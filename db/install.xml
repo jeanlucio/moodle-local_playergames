@@ -73,9 +73,9 @@
         <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="term" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="definition" TYPE="text" NOTNULL="true"/>
-        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="false"/>
         <FIELD NAME="difficulty" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
-        <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -149,7 +149,7 @@
         <FIELD NAME="xpreward" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true"/>
         <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true"/>
-        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -178,7 +178,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true"/>
         <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true"/>
-        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="false"/>
         <FIELD NAME="conditiontype" TYPE="char" LENGTH="50" NOTNULL="true"/>
         <FIELD NAME="conditionvalue" TYPE="int" LENGTH="10" NOTNULL="true"/>
       </FIELDS>
