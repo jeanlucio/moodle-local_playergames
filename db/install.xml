@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/playergames/db" VERSION="20260426"
+    COMMENT="XMLDB file for Moodle local/playergames"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+    <TABLE NAME="local_playergames_seasons" COMMENT="Gamification seasons">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="startdate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="enddate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="upcoming"/>
+        <FIELD NAME="config_snapshot" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_staff_profile" COMMENT="Staff gamification profile per season">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="level" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="showinranking" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_season" TYPE="foreign" FIELDS="seasonid" REFTABLE="local_playergames_seasons" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_seasonid" TYPE="unique" FIELDS="userid, seasonid"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_streaks" COMMENT="Daily activity streaks per user">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="currentstreak" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="longeststreak" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="freezesavailable" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="lastactivedate" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid" TYPE="unique" FIELDS="userid"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_cartridges" COMMENT="Concept cartridges uploaded by admins">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="version" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="timeuploaded" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="uploadedby" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_uploadedby" TYPE="foreign" FIELDS="uploadedby" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_concepts" COMMENT="Concepts belonging to a cartridge">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="term" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="definition" TYPE="text" NOTNULL="true"/>
+        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="difficulty" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT=""/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_cartridgeid" UNIQUE="false" FIELDS="cartridgeid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_daily_assignments" COMMENT="Daily concept assignment per game type">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="conceptid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_gamedate_gametype" UNIQUE="false" FIELDS="gamedate, gametype"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_daily_scores" COMMENT="Daily game results per user">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="completed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="xpawarded" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timeplayed" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_gamedate_gametype" TYPE="unique" FIELDS="userid, gamedate, gametype"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_gamedate_gametype" UNIQUE="false" FIELDS="gamedate, gametype"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_bounce_scores" COMMENT="PlayerBounce daily best scores per user">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="score" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="difficultylevel" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="xpawarded" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timeplayed" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_season" TYPE="foreign" FIELDS="seasonid" REFTABLE="local_playergames_seasons" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_gamedate" TYPE="unique" FIELDS="userid, gamedate"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_userid_seasonid" UNIQUE="false" FIELDS="userid, seasonid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_missions" COMMENT="Hardcoded mission definitions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="targetvalue" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="xpreward" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_mission_progress" COMMENT="User mission progress per season">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="missionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="currentvalue" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="completed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_mission" TYPE="foreign" FIELDS="missionid" REFTABLE="local_playergames_missions" REFFIELDS="id"/>
+        <KEY NAME="fk_season" TYPE="foreign" FIELDS="seasonid" REFTABLE="local_playergames_seasons" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_missionid_seasonid" TYPE="unique" FIELDS="userid, missionid, seasonid"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_achievements" COMMENT="Achievement definitions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT=""/>
+        <FIELD NAME="conditiontype" TYPE="char" LENGTH="50" NOTNULL="true"/>
+        <FIELD NAME="conditionvalue" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_playergames_user_achievements" COMMENT="Achievements earned by users">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="achievementid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_achievement" TYPE="foreign" FIELDS="achievementid" REFTABLE="local_playergames_achievements" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_achievementid" TYPE="unique" FIELDS="userid, achievementid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_userid" UNIQUE="false" FIELDS="userid"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

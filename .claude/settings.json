@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php admin/cli/upgrade.php --non-interactive)",
+      "Bash(php /home/ubuntu/meu-moodle/html/public/admin/cli/upgrade.php --non-interactive)",
+      "Bash(php /home/ubuntu/meu-moodle/html/admin/cli/upgrade.php --non-interactive)",
+      "Bash(php -m)",
+      "Bash(php8.3 -m)",
+      "Read(//usr/bin/**)",
+      "Bash(dpkg -l)",
+      "Bash(apt-cache show *)",
+      "Read(//usr/**)",
+      "Bash(php -c /etc/php/8.3/cli/php.ini -m)",
+      "Bash(php -d extension=pgsql.so -m)",
+      "Read(//etc/php/8.3/cli/conf.d/**)",
+      "Read(//etc/php/8.3/**)",
+      "Read(//etc/php/8.3/fpm/**)",
+      "Bash(xargs php *)",
+      "Bash(php /home/ubuntu/meu-moodle/html/public/local/codechecker/run.php local/playergames)",
+      "Bash(phpcs --standard=/home/ubuntu/meu-moodle/html/public/local/codechecker/moodle/moodle-phpcs/src --extensions=php '--ignore=*/amd/build/*' /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(phpcs --standard=moodle --extensions=php '--ignore=*/amd/build/*' /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(/home/ubuntu/meu-moodle/html/public/local/codechecker/vendor/bin/phpcs --standard=/home/ubuntu/meu-moodle/html/public/local/codechecker/moodle --extensions=php '--ignore=*/amd/build/*' /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(/home/ubuntu/moodle-cs/vendor/bin/phpcs --standard=moodle --extensions=php '--ignore=*/amd/build/*' /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(/home/ubuntu/moodle-cs/vendor/bin/phpcbf --standard=moodle --extensions=php '--ignore=*/amd/build/*' /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(/home/ubuntu/moodle-cs/vendor/bin/phpcs --standard=moodle --extensions=php '--ignore=*/amd/build/*' -s /home/ubuntu/meu-moodle/html/public/local/playergames)",
+      "Bash(echo \"Exit: $?\")"
+    ]
+  }
+}
