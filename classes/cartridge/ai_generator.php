@@ -56,11 +56,14 @@ class ai_generator {
         $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames);
         $result = $this->call_api($prompt);
         if (!$result['success']) {
+            if (empty($result['message'])) {
+                throw new \moodle_exception('error_no_ai_key', 'local_playergames');
+            }
             throw new \moodle_exception(
-                'error_no_ai_key',
+                'error_ai_request_failed',
                 'local_playergames',
                 '',
-                $result['message'] ?? ''
+                $result['message']
             );
         }
         return $this->parse_concepts($result['data']);
