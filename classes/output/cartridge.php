@@ -129,10 +129,15 @@ class cartridge implements renderable, templatable {
                 'concepts_count' => $cartridge->concepts_count ?? 0,
                 'is_active' => (bool) $cartridge->active,
                 'is_inactive' => !(bool) $cartridge->active,
-                'uploaded_date' => userdate(
-                    $cartridge->timeuploaded,
+                'created_date' => userdate(
+                    $cartridge->timecreated,
                     get_string('strftimedatetimeshort', 'core_langconfig')
                 ),
+                'modified_date' => userdate(
+                    $cartridge->timemodified,
+                    get_string('strftimedatetimeshort', 'core_langconfig')
+                ),
+                'author' => format_string($cartridge->author ?? ''),
                 'uploadedby_fullname' => format_string($cartridge->uploadedby_fullname ?? ''),
                 'edit_url' => $editurl,
                 'export_url' => $exporturl,

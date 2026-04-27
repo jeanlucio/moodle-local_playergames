@@ -18,7 +18,9 @@
                 "concepts_count": 42,
                 "is_active": true,
                 "is_inactive": false,
-                "uploaded_date": "27 Apr 2026, 10:00",
+                "created_date": "27 Apr 2026, 10:00",
+                "modified_date": "27 Apr 2026, 12:00",
+                "author": "Jean Lúcio",
                 "uploadedby_fullname": "Admin User",
                 "edit_url": "/local/playergames/cartridge.php?tab=editor&cartridgeid=1",
                 "export_url": "/local/playergames/cartridge.php?action=export_cartridge&cartridgeid=1",
@@ -75,6 +77,8 @@
                     <th scope="col">{{#str}}cartridge_language, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_concepts_count, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_uploaded, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_timemodified, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_author, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_uploadedby, local_playergames{{/str}}</th>
                     <th scope="col"></th>
                 </tr>
@@ -93,7 +97,9 @@
                     </td>
                     <td>{{language}}</td>
                     <td>{{concepts_count}}</td>
-                    <td>{{uploaded_date}}</td>
+                    <td>{{created_date}}</td>
+                    <td>{{modified_date}}</td>
+                    <td>{{author}}</td>
                     <td>{{uploadedby_fullname}}</td>
                     <td class="pg-cartridge-actions">
                         <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
@@ -264,19 +270,26 @@
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
                         <input type="hidden" name="action" value="save_ai_cartridge">
                         <div class="row g-2 mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-5">
                                 <label for="pg-ai-name" class="form-label">
                                     {{#str}}cartridge_name, local_playergames{{/str}}
                                 </label>
                                 <input type="text" id="pg-ai-name" name="ai_cartridge_name"
                                        value="{{ai_preview.cartridge_name}}" class="form-control" required>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="pg-ai-savelang" class="form-label">
                                     {{#str}}cartridge_language, local_playergames{{/str}}
                                 </label>
                                 <input type="text" id="pg-ai-savelang" name="ai_language"
                                        value="{{ai_preview.language}}" class="form-control">
+                            </div>
+                            <div class="col-md-5">
+                                <label for="pg-ai-author" class="form-label">
+                                    {{#str}}cartridge_author, local_playergames{{/str}}
+                                </label>
+                                <input type="text" id="pg-ai-author" name="ai_author"
+                                       class="form-control">
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -342,19 +355,26 @@
                     <form method="post" action="{{action_url}}" class="row g-2 align-items-end">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
                         <input type="hidden" name="action" value="create_cartridge">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label for="pg-new-name" class="form-label">
                                 {{#str}}cartridge_name, local_playergames{{/str}}
                             </label>
                             <input type="text" id="pg-new-name" name="cartridge_name"
                                    class="form-control" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="pg-new-lang" class="form-label">
                                 {{#str}}cartridge_language, local_playergames{{/str}}
                             </label>
                             <input type="text" id="pg-new-lang" name="cartridge_language"
                                    class="form-control" placeholder="pt_BR">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="pg-new-author" class="form-label">
+                                {{#str}}cartridge_author, local_playergames{{/str}}
+                            </label>
+                            <input type="text" id="pg-new-author" name="cartridge_author"
+                                   class="form-control">
                         </div>
                         <div class="col-auto">
                             <button type="submit" class="btn btn-primary">

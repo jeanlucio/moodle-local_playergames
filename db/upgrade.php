@@ -120,5 +120,52 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026042700, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026042800) {
+        $table = new xmldb_table('local_playergames_cartridges');
+
+        // Rename timeuploaded to timecreated.
+        $field = new xmldb_field('timeuploaded', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->rename_field($table, $field, 'timecreated');
+        }
+
+        // Add timemodified field.
+        $timemodifiedfield = new xmldb_field(
+            'timemodified',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'timecreated'
+        );
+        if (!$dbman->field_exists($table, $timemodifiedfield)) {
+            $dbman->add_field($table, $timemodifiedfield);
+        }
+
+        // Add author field (nullable free-text).
+        $authorfield = new xmldb_field(
+            'author',
+            XMLDB_TYPE_CHAR,
+            '255',
+            null,
+            null,
+            null,
+            null,
+            'uploadedby'
+        );
+        if (!$dbman->field_exists($table, $authorfield)) {
+            $dbman->add_field($table, $authorfield);
+        }
+
+        // Populate timemodified with timecreated for existing rows.
+        $DB->execute(
+            'UPDATE {local_playergames_cartridges} SET timemodified = timecreated WHERE timemodified = 0'
+        );
+
+        upgrade_plugin_savepoint(true, 2026042800, 'local', 'playergames');
+    }
+
     return true;
 }

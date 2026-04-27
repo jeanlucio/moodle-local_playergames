@@ -218,8 +218,16 @@ if (data_submitted()) {
             0,
             20
         );
-        $newcartridge->timeuploaded = time();
+        $aiauthor = core_text::substr(
+            clean_param(optional_param('ai_author', '', PARAM_TEXT), PARAM_TEXT),
+            0,
+            255
+        );
+        $now = time();
+        $newcartridge->timecreated = $now;
+        $newcartridge->timemodified = $now;
         $newcartridge->uploadedby = (int) $USER->id;
+        $newcartridge->author = $aiauthor !== '' ? $aiauthor : null;
         $newcartridge->active = 1;
         $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
 
@@ -244,6 +252,11 @@ if (data_submitted()) {
     } else if ($postaction === 'create_cartridge') {
         $cartridgename = required_param('cartridge_name', PARAM_TEXT);
         $cartridgelang = optional_param('cartridge_language', '', PARAM_TEXT);
+        $cartridgeauthor = core_text::substr(
+            clean_param(optional_param('cartridge_author', '', PARAM_TEXT), PARAM_TEXT),
+            0,
+            255
+        );
         $newcartridge = new stdClass();
         $newcartridge->name = core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
         $newcartridge->version = '1.0';
@@ -252,8 +265,11 @@ if (data_submitted()) {
             0,
             20
         );
-        $newcartridge->timeuploaded = time();
+        $createtime = time();
+        $newcartridge->timecreated = $createtime;
+        $newcartridge->timemodified = $createtime;
         $newcartridge->uploadedby = (int) $USER->id;
+        $newcartridge->author = $cartridgeauthor !== '' ? $cartridgeauthor : null;
         $newcartridge->active = 1;
         $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
         redirect(
@@ -289,6 +305,7 @@ if (data_submitted()) {
             );
         }
         $DB->insert_record('local_playergames_concepts', $concept);
+        $DB->set_field('local_playergames_cartridges', 'timemodified', time(), ['id' => $postcartridgeid]);
         redirect(
             new moodle_url('/local/playergames/cartridge.php', [
                 'tab' => 'editor',
@@ -329,6 +346,7 @@ if (data_submitted()) {
         }
         $updated->id = $existingconcept->id;
         $DB->update_record('local_playergames_concepts', $updated);
+        $DB->set_field('local_playergames_cartridges', 'timemodified', time(), ['id' => $postcartridgeid]);
         redirect(
             new moodle_url('/local/playergames/cartridge.php', [
                 'tab' => 'editor',
@@ -345,6 +363,7 @@ if (data_submitted()) {
             'local_playergames_concepts',
             ['id' => $postconceptid, 'cartridgeid' => $postcartridgeid]
         );
+        $DB->set_field('local_playergames_cartridges', 'timemodified', time(), ['id' => $postcartridgeid]);
         redirect(
             new moodle_url('/local/playergames/cartridge.php', [
                 'tab' => 'editor',
@@ -361,6 +380,7 @@ if (data_submitted()) {
             throw new moodle_exception('error_cartridge_notfound', 'local_playergames');
         }
         $cartridgerow->active = $cartridgerow->active ? 0 : 1;
+        $cartridgerow->timemodified = time();
         $DB->update_record('local_playergames_cartridges', $cartridgerow);
         redirect(
             new moodle_url('/local/playergames/cartridge.php'),
@@ -462,7 +482,7 @@ if (data_submitted()) {
 
 // Build page data.
 
-$allcartridges = $DB->get_records('local_playergames_cartridges', null, 'timeuploaded DESC');
+$allcartridges = $DB->get_records('local_playergames_cartridges', null, 'timecreated DESC');
 
 // Bulk-load concept counts to avoid N+1 queries.
 $conceptcounts = [];

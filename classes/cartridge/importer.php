@@ -73,8 +73,13 @@ class importer {
             0,
             20
         );
-        $cartridge->timeuploaded = time();
+        $now = time();
+        $cartridge->timecreated = $now;
+        $cartridge->timemodified = $now;
         $cartridge->uploadedby = $uploaderid;
+        $cartridge->author = isset($data['author'])
+            ? \core_text::substr(clean_param($data['author'], PARAM_TEXT), 0, 255)
+            : null;
         $cartridge->active = 1;
 
         $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
