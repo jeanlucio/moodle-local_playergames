@@ -1,0 +1,83 @@
+{{!
+    Template: local_playergames/mykeys
+    Purpose:  Personal AI API key management page.
+
+    Example context (json):
+    {
+        "heading": "My personal AI API keys",
+        "intro": "Your personal keys take priority over the shared hub key. Leave a field blank to use the shared key.",
+        "providers": [
+            {
+                "provider": "gemini",
+                "label": "Gemini API key",
+                "has_personal": true,
+                "placeholder": "Paste your API key here",
+                "sesskey": "abc123",
+                "action_url": "/local/playergames/mykeys.php"
+            }
+        ],
+        "clear_label": "Clear saved key"
+    }
+}}
+<div class="local-playergames-mykeys container-fluid py-3">
+    <h2>{{heading}}</h2>
+    <p class="text-muted">{{intro}}</p>
+
+    {{#providers}}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="card-title h5">{{label}}</h3>
+
+            {{#has_personal}}
+            <p class="mb-2">
+                <span class="badge bg-success" aria-label="{{label}}">&#10003;</span>
+                <strong>{{label}}</strong>
+            </p>
+            {{/has_personal}}
+            {{^has_personal}}
+            <p class="mb-2 text-secondary">
+                <span class="badge bg-secondary" aria-hidden="true">&#8212;</span>
+            </p>
+            {{/has_personal}}
+
+            <form method="post" action="{{action_url}}" class="d-flex gap-2 align-items-end flex-wrap">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="provider" value="{{provider}}">
+
+                <div class="flex-grow-1">
+                    <label for="apikey-{{provider}}" class="form-label visually-hidden">
+                        {{label}}
+                    </label>
+                    <input
+                        type="password"
+                        id="apikey-{{provider}}"
+                        name="apikey"
+                        class="form-control pg-apikey-input"
+                        placeholder="{{placeholder}}"
+                        autocomplete="new-password"
+                        data-provider="{{provider}}"
+                    >
+                </div>
+
+                <button type="button"
+                    class="btn btn-outline-secondary pg-toggle-key"
+                    data-target="apikey-{{provider}}"
+                    aria-label="{{label}}"
+                    aria-pressed="false">
+                    <span aria-hidden="true">&#128065;</span>
+                </button>
+
+                <button type="submit" class="btn btn-primary">
+                    {{label}}
+                </button>
+
+                {{#has_personal}}
+                <button type="submit" name="apikey" value="" class="btn btn-outline-danger">
+                    {{clear_label}}
+                </button>
+                {{/has_personal}}
+            </form>
+        </div>
+    </div>
+    {{/providers}}
+</div>
