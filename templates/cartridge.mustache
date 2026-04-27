@@ -322,6 +322,31 @@
                     <p class="text-muted mt-2">
                         {{#str}}cartridge_select_to_edit, local_playergames{{/str}}
                     </p>
+                    <hr>
+                    <h5>{{#str}}cartridge_new_heading, local_playergames{{/str}}</h5>
+                    <form method="post" action="{{action_url}}" class="row g-2 align-items-end">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <input type="hidden" name="action" value="create_cartridge">
+                        <div class="col-md-5">
+                            <label for="pg-new-name" class="form-label">
+                                {{#str}}cartridge_name, local_playergames{{/str}}
+                            </label>
+                            <input type="text" id="pg-new-name" name="cartridge_name"
+                                   class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="pg-new-lang" class="form-label">
+                                {{#str}}cartridge_language, local_playergames{{/str}}
+                            </label>
+                            <input type="text" id="pg-new-lang" name="cartridge_language"
+                                   class="form-control" placeholder="pt_BR">
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">
+                                {{#str}}cartridge_new_create, local_playergames{{/str}}
+                            </button>
+                        </div>
+                    </form>
                     {{/has_editor_cartridge}}
 
                     {{#has_editor_cartridge}}

@@ -216,6 +216,31 @@ if (data_submitted()) {
             \core\output\notification::NOTIFY_SUCCESS
         );
 
+    } else if ($postaction === 'create_cartridge') {
+        $cartridgename = required_param('cartridge_name', PARAM_TEXT);
+        $cartridgelang = optional_param('cartridge_language', '', PARAM_TEXT);
+        $newcartridge = new stdClass();
+        $newcartridge->name = core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
+        $newcartridge->version = '1.0';
+        $newcartridge->language = core_text::substr(
+            clean_param($cartridgelang, PARAM_TEXT),
+            0,
+            20
+        );
+        $newcartridge->timeuploaded = time();
+        $newcartridge->uploadedby = (int) $USER->id;
+        $newcartridge->active = 1;
+        $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
+        redirect(
+            new moodle_url('/local/playergames/cartridge.php', [
+                'tab' => 'editor',
+                'cartridgeid' => $newcartridgeid,
+            ]),
+            get_string('cartridge_created', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+
     } else if ($postaction === 'add_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $DB->get_record_or_exception(
