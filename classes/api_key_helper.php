@@ -74,7 +74,8 @@ class api_key_helper {
         }
 
         // Level 3: legacy block_playerhud site config.
-        $legacy = (string) get_config('block_playerhud', $provider . '_key');
+        // block_playerhud uses 'apikey_{provider}' (e.g. apikey_gemini), not '{provider}_key'.
+        $legacy = (string) get_config('block_playerhud', 'apikey_' . $provider);
         return $legacy;
     }
 
