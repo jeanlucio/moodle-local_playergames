@@ -105,6 +105,7 @@ $string['error_cartridge_nofile'] = 'No file was uploaded.';
 $string['error_cartridge_notfound'] = 'Cartridge not found.';
 $string['error_cartridge_tooconcepts'] = 'The cartridge exceeds the maximum number of concepts ({$a}).';
 $string['error_category_duplicate'] = 'A category with this name already exists in this cartridge.';
+$string['error_ai_request_failed'] = 'AI request failed: {$a}';
 $string['error_category_empty_name'] = 'Category name cannot be empty.';
 $string['error_category_notfound'] = 'Category not found.';
 $string['error_concept_empty_definition'] = 'Concept definition cannot be empty.';
