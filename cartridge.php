@@ -267,12 +267,9 @@ if (data_submitted()) {
         );
     } else if ($postaction === 'add_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $DB->get_record_or_exception(
-            'local_playergames_cartridges',
-            ['id' => $postcartridgeid],
-            'error_cartridge_notfound',
-            'local_playergames'
-        );
+        if (!$DB->record_exists('local_playergames_cartridges', ['id' => $postcartridgeid])) {
+            throw new moodle_exception('error_cartridge_notfound', 'local_playergames');
+        }
         $imp = new importer();
         $concept = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
@@ -304,12 +301,13 @@ if (data_submitted()) {
     } else if ($postaction === 'edit_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postconceptid = required_param('concept_id', PARAM_INT);
-        $existingconcept = $DB->get_record_or_exception(
+        $existingconcept = $DB->get_record(
             'local_playergames_concepts',
-            ['id' => $postconceptid, 'cartridgeid' => $postcartridgeid],
-            'error_cartridge_notfound',
-            'local_playergames'
+            ['id' => $postconceptid, 'cartridgeid' => $postcartridgeid]
         );
+        if (!$existingconcept) {
+            throw new moodle_exception('error_cartridge_notfound', 'local_playergames');
+        }
         $imp = new importer();
         $updated = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
@@ -358,12 +356,10 @@ if (data_submitted()) {
         );
     } else if ($postaction === 'toggle_active') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $cartridgerow = $DB->get_record_or_exception(
-            'local_playergames_cartridges',
-            ['id' => $postcartridgeid],
-            'error_cartridge_notfound',
-            'local_playergames'
-        );
+        $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
+        if (!$cartridgerow) {
+            throw new moodle_exception('error_cartridge_notfound', 'local_playergames');
+        }
         $cartridgerow->active = $cartridgerow->active ? 0 : 1;
         $DB->update_record('local_playergames_cartridges', $cartridgerow);
         redirect(
@@ -394,12 +390,9 @@ if (data_submitted()) {
     } else if ($postaction === 'add_category') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $catname = required_param('category_name', PARAM_TEXT);
-        $DB->get_record_or_exception(
-            'local_playergames_cartridges',
-            ['id' => $postcartridgeid],
-            'error_cartridge_notfound',
-            'local_playergames'
-        );
+        if (!$DB->record_exists('local_playergames_cartridges', ['id' => $postcartridgeid])) {
+            throw new moodle_exception('error_cartridge_notfound', 'local_playergames');
+        }
         try {
             $catmgr = new category_manager();
             $catmgr->create($postcartridgeid, $catname);
