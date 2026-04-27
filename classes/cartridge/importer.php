@@ -28,15 +28,13 @@ namespace local_playergames\cartridge;
  * Validates and imports a concept cartridge from a JSON payload.
  */
 class importer {
-
+    /** @var category_manager Lazy-initialised category manager instance. */
+    private ?category_manager $catmgr = null;
     /** @var int Maximum number of characters allowed in a term. */
     const MAX_TERM_LENGTH = 255;
 
     /** @var int Maximum number of characters allowed in a definition. */
     const MAX_DEFINITION_LENGTH = 1000;
-
-    /** @var int Maximum number of characters allowed in a category. */
-    const MAX_CATEGORY_LENGTH = 100;
 
     /** @var int Maximum number of concepts per cartridge. */
     const MAX_CONCEPTS = 2000;
@@ -94,26 +92,37 @@ class importer {
     public function save_concepts(int $cartridgeid, array $concepts): \stdClass {
         global $DB;
 
+        if ($this->catmgr === null) {
+            $this->catmgr = new category_manager();
+        }
+
+        // Pre-resolve all unique category names to IDs (avoids N+1 per-concept queries).
+        $catmap = [];
+        foreach ($concepts as $raw) {
+            $name = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            if ($name !== '' && !array_key_exists($name, $catmap)) {
+                $catmap[$name] = $this->catmgr->ensure_category($cartridgeid, $name);
+            }
+        }
+
         $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
-        $categories = [];
         $count = 0;
 
         foreach ($concepts as $raw) {
+            $name = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            $raw['categoryid'] = ($name !== '' && isset($catmap[$name])) ? $catmap[$name] : null;
             $concept = $this->sanitize_concept($raw, $cartridgeid);
             if ($concept->term === '') {
                 continue;
             }
             $DB->insert_record('local_playergames_concepts', $concept);
             $count++;
-            if ($concept->category !== null && !in_array($concept->category, $categories)) {
-                $categories[] = $concept->category;
-            }
         }
 
         $result = new \stdClass();
         $result->cartridgeid = $cartridgeid;
         $result->count = $count;
-        $result->categories = count($categories) > 0 ? implode(', ', $categories) : '—';
+        $result->categories = !empty($catmap) ? implode(', ', array_keys($catmap)) : '—';
         $result->language = $cartridge ? $cartridge->language : '';
         return $result;
     }
@@ -174,10 +183,8 @@ class importer {
             0,
             self::MAX_DEFINITION_LENGTH
         );
-        $rawcategory = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
-        $concept->category = $rawcategory !== ''
-            ? \core_text::substr($rawcategory, 0, self::MAX_CATEGORY_LENGTH)
-            : null;
+        $rawcatid = isset($raw['categoryid']) ? (int) $raw['categoryid'] : 0;
+        $concept->categoryid = $rawcatid > 0 ? $rawcatid : null;
         $difficulty = isset($raw['difficulty']) ? (int) $raw['difficulty'] : 3;
         $concept->difficulty = max(1, min(5, $difficulty));
         $concept->language = null;

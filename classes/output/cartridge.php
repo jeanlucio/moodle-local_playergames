@@ -34,7 +34,6 @@ use stdClass;
  * Exports data for the cartridge management Mustache template.
  */
 class cartridge implements renderable, templatable {
-
     /** @var string Active tab slug: 'import', 'ai', or 'editor'. */
     private string $tab;
 
@@ -47,20 +46,23 @@ class cartridge implements renderable, templatable {
     /** @var array Concepts for the cartridge being edited. */
     private array $concepts;
 
+    /** @var array Category records for the cartridge being edited. */
+    private array $categories;
+
     /** @var stdClass|null Concept pre-filling the edit form, or null. */
     private ?stdClass $editconcept;
 
     /** @var array|null AI preview data or null if no generation was performed. */
-    private ?array $ai_preview;
+    private ?array $aipreview;
 
     /** @var stdClass|null Form data repopulated after AI generation. */
-    private ?stdClass $ai_form_data;
+    private ?stdClass $aiformdata;
 
     /** @var string Error message from a failed AI generation, or empty string. */
-    private string $ai_error;
+    private string $aierror;
 
     /** @var bool Whether at least one AI provider key is configured. */
-    private bool $has_ai_key;
+    private bool $hasaikey;
 
     /**
      * Constructor.
@@ -69,32 +71,35 @@ class cartridge implements renderable, templatable {
      * @param array $cartridges All cartridge records with concept counts.
      * @param stdClass|null $editcartridge Cartridge being edited, or null.
      * @param array $concepts Concepts belonging to the edit cartridge.
+     * @param array $categories Category records belonging to the edit cartridge.
      * @param stdClass|null $editconcept Concept whose data should pre-fill the form.
-     * @param array|null $ai_preview Preview concepts from AI generation, or null.
-     * @param stdClass|null $ai_form_data Form values to repopulate after generation.
-     * @param string $ai_error AI error message, or empty string.
-     * @param bool $has_ai_key Whether a key is configured for any AI provider.
+     * @param array|null $aipreview Preview concepts from AI generation, or null.
+     * @param stdClass|null $aiformdata Form values to repopulate after generation.
+     * @param string $aierror AI error message, or empty string.
+     * @param bool $hasaikey Whether a key is configured for any AI provider.
      */
     public function __construct(
         string $tab,
         array $cartridges,
         ?stdClass $editcartridge,
         array $concepts,
+        array $categories,
         ?stdClass $editconcept,
-        ?array $ai_preview,
-        ?stdClass $ai_form_data,
-        string $ai_error,
-        bool $has_ai_key
+        ?array $aipreview,
+        ?stdClass $aiformdata,
+        string $aierror,
+        bool $hasaikey
     ) {
         $this->tab = $tab;
         $this->cartridges = $cartridges;
         $this->editcartridge = $editcartridge;
         $this->concepts = $concepts;
+        $this->categories = $categories;
         $this->editconcept = $editconcept;
-        $this->ai_preview = $ai_preview;
-        $this->ai_form_data = $ai_form_data;
-        $this->ai_error = $ai_error;
-        $this->has_ai_key = $has_ai_key;
+        $this->aipreview = $aipreview;
+        $this->aiformdata = $aiformdata;
+        $this->aierror = $aierror;
+        $this->hasaikey = $hasaikey;
     }
 
     /**
@@ -136,17 +141,25 @@ class cartridge implements renderable, templatable {
         }
 
         $conceptrows = [];
+        // Build a category name lookup keyed by ID.
+        $catnamelookup = [];
+        foreach ($this->categories as $cat) {
+            $catnamelookup[(int) $cat->id] = format_string($cat->name);
+        }
         foreach ($this->concepts as $concept) {
             $editconcepturl = (new moodle_url('/local/playergames/cartridge.php', [
                 'tab' => 'editor',
                 'cartridgeid' => $this->editcartridge ? $this->editcartridge->id : 0,
                 'editconcept' => $concept->id,
             ]))->out(false);
+            $catid = isset($concept->categoryid) ? (int) $concept->categoryid : 0;
             $conceptrows[] = [
                 'id' => $concept->id,
                 'term' => format_string($concept->term),
                 'definition' => format_string($concept->definition),
-                'category' => format_string($concept->category ?? ''),
+                'category' => $catid > 0 && isset($catnamelookup[$catid])
+                    ? $catnamelookup[$catid]
+                    : '',
                 'difficulty' => (int) $concept->difficulty,
                 'edit_url' => $editconcepturl,
                 'sesskey' => sesskey(),
@@ -158,7 +171,7 @@ class cartridge implements renderable, templatable {
         $formconceptid = 0;
         $formterm = '';
         $formdefinition = '';
-        $formcategory = '';
+        $formcategoryid = 0;
         $formdifficulty = 3;
         $editingconcept = false;
 
@@ -167,18 +180,41 @@ class cartridge implements renderable, templatable {
             $formconceptid = $this->editconcept->id;
             $formterm = $this->editconcept->term;
             $formdefinition = $this->editconcept->definition;
-            $formcategory = $this->editconcept->category ?? '';
+            $formcategoryid = isset($this->editconcept->categoryid)
+                ? (int) $this->editconcept->categoryid
+                : 0;
             $formdifficulty = (int) $this->editconcept->difficulty;
             $editingconcept = true;
         }
 
+        // Build category select options (with selected flag).
+        $categoryoptions = [];
+        foreach ($this->categories as $cat) {
+            $categoryoptions[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'selected' => (int) $cat->id === $formcategoryid,
+            ];
+        }
+
+        // Build category rows for the management table.
+        $catrows = [];
+        foreach ($this->categories as $cat) {
+            $catrows[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'cartridgeid' => $this->editcartridge ? $this->editcartridge->id : 0,
+                'sesskey' => sesskey(),
+            ];
+        }
+
         $aipreviewdata = null;
-        if ($this->ai_preview !== null) {
+        if ($this->aipreview !== null) {
             $aipreviewdata = [
-                'cartridge_name' => s($this->ai_preview['cartridge_name']),
-                'language' => s($this->ai_preview['language']),
-                'concepts' => $this->ai_preview['concepts'],
-                'count' => count($this->ai_preview['concepts']),
+                'cartridge_name' => s($this->aipreview['cartridge_name']),
+                'language' => s($this->aipreview['language']),
+                'concepts' => $this->aipreview['concepts'],
+                'count' => count($this->aipreview['concepts']),
             ];
         }
 
@@ -192,26 +228,31 @@ class cartridge implements renderable, templatable {
             'tab_import_active' => $this->tab === 'import',
             'tab_ai_active' => $this->tab === 'ai',
             'tab_editor_active' => $this->tab === 'editor',
-            'has_ai_key' => $this->has_ai_key,
+            'has_ai_key' => $this->hasaikey,
             'ai_preview' => $aipreviewdata,
             'has_ai_preview' => $aipreviewdata !== null,
-            'ai_form_topic' => $this->ai_form_data ? s($this->ai_form_data->topic) : '',
-            'ai_form_language' => $this->ai_form_data ? s($this->ai_form_data->language) : '',
-            'ai_form_quantity' => $this->ai_form_data ? (int) $this->ai_form_data->quantity : 20,
-            'ai_form_difficulty' => $this->ai_form_data ? (int) $this->ai_form_data->difficulty : 3,
-            'ai_error' => s($this->ai_error),
-            'has_ai_error' => $this->ai_error !== '',
+            'ai_form_topic' => $this->aiformdata ? s($this->aiformdata->topic) : '',
+            'ai_form_language' => $this->aiformdata ? s($this->aiformdata->language) : '',
+            'ai_form_quantity' => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
+            'ai_form_difficulty' => $this->aiformdata ? (int) $this->aiformdata->difficulty : 3,
+            'ai_form_categories' => $this->aiformdata
+                ? s($this->aiformdata->categories ?? '') : '',
+            'ai_error' => s($this->aierror),
+            'has_ai_error' => $this->aierror !== '',
             'editor_cartridge_id' => $this->editcartridge ? $this->editcartridge->id : 0,
             'editor_cartridge_name' => $this->editcartridge
                 ? format_string($this->editcartridge->name) : '',
             'has_editor_cartridge' => $this->editcartridge !== null,
+            'categories' => $catrows,
+            'categories_empty' => empty($catrows),
+            'category_options' => $categoryoptions,
             'concepts' => $conceptrows,
             'concepts_empty' => empty($conceptrows),
             'form_action' => $formaction,
             'form_concept_id' => $formconceptid,
             'form_term' => s($formterm),
             'form_definition' => s($formdefinition),
-            'form_category' => s($formcategory),
+            'form_categoryid' => $formcategoryid,
             'form_difficulty' => $formdifficulty,
             'editing_concept' => $editingconcept,
         ];

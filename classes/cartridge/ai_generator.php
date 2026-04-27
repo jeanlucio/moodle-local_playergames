@@ -32,7 +32,6 @@ use local_playergames\api_key_helper;
  * Provider priority: Gemini → Groq → OpenAI-compatible (first key found wins).
  */
 class ai_generator {
-
     /** @var int HTTP timeout in seconds for AI API calls. */
     const HTTP_TIMEOUT = 30;
 
@@ -43,11 +42,18 @@ class ai_generator {
      * @param string $language Target language for the generated content.
      * @param int $count Number of concepts to request (10–100).
      * @param int $difficulty Average difficulty target (1–5).
+     * @param array $categorynames Optional list of category names the AI must use.
      * @return array Array of raw concept arrays with term, definition, category, difficulty.
      * @throws \moodle_exception If no AI key is available or the response cannot be parsed.
      */
-    public function generate(string $topic, string $language, int $count, int $difficulty): array {
-        $prompt = $this->build_prompt($topic, $language, $count, $difficulty);
+    public function generate(
+        string $topic,
+        string $language,
+        int $count,
+        int $difficulty,
+        array $categorynames = []
+    ): array {
+        $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames);
         $result = $this->call_api($prompt);
         if (!$result['success']) {
             throw new \moodle_exception(
@@ -76,23 +82,38 @@ class ai_generator {
      * @param string $language Target language name or code.
      * @param int $count Number of concepts to generate.
      * @param int $difficulty Average difficulty 1–5.
+     * @param array $categorynames Optional list of category names to constrain the AI.
      * @return string The constructed prompt.
      */
-    protected function build_prompt(string $topic, string $language, int $count, int $difficulty): string {
+    protected function build_prompt(
+        string $topic,
+        string $language,
+        int $count,
+        int $difficulty,
+        array $categorynames = []
+    ): string {
         $langname = $language !== '' ? $language : 'English';
         $jsonexample = '{"concepts":[{"term":"...","definition":"...","category":"...","difficulty":1}]}';
+
+        if (!empty($categorynames)) {
+            $catlist = '"' . implode('", "', $categorynames) . '"';
+            $categoryrule = "- category: MUST be exactly one of these values (verbatim): {$catlist}";
+        } else {
+            $categoryrule = '- category: one or two words grouping similar terms';
+        }
+
         $rules = "- term: short word or phrase (max 6 words)\n"
             . "- definition: one clear sentence explaining the term\n"
-            . "- category: one or two words grouping similar terms\n"
+            . $categoryrule . "\n"
             . "- difficulty: integer 1–5\n"
-            . "- No markdown, no code fences, only raw JSON";
+            . '- No markdown, no code fences, only raw JSON';
 
         return implode("\n\n", [
-            "You are a knowledgeable educator creating a vocabulary and concept study set.",
+            'You are a knowledgeable educator creating a vocabulary and concept study set.',
             "Generate exactly {$count} educational concepts about the topic: \"{$topic}\".",
             "Target average difficulty: {$difficulty} out of 5 (1 = very easy, 5 = very hard).",
             "Respond in language: {$langname}.",
-            "IMPORTANT: Reply ONLY with a valid JSON object in this exact format, no extra text:",
+            'IMPORTANT: Reply ONLY with a valid JSON object in this exact format, no extra text:',
             $jsonexample,
             "Rules:\n" . $rules,
         ]);
@@ -248,9 +269,9 @@ class ai_generator {
      * @throws \moodle_exception If the response cannot be parsed or contains no concepts.
      */
     protected function parse_concepts(string $responsetext): array {
-        // Strip optional markdown code fences (```json ... ``` or ``` ... ```).
-        $cleaned = preg_replace('/^```(?:json)?\s*/im', '', $responsetext);
-        $cleaned = preg_replace('/```\s*$/m', '', $cleaned);
+        // Strip optional markdown code fences (triple backtick with optional json tag).
+        $cleaned = preg_replace('/^\x60\x60\x60(?:json)?\s*/im', '', $responsetext);
+        $cleaned = preg_replace('/\x60\x60\x60\s*$/m', '', $cleaned);
         $cleaned = trim($cleaned);
 
         $decoded = json_decode($cleaned, true);

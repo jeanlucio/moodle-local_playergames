@@ -47,9 +47,13 @@
         "form_concept_id": 0,
         "form_term": "",
         "form_definition": "",
-        "form_category": "",
+        "form_categoryid": 0,
         "form_difficulty": 3,
-        "editing_concept": false
+        "editing_concept": false,
+        "categories": [],
+        "categories_empty": true,
+        "category_options": [],
+        "ai_form_categories": ""
     }
 }}
 
@@ -214,6 +218,17 @@
                                        placeholder="English">
                             </div>
                             <div class="col-md-4">
+                                <label for="pg-ai-categories" class="form-label">
+                                    {{#str}}cartridge_ai_categories, local_playergames{{/str}}
+                                </label>
+                                <input type="text" id="pg-ai-categories" name="ai_categories"
+                                       value="{{ai_form_categories}}" class="form-control"
+                                       placeholder="{{#str}}cartridge_ai_categories_desc, local_playergames{{/str}}">
+                                <div class="form-text">
+                                    {{#str}}cartridge_ai_categories_help, local_playergames{{/str}}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <label for="pg-ai-quantity" class="form-label">
                                     {{#str}}cartridge_ai_quantity, local_playergames{{/str}}
                                 </label>
@@ -359,6 +374,102 @@
                         </a>
                     </div>
 
+                    {{! Category management }}
+                    <div class="card mb-4 border-secondary">
+                        <div class="card-header bg-transparent">
+                            <h6 class="mb-0">{{#str}}category_heading, local_playergames{{/str}}</h6>
+                        </div>
+                        <div class="card-body">
+                            {{#categories_empty}}
+                            <p class="text-muted small mb-2">
+                                {{#str}}category_list_empty, local_playergames{{/str}}
+                            </p>
+                            {{/categories_empty}}
+                            {{^categories_empty}}
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-borderless mb-0 pg-category-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">
+                                                {{#str}}category_name, local_playergames{{/str}}
+                                            </th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#categories}}
+                                        <tr>
+                                            <td>{{name}}</td>
+                                            <td class="pg-category-actions">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-secondary me-1 pg-rename-cat"
+                                                        data-categoryid="{{id}}"
+                                                        data-name="{{name}}"
+                                                        data-cartridgeid="{{cartridgeid}}"
+                                                        data-sesskey="{{sesskey}}">
+                                                    {{#str}}category_rename, local_playergames{{/str}}
+                                                </button>
+                                                <form method="post" action="{{action_url}}" class="d-inline"
+                                                      data-pg-confirm="{{#str}}category_confirm_delete, local_playergames{{/str}}">
+                                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                                    <input type="hidden" name="action" value="delete_category">
+                                                    <input type="hidden" name="cartridgeid" value="{{cartridgeid}}">
+                                                    <input type="hidden" name="category_id" value="{{id}}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        {{#str}}category_delete, local_playergames{{/str}}
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {{/categories}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{/categories_empty}}
+                            <form method="post" action="{{action_url}}" class="row g-2 align-items-end">
+                                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                <input type="hidden" name="action" value="add_category">
+                                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                                <div class="col-md-6">
+                                    <label for="pg-cat-name" class="form-label">
+                                        {{#str}}category_name, local_playergames{{/str}}
+                                    </label>
+                                    <input type="text" id="pg-cat-name" name="category_name"
+                                           class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        {{#str}}category_add, local_playergames{{/str}}
+                                    </button>
+                                </div>
+                            </form>
+                            {{! Hidden rename form — populated by JS }}
+                            <form id="pg-rename-cat-form" method="post" action="{{action_url}}"
+                                  class="row g-2 align-items-end mt-2 d-none">
+                                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                <input type="hidden" name="action" value="rename_category">
+                                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                                <input type="hidden" name="category_id" id="pg-rename-cat-id">
+                                <div class="col-md-6">
+                                    <label for="pg-rename-cat-name" class="form-label">
+                                        {{#str}}category_rename, local_playergames{{/str}}
+                                    </label>
+                                    <input type="text" id="pg-rename-cat-name" name="category_name"
+                                           class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        {{#str}}category_saved, local_playergames{{/str}}
+                                    </button>
+                                    <button type="button" id="pg-rename-cat-cancel"
+                                            class="btn btn-outline-secondary btn-sm ms-1">
+                                        {{#str}}moodle, cancel{{/str}}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     {{! Add / edit concept form }}
                     <div class="card mb-4">
                         <div class="card-body">
@@ -396,8 +507,12 @@
                                         <label for="pg-form-cat" class="form-label">
                                             {{#str}}concept_category, local_playergames{{/str}}
                                         </label>
-                                        <input type="text" id="pg-form-cat" name="category"
-                                               value="{{form_category}}" class="form-control">
+                                        <select id="pg-form-cat" name="categoryid" class="form-select">
+                                            <option value="0">—</option>
+                                            {{#category_options}}
+                                            <option value="{{id}}"{{#selected}} selected{{/selected}}>{{name}}</option>
+                                            {{/category_options}}
+                                        </select>
                                     </div>
                                     <div class="col-md-2">
                                         <label for="pg-form-diff" class="form-label">

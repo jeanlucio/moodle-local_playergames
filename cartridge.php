@@ -26,6 +26,7 @@ require(__DIR__ . '/../../config.php');
 
 use local_playergames\cartridge\importer;
 use local_playergames\cartridge\ai_generator;
+use local_playergames\cartridge\category_manager;
 use local_playergames\api_key_helper;
 use local_playergames\output\cartridge as cartridge_output;
 use local_playergames\event\cartridge_imported;
@@ -46,7 +47,7 @@ $PAGE->set_pagelayout('admin');
 $PAGE->set_title(get_string('cartridge_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('cartridge_pagetitle', 'local_playergames'));
 
-// --- Export action: output JSON directly before any HTML -------------------------
+// Export action: output JSON directly before any HTML.
 
 if ($action === 'export_cartridge' && $cartridgeid > 0) {
     $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
@@ -58,12 +59,27 @@ if ($action === 'export_cartridge' && $cartridgeid > 0) {
         ['cartridgeid' => $cartridgeid],
         'id ASC'
     );
+    // Bulk-load category names to avoid N+1.
+    $exportcatmap = [];
+    $exportcatids = array_filter(array_column((array) $concepts, 'categoryid'));
+    if (!empty($exportcatids)) {
+        [$excatsql, $excatparams] = $DB->get_in_or_equal($exportcatids);
+        $catrows = $DB->get_records_sql(
+            "SELECT id, name FROM {local_playergames_categories} WHERE id {$excatsql}",
+            $excatparams
+        );
+        foreach ($catrows as $cat) {
+            $exportcatmap[(int) $cat->id] = $cat->name;
+        }
+    }
     $conceptsdata = [];
     foreach ($concepts as $c) {
         $conceptsdata[] = [
             'term' => $c->term,
             'definition' => $c->definition,
-            'category' => $c->category ?? '',
+            'category' => isset($exportcatmap[(int) $c->categoryid])
+                ? $exportcatmap[(int) $c->categoryid]
+                : '',
             'difficulty' => (int) $c->difficulty,
         ];
     }
@@ -82,12 +98,11 @@ if ($action === 'export_cartridge' && $cartridgeid > 0) {
     die();
 }
 
-// --- POST handler ----------------------------------------------------------------
+// POST handler.
 
-$ai_preview = null;
-$ai_form_data = null;
-$ai_error = '';
-$redirecturl = new moodle_url('/local/playergames/cartridge.php');
+$aipreview = null;
+$aiformdata = null;
+$aierror = '';
 
 if (data_submitted()) {
     require_sesskey();
@@ -138,25 +153,37 @@ if (data_submitted()) {
                 \core\output\notification::NOTIFY_ERROR
             );
         }
-
     } else if ($postaction === 'generate_ai') {
         $topic = required_param('topic', PARAM_TEXT);
         $ailanguage = optional_param('ai_language', '', PARAM_TEXT);
         $quantity = required_param('quantity', PARAM_INT);
         $difficulty = required_param('difficulty', PARAM_INT);
+        $aicategoriesraw = optional_param('ai_categories', '', PARAM_TEXT);
         $quantity = max(10, min(100, $quantity));
         $difficulty = max(1, min(5, $difficulty));
 
-        $ai_form_data = new stdClass();
-        $ai_form_data->topic = $topic;
-        $ai_form_data->language = $ailanguage;
-        $ai_form_data->quantity = $quantity;
-        $ai_form_data->difficulty = $difficulty;
+        // Parse comma-separated category names.
+        $categorynames = [];
+        if ($aicategoriesraw !== '') {
+            foreach (explode(',', $aicategoriesraw) as $catname) {
+                $catname = trim(clean_param($catname, PARAM_TEXT));
+                if ($catname !== '') {
+                    $categorynames[] = $catname;
+                }
+            }
+        }
+
+        $aiformdata = new stdClass();
+        $aiformdata->topic = $topic;
+        $aiformdata->language = $ailanguage;
+        $aiformdata->quantity = $quantity;
+        $aiformdata->difficulty = $difficulty;
+        $aiformdata->categories = $aicategoriesraw;
 
         $tab = 'ai';
         try {
             $gen = new ai_generator();
-            $rawconcepts = $gen->generate($topic, $ailanguage, $quantity, $difficulty);
+            $rawconcepts = $gen->generate($topic, $ailanguage, $quantity, $difficulty, $categorynames);
             $indexed = [];
             foreach ($rawconcepts as $i => $c) {
                 $indexed[] = [
@@ -167,16 +194,15 @@ if (data_submitted()) {
                     'difficulty' => max(1, min(5, (int) ($c['difficulty'] ?? 3))),
                 ];
             }
-            $ai_preview = [
+            $aipreview = [
                 'cartridge_name' => $topic,
                 'language' => $ailanguage,
                 'concepts' => $indexed,
             ];
         } catch (moodle_exception $e) {
-            $ai_error = $e->getMessage();
+            $aierror = $e->getMessage();
         }
         // Fall through to page rendering (no redirect).
-
     } else if ($postaction === 'save_ai_cartridge') {
         $cartridgename = required_param('ai_cartridge_name', PARAM_TEXT);
         $cartridgelang = optional_param('ai_language', '', PARAM_TEXT);
@@ -215,7 +241,6 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'create_cartridge') {
         $cartridgename = required_param('cartridge_name', PARAM_TEXT);
         $cartridgelang = optional_param('cartridge_language', '', PARAM_TEXT);
@@ -240,7 +265,6 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'add_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $DB->get_record_or_exception(
@@ -253,7 +277,7 @@ if (data_submitted()) {
         $concept = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
             'definition' => required_param('definition', PARAM_TEXT),
-            'category' => optional_param('category', '', PARAM_TEXT),
+            'categoryid' => optional_param('categoryid', 0, PARAM_INT),
             'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
         if ($concept->term === '') {
@@ -277,7 +301,6 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'edit_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postconceptid = required_param('concept_id', PARAM_INT);
@@ -291,7 +314,7 @@ if (data_submitted()) {
         $updated = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
             'definition' => required_param('definition', PARAM_TEXT),
-            'category' => optional_param('category', '', PARAM_TEXT),
+            'categoryid' => optional_param('categoryid', 0, PARAM_INT),
             'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
         if ($updated->term === '') {
@@ -317,7 +340,6 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'delete_concept') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postconceptid = required_param('concept_id', PARAM_INT);
@@ -334,7 +356,6 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'toggle_active') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $cartridgerow = $DB->get_record_or_exception(
@@ -351,10 +372,10 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
-
     } else if ($postaction === 'delete_cartridge') {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $DB->delete_records('local_playergames_concepts', ['cartridgeid' => $postcartridgeid]);
+        $DB->delete_records('local_playergames_categories', ['cartridgeid' => $postcartridgeid]);
         $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
         if ($cartridgerow) {
             $DB->delete_records('local_playergames_cartridges', ['id' => $postcartridgeid]);
@@ -370,10 +391,83 @@ if (data_submitted()) {
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );
+    } else if ($postaction === 'add_category') {
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $catname = required_param('category_name', PARAM_TEXT);
+        $DB->get_record_or_exception(
+            'local_playergames_cartridges',
+            ['id' => $postcartridgeid],
+            'error_cartridge_notfound',
+            'local_playergames'
+        );
+        try {
+            $catmgr = new category_manager();
+            $catmgr->create($postcartridgeid, $catname);
+            redirect(
+                new moodle_url('/local/playergames/cartridge.php', [
+                    'tab' => 'editor',
+                    'cartridgeid' => $postcartridgeid,
+                ]),
+                get_string('category_saved', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_SUCCESS
+            );
+        } catch (moodle_exception $e) {
+            redirect(
+                new moodle_url('/local/playergames/cartridge.php', [
+                    'tab' => 'editor',
+                    'cartridgeid' => $postcartridgeid,
+                ]),
+                $e->getMessage(),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+    } else if ($postaction === 'rename_category') {
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $postcategoryid = required_param('category_id', PARAM_INT);
+        $catname = required_param('category_name', PARAM_TEXT);
+        try {
+            $catmgr = new category_manager();
+            $catmgr->rename($postcategoryid, $postcartridgeid, $catname);
+            redirect(
+                new moodle_url('/local/playergames/cartridge.php', [
+                    'tab' => 'editor',
+                    'cartridgeid' => $postcartridgeid,
+                ]),
+                get_string('category_saved', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_SUCCESS
+            );
+        } catch (moodle_exception $e) {
+            redirect(
+                new moodle_url('/local/playergames/cartridge.php', [
+                    'tab' => 'editor',
+                    'cartridgeid' => $postcartridgeid,
+                ]),
+                $e->getMessage(),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+    } else if ($postaction === 'delete_category') {
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $postcategoryid = required_param('category_id', PARAM_INT);
+        $catmgr = new category_manager();
+        $catmgr->delete($postcategoryid, $postcartridgeid);
+        redirect(
+            new moodle_url('/local/playergames/cartridge.php', [
+                'tab' => 'editor',
+                'cartridgeid' => $postcartridgeid,
+            ]),
+            get_string('category_deleted', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
     }
 }
 
-// --- Build page data -------------------------------------------------------------
+// Build page data.
 
 $allcartridges = $DB->get_records('local_playergames_cartridges', null, 'timeuploaded DESC');
 
@@ -400,7 +494,8 @@ $uploaders = [];
 if (!empty($uploaderids)) {
     [$insql2, $inparams2] = $DB->get_in_or_equal($uploaderids);
     $uploaderusers = $DB->get_records_sql(
-        "SELECT id, firstname, lastname FROM {user} WHERE id {$insql2}",
+        "SELECT id, firstname, lastname, firstnamephonetic, lastnamephonetic,
+                middlename, alternatename FROM {user} WHERE id {$insql2}",
         $inparams2
     );
     foreach ($uploaderusers as $u) {
@@ -416,10 +511,13 @@ foreach ($allcartridges as $cartridge) {
 $editcartridge = null;
 $concepts = [];
 $editconcept = null;
+$categories = [];
 
 if ($cartridgeid > 0) {
     $editcartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
     if ($editcartridge) {
+        $catmgrload = new category_manager();
+        $categories = $catmgrload->get_categories($cartridgeid);
         $concepts = array_values(
             $DB->get_records('local_playergames_concepts', ['cartridgeid' => $cartridgeid], 'id ASC')
         );
@@ -440,10 +538,11 @@ $renderable = new cartridge_output(
     array_values($allcartridges),
     $editcartridge,
     $concepts,
+    $categories,
     $editconcept,
-    $ai_preview,
-    $ai_form_data,
-    $ai_error,
+    $aipreview,
+    $aiformdata,
+    $aierror,
     $hasaikey
 );
 

@@ -63,11 +63,42 @@ define([], function() {
     }
 
     /**
+     * Wires rename-category buttons to reveal the hidden rename form.
+     */
+    function attachRenameCategoryButtons() {
+        var renameForm = document.getElementById('pg-rename-cat-form');
+        var renameIdInput = document.getElementById('pg-rename-cat-id');
+        var renameNameInput = document.getElementById('pg-rename-cat-name');
+        var cancelBtn = document.getElementById('pg-rename-cat-cancel');
+
+        if (!renameForm) {
+            return;
+        }
+
+        document.querySelectorAll('.pg-rename-cat').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                renameIdInput.value = btn.getAttribute('data-categoryid');
+                renameNameInput.value = btn.getAttribute('data-name');
+                renameForm.classList.remove('d-none');
+                renameNameInput.focus();
+            });
+        });
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                renameForm.classList.add('d-none');
+                renameNameInput.value = '';
+            });
+        }
+    }
+
+    /**
      * Initialises all cartridge-page behaviours.
      */
     function init() {
         attachConfirmDialogs();
         attachExportButton();
+        attachRenameCategoryButtons();
     }
 
     return {

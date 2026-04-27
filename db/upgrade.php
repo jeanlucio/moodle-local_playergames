@@ -29,5 +29,96 @@
  * @return bool
  */
 function xmldb_local_playergames_upgrade(int $oldversion): bool {
+    global $DB;
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026042700) {
+        // Create categories table.
+        $table = new xmldb_table('local_playergames_categories');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('cartridgeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key(
+            'fk_cartridge',
+            XMLDB_KEY_FOREIGN,
+            ['cartridgeid'],
+            'local_playergames_cartridges',
+            ['id']
+        );
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Add categoryid field to concepts (after the existing category text field).
+        $conceptstable = new xmldb_table('local_playergames_concepts');
+        $categoryidfield = new xmldb_field(
+            'categoryid',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            null,
+            null,
+            null,
+            'difficulty'
+        );
+        if (!$dbman->field_exists($conceptstable, $categoryidfield)) {
+            $dbman->add_field($conceptstable, $categoryidfield);
+        }
+
+        // Add index on categoryid.
+        $categoryidindex = new xmldb_index('idx_categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
+        if (!$dbman->index_exists($conceptstable, $categoryidindex)) {
+            $dbman->add_index($conceptstable, $categoryidindex);
+        }
+
+        // Migrate existing text categories to category records.
+        $rows = $DB->get_records_sql(
+            "SELECT MIN(id) AS id, cartridgeid, category
+               FROM {local_playergames_concepts}
+              WHERE category IS NOT NULL AND category <> ''
+           GROUP BY cartridgeid, category"
+        );
+        $catmap = [];
+        $sortorder = 0;
+        foreach ($rows as $row) {
+            $cid = (int) $row->cartridgeid;
+            $name = trim($row->category);
+            if ($name === '') {
+                continue;
+            }
+            $catrecord = new stdClass();
+            $catrecord->cartridgeid = $cid;
+            $catrecord->name = $name;
+            $catrecord->sortorder = $sortorder++;
+            $catrecord->timecreated = time();
+            $catid = $DB->insert_record('local_playergames_categories', $catrecord);
+            $catmap[$cid][$name] = (int) $catid;
+        }
+
+        // Update concepts with resolved categoryid.
+        foreach ($catmap as $cid => $namemap) {
+            foreach ($namemap as $name => $catid) {
+                $DB->set_field_select(
+                    'local_playergames_concepts',
+                    'categoryid',
+                    $catid,
+                    'cartridgeid = ? AND category = ?',
+                    [$cid, $name]
+                );
+            }
+        }
+
+        // Drop old category text column.
+        $categoryfield = new xmldb_field('category');
+        if ($dbman->field_exists($conceptstable, $categoryfield)) {
+            $dbman->drop_field($conceptstable, $categoryfield);
+        }
+
+        upgrade_plugin_savepoint(true, 2026042700, 'local', 'playergames');
+    }
+
     return true;
 }

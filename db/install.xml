@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/playergames/db" VERSION="20260426"
+<XMLDB PATH="local/playergames/db" VERSION="20260427"
     COMMENT="XMLDB file for Moodle local/playergames"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
@@ -73,8 +73,8 @@
         <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="term" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="definition" TYPE="text" NOTNULL="true"/>
-        <FIELD NAME="category" TYPE="char" LENGTH="100" NOTNULL="false"/>
         <FIELD NAME="difficulty" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false"/>
         <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="false"/>
       </FIELDS>
       <KEYS>
@@ -83,7 +83,21 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="idx_cartridgeid" UNIQUE="false" FIELDS="cartridgeid"/>
+        <INDEX NAME="idx_categoryid" UNIQUE="false" FIELDS="categoryid"/>
       </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_categories" COMMENT="Concept categories per cartridge">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
+      </KEYS>
     </TABLE>
     <TABLE NAME="local_playergames_daily_assignments" COMMENT="Daily concept assignment per game type">
       <FIELDS>
