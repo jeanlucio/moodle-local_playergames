@@ -102,7 +102,10 @@ class ai_generator {
             $catlist = '"' . implode('", "', $categorynames) . '"';
             $categoryrule = "- category: MUST be exactly one of these values (verbatim): {$catlist}";
         } else {
-            $categoryrule = '- category: one or two words grouping similar terms';
+            $categoryrule = '- category: broad subject-area label that identifies the field of knowledge'
+                . ' (e.g. "History", "Science", "Current Affairs", "Mathematics").'
+                . ' Use at most 3 distinct categories for the whole concept set.'
+                . ' Do NOT use specific sub-topics of the current theme as category names.';
         }
 
         $rules = "- term: short word or phrase (max 6 words)\n"
