@@ -94,6 +94,7 @@ $string['concept_deleted'] = 'Conceito excluído.';
 $string['concept_difficulty'] = 'Dificuldade';
 $string['concept_edit'] = 'Editar';
 $string['concept_list_empty'] = 'Nenhum conceito neste cartucho ainda. Adicione o primeiro abaixo.';
+$string['concept_save'] = 'Salvar';
 $string['concept_saved'] = 'Conceito salvo.';
 $string['concept_term'] = 'Termo';
 $string['defaultseasonname'] = 'Temporada 1';

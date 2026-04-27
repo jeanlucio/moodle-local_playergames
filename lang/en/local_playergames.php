@@ -94,6 +94,7 @@ $string['concept_deleted'] = 'Concept deleted.';
 $string['concept_difficulty'] = 'Difficulty';
 $string['concept_edit'] = 'Edit';
 $string['concept_list_empty'] = 'No concepts in this cartridge yet. Add the first one below.';
+$string['concept_save'] = 'Save';
 $string['concept_saved'] = 'Concept saved.';
 $string['concept_term'] = 'Term';
 $string['defaultseasonname'] = 'Season 1';
