@@ -70,7 +70,7 @@ if ($hassiteconfig) {
         'local_playergames/openai_baseurl',
         get_string('settings_openai_baseurl', 'local_playergames'),
         get_string('settings_openai_baseurl_desc', 'local_playergames'),
-        'https://api.openai.com/v1',
+        'https://api.openai.com/v1/chat/completions',
         PARAM_URL
     ));
 
@@ -112,4 +112,46 @@ if ($hassiteconfig) {
     ));
 
     $ADMIN->add('playergames', $page2);
+
+    // Games.
+    $page3 = new admin_settingpage(
+        'local_playergames_games',
+        get_string('settings_games_heading', 'local_playergames')
+    );
+
+    $page3->add(new admin_setting_heading(
+        'local_playergames/games_heading',
+        get_string('settings_games_heading', 'local_playergames'),
+        get_string('settings_games_heading_desc', 'local_playergames')
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/wordle_minlen',
+        get_string('settings_wordle_minlen', 'local_playergames'),
+        get_string('settings_wordle_minlen_desc', 'local_playergames'),
+        '4',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/wordle_maxlen',
+        get_string('settings_wordle_maxlen', 'local_playergames'),
+        get_string('settings_wordle_maxlen_desc', 'local_playergames'),
+        '8',
+        PARAM_INT
+    ));
+
+    $conceptdayoptions = [
+        'random' => get_string('cartridge_concept_day_random', 'local_playergames'),
+        'bycategory' => get_string('cartridge_concept_day_bycategory', 'local_playergames'),
+    ];
+    $page3->add(new admin_setting_configselect(
+        'local_playergames/concept_day_mode',
+        get_string('cartridge_concept_day_mode', 'local_playergames'),
+        get_string('cartridge_concept_day_mode_desc', 'local_playergames'),
+        'random',
+        $conceptdayoptions
+    ));
+
+    $ADMIN->add('playergames', $page3);
 }
