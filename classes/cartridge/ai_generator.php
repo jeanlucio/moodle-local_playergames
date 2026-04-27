@@ -150,7 +150,10 @@ class ai_generator {
     }
 
     /**
-     * Calls the Gemini generative language API.
+     * Calls the Gemini generative language API with JSON mode enabled.
+     *
+     * Uses responseMimeType=application/json to force structured output and
+     * avoid truncated or wrapped responses for large concept counts.
      *
      * @param string $prompt The prompt text.
      * @param string $key Gemini API key.
@@ -159,7 +162,10 @@ class ai_generator {
     protected function call_gemini(string $prompt, string $key): array {
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
             . 'gemini-flash-latest:generateContent?key=' . urlencode($key);
-        $data = ['contents' => [['parts' => [['text' => $prompt]]]]];
+        $data = [
+            'contents' => [['parts' => [['text' => $prompt]]]],
+            'generationConfig' => ['responseMimeType' => 'application/json'],
+        ];
         return $this->http_post(
             $url,
             json_encode($data),
