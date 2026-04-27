@@ -45,7 +45,9 @@ $string['cartridge_ai_nokey'] = 'Nenhuma chave de IA configurada. Adicione uma c
 $string['cartridge_ai_quantity'] = 'Número de conceitos';
 $string['cartridge_ai_quantity_desc'] = 'Quantos conceitos gerar (10–100).';
 $string['cartridge_ai_topic'] = 'Tópico';
-$string['cartridge_ai_topic_desc'] = 'Descreva o tema ou área de conhecimento para os conceitos gerados.';$string['cartridge_author'] = 'Autor';$string['cartridge_categories'] = 'Categorias';
+$string['cartridge_ai_topic_desc'] = 'Descreva o tema ou área de conhecimento para os conceitos gerados.';
+$string['cartridge_author'] = 'Autor';
+$string['cartridge_categories'] = 'Categorias';
 $string['cartridge_concept_day_bycategory'] = 'Por categoria (uma por dia da semana)';
 $string['cartridge_concept_day_mode'] = 'Seleção do conceito do dia';
 $string['cartridge_concept_day_mode_desc'] = 'Seleção aleatória de todos os cartuchos ativos, ou uma categoria fixa por dia da semana.';

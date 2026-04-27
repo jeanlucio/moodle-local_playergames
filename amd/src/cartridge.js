@@ -24,8 +24,21 @@
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define([], function() {
+define(['core/notification', 'core/str'], function(Notification, Str) {
     'use strict';
+
+    /** @var {Object} Preloaded confirmation button labels. */
+    var confirmStrings = {yes: 'Yes', no: 'No'};
+
+    // Preload yes/no strings for confirm dialogs.
+    Str.get_strings([
+        {key: 'yes', component: 'core'},
+        {key: 'no', component: 'core'},
+    ]).then(function(results) {
+        confirmStrings.yes = results[0];
+        confirmStrings.no = results[1];
+        return results;
+    }).catch(Notification.exception);
 
     /**
      * Attaches a submit-time confirmation dialog to every form that carries
@@ -35,10 +48,17 @@ define([], function() {
         var forms = document.querySelectorAll('form[data-pg-confirm]');
         forms.forEach(function(form) {
             form.addEventListener('submit', function(e) {
+                e.preventDefault();
                 var message = form.getAttribute('data-pg-confirm');
-                if (!window.confirm(message)) {
-                    e.preventDefault();
-                }
+                Notification.confirm(
+                    '',
+                    message,
+                    confirmStrings.yes,
+                    confirmStrings.no,
+                    function() {
+                        form.submit();
+                    }
+                );
             });
         });
     }
