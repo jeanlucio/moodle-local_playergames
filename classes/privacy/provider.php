@@ -15,7 +15,11 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Privacy provider stub for local_playergames.
+ * Privacy provider for local_playergames.
+ *
+ * Phase 2: declares user preferences local_playergames_*_key (personal API keys).
+ * Full export/deletion for staff_profile, streaks, daily_scores, bounce_scores,
+ * mission_progress, user_achievements will be added in Phase 8.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,26 +28,65 @@
 
 namespace local_playergames\privacy;
 
-use core_privacy\local\metadata\null_provider;
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\user_preference_provider;
 
 /**
- * Privacy provider declaring no personal data is stored yet.
- *
- * Full implementation — covering staff_profile, streaks, daily_scores,
- * bounce_scores, mission_progress, user_achievements and user_preferences
- * — will be added in Phase 8 (Privacy API completion).
+ * Privacy provider implementing user_preference_provider for API key preferences.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements null_provider {
+class provider implements user_preference_provider {
     /**
-     * Returns the lang string key explaining why no data is stored yet.
+     * Returns metadata describing the user data stored by this plugin.
      *
-     * @return string
+     * @param collection $collection
+     * @return collection
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_user_preference(
+            'local_playergames_gemini_key',
+            'privacy:pref_gemini_key'
+        );
+        $collection->add_user_preference(
+            'local_playergames_groq_key',
+            'privacy:pref_groq_key'
+        );
+        $collection->add_user_preference(
+            'local_playergames_openai_key',
+            'privacy:pref_openai_key'
+        );
+        return $collection;
+    }
+
+    /**
+     * Exports all user preferences for the given user.
+     *
+     * @param int $userid
+     * @return void
+     */
+    public static function export_user_preferences(int $userid): void {
+        $prefs = [
+            'local_playergames_gemini_key' => 'privacy:pref_gemini_key',
+            'local_playergames_groq_key'   => 'privacy:pref_groq_key',
+            'local_playergames_openai_key' => 'privacy:pref_openai_key',
+        ];
+
+        foreach ($prefs as $prefname => $stringkey) {
+            $value = get_user_preferences($prefname, null, $userid);
+            if ($value !== null) {
+                \core_privacy\local\request\writer::with_context(
+                    \context_system::instance()
+                )->export_user_preference(
+                    'local_playergames',
+                    $prefname,
+                    // Export only the presence of a key, never its value.
+                    get_string('privacy:pref_key_set', 'local_playergames'),
+                    get_string($stringkey, 'local_playergames')
+                );
+            }
+        }
     }
 }

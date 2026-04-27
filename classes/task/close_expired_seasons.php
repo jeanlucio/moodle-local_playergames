@@ -28,6 +28,12 @@ namespace local_playergames\task;
  * Sets status to 'closed' for any season where enddate < now and status = 'active'.
  * Fires season_closed event for each closed season.
  *
+ * Auto-renewal (Phase 4): after closing a season, if the admin setting
+ * 'autorenew_seasons' is enabled and no active/upcoming season exists, this
+ * task creates the next season automatically using 'season_duration_months'
+ * (default 6). The new season inherits the XP caps from the closed season's
+ * config_snapshot so settings stay consistent until the admin changes them.
+ *
  * Full implementation in Phase 4.
  *
  * @package    local_playergames
@@ -51,5 +57,11 @@ class close_expired_seasons extends \core\task\scheduled_task {
      */
     public function execute(): void {
         // Stub: implemented in Phase 4.
+        // Phase 4 sequence:
+        // 1. Find seasons with enddate < time() and status = 'active'.
+        // 2. For each: set status = 'closed', fire season_closed event.
+        // 3. If autorenew_seasons is enabled and no active/upcoming season exists,
+        // call season_manager::create_next() — inherits config_snapshot and uses
+        // season_duration_months to calculate the new enddate.
     }
 }
