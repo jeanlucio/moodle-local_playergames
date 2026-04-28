@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026042800;
+$plugin->version   = 2026042801;
 $plugin->requires  = 2024100700;
 $plugin->component = 'local_playergames';
 $plugin->maturity  = MATURITY_ALPHA;

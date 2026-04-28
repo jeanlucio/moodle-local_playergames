@@ -34,28 +34,26 @@ $PAGE->set_title(get_string('mykeys_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('mykeys_pagetitle', 'local_playergames'));
 $PAGE->requires->js_call_amd('local_playergames/mykeys', 'init');
 
-// Handle POST — save or clear a key.
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_sesskey();
+// Handle POST — save all three keys at once.
+if (data_submitted() && confirm_sesskey()) {
+    $geminikey = optional_param('gemini_key', '', PARAM_RAW_TRIMMED);
+    $groqkey   = optional_param('groq_key', '', PARAM_RAW_TRIMMED);
+    $openaikey = optional_param('openai_key', '', PARAM_RAW_TRIMMED);
 
-    $provider = required_param('provider', PARAM_ALPHA);
-    $key = optional_param('apikey', '', PARAM_RAW_TRIMMED);
-
-    $allowed = [
+    \local_playergames\api_key_helper::save_user_key(
         \local_playergames\api_key_helper::PROVIDER_GEMINI,
+        $geminikey
+    );
+    \local_playergames\api_key_helper::save_user_key(
         \local_playergames\api_key_helper::PROVIDER_GROQ,
+        $groqkey
+    );
+    \local_playergames\api_key_helper::save_user_key(
         \local_playergames\api_key_helper::PROVIDER_OPENAI,
-    ];
+        $openaikey
+    );
 
-    if (in_array($provider, $allowed, true)) {
-        \local_playergames\api_key_helper::save_user_key($provider, $key);
-        if ($key !== '') {
-            \core\notification::success(get_string('apikey_saved', 'local_playergames'));
-        } else {
-            \core\notification::success(get_string('apikey_cleared', 'local_playergames'));
-        }
-    }
-
+    \core\notification::success(get_string('apikey_saved', 'local_playergames'));
     redirect(new moodle_url('/local/playergames/mykeys.php'));
 }
 

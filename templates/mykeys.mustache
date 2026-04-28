@@ -1,83 +1,219 @@
 {{!
-    Template: local_playergames/mykeys
-    Purpose:  Personal AI API key management page.
+    @template local_playergames/mykeys
+
+    Personal AI API key management page.
+    Two-column layout: keys card (left) + recent AI usage log (right).
+    Follows the PlayerHUD tab_config card pattern.
 
     Example context (json):
     {
         "heading": "My personal AI API keys",
         "intro": "Your personal keys take priority over the shared hub key. Leave a field blank to use the shared key.",
-        "providers": [
+        "action_url": "/local/playergames/mykeys.php",
+        "sesskey": "abc123",
+        "val_gemini": "AIzaSy...",
+        "val_groq": "",
+        "val_openai": "",
+        "label_gemini": "Gemini API key",
+        "label_groq": "Groq API key",
+        "label_openai": "OpenAI API key",
+        "placeholder": "Paste your API key here",
+        "save_label": "Save",
+        "show_hide_label": "Show or hide key",
+        "openai_advanced_label": "Advanced settings (URL & model)",
+        "openai_advanced_hint": "The endpoint URL and model are global settings managed by your administrator.",
+        "openai_url_label": "Base URL",
+        "openai_url": "https://api.openai.com/v1/chat/completions",
+        "openai_model_label": "Model name",
+        "openai_model": "gpt-4o-mini",
+        "ailog_heading": "Recent AI usage",
+        "ailog_empty_label": "No AI generations recorded yet.",
+        "ailog_topic_label": "Topic",
+        "ailog_concepts_label": "Concepts",
+        "ailog_model_label": "Model",
+        "ailog_has_rows": true,
+        "ailog_rows": [
             {
-                "provider": "gemini",
-                "label": "Gemini API key",
-                "has_personal": true,
-                "placeholder": "Paste your API key here",
-                "sesskey": "abc123",
-                "action_url": "/local/playergames/mykeys.php"
+                "provider": "Gemini",
+                "provider_icon": "fa fa-google",
+                "model": "gemini-flash-latest",
+                "topic": "History of Brazil",
+                "conceptcount": 20,
+                "date": "28 Apr 2026, 10:00"
             }
-        ],
-        "clear_label": "Clear saved key"
+        ]
     }
 }}
 <div class="local-playergames-mykeys container-fluid py-3">
-    <h2>{{heading}}</h2>
-    <p class="text-muted">{{intro}}</p>
+    <div class="row g-4">
 
-    {{#providers}}
-    <div class="card mb-3">
-        <div class="card-body">
-            <h3 class="card-title h5">{{label}}</h3>
-
-            {{#has_personal}}
-            <p class="mb-2">
-                <span class="badge bg-success" aria-label="{{label}}">&#10003;</span>
-                <strong>{{label}}</strong>
-            </p>
-            {{/has_personal}}
-            {{^has_personal}}
-            <p class="mb-2 text-secondary">
-                <span class="badge bg-secondary" aria-hidden="true">&#8212;</span>
-            </p>
-            {{/has_personal}}
-
-            <form method="post" action="{{action_url}}" class="d-flex gap-2 align-items-end flex-wrap">
-                <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <input type="hidden" name="provider" value="{{provider}}">
-
-                <div class="flex-grow-1">
-                    <label for="apikey-{{provider}}" class="form-label visually-hidden">
-                        {{label}}
-                    </label>
-                    <input
-                        type="password"
-                        id="apikey-{{provider}}"
-                        name="apikey"
-                        class="form-control pg-apikey-input"
-                        placeholder="{{placeholder}}"
-                        autocomplete="new-password"
-                        data-provider="{{provider}}"
-                    >
+        {{! ── Keys card ── }}
+        <div class="col-md-6">
+            <div class="card border-dark h-100 shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fa fa-key me-2" aria-hidden="true"></i>{{heading}}
                 </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">{{intro}}</p>
 
-                <button type="button"
-                    class="btn btn-outline-secondary pg-toggle-key"
-                    data-target="apikey-{{provider}}"
-                    aria-label="{{label}}"
-                    aria-pressed="false">
-                    <span aria-hidden="true">&#128065;</span>
-                </button>
+                    <form action="{{action_url}}" method="post">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
 
-                <button type="submit" class="btn btn-primary">
-                    {{label}}
-                </button>
+                        <div class="mb-3">
+                            <label class="fw-bold form-label" for="pg-gemini-key">
+                                <span class="badge bg-dark me-1" aria-hidden="true">1°</span>
+                                {{label_gemini}}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-google" aria-hidden="true"></i>
+                                </span>
+                                <input type="password"
+                                       class="form-control pg-apikey-input"
+                                       id="pg-gemini-key"
+                                       name="gemini_key"
+                                       value="{{val_gemini}}"
+                                       placeholder="{{placeholder}}"
+                                       autocomplete="new-password">
+                                <button type="button"
+                                        class="btn btn-outline-secondary pg-toggle-key"
+                                        data-target="pg-gemini-key"
+                                        aria-label="{{show_hide_label}}"
+                                        aria-pressed="false">
+                                    <span aria-hidden="true">&#128065;</span>
+                                </button>
+                            </div>
+                        </div>
 
-                {{#has_personal}}
-                <button type="submit" name="apikey" value="" class="btn btn-outline-danger">
-                    {{clear_label}}
-                </button>
-                {{/has_personal}}
-            </form>
+                        <div class="mb-3">
+                            <label class="fw-bold form-label" for="pg-groq-key">
+                                <span class="badge bg-dark me-1" aria-hidden="true">2°</span>
+                                {{label_groq}}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-bolt" aria-hidden="true"></i>
+                                </span>
+                                <input type="password"
+                                       class="form-control pg-apikey-input"
+                                       id="pg-groq-key"
+                                       name="groq_key"
+                                       value="{{val_groq}}"
+                                       placeholder="{{placeholder}}"
+                                       autocomplete="new-password">
+                                <button type="button"
+                                        class="btn btn-outline-secondary pg-toggle-key"
+                                        data-target="pg-groq-key"
+                                        aria-label="{{show_hide_label}}"
+                                        aria-pressed="false">
+                                    <span aria-hidden="true">&#128065;</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold form-label" for="pg-openai-key">
+                                <span class="badge bg-dark me-1" aria-hidden="true">3°</span>
+                                {{label_openai}}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-plug" aria-hidden="true"></i>
+                                </span>
+                                <input type="password"
+                                       class="form-control pg-apikey-input"
+                                       id="pg-openai-key"
+                                       name="openai_key"
+                                       value="{{val_openai}}"
+                                       placeholder="{{placeholder}}"
+                                       autocomplete="new-password">
+                                <button type="button"
+                                        class="btn btn-outline-secondary pg-toggle-key"
+                                        data-target="pg-openai-key"
+                                        aria-label="{{show_hide_label}}"
+                                        aria-pressed="false">
+                                    <span aria-hidden="true">&#128065;</span>
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <a class="text-muted small text-decoration-none d-block"
+                                   data-bs-toggle="collapse" data-toggle="collapse"
+                                   href="#pg-openai-advanced" role="button" aria-expanded="false"
+                                   aria-controls="pg-openai-advanced">
+                                    <i class="fa fa-caret-right me-1" aria-hidden="true"></i>{{openai_advanced_label}}
+                                </a>
+                                <div class="collapse" id="pg-openai-advanced">
+                                    <div class="mt-2 ps-3 border-start">
+                                        <p class="text-muted small mb-2">{{openai_advanced_hint}}</p>
+                                        <p class="mb-1 small">
+                                            <span class="fw-semibold">{{openai_url_label}}:</span>
+                                            <code class="ms-1">{{openai_url}}</code>
+                                        </p>
+                                        <p class="mb-0 small">
+                                            <span class="fw-semibold">{{openai_model_label}}:</span>
+                                            <code class="ms-1">{{openai_model}}</code>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <button type="submit" class="btn btn-success w-100 shadow-sm">
+                            <i class="fa fa-save me-1" aria-hidden="true"></i>{{save_label}}
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
+
+        {{! ── AI usage log card ── }}
+        <div class="col-md-6">
+            <div class="card border-dark h-100 shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fa fa-history me-2" aria-hidden="true"></i>{{ailog_heading}}
+                </div>
+                <div class="card-body p-0">
+                    {{#ailog_has_rows}}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">{{ailog_topic_label}}</th>
+                                    <th scope="col" class="text-nowrap">{{ailog_model_label}}</th>
+                                    <th scope="col" class="text-center">{{ailog_concepts_label}}</th>
+                                    <th scope="col" class="text-nowrap">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#ailog_rows}}
+                                <tr>
+                                    <td>
+                                        <i class="{{provider_icon}} me-1 text-muted" aria-hidden="true"></i>
+                                        {{topic}}
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <code class="small">{{model}}</code>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{conceptcount}}</span>
+                                    </td>
+                                    <td class="text-nowrap text-muted small">{{date}}</td>
+                                </tr>
+                                {{/ailog_rows}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{/ailog_has_rows}}
+                    {{^ailog_has_rows}}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fa fa-inbox fa-2x mb-2" aria-hidden="true"></i>
+                        <p class="mb-0 small">{{ailog_empty_label}}</p>
+                    </div>
+                    {{/ailog_has_rows}}
+                </div>
+            </div>
+        </div>
+
     </div>
-    {{/providers}}
 </div>

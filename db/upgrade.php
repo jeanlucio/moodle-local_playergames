@@ -167,5 +167,33 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026042800, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026042801) {
+        $table = new xmldb_table('local_playergames_ai_log');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_field('provider', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+        $table->add_field('model', XMLDB_TYPE_CHAR, '100', null, null);
+        $table->add_field('topic', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+        $table->add_field('conceptcount', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key(
+            'fk_user',
+            XMLDB_KEY_FOREIGN,
+            ['userid'],
+            'user',
+            ['id']
+        );
+        $table->add_index(
+            'idx_userid_timecreated',
+            XMLDB_INDEX_NOTUNIQUE,
+            ['userid', 'timecreated']
+        );
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026042801, 'local', 'playergames');
+    }
+
     return true;
 }
