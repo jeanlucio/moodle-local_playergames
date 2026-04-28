@@ -26,7 +26,7 @@ require(__DIR__ . '/../../config.php');
 
 use local_playergames\cartridge\controller;
 
-$tab = optional_param('tab', 'import', PARAM_ALPHA);
+$tab = optional_param('tab', 'library', PARAM_ALPHA);
 $cartridgeid = optional_param('cartridgeid', 0, PARAM_INT);
 $editconceptid = optional_param('editconcept', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);

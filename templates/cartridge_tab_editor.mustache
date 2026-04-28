@@ -1,0 +1,321 @@
+{{!
+    @template local_playergames/cartridge_tab_editor
+
+    Manual editor tab: create a new cartridge or edit concepts of an existing one.
+    When has_editor_cartridge is false, shows the "create new" form.
+    When has_editor_cartridge is true, shows the full concept editor.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123",
+        "has_editor_cartridge": false,
+        "editor_cartridge_id": 0,
+        "editor_cartridge_name": "",
+        "export_url": "",
+        "url_tab_library": "/local/playergames/cartridge.php?tab=library",
+        "editing_concept": false,
+        "form_action": "add_concept",
+        "form_concept_id": 0,
+        "form_term": "",
+        "form_definition": "",
+        "form_categoryid": 0,
+        "form_difficulty": 3,
+        "categories": [],
+        "categories_empty": true,
+        "category_options": [],
+        "concepts": [],
+        "concepts_empty": true
+    }
+}}
+<div class="pg-tab-editor">
+
+    {{^has_editor_cartridge}}
+    {{! ── New cartridge form ── }}
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-pencil me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_new_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}" class="row g-3 align-items-end">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="create_cartridge">
+                <input type="hidden" name="tab" value="editor">
+                <div class="col-md-4">
+                    <label for="pg-new-name" class="form-label">
+                        {{#str}}cartridge_name, local_playergames{{/str}}
+                    </label>
+                    <input type="text" id="pg-new-name" name="cartridge_name"
+                           class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="pg-new-lang" class="form-label">
+                        {{#str}}cartridge_language, local_playergames{{/str}}
+                    </label>
+                    <input type="text" id="pg-new-lang" name="cartridge_language"
+                           class="form-control" placeholder="pt_BR">
+                </div>
+                <div class="col-md-4">
+                    <label for="pg-new-author" class="form-label">
+                        {{#str}}cartridge_author, local_playergames{{/str}}
+                    </label>
+                    <input type="text" id="pg-new-author" name="cartridge_author"
+                           class="form-control">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-plus me-1" aria-hidden="true"></i>
+                        {{#str}}cartridge_new_create, local_playergames{{/str}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {{/has_editor_cartridge}}
+
+    {{#has_editor_cartridge}}
+    {{! ── Editor header: cartridge name + actions ── }}
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{url_tab_library}}" class="btn btn-outline-secondary btn-sm"
+               aria-label="{{#str}}cartridge_back_to_library, local_playergames{{/str}}">
+                <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_back_to_library, local_playergames{{/str}}
+            </a>
+            <h4 class="mb-0">{{editor_cartridge_name}}</h4>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{url_tab_editor_new}}" class="btn btn-outline-primary btn-sm">
+                <i class="fa fa-plus me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_new_create, local_playergames{{/str}}
+            </a>
+            <a href="{{export_url}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-download me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_export, local_playergames{{/str}}
+            </a>
+        </div>
+    </div>
+
+    {{! ── Categories ── }}
+    <div class="card mb-4 border-secondary shadow-sm">
+        <div class="card-header bg-transparent fw-bold">
+            <i class="fa fa-tags me-2" aria-hidden="true"></i>
+            {{#str}}category_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            {{#categories_empty}}
+            <p class="text-muted small mb-2">
+                {{#str}}category_list_empty, local_playergames{{/str}}
+            </p>
+            {{/categories_empty}}
+            {{^categories_empty}}
+            <div class="table-responsive mb-3">
+                <table class="table table-sm table-borderless mb-0 pg-category-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">{{#str}}category_name, local_playergames{{/str}}</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#categories}}
+                        <tr>
+                            <td>{{name}}</td>
+                            <td class="pg-category-actions">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary me-1 pg-rename-cat"
+                                        data-categoryid="{{id}}"
+                                        data-name="{{name}}"
+                                        data-cartridgeid="{{cartridgeid}}"
+                                        data-sesskey="{{sesskey}}"
+                                        aria-label="{{#str}}category_rename, local_playergames{{/str}}">
+                                    {{#str}}category_rename, local_playergames{{/str}}
+                                </button>
+                                <form method="post" action="{{action_url}}" class="d-inline"
+                                      data-pg-confirm="{{#str}}category_confirm_delete, local_playergames{{/str}}">
+                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                    <input type="hidden" name="action" value="delete_category">
+                                    <input type="hidden" name="cartridgeid" value="{{cartridgeid}}">
+                                    <input type="hidden" name="category_id" value="{{id}}">
+                                    <input type="hidden" name="tab" value="editor">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        {{#str}}category_delete, local_playergames{{/str}}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {{/categories}}
+                    </tbody>
+                </table>
+            </div>
+            {{/categories_empty}}
+
+            {{! Add category form }}
+            <form method="post" action="{{action_url}}" class="row g-2 align-items-end">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="add_category">
+                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                <input type="hidden" name="tab" value="editor">
+                <div class="col-md-6">
+                    <label for="pg-cat-name" class="form-label">
+                        {{#str}}category_name, local_playergames{{/str}}
+                    </label>
+                    <input type="text" id="pg-cat-name" name="category_name"
+                           class="form-control form-control-sm" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        {{#str}}category_add, local_playergames{{/str}}
+                    </button>
+                </div>
+            </form>
+
+            {{! Hidden rename form — populated by JS }}
+            <form id="pg-rename-cat-form" method="post" action="{{action_url}}"
+                  class="row g-2 align-items-end mt-2 d-none">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="rename_category">
+                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                <input type="hidden" name="category_id" id="pg-rename-cat-id">
+                <input type="hidden" name="tab" value="editor">
+                <div class="col-md-6">
+                    <label for="pg-rename-cat-name" class="form-label">
+                        {{#str}}category_rename, local_playergames{{/str}}
+                    </label>
+                    <input type="text" id="pg-rename-cat-name" name="category_name"
+                           class="form-control form-control-sm" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        {{#str}}category_saved, local_playergames{{/str}}
+                    </button>
+                    <button type="button" id="pg-rename-cat-cancel"
+                            class="btn btn-outline-secondary btn-sm ms-1">
+                        {{#str}}cancel, core{{/str}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{! ── Add / edit concept form ── }}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-tag me-2" aria-hidden="true"></i>
+            {{#editing_concept}}
+            {{#str}}concept_edit, local_playergames{{/str}}
+            {{/editing_concept}}
+            {{^editing_concept}}
+            {{#str}}cartridge_add_concept, local_playergames{{/str}}
+            {{/editing_concept}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="{{form_action}}">
+                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                <input type="hidden" name="tab" value="editor">
+                {{#editing_concept}}
+                <input type="hidden" name="concept_id" value="{{form_concept_id}}">
+                {{/editing_concept}}
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label for="pg-form-term" class="form-label">
+                            {{#str}}concept_term, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-form-term" name="term"
+                               value="{{form_term}}" class="form-control" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="pg-form-def" class="form-label">
+                            {{#str}}concept_definition, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-form-def" name="definition"
+                               value="{{form_definition}}" class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pg-form-cat" class="form-label">
+                            {{#str}}concept_category, local_playergames{{/str}}
+                        </label>
+                        <select id="pg-form-cat" name="categoryid" class="form-select">
+                            <option value="0">—</option>
+                            {{#category_options}}
+                            <option value="{{id}}"{{#selected}} selected{{/selected}}>{{name}}</option>
+                            {{/category_options}}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pg-form-diff" class="form-label">
+                            {{#str}}concept_difficulty, local_playergames{{/str}}
+                        </label>
+                        <input type="number" id="pg-form-diff" name="difficulty"
+                               value="{{form_difficulty}}" min="1" max="5"
+                               class="form-control">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        {{#str}}concept_save, local_playergames{{/str}}
+                    </button>
+                    {{#editing_concept}}
+                    <a href="{{url_cancel_edit}}"
+                       class="btn btn-outline-secondary btn-sm ms-1">
+                        {{#str}}cancel, core{{/str}}
+                    </a>
+                    {{/editing_concept}}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{! ── Concept list ── }}
+    {{#concepts_empty}}
+    <p class="text-muted">{{#str}}concept_list_empty, local_playergames{{/str}}</p>
+    {{/concepts_empty}}
+
+    {{^concepts_empty}}
+    <div class="table-responsive">
+        <table class="table table-sm pg-concept-table">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}}concept_term, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}concept_definition, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}concept_category, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}concept_difficulty, local_playergames{{/str}}</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#concepts}}
+                <tr>
+                    <td>{{term}}</td>
+                    <td>{{definition}}</td>
+                    <td>{{category}}</td>
+                    <td>{{difficulty}}</td>
+                    <td class="pg-concept-actions">
+                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
+                            {{#str}}concept_edit, local_playergames{{/str}}
+                        </a>
+                        <form method="post" action="{{action_url}}" class="d-inline"
+                              data-pg-confirm="{{#str}}cartridge_confirm_delete, local_playergames{{/str}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="delete_concept">
+                            <input type="hidden" name="cartridgeid" value="{{cartridgeid}}">
+                            <input type="hidden" name="concept_id" value="{{id}}">
+                            <input type="hidden" name="tab" value="editor">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                {{#str}}concept_delete, local_playergames{{/str}}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {{/concepts}}
+            </tbody>
+        </table>
+    </div>
+    {{/concepts_empty}}
+
+    {{/has_editor_cartridge}}
+
+</div>{{! .pg-tab-editor }}

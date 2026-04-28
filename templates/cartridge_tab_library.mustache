@@ -1,0 +1,134 @@
+{{!
+    @template local_playergames/cartridge_tab_library
+
+    Library tab: lists all concept cartridges with actions.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123",
+        "cartridges": [
+            {
+                "id": 1,
+                "name": "Gamification Fundamentals",
+                "language": "en",
+                "concepts_count": 42,
+                "is_active": true,
+                "is_inactive": false,
+                "created_date": "27 Apr 2026, 10:00",
+                "modified_date": "27 Apr 2026, 12:00",
+                "author": "Jean Lúcio",
+                "uploadedby_fullname": "Admin User",
+                "edit_url": "/local/playergames/cartridge.php?tab=editor&cartridgeid=1",
+                "export_url": "/local/playergames/cartridge.php?action=export_cartridge&cartridgeid=1",
+                "sesskey": "abc123"
+            }
+        ],
+        "cartridges_empty": false,
+        "url_tab_import": "/local/playergames/cartridge.php?tab=import",
+        "url_tab_ai": "/local/playergames/cartridge.php?tab=ai",
+        "url_tab_editor": "/local/playergames/cartridge.php?tab=editor"
+    }
+}}
+<div class="pg-tab-library">
+
+    {{#cartridges_empty}}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fa fa-inbox fa-3x text-muted mb-3" aria-hidden="true"></i>
+            <p class="text-muted mb-3">{{#str}}cartridge_list_empty, local_playergames{{/str}}</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <a href="{{url_tab_import}}" class="btn btn-outline-primary">
+                    <i class="fa fa-upload me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_tab_import, local_playergames{{/str}}
+                </a>
+                <a href="{{url_tab_ai}}" class="btn btn-outline-primary">
+                    <i class="fa fa-magic me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_tab_ai, local_playergames{{/str}}
+                </a>
+                <a href="{{url_tab_editor}}" class="btn btn-primary">
+                    <i class="fa fa-pencil me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_new_create, local_playergames{{/str}}
+                </a>
+            </div>
+        </div>
+    </div>
+    {{/cartridges_empty}}
+
+    {{^cartridges_empty}}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover pg-cartridge-table">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}}cartridge_name, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_language, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_concepts_count, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_uploaded, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_timemodified, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_author, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_uploadedby, local_playergames{{/str}}</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#cartridges}}
+                <tr>
+                    <td>
+                        {{name}}
+                        {{#is_active}}
+                        <span class="badge bg-success ms-1">
+                            {{#str}}cartridge_active, local_playergames{{/str}}
+                        </span>
+                        {{/is_active}}
+                        {{#is_inactive}}
+                        <span class="badge bg-secondary ms-1">
+                            {{#str}}cartridge_inactive, local_playergames{{/str}}
+                        </span>
+                        {{/is_inactive}}
+                    </td>
+                    <td>{{language}}</td>
+                    <td>{{concepts_count}}</td>
+                    <td>{{created_date}}</td>
+                    <td>{{modified_date}}</td>
+                    <td>{{author}}</td>
+                    <td>{{uploadedby_fullname}}</td>
+                    <td class="pg-cartridge-actions">
+                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
+                            {{#str}}cartridge_edit_concepts, local_playergames{{/str}}
+                        </a>
+                        <a href="{{export_url}}" class="btn btn-sm btn-outline-secondary me-1">
+                            {{#str}}cartridge_export, local_playergames{{/str}}
+                        </a>
+                        <form method="post" action="{{action_url}}" class="d-inline">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="toggle_active">
+                            <input type="hidden" name="cartridgeid" value="{{id}}">
+                            {{#is_active}}
+                            <button type="submit" class="btn btn-sm btn-outline-warning me-1">
+                                {{#str}}cartridge_deactivate, local_playergames{{/str}}
+                            </button>
+                            {{/is_active}}
+                            {{#is_inactive}}
+                            <button type="submit" class="btn btn-sm btn-outline-success me-1">
+                                {{#str}}cartridge_activate, local_playergames{{/str}}
+                            </button>
+                            {{/is_inactive}}
+                        </form>
+                        <form method="post" action="{{action_url}}" class="d-inline"
+                              data-pg-confirm="{{#str}}cartridge_confirm_delete, local_playergames{{/str}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="delete_cartridge">
+                            <input type="hidden" name="cartridgeid" value="{{id}}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                {{#str}}cartridge_delete, local_playergames{{/str}}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {{/cartridges}}
+            </tbody>
+        </table>
+    </div>
+    {{/cartridges_empty}}
+
+</div>{{! .pg-tab-library }}

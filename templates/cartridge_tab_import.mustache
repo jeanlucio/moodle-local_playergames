@@ -1,0 +1,39 @@
+{{!
+    @template local_playergames/cartridge_tab_import
+
+    Import tab: upload a JSON cartridge file.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123"
+    }
+}}
+<div class="pg-tab-import">
+
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-upload me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_import_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}" enctype="multipart/form-data">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="import_json">
+                <input type="hidden" name="tab" value="import">
+                <div class="mb-3">
+                    <label for="pg-import-file" class="form-label">
+                        {{#str}}cartridge_import_file, local_playergames{{/str}}
+                    </label>
+                    <input type="file" id="pg-import-file" name="jsonfile"
+                           accept=".json,application/json" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-upload me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_tab_import, local_playergames{{/str}}
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>{{! .pg-tab-import }}
