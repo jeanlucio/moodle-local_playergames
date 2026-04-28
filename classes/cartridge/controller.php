@@ -26,7 +26,7 @@ namespace local_playergames\cartridge;
 
 use local_playergames\event\cartridge_deleted;
 use local_playergames\event\cartridge_imported;
-use local_playergames\output\cartridge as cartridge_output;
+use local_playergames\output\cartridge as cartridge_shell;
 
 /**
  * Handles POST dispatch and page data assembly for the cartridge management page.
@@ -176,7 +176,8 @@ class controller {
     }
 
     /**
-     * Builds and returns the Mustache template context array for the cartridge page.
+     * Builds and returns the Mustache template context array for the cartridge shell.
+     * Renders the active tab sub-template server-side and injects it as content_html.
      *
      * @param \renderer_base $output The active renderer.
      * @return array Template context data.
@@ -184,14 +185,39 @@ class controller {
     public function get_renderable(\renderer_base $output): array {
         global $DB;
 
-        $allcartridges = $DB->get_records('local_playergames_cartridges', null, 'timecreated DESC');
+        $baseurl = '/local/playergames/cartridge.php';
+        $contenthtml = '';
 
-        // Bulk-load concept counts to avoid N+1 queries.
+        if ($this->tab === 'library') {
+            $contenthtml = $this->render_tab_library($output, $DB, $baseurl);
+        } else if ($this->tab === 'import') {
+            $contenthtml = $this->render_tab_import($output, $baseurl);
+        } else if ($this->tab === 'ai') {
+            $contenthtml = $this->render_tab_ai($output, $baseurl);
+        } else if ($this->tab === 'editor') {
+            $contenthtml = $this->render_tab_editor($output, $DB, $baseurl);
+        }
+
+        $shell = new cartridge_shell($this->tab, $contenthtml);
+        return $shell->export_for_template($output);
+    }
+
+    /**
+     * Renders the library tab HTML.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param \moodle_database $db Database instance.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_library(\renderer_base $output, \moodle_database $db, string $baseurl): string {
+        $allcartridges = $db->get_records('local_playergames_cartridges', null, 'timecreated DESC');
+
         $conceptcounts = [];
         if (!empty($allcartridges)) {
             $cartridgeids = array_keys($allcartridges);
-            [$insql, $inparams] = $DB->get_in_or_equal($cartridgeids);
-            $rows = $DB->get_records_sql(
+            [$insql, $inparams] = $db->get_in_or_equal($cartridgeids);
+            $rows = $db->get_records_sql(
                 "SELECT cartridgeid, COUNT(id) AS cnt
                    FROM {local_playergames_concepts}
                   WHERE cartridgeid {$insql}
@@ -203,12 +229,11 @@ class controller {
             }
         }
 
-        // Bulk-load uploader full names to avoid N+1 queries.
         $uploaderids = array_unique(array_column((array) $allcartridges, 'uploadedby'));
         $uploaders = [];
         if (!empty($uploaderids)) {
-            [$insql2, $inparams2] = $DB->get_in_or_equal($uploaderids);
-            $uploaderusers = $DB->get_records_sql(
+            [$insql2, $inparams2] = $db->get_in_or_equal($uploaderids);
+            $uploaderusers = $db->get_records_sql(
                 "SELECT id, firstname, lastname, firstnamephonetic, lastnamephonetic,
                         middlename, alternatename FROM {user} WHERE id {$insql2}",
                 $inparams2
@@ -218,18 +243,121 @@ class controller {
             }
         }
 
+        $cartridgerows = [];
         foreach ($allcartridges as $cartridge) {
             $cartridge->concepts_count = $conceptcounts[(int) $cartridge->id] ?? 0;
             $cartridge->uploadedby_fullname = $uploaders[(int) $cartridge->uploadedby] ?? '';
+            $editurl = (new \moodle_url($baseurl, [
+                'tab' => 'editor',
+                'cartridgeid' => $cartridge->id,
+            ]))->out(false);
+            $exporturl = (new \moodle_url($baseurl, [
+                'action' => 'export_cartridge',
+                'cartridgeid' => $cartridge->id,
+            ]))->out(false);
+            $cartridgerows[] = [
+                'id' => $cartridge->id,
+                'name' => format_string($cartridge->name),
+                'language' => s($cartridge->language),
+                'version' => s($cartridge->version),
+                'concepts_count' => $cartridge->concepts_count,
+                'is_active' => (bool) $cartridge->active,
+                'is_inactive' => !(bool) $cartridge->active,
+                'created_date' => userdate(
+                    $cartridge->timecreated,
+                    get_string('strftimedatetimeshort', 'core_langconfig')
+                ),
+                'modified_date' => userdate(
+                    $cartridge->timemodified,
+                    get_string('strftimedatetimeshort', 'core_langconfig')
+                ),
+                'author' => format_string($cartridge->author ?? ''),
+                'uploadedby_fullname' => format_string($cartridge->uploadedby_fullname),
+                'edit_url' => $editurl,
+                'export_url' => $exporturl,
+                'sesskey' => sesskey(),
+            ];
         }
 
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'cartridges' => $cartridgerows,
+            'cartridges_empty' => empty($cartridgerows),
+            'url_tab_import' => (new \moodle_url($baseurl, ['tab' => 'import']))->out(false),
+            'url_tab_ai' => (new \moodle_url($baseurl, ['tab' => 'ai']))->out(false),
+            'url_tab_editor' => (new \moodle_url($baseurl, ['tab' => 'editor']))->out(false),
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_library', $ctx);
+    }
+
+    /**
+     * Renders the import tab HTML.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_import(\renderer_base $output, string $baseurl): string {
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_import', $ctx);
+    }
+
+    /**
+     * Renders the AI generation tab HTML.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_ai(\renderer_base $output, string $baseurl): string {
+        $gen = new ai_generator();
+        $aipreviewdata = null;
+        if ($this->aipreview !== null) {
+            $aipreviewdata = [
+                'cartridge_name' => s($this->aipreview['cartridge_name']),
+                'language' => s($this->aipreview['language']),
+                'concepts' => $this->aipreview['concepts'],
+            ];
+        }
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'has_ai_key' => $gen->has_key(),
+            'has_ai_error' => $this->aierror !== '',
+            'ai_error' => s($this->aierror),
+            'has_ai_preview' => $aipreviewdata !== null,
+            'ai_preview' => $aipreviewdata,
+            'ai_form_topic' => $this->aiformdata ? s($this->aiformdata->topic) : '',
+            'ai_form_context' => $this->aiformdata ? s($this->aiformdata->context ?? '') : '',
+            'ai_form_language' => $this->aiformdata ? s($this->aiformdata->language) : '',
+            'ai_form_quantity' => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
+            'ai_form_difficulty' => $this->aiformdata ? (int) $this->aiformdata->difficulty : 3,
+            'ai_form_categories' => $this->aiformdata
+                ? s($this->aiformdata->categories ?? '') : '',
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_ai', $ctx);
+    }
+
+    /**
+     * Renders the manual editor tab HTML.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param \moodle_database $db Database instance.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_editor(\renderer_base $output, \moodle_database $db, string $baseurl): string {
         $editcartridge = null;
         $concepts = [];
         $editconcept = null;
         $categories = [];
 
         if ($this->cartridgeid > 0) {
-            $editcartridge = $DB->get_record(
+            $editcartridge = $db->get_record(
                 'local_playergames_cartridges',
                 ['id' => $this->cartridgeid]
             );
@@ -237,14 +365,14 @@ class controller {
                 $catmgr = new category_manager();
                 $categories = $catmgr->get_categories($this->cartridgeid);
                 $concepts = array_values(
-                    $DB->get_records(
+                    $db->get_records(
                         'local_playergames_concepts',
                         ['cartridgeid' => $this->cartridgeid],
                         'id ASC'
                     )
                 );
                 if ($this->editconceptid > 0) {
-                    $editconcept = $DB->get_record(
+                    $editconcept = $db->get_record(
                         'local_playergames_concepts',
                         ['id' => $this->editconceptid, 'cartridgeid' => $this->cartridgeid]
                     ) ?: null;
@@ -252,20 +380,105 @@ class controller {
             }
         }
 
-        $gen = new ai_generator();
-        $renderable = new cartridge_output(
-            $this->tab,
-            array_values($allcartridges),
-            $editcartridge,
-            $concepts,
-            $categories,
-            $editconcept,
-            $this->aipreview,
-            $this->aiformdata,
-            $this->aierror,
-            $gen->has_key()
-        );
-        return $renderable->export_for_template($output);
+        $catnamelookup = [];
+        foreach ($categories as $cat) {
+            $catnamelookup[(int) $cat->id] = format_string($cat->name);
+        }
+
+        $formaction = 'add_concept';
+        $formconceptid = 0;
+        $formterm = '';
+        $formdefinition = '';
+        $formcategoryid = 0;
+        $formdifficulty = 3;
+        $editingconcept = false;
+
+        if ($editconcept !== null) {
+            $formaction = 'edit_concept';
+            $formconceptid = $editconcept->id;
+            $formterm = $editconcept->term;
+            $formdefinition = $editconcept->definition;
+            $formcategoryid = isset($editconcept->categoryid) ? (int) $editconcept->categoryid : 0;
+            $formdifficulty = (int) $editconcept->difficulty;
+            $editingconcept = true;
+        }
+
+        $categoryoptions = [];
+        foreach ($categories as $cat) {
+            $categoryoptions[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'selected' => (int) $cat->id === $formcategoryid,
+            ];
+        }
+
+        $catrows = [];
+        foreach ($categories as $cat) {
+            $catrows[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'cartridgeid' => $this->cartridgeid,
+                'sesskey' => sesskey(),
+            ];
+        }
+
+        $conceptrows = [];
+        foreach ($concepts as $concept) {
+            $editconcepturl = (new \moodle_url($baseurl, [
+                'tab' => 'editor',
+                'cartridgeid' => $this->cartridgeid,
+                'editconcept' => $concept->id,
+            ]))->out(false);
+            $catid = isset($concept->categoryid) ? (int) $concept->categoryid : 0;
+            $conceptrows[] = [
+                'id' => $concept->id,
+                'term' => format_string($concept->term),
+                'definition' => format_string($concept->definition),
+                'category' => $catid > 0 && isset($catnamelookup[$catid])
+                    ? $catnamelookup[$catid] : '',
+                'difficulty' => (int) $concept->difficulty,
+                'edit_url' => $editconcepturl,
+                'sesskey' => sesskey(),
+                'cartridgeid' => $this->cartridgeid,
+            ];
+        }
+
+        $cancelurl = (new \moodle_url($baseurl, [
+            'tab' => 'editor',
+            'cartridgeid' => $this->cartridgeid,
+        ]))->out(false);
+
+        $exporturl = $this->cartridgeid > 0
+            ? (new \moodle_url($baseurl, [
+                'action' => 'export_cartridge',
+                'cartridgeid' => $this->cartridgeid,
+            ]))->out(false)
+            : '';
+
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'has_editor_cartridge' => $editcartridge !== null,
+            'editor_cartridge_id' => $this->cartridgeid,
+            'editor_cartridge_name' => $editcartridge ? format_string($editcartridge->name) : '',
+            'export_url' => $exporturl,
+            'url_tab_library' => (new \moodle_url($baseurl, ['tab' => 'library']))->out(false),
+            'url_tab_editor_new' => (new \moodle_url($baseurl, ['tab' => 'editor']))->out(false),
+            'url_cancel_edit' => $cancelurl,
+            'editing_concept' => $editingconcept,
+            'form_action' => $formaction,
+            'form_concept_id' => $formconceptid,
+            'form_term' => s($formterm),
+            'form_definition' => s($formdefinition),
+            'form_categoryid' => $formcategoryid,
+            'form_difficulty' => $formdifficulty,
+            'categories' => $catrows,
+            'categories_empty' => empty($catrows),
+            'category_options' => $categoryoptions,
+            'concepts' => $conceptrows,
+            'concepts_empty' => empty($conceptrows),
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_editor', $ctx);
     }
 
     /**
@@ -332,6 +545,7 @@ class controller {
      */
     private function action_generate_ai(): void {
         $topic = required_param('topic', PARAM_TEXT);
+        $aicontext = optional_param('ai_context', '', PARAM_TEXT);
         $ailanguage = optional_param('ai_language', '', PARAM_TEXT);
         $quantity = required_param('quantity', PARAM_INT);
         $difficulty = required_param('difficulty', PARAM_INT);
@@ -351,6 +565,7 @@ class controller {
 
         $this->aiformdata = new \stdClass();
         $this->aiformdata->topic = $topic;
+        $this->aiformdata->context = $aicontext;
         $this->aiformdata->language = $ailanguage;
         $this->aiformdata->quantity = $quantity;
         $this->aiformdata->difficulty = $difficulty;
@@ -359,7 +574,14 @@ class controller {
 
         try {
             $gen = new ai_generator();
-            $rawconcepts = $gen->generate($topic, $ailanguage, $quantity, $difficulty, $categorynames);
+            $rawconcepts = $gen->generate(
+                $topic,
+                $ailanguage,
+                $quantity,
+                $difficulty,
+                $categorynames,
+                $aicontext
+            );
             $indexed = [];
             foreach ($rawconcepts as $i => $c) {
                 $indexed[] = [

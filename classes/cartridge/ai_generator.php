@@ -43,6 +43,7 @@ class ai_generator {
      * @param int $count Number of concepts to request (10–100).
      * @param int $difficulty Average difficulty target (1–5).
      * @param array $categorynames Optional list of category names the AI must use.
+     * @param string $context Optional reference text or summary to focus the AI.
      * @return array Array of raw concept arrays with term, definition, category, difficulty.
      * @throws \moodle_exception If no AI key is available or the response cannot be parsed.
      */
@@ -51,9 +52,10 @@ class ai_generator {
         string $language,
         int $count,
         int $difficulty,
-        array $categorynames = []
+        array $categorynames = [],
+        string $context = ''
     ): array {
-        $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames);
+        $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames, $context);
         $result = $this->call_api($prompt);
         if (!$result['success']) {
             if (empty($result['message'])) {
@@ -66,7 +68,9 @@ class ai_generator {
                 $result['message']
             );
         }
-        return $this->parse_concepts($result['data']);
+        $concepts = $this->parse_concepts($result['data']);
+        $this->log_usage($result['provider'], $result['model'] ?? '', $topic, count($concepts));
+        return $concepts;
     }
 
     /**
@@ -79,6 +83,27 @@ class ai_generator {
     }
 
     /**
+     * Inserts a usage log entry after a successful generation.
+     *
+     * @param string $provider Provider display name (Gemini, Groq, OpenAI).
+     * @param string $model Model identifier used.
+     * @param string $topic Topic that was generated.
+     * @param int $conceptcount Number of concepts returned.
+     * @return void
+     */
+    private function log_usage(string $provider, string $model, string $topic, int $conceptcount): void {
+        global $DB, $USER;
+        $record = new \stdClass();
+        $record->userid = (int) $USER->id;
+        $record->provider = $provider;
+        $record->model = $model;
+        $record->topic = $topic;
+        $record->conceptcount = $conceptcount;
+        $record->timecreated = time();
+        $DB->insert_record('local_playergames_ai_log', $record, false);
+    }
+
+    /**
      * Builds the structured prompt for concept generation.
      *
      * @param string $topic Subject area.
@@ -86,6 +111,7 @@ class ai_generator {
      * @param int $count Number of concepts to generate.
      * @param int $difficulty Average difficulty 1–5.
      * @param array $categorynames Optional list of category names to constrain the AI.
+     * @param string $context Optional reference text or summary about the topic.
      * @return string The constructed prompt.
      */
     protected function build_prompt(
@@ -93,7 +119,8 @@ class ai_generator {
         string $language,
         int $count,
         int $difficulty,
-        array $categorynames = []
+        array $categorynames = [],
+        string $context = ''
     ): string {
         $langname = $language !== '' ? $language : 'English';
         $jsonexample = '{"concepts":[{"term":"...","definition":"...","category":"...","difficulty":1}]}';
@@ -102,10 +129,11 @@ class ai_generator {
             $catlist = '"' . implode('", "', $categorynames) . '"';
             $categoryrule = "- category: MUST be exactly one of these values (verbatim): {$catlist}";
         } else {
-            $categoryrule = '- category: broad subject-area label that identifies the field of knowledge'
-                . ' (e.g. "History", "Science", "Current Affairs", "Mathematics").'
+            $categoryrule = '- category: broad subject-area label in ' . $langname
+                . ' that identifies the field of knowledge.'
                 . ' Use at most 3 distinct categories for the whole concept set.'
-                . ' Do NOT use specific sub-topics of the current theme as category names.';
+                . ' Do NOT use specific sub-topics of the current theme as category names.'
+                . ' The category value MUST be written in ' . $langname . '.';
         }
 
         $rules = "- term: short word or phrase (max 6 words)\n"
@@ -114,42 +142,70 @@ class ai_generator {
             . "- difficulty: integer 1–5\n"
             . '- No markdown, no code fences, only raw JSON';
 
-        return implode("\n\n", [
+        $parts = [
             'You are a knowledgeable educator creating a vocabulary and concept study set.',
             "Generate exactly {$count} educational concepts about the topic: \"{$topic}\".",
             "Target average difficulty: {$difficulty} out of 5 (1 = very easy, 5 = very hard).",
             "Respond in language: {$langname}.",
-            'IMPORTANT: Reply ONLY with a valid JSON object in this exact format, no extra text:',
-            $jsonexample,
-            "Rules:\n" . $rules,
-        ]);
+        ];
+
+        if ($context !== '') {
+            $parts[] = 'The following reference text provides specific details about this topic.'
+                . ' Use it to generate targeted, specific concepts rather than generic ones.'
+                . ' Focus on the concrete terms, rules, and ideas mentioned in this text:';
+            $parts[] = '---' . "\n" . $context . "\n" . '---';
+        }
+
+        $parts[] = 'IMPORTANT: Reply ONLY with a valid JSON object in this exact format, no extra text:';
+        $parts[] = $jsonexample;
+        $parts[] = "Rules:\n" . $rules;
+
+        return implode("\n\n", $parts);
     }
 
     /**
      * Tries configured providers in priority order: Gemini → Groq → OpenAI-compatible.
      *
+     * If a provider has a key but the call fails (network error, timeout, HTTP error),
+     * the next available provider is tried automatically. The error from the last
+     * attempted provider is returned only when all options are exhausted.
+     *
      * @param string $prompt The prompt text.
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
     protected function call_api(string $prompt): array {
+        $lasterror = ['success' => false, 'message' => ''];
+
         $geminikey = api_key_helper::get_gemini_key();
         if ($geminikey !== '') {
-            return $this->call_gemini($prompt, $geminikey);
+            $result = $this->call_gemini($prompt, $geminikey);
+            if ($result['success']) {
+                return $result;
+            }
+            $lasterror = $result;
         }
 
         $groqkey = api_key_helper::get_groq_key();
         if ($groqkey !== '') {
-            return $this->call_groq($prompt, $groqkey);
+            $result = $this->call_groq($prompt, $groqkey);
+            if ($result['success']) {
+                return $result;
+            }
+            $lasterror = $result;
         }
 
         $openaikey = api_key_helper::get_openai_key();
         if ($openaikey !== '') {
             $url = api_key_helper::get_openai_baseurl();
             $model = api_key_helper::get_openai_model();
-            return $this->call_openai_compatible($prompt, $openaikey, $url, $model);
+            $result = $this->call_openai_compatible($prompt, $openaikey, $url, $model);
+            if ($result['success']) {
+                return $result;
+            }
+            $lasterror = $result;
         }
 
-        return ['success' => false, 'message' => ''];
+        return $lasterror;
     }
 
     /**
@@ -174,7 +230,7 @@ class ai_generator {
             json_encode($data),
             ['Content-Type: application/json'],
             'Gemini'
-        );
+        ) + ['model' => 'gemini-flash-latest'];
     }
 
     /**
@@ -196,7 +252,7 @@ class ai_generator {
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'Groq'
-        );
+        ) + ['model' => 'llama-3.3-70b-versatile'];
     }
 
     /**
@@ -214,8 +270,9 @@ class ai_generator {
         string $endpointurl,
         string $model
     ): array {
+        $modelname = $model !== '' ? $model : 'gpt-4o-mini';
         $data = [
-            'model' => $model !== '' ? $model : 'gpt-4o-mini',
+            'model' => $modelname,
             'messages' => [['role' => 'user', 'content' => $prompt]],
             'response_format' => ['type' => 'json_object'],
         ];
@@ -224,7 +281,7 @@ class ai_generator {
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'OpenAI'
-        );
+        ) + ['model' => $modelname];
     }
 
     /**
