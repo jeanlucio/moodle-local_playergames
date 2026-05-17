@@ -1,0 +1,148 @@
+{{!
+    Template: local_playergames/engagement_meter
+
+    Example context (json):
+    {
+        "pageurl": "/local/playergames/engagement_meter.php",
+        "days": 30,
+        "day_options": [
+            {"value": 30, "label": "Last 30 days", "selected": true},
+            {"value": 60, "label": "Last 60 days"},
+            {"value": 90, "label": "Last 90 days"}
+        ],
+        "has_data": true,
+        "with_count": "5 courses",
+        "without_count": "23 courses",
+        "disclaimer": "This is correlation data, not causation.",
+        "chart_events": "<p>Chart placeholder</p>",
+        "chart_completion": "<p>Chart placeholder</p>",
+        "chart_grade": "<p>Chart placeholder</p>",
+        "summary": [
+            {
+                "metric": "Access events per student",
+                "with_value": "42.3",
+                "without_value": "18.7",
+                "delta": "+126%"
+            }
+        ]
+    }
+}}
+<div class="local-playergames-engagement-meter">
+
+    {{! Period selector }}
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <form method="get" action="{{pageurl}}" class="d-flex align-items-center gap-2 mb-0">
+            <label for="pg-engmeter-period" class="fw-semibold text-nowrap mb-0">
+                {{#str}} engmeter_period, local_playergames {{/str}}
+            </label>
+            <select id="pg-engmeter-period" name="days"
+                    class="form-select form-select-sm w-auto"
+                    onchange="this.form.submit()">
+                {{#day_options}}
+                <option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>
+                {{/day_options}}
+            </select>
+        </form>
+    </div>
+
+    {{#has_data}}
+
+    {{! Group headings with course counts }}
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <span class="badge bg-success fs-6">
+                {{#str}} engmeter_with_player, local_playergames {{/str}}
+            </span>
+            <small class="text-muted ms-2">{{with_count}}</small>
+        </div>
+        <div class="col-md-6">
+            <span class="badge bg-secondary fs-6">
+                {{#str}} engmeter_without_player, local_playergames {{/str}}
+            </span>
+            <small class="text-muted ms-2">{{without_count}}</small>
+        </div>
+    </div>
+
+    {{! Charts }}
+    <div class="row row-cols-1 row-cols-lg-3 g-4 mb-4">
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h6">
+                        {{#str}} engmeter_chart_events, local_playergames {{/str}}
+                    </h3>
+                    <div class="engmeter-chart-wrap">
+                        {{{chart_events}}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h6">
+                        {{#str}} engmeter_chart_completion, local_playergames {{/str}}
+                    </h3>
+                    <div class="engmeter-chart-wrap">
+                        {{{chart_completion}}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h6">
+                        {{#str}} engmeter_chart_grade, local_playergames {{/str}}
+                    </h3>
+                    <div class="engmeter-chart-wrap">
+                        {{{chart_grade}}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {{! Summary table }}
+    <div class="table-responsive mb-4">
+        <table class="table table-sm table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">{{#str}} engmeter_metric, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} engmeter_with_player, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} engmeter_without_player, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} engmeter_delta, local_playergames {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#summary}}
+                <tr>
+                    <td>{{metric}}</td>
+                    <td class="text-success fw-bold">{{with_value}}</td>
+                    <td class="text-secondary">{{without_value}}</td>
+                    <td>{{delta}}</td>
+                </tr>
+                {{/summary}}
+            </tbody>
+        </table>
+    </div>
+
+    {{! Disclaimer }}
+    <div class="alert alert-warning d-flex gap-2" role="alert">
+        <i class="fa fa-info-circle mt-1" aria-hidden="true"></i>
+        <span>{{disclaimer}}</span>
+    </div>
+
+    {{/has_data}}
+
+    {{^has_data}}
+    <div class="alert alert-info" role="alert">
+        {{#str}} engmeter_no_courses, local_playergames {{/str}}
+    </div>
+    {{/has_data}}
+
+</div>

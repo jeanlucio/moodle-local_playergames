@@ -57,6 +57,15 @@ $capabilities = [
             'teacher'        => CAP_ALLOW,
         ],
     ],
+    'local/playergames:viewengagementmeter' => [
+        'captype'      => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes'   => [
+            'editingteacher' => CAP_ALLOW,
+            'manager'        => CAP_ALLOW,
+            'teacher'        => CAP_ALLOW,
+        ],
+    ],
     'local/playergames:managecartridges' => [
         'captype'      => 'write',
         'contextlevel' => CONTEXT_SYSTEM,

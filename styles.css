@@ -1,0 +1,9 @@
+.local-playergames-engagement-meter .engmeter-chart-wrap {
+    max-width: 300px;
+    margin-inline: auto;
+}
+
+/* Override Moodle's .chart-area .chart-image {width:46vw} so the bar charts fit the wrapper. */
+.local-playergames-engagement-meter .engmeter-chart-wrap .chart-area .chart-image {
+    width: 100%;
+}

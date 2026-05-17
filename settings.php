@@ -154,4 +154,15 @@ if ($hassiteconfig) {
     ));
 
     $ADMIN->add('playergames', $page3);
+
+    // Engagement meter.
+    $ADMIN->add(
+        'playergames',
+        new admin_externalpage(
+            'local_playergames_engagementmeter',
+            get_string('engmeter_pagetitle', 'local_playergames'),
+            new moodle_url('/local/playergames/engagement_meter.php'),
+            'local/playergames:viewengagementmeter'
+        )
+    );
 }
