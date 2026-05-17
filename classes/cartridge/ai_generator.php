@@ -164,9 +164,10 @@ class ai_generator {
     }
 
     /**
-     * Tries configured providers in priority order: Gemini → Groq → OpenAI-compatible.
+     * Tries configured providers in priority order:
+     * Moodle core_ai → Gemini → Groq → OpenAI-compatible.
      *
-     * If a provider has a key but the call fails (network error, timeout, HTTP error),
+     * If a provider is unavailable or its call fails (network error, timeout, HTTP error),
      * the next available provider is tried automatically. The error from the last
      * attempted provider is returned only when all options are exhausted.
      *
@@ -176,6 +177,18 @@ class ai_generator {
     protected function call_api(string $prompt): array {
         $lasterror = ['success' => false, 'message' => ''];
 
+        // Priority 0: Moodle core_ai subsystem (Moodle 4.5+).
+        if (api_key_helper::has_core_ai_provider()) {
+            $result = $this->call_core_ai($prompt);
+            if ($result['success']) {
+                return $result;
+            }
+            if ($result['message'] !== '') {
+                $lasterror = $result;
+            }
+        }
+
+        // Priority 1: Gemini.
         $geminikey = api_key_helper::get_gemini_key();
         if ($geminikey !== '') {
             $result = $this->call_gemini($prompt, $geminikey);
@@ -185,6 +198,7 @@ class ai_generator {
             $lasterror = $result;
         }
 
+        // Priority 2: Groq.
         $groqkey = api_key_helper::get_groq_key();
         if ($groqkey !== '') {
             $result = $this->call_groq($prompt, $groqkey);
@@ -194,9 +208,11 @@ class ai_generator {
             $lasterror = $result;
         }
 
+        // Priority 3: OpenAI-compatible.
         $openaikey = api_key_helper::get_openai_key();
-        if ($openaikey !== '') {
-            $url = api_key_helper::get_openai_baseurl();
+        $openaiurl = api_key_helper::get_openai_baseurl();
+        if ($openaikey !== '' && $this->is_safe_url($openaiurl)) {
+            $url = $openaiurl;
             $model = api_key_helper::get_openai_model();
             $result = $this->call_openai_compatible($prompt, $openaikey, $url, $model);
             if ($result['success']) {
@@ -206,6 +222,57 @@ class ai_generator {
         }
 
         return $lasterror;
+    }
+
+    /**
+     * Generates text via the Moodle core_ai subsystem.
+     *
+     * Handles both Moodle 4.5 (static manager API) and 5.x (instance API with
+     * DB injection) by inspecting whether get_providers_for_actions is static.
+     * Falls back silently (empty message) when no providers are configured.
+     *
+     * @param string $prompt The prompt text.
+     * @return array Result with keys: success (bool), data (string), message (string), provider (string).
+     */
+    protected function call_core_ai(string $prompt): array {
+        global $DB, $USER;
+
+        try {
+            $actionclass = \core_ai\aiactions\generate_text::class;
+            $reflection = new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions');
+
+            if ($reflection->isStatic()) {
+                // Moodle 4.5 — static API.
+                $providers = \core_ai\manager::get_providers_for_actions([$actionclass], true);
+                $manager = new \core_ai\manager();
+            } else {
+                // Moodle 5.x — instance API with DB injection.
+                $manager = new \core_ai\manager($DB);
+                $providers = $manager->get_providers_for_actions([$actionclass], true);
+            }
+
+            if (empty($providers[$actionclass])) {
+                return ['success' => false, 'message' => ''];
+            }
+
+            $action = new \core_ai\aiactions\generate_text(
+                contextid: \context_system::instance()->id,
+                userid: (int) $USER->id,
+                prompttext: $prompt,
+            );
+
+            $response = $manager->process_action($action);
+            $data = $response->get_response_data();
+            $content = (string) ($data['generatedcontent'] ?? '');
+
+            if ($content === '') {
+                return ['success' => false, 'message' => 'core_ai: empty response'];
+            }
+
+            return ['success' => true, 'data' => $content, 'provider' => 'Moodle AI', 'model' => ''];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => 'core_ai: ' . $e->getMessage()];
+        }
     }
 
     /**
@@ -220,7 +287,7 @@ class ai_generator {
      */
     protected function call_gemini(string $prompt, string $key): array {
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-            . 'gemini-flash-latest:generateContent?key=' . urlencode($key);
+            . 'gemini-flash-latest:generateContent';
         $data = [
             'contents' => [['parts' => [['text' => $prompt]]]],
             'generationConfig' => ['responseMimeType' => 'application/json'],
@@ -228,7 +295,7 @@ class ai_generator {
         return $this->http_post(
             $url,
             json_encode($data),
-            ['Content-Type: application/json'],
+            ['Content-Type: application/json', 'x-goog-api-key: ' . $key],
             'Gemini'
         ) + ['model' => 'gemini-flash-latest'];
     }
@@ -282,6 +349,67 @@ class ai_generator {
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'OpenAI'
         ) + ['model' => $modelname];
+    }
+
+    /**
+     * Returns true when the URL is safe to use as an AI endpoint.
+     *
+     * Enforces HTTPS and blocks loopback, link-local, and RFC-1918 private
+     * addresses to prevent SSRF via admin-configured endpoints. Also resolves
+     * A/AAAA DNS records to block DNS-rebinding attacks where a public domain
+     * resolves to an internal IP.
+     *
+     * @param string $url The URL to validate.
+     * @return bool True if safe; false otherwise.
+     */
+    private function is_safe_url(string $url): bool {
+        $parsed = parse_url($url);
+        if (!$parsed || ($parsed['scheme'] ?? '') !== 'https') {
+            return false;
+        }
+        $host = $parsed['host'] ?? '';
+        if (empty($host)) {
+            return false;
+        }
+        if (in_array(strtolower($host), ['localhost', '127.0.0.1', '::1'], true)) {
+            return false;
+        }
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false) {
+            $ispublic = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+            if ($ispublic === false) {
+                return false;
+            }
+        } else {
+            $resolvedips = [];
+            $arecords = dns_get_record($host, DNS_A);
+            if (is_array($arecords)) {
+                foreach ($arecords as $r) {
+                    if (!empty($r['ip'])) {
+                        $resolvedips[] = $r['ip'];
+                    }
+                }
+            }
+            $aaaarecords = dns_get_record($host, DNS_AAAA);
+            if (is_array($aaaarecords)) {
+                foreach ($aaaarecords as $r) {
+                    if (!empty($r['ipv6'])) {
+                        $resolvedips[] = $r['ipv6'];
+                    }
+                }
+            }
+            foreach ($resolvedips as $resolvedip) {
+                $ispublic = filter_var(
+                    $resolvedip,
+                    FILTER_VALIDATE_IP,
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+                );
+                if ($ispublic === false) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

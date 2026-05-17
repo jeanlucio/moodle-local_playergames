@@ -159,12 +159,46 @@ class api_key_helper {
     }
 
     /**
-     * Returns true when at least one provider has a key resolvable for the given user.
+     * Returns true when the Moodle core_ai subsystem has at least one provider
+     * configured and enabled for text generation.
+     *
+     * Compatible with Moodle 4.5 (static API) and 5.x (instance API with DB injection).
+     *
+     * @return bool
+     */
+    public static function has_core_ai_provider(): bool {
+        global $DB;
+
+        if (
+            !class_exists(\core_ai\manager::class)
+            || !class_exists(\core_ai\aiactions\generate_text::class)
+        ) {
+            return false;
+        }
+
+        try {
+            $reflection = new \ReflectionMethod(\core_ai\manager::class, 'is_action_available');
+            $actionclass = \core_ai\aiactions\generate_text::class;
+            if ($reflection->isStatic()) {
+                return \core_ai\manager::is_action_available($actionclass);
+            }
+            return (new \core_ai\manager($DB))->is_action_available($actionclass);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true when at least one AI source is available: the Moodle core_ai
+     * subsystem or a personal/site API key for any configured provider.
      *
      * @param int|null $userid
      * @return bool
      */
     public static function has_any_key(?int $userid = null): bool {
+        if (self::has_core_ai_provider()) {
+            return true;
+        }
         $providers = [self::PROVIDER_GEMINI, self::PROVIDER_GROQ, self::PROVIDER_OPENAI];
         foreach ($providers as $provider) {
             if (self::get_key($provider, $userid) !== '') {
