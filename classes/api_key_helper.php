@@ -18,9 +18,10 @@
  * AI API key helper for local_playergames.
  *
  * Resolution chain (highest priority first):
- * 1. User preference  local_playergames_{provider}_key  (opt-in personal key)
+ * 1. User preference  local_playergames_{provider}_key  (opt-in personal key in this hub)
  * 2. Hub site config  local_playergames / {provider}_key
- * 3. Legacy block config  block_playerhud / {provider}_key  (backward compat)
+ * 3. User preference  block_playerhud_{provider}_key  (personal key set inside PlayerHUD)
+ * 4. Legacy block site config  block_playerhud / apikey_{provider}  (backward compat)
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -73,10 +74,15 @@ class api_key_helper {
             return $hub;
         }
 
-        // Level 3: legacy block_playerhud site config.
+        // Level 3: legacy block_playerhud user preference (personal key set by the user in PlayerHUD).
+        $legacypref = get_user_preferences('block_playerhud_' . $provider . '_key', '', $userid);
+        if ($legacypref !== '') {
+            return $legacypref;
+        }
+
+        // Level 4: legacy block_playerhud site config (admin-wide key set in PlayerHUD settings).
         // block_playerhud uses 'apikey_{provider}' (e.g. apikey_gemini), not '{provider}_key'.
-        $legacy = (string) get_config('block_playerhud', 'apikey_' . $provider);
-        return $legacy;
+        return (string) get_config('block_playerhud', 'apikey_' . $provider);
     }
 
     /**
@@ -177,12 +183,14 @@ class api_key_helper {
         }
 
         try {
-            $reflection = new \ReflectionMethod(\core_ai\manager::class, 'is_action_available');
             $actionclass = \core_ai\aiactions\generate_text::class;
+            $reflection = new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions');
             if ($reflection->isStatic()) {
-                return \core_ai\manager::is_action_available($actionclass);
+                $providers = \core_ai\manager::get_providers_for_actions([$actionclass], true);
+            } else {
+                $providers = (new \core_ai\manager($DB))->get_providers_for_actions([$actionclass], true);
             }
-            return (new \core_ai\manager($DB))->is_action_available($actionclass);
+            return !empty($providers[$actionclass]);
         } catch (\Throwable $e) {
             return false;
         }

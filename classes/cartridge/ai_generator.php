@@ -225,31 +225,37 @@ class ai_generator {
     }
 
     /**
+     * Instantiates core_ai manager for the current Moodle version.
+     *
+     * Reflects on get_providers_for_actions — the method used in call_core_ai — so
+     * the staticness check is consistent between availability detection and actual calls.
+     *
+     * @return \core_ai\manager
+     */
+    private function make_core_ai_manager(): \core_ai\manager {
+        global $DB;
+        $reflection = new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions');
+        if ($reflection->isStatic()) {
+            return new \core_ai\manager();
+        }
+        return new \core_ai\manager($DB);
+    }
+
+    /**
      * Generates text via the Moodle core_ai subsystem.
      *
-     * Handles both Moodle 4.5 (static manager API) and 5.x (instance API with
-     * DB injection) by inspecting whether get_providers_for_actions is static.
      * Falls back silently (empty message) when no providers are configured.
      *
      * @param string $prompt The prompt text.
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
     protected function call_core_ai(string $prompt): array {
-        global $DB, $USER;
+        global $USER;
 
         try {
             $actionclass = \core_ai\aiactions\generate_text::class;
-            $reflection = new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions');
-
-            if ($reflection->isStatic()) {
-                // Moodle 4.5 — static API.
-                $providers = \core_ai\manager::get_providers_for_actions([$actionclass], true);
-                $manager = new \core_ai\manager();
-            } else {
-                // Moodle 5.x — instance API with DB injection.
-                $manager = new \core_ai\manager($DB);
-                $providers = $manager->get_providers_for_actions([$actionclass], true);
-            }
+            $manager = $this->make_core_ai_manager();
+            $providers = $manager->get_providers_for_actions([$actionclass], true);
 
             if (empty($providers[$actionclass])) {
                 return ['success' => false, 'message' => ''];
@@ -262,6 +268,11 @@ class ai_generator {
             );
 
             $response = $manager->process_action($action);
+
+            if (!$response->get_success()) {
+                return ['success' => false, 'message' => 'core_ai: provider returned failure'];
+            }
+
             $data = $response->get_response_data();
             $content = (string) ($data['generatedcontent'] ?? '');
 
