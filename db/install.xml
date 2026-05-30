@@ -135,14 +135,16 @@
         <INDEX NAME="idx_gamedate_gametype" UNIQUE="false" FIELDS="gamedate, gametype"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="local_playergames_bounce_scores" COMMENT="PlayerBounce daily best scores per user">
+    <TABLE NAME="local_playergames_battle_scores" COMMENT="PlayerBattle daily best scores per user">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="score" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="difficultylevel" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="bosshpdealt" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="questionscorrect" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="questionstotal" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="victory" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="xpawarded" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="timeplayed" TYPE="int" LENGTH="10" NOTNULL="true"/>

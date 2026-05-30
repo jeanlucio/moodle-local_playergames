@@ -195,5 +195,82 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026042801, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026052201) {
+        $oldtable = new xmldb_table('local_playergames_bounce_scores');
+        if ($dbman->table_exists($oldtable)) {
+            $dbman->rename_table($oldtable, 'local_playergames_battle_scores');
+        }
+
+        $table = new xmldb_table('local_playergames_battle_scores');
+
+        $scorefield = new xmldb_field('score');
+        if ($dbman->field_exists($table, $scorefield)) {
+            $dbman->drop_field($table, $scorefield);
+        }
+
+        $difficultyfield = new xmldb_field('difficultylevel');
+        if ($dbman->field_exists($table, $difficultyfield)) {
+            $dbman->drop_field($table, $difficultyfield);
+        }
+
+        $bosshpfield = new xmldb_field(
+            'bosshpdealt',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'gamedate'
+        );
+        if (!$dbman->field_exists($table, $bosshpfield)) {
+            $dbman->add_field($table, $bosshpfield);
+        }
+
+        $correctfield = new xmldb_field(
+            'questionscorrect',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'bosshpdealt'
+        );
+        if (!$dbman->field_exists($table, $correctfield)) {
+            $dbman->add_field($table, $correctfield);
+        }
+
+        $totalfield = new xmldb_field(
+            'questionstotal',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'questionscorrect'
+        );
+        if (!$dbman->field_exists($table, $totalfield)) {
+            $dbman->add_field($table, $totalfield);
+        }
+
+        $victoryfield = new xmldb_field(
+            'victory',
+            XMLDB_TYPE_INTEGER,
+            '1',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'questionstotal'
+        );
+        if (!$dbman->field_exists($table, $victoryfield)) {
+            $dbman->add_field($table, $victoryfield);
+        }
+
+        upgrade_plugin_savepoint(true, 2026052201, 'local', 'playergames');
+    }
+
     return true;
 }
