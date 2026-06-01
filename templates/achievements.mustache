@@ -1,0 +1,93 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/achievements
+
+    Grid of all achievements with earned/locked state.
+
+    Example context (json):
+    {
+        "str_pagetitle": "Achievements",
+        "str_huburl": "/local/playergames/hub.php",
+        "totalearned": 2,
+        "total": 6,
+        "items": [
+            {
+                "icon": "fa-gamepad",
+                "name": "First Steps",
+                "desc": "Complete your first daily game.",
+                "earned": true,
+                "locked": false,
+                "earnedts": "1 June 2026"
+            },
+            {
+                "icon": "fa-medal",
+                "name": "Century Player",
+                "desc": "Complete 100 daily games in a season.",
+                "earned": false,
+                "locked": true,
+                "earnedts": ""
+            }
+        ]
+    }
+}}
+<div class="path-local-playergames pg-achievements">
+
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <h4 class="mb-0">
+            <i class="fa fa-trophy me-2" aria-hidden="true"></i>{{str_pagetitle}}
+        </h4>
+        <div>
+            <span class="badge bg-warning text-dark me-2">
+                {{totalearned}}/{{total}}
+            </span>
+            <a href="{{str_huburl}}" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>{{str_pagetitle}}
+            </a>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {{#items}}
+        <div class="col">
+            <div class="card h-100 pg-achievement-card {{#locked}}pg-achievement-locked{{/locked}}">
+                <div class="card-body text-center p-4">
+                    <div class="pg-achievement-icon mb-3">
+                        <i class="fa {{icon}} fa-2x
+                            {{#earned}}text-warning{{/earned}}
+                            {{#locked}}text-muted{{/locked}}"
+                            role="img" aria-label="{{name}}"></i>
+                    </div>
+                    <h6 class="card-title {{#locked}}text-muted{{/locked}}">{{name}}</h6>
+                    <p class="card-text small text-muted mb-2">{{desc}}</p>
+                    {{#earned}}
+                    <span class="badge bg-success">
+                        <i class="fa fa-check me-1" aria-hidden="true"></i>{{earnedts}}
+                    </span>
+                    {{/earned}}
+                    {{#locked}}
+                    <span class="badge bg-secondary">
+                        <i class="fa fa-lock me-1" aria-hidden="true"></i>
+                    </span>
+                    {{/locked}}
+                </div>
+            </div>
+        </div>
+        {{/items}}
+    </div>
+
+</div>{{! end pg-achievements }}

@@ -1,0 +1,506 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/hub
+
+    Player Hub: profile, ranking, missions and today's games.
+
+    Example context (json):
+    {
+        "noseason": false,
+        "str_pagetitle": "Player Hub",
+        "season_name": "Season 1",
+        "str_season_label": "Season",
+        "level": 3,
+        "title": "Student",
+        "xp": 350,
+        "xp_next": 250,
+        "xp_in_level": 50,
+        "level_range": 300,
+        "progress_pct": 17,
+        "maxlevel": false,
+        "streak": 5,
+        "freezes": 1,
+        "showinranking": true,
+        "sesskey": "abc123",
+        "formaction": "/local/playergames/hub.php",
+        "achievementsurl": "/local/playergames/achievements.php",
+        "showbothtabs": false,
+        "hasstudentranking": true,
+        "hasstaffranking": false,
+        "selfinstudents": 2,
+        "selfinstaff": 0,
+        "studentranking": [
+            {"pos": 1, "name": "Alice Smith", "xp": 900, "level": 8, "isself": false, "extra": false},
+            {"pos": 2, "name": "Bob Jones", "xp": 350, "level": 3, "isself": true, "extra": false}
+        ],
+        "staffranking": [],
+        "hasmissions": true,
+        "missions": [
+            {
+                "icon": "fa-play",
+                "name": "Daily Player",
+                "desc": "Complete 1 daily game today.",
+                "current": 0,
+                "target": 1,
+                "completed": false,
+                "xpreward": 5,
+                "progress_pct": 0
+            }
+        ],
+        "games": [
+            {
+                "gametype": "quiz",
+                "name": "PlayerQuiz",
+                "icon": "fa-question-circle",
+                "done": false,
+                "locked": false,
+                "pending": true,
+                "str_done": "Done",
+                "str_pending": "Play",
+                "str_locked": "No cartridge"
+            }
+        ],
+        "str_profile": "Your profile",
+        "str_ranking": "Ranking",
+        "str_missions": "Active missions",
+        "str_games": "Today's games",
+        "str_xp": "XP",
+        "str_level": "Level",
+        "str_streak": "Streak",
+        "str_freezes": "Freezes",
+        "str_xp_next": "XP to next level",
+        "str_showinranking": "Appear in ranking",
+        "str_ranking_stu": "Students",
+        "str_ranking_sta": "Staff",
+        "str_rank_pos": "#",
+        "str_rank_player": "Player",
+        "str_rank_xp": "XP",
+        "str_rank_level": "Level",
+        "str_top10": "Top 10",
+        "str_show_all": "Show full ranking",
+        "str_show_less": "Show top 10",
+        "str_invite": "You have not joined the ranking yet.",
+        "str_join": "Join the ranking"
+    }
+}}
+<div class="path-local-playergames pg-hub">
+
+    {{#noseason}}
+    <div class="alert alert-info" role="alert">
+        <i class="fa fa-info-circle me-2" aria-hidden="true"></i>{{str_no_season}}
+    </div>
+    {{/noseason}}
+
+    {{^noseason}}
+    <div class="pg-hub-header d-flex align-items-center justify-content-between flex-wrap mb-4 gap-2">
+        <div>
+            <span class="badge bg-secondary">
+                <i class="fa fa-calendar-alt me-1" aria-hidden="true"></i>
+                {{str_season_label}}: {{season_name}}
+            </span>
+        </div>
+        <a href="{{achievementsurl}}" class="btn btn-sm btn-outline-warning">
+            <i class="fa fa-trophy me-1" aria-hidden="true"></i>{{str_pagetitle}}
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {{! Left column: profile + missions }}
+        <div class="col-lg-4">
+
+            {{! Profile card }}
+            <div class="card pg-hub-profile-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-user-circle me-2" aria-hidden="true"></i>{{str_profile}}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="badge bg-primary fs-5">{{str_level}} {{level}}</span>
+                        <div>
+                            <div class="fw-bold">{{title}}</div>
+                            <small class="text-muted">{{str_xp}}: {{xp}}</small>
+                        </div>
+                    </div>
+
+                    {{^maxlevel}}
+                    <div class="pg-hub-xp-bar mb-2">
+                        <div class="d-flex justify-content-between">
+                            <small>{{str_xp_next}}: {{xp_next}}</small>
+                        </div>
+                        <div class="progress" role="progressbar"
+                            aria-valuenow="{{progress_pct}}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-primary" style="width: {{progress_pct}}%"></div>
+                        </div>
+                    </div>
+                    {{/maxlevel}}
+
+                    <div class="row row-cols-2 g-2 mt-1">
+                        <div class="col">
+                            <div class="pg-hub-stat-box rounded p-2 text-center">
+                                <i class="fa fa-fire text-warning" aria-hidden="true"></i>
+                                <div class="fw-bold">{{streak}}</div>
+                                <small class="text-muted">{{str_streak}}</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="pg-hub-stat-box rounded p-2 text-center">
+                                <i class="fa fa-snowflake text-info" aria-hidden="true"></i>
+                                <div class="fw-bold">{{freezes}}</div>
+                                <small class="text-muted">{{str_freezes}}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{formaction}}" class="mt-3">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox"
+                                id="pg-showinranking"
+                                name="showinranking"
+                                value="1"
+                                {{#showinranking}}checked{{/showinranking}}
+                                onchange="this.form.submit()">
+                            <label class="form-check-label" for="pg-showinranking">
+                                {{str_showinranking}}
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{! Missions }}
+            {{#hasmissions}}
+            <div class="card pg-hub-missions-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-star me-2" aria-hidden="true"></i>{{str_missions}}
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {{#missions}}
+                    <div class="list-group-item pg-hub-mission {{#completed}}pg-mission-done{{/completed}}">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa {{icon}} fs-5
+                                {{#completed}}text-success{{/completed}}
+                                {{^completed}}text-muted{{/completed}}"
+                                aria-hidden="true"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-semibold">{{name}}</span>
+                                    <small class="text-muted">+{{xpreward}} XP</small>
+                                </div>
+                                <small class="text-muted">{{desc}}</small>
+                                {{^completed}}
+                                <div class="progress mt-1" style="height: 6px"
+                                    role="progressbar"
+                                    aria-valuenow="{{progress_pct}}"
+                                    aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar bg-warning" style="width: {{progress_pct}}%"></div>
+                                </div>
+                                <small class="text-muted">{{current}}/{{target}}</small>
+                                {{/completed}}
+                                {{#completed}}
+                                <div class="text-success mt-1">
+                                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                                </div>
+                                {{/completed}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/missions}}
+                </div>
+            </div>
+            {{/hasmissions}}
+
+        </div>{{! end left column }}
+
+        {{! Right column: ranking + games }}
+        <div class="col-lg-8">
+
+            <div class="card pg-hub-ranking-card mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0">
+                        <i class="fa fa-ranking-star me-2" aria-hidden="true"></i>{{str_ranking}}
+                    </h5>
+                    {{#showbothtabs}}
+                    <ul class="nav nav-pills" id="pg-rank-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="pg-tab-stu"
+                                data-bs-toggle="pill" data-bs-target="#pg-rank-students"
+                                type="button" role="tab"
+                                aria-controls="pg-rank-students" aria-selected="true">
+                                {{str_ranking_stu}}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pg-tab-sta"
+                                data-bs-toggle="pill" data-bs-target="#pg-rank-staff"
+                                type="button" role="tab"
+                                aria-controls="pg-rank-staff" aria-selected="false">
+                                {{str_ranking_sta}}
+                            </button>
+                        </li>
+                    </ul>
+                    {{/showbothtabs}}
+                </div>
+
+                <div class="card-body p-0">
+                    {{#showbothtabs}}
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="pg-rank-students"
+                            role="tabpanel" aria-labelledby="pg-tab-stu">
+                            <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstudents}}">
+                                {{^selfinstudents}}
+                                <div class="alert alert-secondary mx-3 mt-3">
+                                    <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                                    {{str_invite}}
+                                </div>
+                                {{/selfinstudents}}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="text-center" style="width:3rem">
+                                                    {{str_rank_pos}}
+                                                </th>
+                                                <th scope="col">{{str_rank_player}}</th>
+                                                <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                                <th scope="col" class="text-center">{{str_rank_level}}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{#studentranking}}
+                                            <tr class="{{#isself}}table-primary{{/isself}}
+                                                {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                                <td class="text-center fw-bold">{{pos}}</td>
+                                                <td>{{name}}</td>
+                                                <td class="text-end">{{xp}}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary">{{level}}</span>
+                                                </td>
+                                            </tr>
+                                            {{/studentranking}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center p-2">
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                        data-show-label="{{str_show_all}}"
+                                        data-hide-label="{{str_show_less}}">
+                                        {{str_show_all}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="pg-rank-staff"
+                            role="tabpanel" aria-labelledby="pg-tab-sta">
+                            <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstaff}}">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="text-center" style="width:3rem">
+                                                    {{str_rank_pos}}
+                                                </th>
+                                                <th scope="col">{{str_rank_player}}</th>
+                                                <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                                <th scope="col" class="text-center">{{str_rank_level}}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{#staffranking}}
+                                            <tr class="{{#isself}}table-primary{{/isself}}
+                                                {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                                <td class="text-center fw-bold">{{pos}}</td>
+                                                <td>{{name}}</td>
+                                                <td class="text-end">{{xp}}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary">{{level}}</span>
+                                                </td>
+                                            </tr>
+                                            {{/staffranking}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center p-2">
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                        data-show-label="{{str_show_all}}"
+                                        data-hide-label="{{str_show_less}}">
+                                        {{str_show_all}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/showbothtabs}}
+
+                    {{^showbothtabs}}
+                    {{#hasstudentranking}}
+                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstudents}}">
+                        {{^selfinstudents}}
+                        <div class="alert alert-secondary mx-3 mt-3">
+                            <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                            {{str_invite}}
+                            <form method="post" action="{{formaction}}" class="d-inline ms-2">
+                                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                <input type="hidden" name="showinranking" value="1">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    {{str_join}}
+                                </button>
+                            </form>
+                        </div>
+                        {{/selfinstudents}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-center" style="width:3rem">
+                                            {{str_rank_pos}}
+                                        </th>
+                                        <th scope="col">{{str_rank_player}}</th>
+                                        <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                        <th scope="col" class="text-center">{{str_rank_level}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#studentranking}}
+                                    <tr class="{{#isself}}table-primary{{/isself}}
+                                        {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                        <td class="text-center fw-bold">{{pos}}</td>
+                                        <td>{{name}}</td>
+                                        <td class="text-end">{{xp}}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{level}}</span>
+                                        </td>
+                                    </tr>
+                                    {{/studentranking}}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center p-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                data-show-label="{{str_show_all}}"
+                                data-hide-label="{{str_show_less}}">
+                                {{str_show_all}}
+                            </button>
+                        </div>
+                    </div>
+                    {{/hasstudentranking}}
+
+                    {{#hasstaffranking}}
+                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstaff}}">
+                        {{^selfinstaff}}
+                        <div class="alert alert-secondary mx-3 mt-3">
+                            <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                            {{str_invite}}
+                        </div>
+                        {{/selfinstaff}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-center" style="width:3rem">
+                                            {{str_rank_pos}}
+                                        </th>
+                                        <th scope="col">{{str_rank_player}}</th>
+                                        <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                        <th scope="col" class="text-center">{{str_rank_level}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#staffranking}}
+                                    <tr class="{{#isself}}table-primary{{/isself}}
+                                        {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                        <td class="text-center fw-bold">{{pos}}</td>
+                                        <td>{{name}}</td>
+                                        <td class="text-end">{{xp}}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{level}}</span>
+                                        </td>
+                                    </tr>
+                                    {{/staffranking}}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center p-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                data-show-label="{{str_show_all}}"
+                                data-hide-label="{{str_show_less}}">
+                                {{str_show_all}}
+                            </button>
+                        </div>
+                    </div>
+                    {{/hasstaffranking}}
+                    {{/showbothtabs}}
+                </div>
+            </div>
+
+            {{! Today's games }}
+            <div class="card pg-hub-games-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-gamepad me-2" aria-hidden="true"></i>{{str_games}}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-2 row-cols-md-4 g-3">
+                        {{#games}}
+                        <div class="col">
+                            <div class="pg-hub-game-card text-center p-3 rounded
+                                {{#done}}pg-game-done{{/done}}
+                                {{#locked}}pg-game-locked{{/locked}}
+                                {{#pending}}pg-game-pending{{/pending}}">
+                                <i class="fa {{icon}} fs-3 mb-2
+                                    {{#done}}text-success{{/done}}
+                                    {{#locked}}text-muted{{/locked}}
+                                    {{#pending}}text-primary{{/pending}}"
+                                    aria-hidden="true"></i>
+                                <div class="fw-semibold small">{{name}}</div>
+                                <div class="mt-1">
+                                    {{#done}}
+                                    <span class="badge bg-success">
+                                        <i class="fa fa-check me-1" aria-hidden="true"></i>{{str_done}}
+                                    </span>
+                                    {{/done}}
+                                    {{#locked}}
+                                    <span class="badge bg-secondary">
+                                        <i class="fa fa-lock me-1" aria-hidden="true"></i>{{str_locked}}
+                                    </span>
+                                    {{/locked}}
+                                    {{#pending}}
+                                    <span class="badge bg-primary">{{str_pending}}</span>
+                                    {{/pending}}
+                                </div>
+                            </div>
+                        </div>
+                        {{/games}}
+                    </div>
+                </div>
+            </div>
+
+        </div>{{! end right column }}
+    </div>{{! end row }}
+    {{/noseason}}
+
+</div>{{! end pg-hub }}

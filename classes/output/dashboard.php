@@ -232,9 +232,9 @@ class dashboard implements renderable, templatable {
             $actions[] = [
                 'icon'       => 'fa-trophy',
                 'label'      => get_string('dashboard_card_hub', 'local_playergames'),
-                'url'        => '#',
-                'disabled'   => true,
-                'comingsoon' => $comingsoon,
+                'url'        => (new moodle_url('/local/playergames/hub.php'))->out(false),
+                'disabled'   => false,
+                'comingsoon' => false,
             ];
         }
 
@@ -296,9 +296,9 @@ class dashboard implements renderable, templatable {
             $cards[] = [
                 'icon'       => 'fa-trophy',
                 'label'      => get_string('dashboard_card_hub', 'local_playergames'),
-                'url'        => '#',
-                'disabled'   => true,
-                'comingsoon' => $comingsoon,
+                'url'        => (new moodle_url('/local/playergames/hub.php'))->out(false),
+                'disabled'   => false,
+                'comingsoon' => false,
             ];
         }
 
