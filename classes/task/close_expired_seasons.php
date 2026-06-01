@@ -24,17 +24,13 @@
 
 namespace local_playergames\task;
 
+use local_playergames\hub\season_manager;
+
 /**
- * Sets status to 'closed' for any season where enddate < now and status = 'active'.
- * Fires season_closed event for each closed season.
+ * Closes active seasons whose enddate < now and optionally creates the next one.
  *
- * Auto-renewal (Phase 4): after closing a season, if the admin setting
- * 'autorenew_seasons' is enabled and no active/upcoming season exists, this
- * task creates the next season automatically using 'season_duration_months'
- * (default 6). The new season inherits the XP caps from the closed season's
- * config_snapshot so settings stay consistent until the admin changes them.
- *
- * Full implementation in Phase 4.
+ * If autorenew_seasons is enabled and no active or upcoming season exists after
+ * closing, season_manager::create_next() is called to schedule a new season.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -51,17 +47,43 @@ class close_expired_seasons extends \core\task\scheduled_task {
     }
 
     /**
-     * Executes the task.
+     * Closes expired seasons and auto-renews if configured.
      *
      * @return void
      */
     public function execute(): void {
-        // Stub: implemented in Phase 4.
-        // Phase 4 sequence:
-        // 1. Find seasons with enddate < time() and status = 'active'.
-        // 2. For each: set status = 'closed', fire season_closed event.
-        // 3. If autorenew_seasons is enabled and no active/upcoming season exists,
-        // call season_manager::create_next() — inherits config_snapshot and uses
-        // season_duration_months to calculate the new enddate.
+        global $DB;
+        $now     = time();
+        $expired = $DB->get_records_select(
+            'local_playergames_seasons',
+            "status = 'active' AND enddate < :now",
+            ['now' => $now]
+        );
+
+        foreach ($expired as $season) {
+            season_manager::close((int) $season->id);
+            mtrace("Closed season {$season->id}: {$season->name}");
+        }
+
+        if (empty($expired)) {
+            return;
+        }
+
+        $autorenew = (bool) get_config('local_playergames', 'autorenew_seasons');
+        if (!$autorenew) {
+            return;
+        }
+
+        $next = season_manager::get_active_or_upcoming();
+        if ($next) {
+            return;
+        }
+
+        $lastclosed = end($expired);
+        $newseason  = season_manager::create_next($lastclosed);
+        mtrace("Auto-created next season {$newseason->id}: {$newseason->name}");
+
+        season_manager::activate((int) $newseason->id);
+        mtrace("Activated season {$newseason->id}");
     }
 }

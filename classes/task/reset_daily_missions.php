@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Scheduled task: reset daily missions for all users.
+ * Scheduled task: reset daily missions and process streak breaks.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,10 +24,17 @@
 
 namespace local_playergames\task;
 
+use local_playergames\hub\mission_manager;
+use local_playergames\hub\season_manager;
+use local_playergames\hub\streak_manager;
+
 /**
- * Resets completion status of daily-type missions in mission_progress at midnight.
+ * Runs at midnight to reset daily missions and process streak breaks.
  *
- * Full implementation in Phase 4.
+ * Sequence:
+ *   1. Process streak breaks for users who missed yesterday (freeze or reset).
+ *   2. Reset daily mission progress for all users in the active season.
+ *   3. Reset checkin_streak progress for users who missed a check-in yesterday.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -44,11 +51,27 @@ class reset_daily_missions extends \core\task\scheduled_task {
     }
 
     /**
-     * Executes the task.
+     * Resets daily missions and processes streak breaks.
      *
      * @return void
      */
     public function execute(): void {
-        // Stub: implemented in Phase 4.
+        $today     = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $yesterday = $today - DAYSECS;
+
+        $broken = streak_manager::process_breaks();
+        mtrace("Streak breaks processed: {$broken}");
+
+        $season = season_manager::get_active();
+        if (!$season) {
+            mtrace('No active season — skipping mission reset.');
+            return;
+        }
+
+        mission_manager::reset_daily((int) $season->id);
+        mtrace('Daily missions reset for season ' . $season->id);
+
+        mission_manager::reset_missed_checkin_streaks((int) $season->id, $yesterday);
+        mtrace('Checkin streak missions reset for missed users.');
     }
 }

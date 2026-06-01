@@ -15,46 +15,47 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Event fired when a player reaches a new level.
+ * Level-to-title mapping for local_playergames.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_playergames\event;
+namespace local_playergames\hub;
 
 /**
- * Fired by xp_manager::award() when the user's level increases.
+ * Maps player levels to display titles using lang strings.
+ *
+ * Titles are shown on user profiles and in forum posts (Phase 6).
+ * Each level maps to a lang string key of the form level_title_{n}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class level_reached extends \core\event\base {
-    #[\Override]
-    protected function init(): void {
-        $this->data['objecttable'] = 'local_playergames_player_profile';
-        $this->data['crud']        = 'u';
-        $this->data['edulevel']    = self::LEVEL_PARTICIPATING;
+class title_manager {
+    /** @var int Highest level with a defined title (mirrors xp_manager::MAX_LEVEL). */
+    const MAX_LEVEL = 20;
+
+    /**
+     * Returns the lang string key for a given level.
+     *
+     * @param int $level Player level (1–MAX_LEVEL).
+     * @return string Lang string key, e.g. 'level_title_5'.
+     */
+    public static function get_string_key(int $level): string {
+        $clamped = max(1, min($level, self::MAX_LEVEL));
+        return 'level_title_' . $clamped;
     }
 
     /**
-     * Returns the human-readable event name.
+     * Returns the translated title for a given level.
      *
-     * @return string
+     * @param int $level Player level (1–MAX_LEVEL).
+     * @return string Translated title string.
      */
-    public static function get_name(): string {
-        return get_string('event_level_reached', 'local_playergames');
-    }
-
-    /**
-     * Returns a description of what happened.
-     *
-     * @return string
-     */
-    public function get_description(): string {
-        return "User with id '{$this->userid}' reached a new level in season " .
-            "with id '{$this->other['seasonid']}'.";
+    public static function get_title(int $level): string {
+        return get_string(self::get_string_key($level), 'local_playergames');
     }
 }

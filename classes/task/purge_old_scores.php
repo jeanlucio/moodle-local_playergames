@@ -25,11 +25,11 @@
 namespace local_playergames\task;
 
 /**
- * Removes daily_scores rows whose gamedate falls in seasons closed more than
- * N seasons ago (default 2). Never purges the active or immediately preceding season.
- * N is configurable via admin setting (added in Phase 4).
+ * Removes daily_scores rows from seasons closed more than N seasons ago.
  *
- * Full implementation in Phase 4.
+ * N is configured via the admin setting 'seasons_keep' (default 2).
+ * The active season and the N most-recently-closed seasons are always preserved.
+ * Only seasons with status = 'closed' are considered for purge.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -46,11 +46,49 @@ class purge_old_scores extends \core\task\scheduled_task {
     }
 
     /**
-     * Executes the task.
+     * Deletes daily_scores rows for seasons older than the retention window.
      *
      * @return void
      */
     public function execute(): void {
-        // Stub: implemented in Phase 4.
+        global $DB;
+        $keep = max(1, (int) get_config('local_playergames', 'seasons_keep') ?: 2);
+
+        $closedseasons = $DB->get_records_select(
+            'local_playergames_seasons',
+            "status = 'closed'",
+            [],
+            'enddate DESC',
+            'id, name, startdate, enddate'
+        );
+
+        if (count($closedseasons) <= $keep) {
+            mtrace('Not enough closed seasons to purge — nothing to do.');
+            return;
+        }
+
+        $preserved = array_slice(array_keys($closedseasons), 0, $keep);
+        $purge     = array_slice(array_keys($closedseasons), $keep);
+
+        foreach ($purge as $seasonid) {
+            $season   = $closedseasons[$seasonid];
+            $deleted  = $DB->count_records_select(
+                'local_playergames_daily_scores',
+                'gamedate BETWEEN :start AND :end',
+                ['start' => $season->startdate, 'end' => $season->enddate]
+            );
+            $DB->delete_records_select(
+                'local_playergames_daily_scores',
+                'gamedate BETWEEN :start AND :end',
+                ['start' => $season->startdate, 'end' => $season->enddate]
+            );
+            mtrace("Purged {$deleted} daily_scores rows for season {$seasonid}: {$season->name}");
+        }
+
+        $preservednames = implode(', ', array_map(
+            fn($id) => $closedseasons[$id]->name,
+            $preserved
+        ));
+        mtrace("Preserved seasons: {$preservednames}");
     }
 }

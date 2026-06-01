@@ -124,6 +124,46 @@ if ($hassiteconfig) {
         $participantoptions
     ));
 
+    $page2->add(new admin_setting_heading(
+        'local_playergames/xp_heading',
+        get_string('settings_xp_heading', 'local_playergames'),
+        get_string('settings_xp_heading_desc', 'local_playergames')
+    ));
+
+    foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
+        $page2->add(new admin_setting_configtext(
+            'local_playergames/xp_cap_' . $gametype,
+            get_string('settings_xp_cap_' . $gametype, 'local_playergames'),
+            get_string('settings_xp_cap_' . $gametype . '_desc', 'local_playergames'),
+            '25',
+            PARAM_INT
+        ));
+    }
+
+    $page2->add(new admin_setting_configtext(
+        'local_playergames/xp_checkin_daily',
+        get_string('settings_xp_checkin_daily', 'local_playergames'),
+        get_string('settings_xp_checkin_daily_desc', 'local_playergames'),
+        '5',
+        PARAM_INT
+    ));
+
+    $page2->add(new admin_setting_configtext(
+        'local_playergames/xp_cap_checkin_season',
+        get_string('settings_xp_cap_checkin_season', 'local_playergames'),
+        get_string('settings_xp_cap_checkin_season_desc', 'local_playergames'),
+        '150',
+        PARAM_INT
+    ));
+
+    $page2->add(new admin_setting_configtext(
+        'local_playergames/seasons_keep',
+        get_string('settings_seasons_keep', 'local_playergames'),
+        get_string('settings_seasons_keep_desc', 'local_playergames'),
+        '2',
+        PARAM_INT
+    ));
+
     $ADMIN->add('playergames', $page2);
 
     // Games.

@@ -1,0 +1,253 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * XP and level manager for local_playergames.
+ *
+ * @package    local_playergames
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace local_playergames\hub;
+
+use cache;
+use local_playergames\event\level_reached;
+use stdClass;
+
+/**
+ * Manages XP award, daily cap enforcement, level calculation and ranking cache.
+ *
+ * Flow for game handlers (Phase 5):
+ *   1. Validate game and re-fetch the concept server-side.
+ *   2. Call xp_manager::award() to get the capped XP amount.
+ *   3. Write daily_scores with xpawarded = return value.
+ *   4. Fire game_completed event.
+ *
+ * award() checks the per-gametype daily cap via daily_scores so that
+ * mid-day replays beyond the cap correctly return 0.
+ *
+ * @package    local_playergames
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class xp_manager {
+    /** @var int Maximum achievable level. */
+    const MAX_LEVEL = 20;
+
+    /**
+     * Minimum cumulative XP required to reach each level (1-indexed).
+     *
+     * Level 20 aligns with ~180 days of full daily activity in a 6-month season.
+     *
+     * @var array<int, int>
+     */
+    const LEVEL_THRESHOLDS = [
+        1  => 0,
+        2  => 100,
+        3  => 300,
+        4  => 600,
+        5  => 1000,
+        6  => 1500,
+        7  => 2100,
+        8  => 2800,
+        9  => 3600,
+        10 => 4500,
+        11 => 5500,
+        12 => 6600,
+        13 => 7800,
+        14 => 9100,
+        15 => 10500,
+        16 => 12000,
+        17 => 13600,
+        18 => 15300,
+        19 => 17100,
+        20 => 19000,
+    ];
+
+    /**
+     * Game types that bypass the daily XP cap (e.g. mission rewards).
+     *
+     * @var string[]
+     */
+    const UNCAPPED_TYPES = ['mission'];
+
+    /**
+     * Awards XP to a user for a specific game type, respecting the daily cap.
+     *
+     * Reads the cap from the season's config_snapshot. If the daily cap
+     * for this gametype has already been reached today, returns 0.
+     * Updates player_profile, fires level_reached if level changed,
+     * and invalidates the ranking cache.
+     *
+     * @param int $userid User to award XP to.
+     * @param int $xp Requested XP amount (before cap enforcement).
+     * @param string $gametype One of: quiz, guess, fill, battle, checkin, mission.
+     * @param int $gamedate Unix timestamp of the game date (midnight of the day).
+     * @param int $seasonid Season to award XP within.
+     * @return int Actual XP awarded (0 if cap already reached).
+     */
+    public static function award(int $userid, int $xp, string $gametype, int $gamedate, int $seasonid): int {
+        global $DB;
+        if ($xp <= 0) {
+            return 0;
+        }
+        $season   = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+        $snapshot = season_manager::get_config_snapshot($season);
+        $actual   = $xp;
+
+        if (!in_array($gametype, self::UNCAPPED_TYPES, true)) {
+            $capkey = 'xp_cap_' . $gametype;
+            $cap    = isset($snapshot[$capkey]) ? (int) $snapshot[$capkey] : 0;
+            if ($cap > 0) {
+                $alreadyearned = (int) $DB->get_field_sql(
+                    "SELECT COALESCE(SUM(xpawarded), 0)
+                       FROM {local_playergames_daily_scores}
+                      WHERE userid = :uid AND gamedate = :gd AND gametype = :gt",
+                    ['uid' => $userid, 'gd' => $gamedate, 'gt' => $gametype]
+                );
+                $actual = max(0, min($xp, $cap - $alreadyearned));
+                if ($actual <= 0) {
+                    return 0;
+                }
+            }
+            if ($gametype === 'checkin') {
+                $seasoncap     = isset($snapshot['xp_cap_checkin_season']) ? (int) $snapshot['xp_cap_checkin_season'] : 150;
+                $seasonearned  = (int) $DB->get_field_sql(
+                    "SELECT COALESCE(SUM(xpawarded), 0)
+                       FROM {local_playergames_daily_scores}
+                      WHERE userid = :uid AND gametype = 'checkin'
+                        AND gamedate BETWEEN :start AND :end",
+                    ['uid' => $userid, 'start' => $season->startdate, 'end' => $season->enddate]
+                );
+                $actual = max(0, min($actual, $seasoncap - $seasonearned));
+                if ($actual <= 0) {
+                    return 0;
+                }
+            }
+        }
+
+        $profile    = self::get_or_create_profile($userid, $seasonid);
+        $oldlevel   = self::get_level($profile->xp);
+        $profile->xp += $actual;
+        $newlevel   = self::get_level($profile->xp);
+        $profile->level         = $newlevel;
+        $profile->timemodified  = time();
+        $DB->update_record('local_playergames_player_profile', $profile);
+
+        if ($newlevel > $oldlevel) {
+            $event = level_reached::create([
+                'objectid' => $profile->id,
+                'context'  => \context_system::instance(),
+                'userid'   => $userid,
+                'other'    => ['seasonid' => $seasonid, 'level' => $newlevel],
+            ]);
+            $event->trigger();
+        }
+
+        self::invalidate_ranking_cache($seasonid);
+        return $actual;
+    }
+
+    /**
+     * Awards XP without any daily cap enforcement (used for mission rewards).
+     *
+     * @param int $userid
+     * @param int $xp
+     * @param int $seasonid
+     * @return int Actual XP awarded.
+     */
+    public static function award_uncapped(int $userid, int $xp, int $seasonid): int {
+        if ($xp <= 0) {
+            return 0;
+        }
+        $today    = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        return self::award($userid, $xp, 'mission', $today, $seasonid);
+    }
+
+    /**
+     * Returns the level corresponding to a given XP total.
+     *
+     * @param int $xp Total cumulative XP.
+     * @return int Level (1–MAX_LEVEL).
+     */
+    public static function get_level(int $xp): int {
+        $level = 1;
+        foreach (self::LEVEL_THRESHOLDS as $lvl => $threshold) {
+            if ($xp >= $threshold) {
+                $level = $lvl;
+            } else {
+                break;
+            }
+        }
+        return min($level, self::MAX_LEVEL);
+    }
+
+    /**
+     * Returns the minimum XP required to reach a specific level.
+     *
+     * @param int $level Target level (1–MAX_LEVEL).
+     * @return int XP threshold.
+     */
+    public static function get_xp_for_level(int $level): int {
+        $clamped = max(1, min($level, self::MAX_LEVEL));
+        return self::LEVEL_THRESHOLDS[$clamped];
+    }
+
+    /**
+     * Returns the player_profile record for a user/season, creating it if absent.
+     *
+     * @param int $userid
+     * @param int $seasonid
+     * @return stdClass
+     */
+    public static function get_or_create_profile(int $userid, int $seasonid): stdClass {
+        global $DB;
+        $profile = $DB->get_record(
+            'local_playergames_player_profile',
+            ['userid' => $userid, 'seasonid' => $seasonid]
+        );
+        if ($profile) {
+            return $profile;
+        }
+        $now             = time();
+        $profile         = new stdClass();
+        $profile->userid         = $userid;
+        $profile->seasonid       = $seasonid;
+        $profile->xp             = 0;
+        $profile->level          = 1;
+        $profile->showinranking  = 0;
+        $profile->timecreated    = $now;
+        $profile->timemodified   = $now;
+        $profile->id = $DB->insert_record('local_playergames_player_profile', $profile);
+        return $profile;
+    }
+
+    /**
+     * Deletes the cached ranking entry for a season.
+     *
+     * Called after every XP award so the ranking reflects the latest state
+     * within the 60-second TTL window.
+     *
+     * @param int $seasonid
+     * @return void
+     */
+    private static function invalidate_ranking_cache(int $seasonid): void {
+        $cache = cache::make('local_playergames', 'ranking');
+        $cache->delete('season_' . $seasonid . '_students');
+        $cache->delete('season_' . $seasonid . '_staff');
+    }
+}

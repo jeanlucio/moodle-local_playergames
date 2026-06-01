@@ -25,16 +25,26 @@
 namespace local_playergames\task;
 
 /**
- * Picks a random concept from active cartridges for each enabled game type
+ * Picks a random concept from active cartridges for each concept-based game
  * and writes a row to local_playergames_daily_assignments.
  *
- * Full implementation in Phase 4.
+ * PlayerBattle is excluded (questions are drawn dynamically from cartridges
+ * during gameplay). Check-in has no concept. Only quiz, guess, and fill are assigned.
+ *
+ * Idempotent: if an assignment already exists for today and a given gametype,
+ * it is left unchanged.
+ *
+ * Wordle-style filter for PlayerGuess: only concepts whose term length falls
+ * between wordle_minlen and wordle_maxlen (admin settings) are eligible.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class assign_daily_games extends \core\task\scheduled_task {
+    /** @var string[] Game types that receive a concept assignment. */
+    private const CONCEPT_GAMES = ['quiz', 'guess', 'fill'];
+
     /**
      * Returns the human-readable task name.
      *
@@ -45,11 +55,79 @@ class assign_daily_games extends \core\task\scheduled_task {
     }
 
     /**
-     * Executes the task.
+     * Assigns a concept to each concept-based game for today.
      *
      * @return void
      */
     public function execute(): void {
-        // Stub: implemented in Phase 4.
+        global $DB;
+        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+
+        $activeids = $DB->get_fieldset_select(
+            'local_playergames_cartridges',
+            'id',
+            'active = 1'
+        );
+        if (empty($activeids)) {
+            mtrace('No active cartridges — skipping assignment.');
+            return;
+        }
+
+        $minlen = (int) get_config('local_playergames', 'wordle_minlen') ?: 4;
+        $maxlen = (int) get_config('local_playergames', 'wordle_maxlen') ?: 8;
+
+        foreach (self::CONCEPT_GAMES as $gametype) {
+            $alreadyassigned = $DB->record_exists(
+                'local_playergames_daily_assignments',
+                ['gamedate' => $today, 'gametype' => $gametype]
+            );
+            if ($alreadyassigned) {
+                mtrace("Assignment already exists for {$gametype} today — skipping.");
+                continue;
+            }
+
+            $conceptid = $this->pick_concept($activeids, $gametype, $minlen, $maxlen);
+            if ($conceptid === null) {
+                mtrace("No eligible concept found for {$gametype} — skipping.");
+                continue;
+            }
+
+            $record           = new \stdClass();
+            $record->gamedate = $today;
+            $record->gametype = $gametype;
+            $record->conceptid = $conceptid;
+            $DB->insert_record('local_playergames_daily_assignments', $record);
+            mtrace("Assigned concept {$conceptid} to {$gametype} for today.");
+        }
+    }
+
+    /**
+     * Picks a random eligible concept for a given game type.
+     *
+     * @param int[] $cartridgeids Active cartridge IDs.
+     * @param string $gametype Game type to pick for.
+     * @param int $minlen Minimum term length (used for 'guess').
+     * @param int $maxlen Maximum term length (used for 'guess').
+     * @return int|null Concept ID or null if none found.
+     */
+    private function pick_concept(array $cartridgeids, string $gametype, int $minlen, int $maxlen): ?int {
+        global $DB;
+
+        [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
+        $where = "cartridgeid {$insql}";
+
+        if ($gametype === 'guess') {
+            $params['minlen'] = $minlen;
+            $params['maxlen'] = $maxlen;
+            $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
+            $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
+        }
+
+        $ids = $DB->get_fieldset_select('local_playergames_concepts', 'id', $where, $params);
+        if (empty($ids)) {
+            return null;
+        }
+
+        return (int) $ids[array_rand($ids)];
     }
 }
