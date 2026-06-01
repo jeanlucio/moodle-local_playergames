@@ -216,11 +216,19 @@ class hub implements renderable, templatable {
      * @return int[]
      */
     private function get_staff_ids(context_system $context): array {
+        global $CFG;
+
         $users = get_users_by_capability($context, 'moodle/course:manageactivities', 'u.id');
-        if (empty($users)) {
-            return [];
+        $ids   = empty($users) ? [] : array_map('intval', array_column((array) $users, 'id'));
+
+        // Site admins have all capabilities implicitly but are not returned by
+        // get_users_by_capability. Merge them into the staff set.
+        if (!empty($CFG->siteadmins)) {
+            $adminids = array_map('intval', explode(',', $CFG->siteadmins));
+            $ids      = array_values(array_unique(array_merge($ids, $adminids)));
         }
-        return array_map('intval', array_column((array) $users, 'id'));
+
+        return $ids;
     }
 
     /**
@@ -245,18 +253,24 @@ class hub implements renderable, templatable {
         $filter = '';
 
         if (!empty($staffids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal($staffids, SQL_PARAMS_NAMED, 'uid');
-            $params  = array_merge($params, $inparams);
-            $filter  = $wantstaff
-                ? "AND p.userid {$insql}"
-                : "AND p.userid NOT {$insql}";
+            [$insql, $inparams] = $DB->get_in_or_equal(
+                $staffids,
+                SQL_PARAMS_NAMED,
+                'uid',
+                $wantstaff
+            );
+            $params = array_merge($params, $inparams);
+            $filter = "AND p.userid {$insql}";
         } else if ($wantstaff) {
             // No staff users — staff ranking is empty.
             $cache->set($cachekey, []);
             return [];
         }
 
-        $sql = "SELECT p.userid, p.xp, p.level, u.firstname, u.lastname
+        $sql = "SELECT p.userid, p.xp, p.level,
+                       u.firstname, u.lastname,
+                       u.firstnamephonetic, u.lastnamephonetic,
+                       u.middlename, u.alternatename
                   FROM {local_playergames_player_profile} p
                   JOIN {user} u ON u.id = p.userid
                  WHERE p.seasonid = :seasonid
