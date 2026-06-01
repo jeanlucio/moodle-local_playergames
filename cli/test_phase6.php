@@ -134,8 +134,8 @@ function cleanup(int $seasonid, int $userid, bool $keepdb, ?int $prevactiveid): 
 }
 
 // ---------------------------------------------------------------------------
-// Minimal renderer stub for export_for_template().
-// The real Moodle page renderer is not available in CLI context.
+// Minimal renderer stub: the real Moodle page renderer is unavailable in CLI context.
+// phpcs:disable moodle.Commenting.MissingDocblock.Class,moodle.Commenting.MissingDocblock.Function
 $stubrenderer = new class extends \renderer_base {
     /** @var \moodle_page */
     public $page;
@@ -147,6 +147,7 @@ $stubrenderer = new class extends \renderer_base {
         return '';
     }
 };
+// phpcs:enable moodle.Commenting.MissingDocblock.Class,moodle.Commenting.MissingDocblock.Function
 
 // ---------------------------------------------------------------------------
 
@@ -234,7 +235,7 @@ foreach ($leveldata as $k) {
 // ---------------------------------------------------------------------------
 section('4. Ranking and cache');
 
-// showinranking is 0 by default — ranking should be empty.
+// Showinranking is 0 by default: ranking should be empty.
 $ranking = $data['studentranking'] ?? $data['staffranking'] ?? [];
 ok('Ranking empty when showinranking=0', empty($ranking));
 
