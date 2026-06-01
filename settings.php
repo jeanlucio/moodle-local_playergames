@@ -218,4 +218,15 @@ if ($hassiteconfig) {
             'local/playergames:viewengagementmeter'
         )
     );
+
+    // Ecosystem dashboard.
+    $ADMIN->add(
+        'playergames',
+        new admin_externalpage(
+            'local_playergames_dashboard',
+            get_string('dashboard_pagetitle', 'local_playergames'),
+            new moodle_url('/local/playergames/dashboard.php'),
+            'local/playergames:viewdashboard'
+        )
+    );
 }

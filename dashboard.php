@@ -15,7 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Intelligent redirect for local_playergames.
+ * Player ecosystem dashboard entry point.
+ *
+ * Shows a quick-access nav grid and an SVG map of all Player plugins with
+ * their installation status and dependency arrows.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,16 +27,29 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_playergames\output\dashboard;
+
 require_login();
 
 $context = context_system::instance();
-$PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/local/playergames/index.php'));
+require_capability('local/playergames:viewdashboard', $context);
 
-if (has_capability('local/playergames:viewdashboard', $context)) {
-    redirect(new moodle_url('/local/playergames/dashboard.php'));
-} else if (has_capability('local/playergames:viewhub', $context)) {
-    redirect(new moodle_url('/local/playergames/hub.php'));
-} else {
-    redirect(new moodle_url('/'));
-}
+$PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/local/playergames/dashboard.php'));
+$PAGE->set_pagelayout('standard');
+
+$title = get_string('dashboard_pagetitle', 'local_playergames');
+$PAGE->set_title($title);
+$PAGE->set_heading($title);
+
+$PAGE->requires->js_call_amd('local_playergames/dashboard', 'init');
+
+echo $OUTPUT->header();
+
+$renderable = new dashboard();
+echo $OUTPUT->render_from_template(
+    'local_playergames/dashboard',
+    $renderable->export_for_template($OUTPUT)
+);
+
+echo $OUTPUT->footer();

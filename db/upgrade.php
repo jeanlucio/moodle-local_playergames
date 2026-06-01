@@ -452,5 +452,10 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026060100, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026060101) {
+        // Capability resync: viewdashboard extended to teacher and editingteacher.
+        upgrade_plugin_savepoint(true, 2026060101, 'local', 'playergames');
+    }
+
     return true;
 }

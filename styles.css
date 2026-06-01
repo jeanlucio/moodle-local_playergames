@@ -39,3 +39,80 @@ body.path-local-playergames .pg-gap-2 {
 body.path-local-playergames .pg-gap-3 {
     gap: 1rem;
 }
+
+/* ── Ecosystem dashboard ─────────────────────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-nav-card {
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0.5rem;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    color: inherit;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-nav-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-wrap {
+    overflow-x: auto;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-svg {
+    width: 100%;
+    max-width: 700px;
+    display: block;
+    margin-inline: auto;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge {
+    stroke: var(--text-muted, #6c757d);
+    stroke-width: 1.5;
+    fill: none;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge-missing {
+    stroke: #cbd5e1;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-arrow-marker {
+    fill: var(--text-muted, #6c757d);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-node {
+    cursor: pointer;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-node:focus {
+    outline: 3px solid var(--primary, #0f6cbf);
+    outline-offset: 4px;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-node-hub circle {
+    stroke: #fff;
+    stroke-width: 3;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-node-missing circle {
+    stroke: #94a3b8;
+    stroke-width: 2;
+    stroke-dasharray: 7 4;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-node-abbr {
+    fill: #fff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: inherit;
+    pointer-events: none;
+    user-select: none;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-node-label {
+    fill: var(--body-color, #1d2125);
+    font-size: 0.75rem;
+    font-family: inherit;
+    pointer-events: none;
+    user-select: none;
+}

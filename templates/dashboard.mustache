@@ -1,0 +1,174 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/dashboard
+
+    Player ecosystem dashboard: quick-access nav cards and SVG plugin map.
+
+    Classes required for JS:
+    * pg-ecosystem-node — SVG <g> element for each plugin node (click opens modal).
+
+    Data attributes required for JS:
+    * data-component — plugin frankenstyle component.
+    * data-name      — plugin display name (used as modal title).
+
+    Example context (json):
+    {
+        "str_heading_nav": "Quick access",
+        "str_heading_ecosystem": "Plugin ecosystem",
+        "hasnavcards": true,
+        "navcards": [
+            {
+                "icon": "fa-box-archive",
+                "label": "Concept Cartridges",
+                "url": "/local/playergames/cartridge.php",
+                "disabled": false,
+                "comingsoon": false
+            }
+        ],
+        "svgviewbox": "0 0 700 500",
+        "svgedges": [
+            {
+                "x1": 350, "y1": 129, "x2": 350, "y2": 188,
+                "cssclass": "pg-edge-installed",
+                "strokedash": ""
+            }
+        ],
+        "svgnodes": [
+            {
+                "component": "local_playergames",
+                "displayname": "Player Games",
+                "abbr": "PG",
+                "cx": 350, "cy": 240, "labelcy": 302, "r": 44,
+                "ishub": true,
+                "fill": "#4f46e5",
+                "cssclass": "pg-ecosystem-node pg-node-hub pg-node-installed",
+                "installed": "1",
+                "isinstalled": true,
+                "description": "Hub plugin for the Player ecosystem.",
+                "version": "0.9.0",
+                "hasversion": true,
+                "statuslabel": "Installed",
+                "statusbadge": "bg-success",
+                "hasactions": true,
+                "actions": [
+                    {
+                        "icon": "fa-box-archive",
+                        "label": "Concept Cartridges",
+                        "url": "/local/playergames/cartridge.php",
+                        "disabled": false,
+                        "comingsoon": false
+                    }
+                ]
+            }
+        ]
+    }
+}}
+<div class="local-playergames-dashboard">
+
+    {{#hasnavcards}}
+    <h2 class="h5 mb-3">{{str_heading_nav}}</h2>
+    <div class="row g-3 mb-5">
+        {{#navcards}}
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+            <a href="{{url}}"
+               class="card text-center text-decoration-none pg-nav-card h-100{{#disabled}} opacity-50 pe-none{{/disabled}}"
+               {{#disabled}}aria-disabled="true"{{/disabled}}>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3 gap-2">
+                    <i class="fa {{icon}} fa-2x" aria-hidden="true"></i>
+                    <span class="small fw-semibold">{{label}}</span>
+                    {{#comingsoon}}<span class="badge bg-secondary">{{comingsoon}}</span>{{/comingsoon}}
+                </div>
+            </a>
+        </div>
+        {{/navcards}}
+    </div>
+    {{/hasnavcards}}
+
+    <h2 class="h5 mb-3">{{str_heading_ecosystem}}</h2>
+    <div class="pg-ecosystem-wrap">
+        <svg viewBox="{{svgviewbox}}"
+             class="pg-ecosystem-svg"
+             role="img"
+             aria-label="{{str_heading_ecosystem}}">
+            <title>{{str_heading_ecosystem}}</title>
+            <defs>
+                <marker id="pg-arrow"
+                        markerWidth="8"
+                        markerHeight="6"
+                        refX="7"
+                        refY="3"
+                        orient="auto"
+                        aria-hidden="true">
+                    <polygon points="0 0, 8 3, 0 6" class="pg-arrow-marker"/>
+                </marker>
+            </defs>
+
+            {{#svgedges}}
+            <line x1="{{x1}}" y1="{{y1}}" x2="{{x2}}" y2="{{y2}}"
+                  class="pg-edge {{cssclass}}"
+                  stroke-dasharray="{{strokedash}}"
+                  marker-end="url(#pg-arrow)"
+                  aria-hidden="true"/>
+            {{/svgedges}}
+
+            {{#svgnodes}}
+            <g class="{{cssclass}}"
+               data-component="{{component}}"
+               data-name="{{displayname}}"
+               role="button"
+               tabindex="0"
+               aria-label="{{displayname}}, {{statuslabel}}">
+                <circle cx="{{cx}}" cy="{{cy}}" r="{{r}}" fill="{{fill}}"/>
+                <text x="{{cx}}" y="{{cy}}"
+                      text-anchor="middle"
+                      dominant-baseline="central"
+                      class="pg-node-abbr"
+                      aria-hidden="true">{{abbr}}</text>
+                <text x="{{cx}}" y="{{labelcy}}"
+                      text-anchor="middle"
+                      class="pg-node-label"
+                      aria-hidden="true">{{displayname}}</text>
+            </g>
+            {{/svgnodes}}
+        </svg>
+    </div>
+
+</div>
+
+{{! Hidden modal content blocks — one per plugin, read by dashboard.js }}
+{{#svgnodes}}
+<div id="pg-modal-{{component}}" class="d-none">
+    <p class="mb-2">{{description}}</p>
+    <p class="mb-0">
+        <span class="badge {{statusbadge}}">{{statuslabel}}</span>
+        {{#hasversion}}<small class="text-muted ms-2">v{{version}}</small>{{/hasversion}}
+    </p>
+    {{#hasactions}}
+    <hr class="my-3">
+    <div class="list-group list-group-flush">
+        {{#actions}}
+        <a href="{{url}}"
+           class="list-group-item list-group-item-action{{#disabled}} disabled{{/disabled}}">
+            <i class="fa {{icon}} me-2" aria-hidden="true"></i>{{label}}
+            {{#comingsoon}}<span class="badge bg-secondary ms-2">{{comingsoon}}</span>{{/comingsoon}}
+        </a>
+        {{/actions}}
+    </div>
+    {{/hasactions}}
+</div>
+{{/svgnodes}}
