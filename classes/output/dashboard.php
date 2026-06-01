@@ -68,7 +68,7 @@ class dashboard implements renderable, templatable {
      * Exports data for the dashboard Mustache template.
      *
      * @param renderer_base $output Moodle renderer (unused; kept for interface).
-     * @return array<string, mixed>
+     * @return array
      */
     public function export_for_template(renderer_base $output): array {
         $context   = context_system::instance();
@@ -92,10 +92,10 @@ class dashboard implements renderable, templatable {
     /**
      * Calculates SVG node and edge data for all plugins.
      *
-     * @param array<int, array<string, mixed>>             $catalog   Plugin definitions.
-     * @param array<string, array{installed: bool, version: string}> $statusmap Installation status keyed by component.
-     * @param context_system                               $context   System context for capability checks.
-     * @return array{0: array<int, array<string, mixed>>, 1: array<int, array<string, mixed>>}
+     * @param array $catalog Plugin definitions from the plugin registry.
+     * @param array $statusmap Installation status keyed by component name.
+     * @param context_system $context System context for capability checks.
+     * @return array Two-element array: [nodes[], edges[]] for the SVG template.
      */
     private function build_svg(array $catalog, array $statusmap, context_system $context): array {
         $hubcx     = self::HUB_CX;
@@ -120,7 +120,7 @@ class dashboard implements renderable, templatable {
         // Peripheral plugins arranged in a circle.
         $peripherals  = array_slice($catalog, 1);
         $count        = count($peripherals);
-        $angleoffset  = -M_PI / 2; // start at top
+        $angleoffset  = -M_PI / 2; // Start at the top of the circle.
 
         foreach ($peripherals as $i => $def) {
             $angle     = $angleoffset + ($i * 2 * M_PI / $count);
@@ -155,14 +155,14 @@ class dashboard implements renderable, templatable {
     /**
      * Builds the data array for a single SVG node.
      *
-     * @param array<string, mixed> $def       Plugin registry definition.
-     * @param int                  $cx        Node centre X in SVG coordinates.
-     * @param int                  $cy        Node centre Y in SVG coordinates.
-     * @param bool                 $installed Whether the plugin is installed.
-     * @param bool                 $ishub     Whether this is the centre hub node.
-     * @param string               $version   Release version string, or empty.
-     * @param array<int, array<string, mixed>> $actions Capability-filtered action links.
-     * @return array<string, mixed>
+     * @param array $def Plugin registry definition.
+     * @param int $cx Node centre X in SVG coordinates.
+     * @param int $cy Node centre Y in SVG coordinates.
+     * @param bool $installed Whether the plugin is installed.
+     * @param bool $ishub Whether this is the centre hub node.
+     * @param string $version Release version string, or empty.
+     * @param array $actions Capability-filtered action links.
+     * @return array
      */
     private function build_node(
         array $def,
@@ -212,7 +212,7 @@ class dashboard implements renderable, templatable {
      * Returns capability-filtered action links shown in the hub node modal.
      *
      * @param context_system $context System context for capability checks.
-     * @return array<int, array<string, mixed>>
+     * @return array
      */
     private function build_hub_actions(context_system $context): array {
         $comingsoon = get_string('dashboard_card_comingsoon', 'local_playergames');
@@ -276,7 +276,7 @@ class dashboard implements renderable, templatable {
      * Builds the quick-access nav cards shown above the SVG.
      *
      * @param context_system $context System context.
-     * @return array<int, array<string, mixed>>
+     * @return array
      */
     private function build_nav_cards(context_system $context): array {
         $comingsoon = get_string('dashboard_card_comingsoon', 'local_playergames');
