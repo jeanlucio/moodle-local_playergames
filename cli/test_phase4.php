@@ -63,9 +63,16 @@ $failed  = 0;
 $seasonid = 0;
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// Helpers.
 
+/**
+ * Prints a pass/fail check line and updates global counters.
+ *
+ * @param string $label     Short description of the check.
+ * @param bool   $condition True if the check passed.
+ * @param string $detail    Optional detail appended in parentheses.
+ * @return void
+ */
 function ok(string $label, bool $condition, string $detail = ''): void {
     global $passed, $failed;
     $mark   = $condition ? "\033[32m✔\033[0m" : "\033[31m✘\033[0m";
@@ -78,11 +85,26 @@ function ok(string $label, bool $condition, string $detail = ''): void {
     }
 }
 
+/**
+ * Prints a bold section heading to the CLI output.
+ *
+ * @param string $title Section title.
+ * @return void
+ */
 function section(string $title): void {
     cli_writeln('');
     cli_writeln("\033[1m── {$title}\033[0m");
 }
 
+/**
+ * Deletes all test data created during the verification run.
+ *
+ * @param int      $seasonid     ID of the test season to remove.
+ * @param int      $userid       User ID whose test records are deleted.
+ * @param bool     $keepdb       When true, skip cleanup and leave data in DB.
+ * @param int|null $prevactiveid Season to restore to active status, if any.
+ * @return void
+ */
 function cleanup(int $seasonid, int $userid, bool $keepdb, ?int $prevactiveid): void {
     global $DB;
     if ($keepdb) {
@@ -107,8 +129,7 @@ function cleanup(int $seasonid, int $userid, bool $keepdb, ?int $prevactiveid): 
 }
 
 // ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
+// Main.
 
 cli_writeln('');
 cli_writeln("\033[1mPhase 4 — Player Hub Logic Verification\033[0m");
@@ -423,8 +444,7 @@ $DB->delete_records('local_playergames_seasons', ['id' => $old2]);
 set_config('seasons_keep', '2', 'local_playergames');
 
 // ---------------------------------------------------------------------------
-// Summary
-// ---------------------------------------------------------------------------
+// Summary.
 section('Summary');
 
 cleanup($seasonid, $userid, $keepdb, $prevactive ? (int) $prevactive->id : null);

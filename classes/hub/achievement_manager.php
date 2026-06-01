@@ -122,10 +122,10 @@ class achievement_manager {
      * Should be called after significant events: game completed, XP awarded,
      * streak updated, or level reached. Already-earned achievements are skipped.
      *
-     * @param int $userid
-     * @param int $seasonid Current season.
-     * @param string $trigger Event type: 'game_played', 'level_reached', 'streak_updated'.
-     * @param array<string, mixed> $context Contextual values (level, streak, gamedate, etc.).
+     * @param int    $userid
+     * @param int    $seasonid Current season.
+     * @param string $trigger  Event type: 'game_played', 'level_reached', 'streak_updated'.
+     * @param array  $context  Contextual values (level, streak, gamedate, etc.).
      * @return void
      */
     public static function check(int $userid, int $seasonid, string $trigger, array $context = []): void {
@@ -157,11 +157,11 @@ class achievement_manager {
     /**
      * Evaluates whether a single achievement condition is met.
      *
-     * @param int $userid
-     * @param int $seasonid
+     * @param int      $userid
+     * @param int      $seasonid
      * @param stdClass $achievement Achievement record.
-     * @param string $trigger
-     * @param array<string, mixed> $context
+     * @param string   $trigger
+     * @param array    $context
      * @return bool
      */
     private static function evaluate(

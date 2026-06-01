@@ -140,10 +140,10 @@ class mission_manager {
      *   'battle_won'    — completes battle_win mission
      *   'checkin'       — advances checkin_streak mission
      *
-     * @param int $userid
-     * @param int $seasonid
-     * @param string $trigger Event trigger key.
-     * @param array<string, mixed> $context Additional data for the trigger.
+     * @param int    $userid
+     * @param int    $seasonid
+     * @param string $trigger  Event trigger key.
+     * @param array  $context  Additional data for the trigger.
      * @return void
      */
     public static function update(int $userid, int $seasonid, string $trigger, array $context = []): void {
