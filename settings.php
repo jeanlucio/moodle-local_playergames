@@ -111,6 +111,19 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $participantoptions = [
+        'students' => get_string('settings_participants_students', 'local_playergames'),
+        'staff'    => get_string('settings_participants_staff', 'local_playergames'),
+        'both'     => get_string('settings_participants_both', 'local_playergames'),
+    ];
+    $page2->add(new admin_setting_configselect(
+        'local_playergames/allowed_participants',
+        get_string('settings_allowed_participants', 'local_playergames'),
+        get_string('settings_allowed_participants_desc', 'local_playergames'),
+        'students',
+        $participantoptions
+    ));
+
     $ADMIN->add('playergames', $page2);
 
     // Games.

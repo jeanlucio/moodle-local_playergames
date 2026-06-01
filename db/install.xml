@@ -19,7 +19,7 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="local_playergames_staff_profile" COMMENT="Staff gamification profile per season">
+    <TABLE NAME="local_playergames_player_profile" COMMENT="Player gamification profile per season">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>

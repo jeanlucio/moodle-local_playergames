@@ -43,15 +43,17 @@ $capabilities = [
         'captype'      => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [
+            'student'        => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager'        => CAP_ALLOW,
             'teacher'        => CAP_ALLOW,
         ],
     ],
-    'local/playergames:viewstaffhud' => [
+    'local/playergames:viewhub' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [
+            'student'        => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager'        => CAP_ALLOW,
             'teacher'        => CAP_ALLOW,

@@ -272,5 +272,185 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026052201, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026060100) {
+        // Create seasons table first (referenced by FK in player_profile and mission_progress).
+        $table = new xmldb_table('local_playergames_seasons');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+            $table->add_field('startdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('enddate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('status', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'upcoming');
+            $table->add_field('config_snapshot', XMLDB_TYPE_TEXT, null, null, null);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $dbman->create_table($table);
+        }
+
+        // Rename staff_profile to player_profile (audience expanded to students).
+        $oldtable = new xmldb_table('local_playergames_staff_profile');
+        if ($dbman->table_exists($oldtable)) {
+            $dbman->rename_table($oldtable, 'local_playergames_player_profile');
+        }
+
+        // Create player_profile if it doesn't exist yet.
+        $table = new xmldb_table('local_playergames_player_profile');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('seasonid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('xp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('level', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1');
+            $table->add_field('showinranking', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key(
+                'fk_season',
+                XMLDB_KEY_FOREIGN,
+                ['seasonid'],
+                'local_playergames_seasons',
+                ['id']
+            );
+            $table->add_key('uq_userid_seasonid', XMLDB_KEY_UNIQUE, ['userid', 'seasonid']);
+            $dbman->create_table($table);
+        }
+
+        // Create streaks table.
+        $table = new xmldb_table('local_playergames_streaks');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('currentstreak', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('longeststreak', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('freezesavailable', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('lastactivedate', XMLDB_TYPE_INTEGER, '10', null, null);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key('uq_userid', XMLDB_KEY_UNIQUE, ['userid']);
+            $dbman->create_table($table);
+        }
+
+        // Create daily_assignments table.
+        $table = new xmldb_table('local_playergames_daily_assignments');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('gamedate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('gametype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+            $table->add_field('conceptid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('idx_gamedate_gametype', XMLDB_INDEX_NOTUNIQUE, ['gamedate', 'gametype']);
+            $dbman->create_table($table);
+        }
+
+        // Create daily_scores table.
+        $table = new xmldb_table('local_playergames_daily_scores');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('gamedate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('gametype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+            $table->add_field('completed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('xpawarded', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('attempts', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timeplayed', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key(
+                'uq_userid_gamedate_gametype',
+                XMLDB_KEY_UNIQUE,
+                ['userid', 'gamedate', 'gametype']
+            );
+            $table->add_index('idx_gamedate_gametype', XMLDB_INDEX_NOTUNIQUE, ['gamedate', 'gametype']);
+            $dbman->create_table($table);
+        }
+
+        // Create missions table (before mission_progress which has FK to it).
+        $table = new xmldb_table('local_playergames_missions');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('type', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+            $table->add_field('targetvalue', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('xpreward', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('namestring', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $table->add_field('descstring', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $table->add_field('icon', XMLDB_TYPE_CHAR, '100', null, null);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $dbman->create_table($table);
+        }
+
+        // Create mission_progress table.
+        $table = new xmldb_table('local_playergames_mission_progress');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('missionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('seasonid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('currentvalue', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('completed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, null);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key(
+                'fk_mission',
+                XMLDB_KEY_FOREIGN,
+                ['missionid'],
+                'local_playergames_missions',
+                ['id']
+            );
+            $table->add_key(
+                'fk_season',
+                XMLDB_KEY_FOREIGN,
+                ['seasonid'],
+                'local_playergames_seasons',
+                ['id']
+            );
+            $table->add_key(
+                'uq_userid_missionid_seasonid',
+                XMLDB_KEY_UNIQUE,
+                ['userid', 'missionid', 'seasonid']
+            );
+            $dbman->create_table($table);
+        }
+
+        // Create achievements table (before user_achievements which has FK to it).
+        $table = new xmldb_table('local_playergames_achievements');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('namestring', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $table->add_field('descstring', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $table->add_field('icon', XMLDB_TYPE_CHAR, '100', null, null);
+            $table->add_field('conditiontype', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL);
+            $table->add_field('conditionvalue', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $dbman->create_table($table);
+        }
+
+        // Create user_achievements table.
+        $table = new xmldb_table('local_playergames_user_achievements');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('achievementid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key(
+                'fk_achievement',
+                XMLDB_KEY_FOREIGN,
+                ['achievementid'],
+                'local_playergames_achievements',
+                ['id']
+            );
+            $table->add_key('uq_userid_achievementid', XMLDB_KEY_UNIQUE, ['userid', 'achievementid']);
+            $table->add_index('idx_userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026060100, 'local', 'playergames');
+    }
+
     return true;
 }
