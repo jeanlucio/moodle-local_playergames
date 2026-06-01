@@ -1,0 +1,159 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/manage_seasons
+
+    Season management page: list, create, activate and close seasons.
+
+    Example context (json):
+    {
+        "notifications": "",
+        "seasons": [
+            {
+                "id": 1,
+                "name": "Season 1",
+                "startdate": "1 Jan 2026",
+                "enddate": "30 Jun 2026",
+                "status": "Active",
+                "statusbadge": "bg-success text-white",
+                "players": 12,
+                "canactivate": false,
+                "canclose": true
+            }
+        ],
+        "noseasons": false,
+        "formaction": "/local/playergames/manage_seasons.php",
+        "sesskey": "abc123",
+        "defaultname": "Season 2",
+        "defaultstart": "2026-07-01",
+        "defaultend": "2026-12-31",
+        "str_create": "Create new season",
+        "str_name": "Season name",
+        "str_startdate": "Start date",
+        "str_enddate": "End date",
+        "str_players": "Players",
+        "str_activate": "Activate",
+        "str_close": "Close season",
+        "str_noseasons": "No seasons yet. Create the first one below.",
+        "str_save": "Save changes",
+        "str_status": "Status",
+        "str_actions": "Actions"
+    }
+}}
+<div class="local-playergames-manage-seasons">
+
+    {{{notifications}}}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">{{str_create}}</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{formaction}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="create">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="pg-season-name" class="form-label">{{str_name}}</label>
+                        <input type="text"
+                               id="pg-season-name"
+                               name="name"
+                               class="form-control"
+                               value="{{defaultname}}"
+                               required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pg-season-start" class="form-label">{{str_startdate}}</label>
+                        <input type="date"
+                               id="pg-season-start"
+                               name="startdate"
+                               class="form-control"
+                               value="{{defaultstart}}"
+                               required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pg-season-end" class="form-label">{{str_enddate}}</label>
+                        <input type="date"
+                               id="pg-season-end"
+                               name="enddate"
+                               class="form-control"
+                               value="{{defaultend}}"
+                               required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">{{str_save}}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{#noseasons}}
+    <p class="text-muted">{{str_noseasons}}</p>
+    {{/noseasons}}
+
+    {{^noseasons}}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">{{str_name}}</th>
+                    <th scope="col">{{str_startdate}}</th>
+                    <th scope="col">{{str_enddate}}</th>
+                    <th scope="col">{{str_players}}</th>
+                    <th scope="col">{{str_status}}</th>
+                    <th scope="col">{{str_actions}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#seasons}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>{{startdate}}</td>
+                    <td>{{enddate}}</td>
+                    <td>{{players}}</td>
+                    <td><span class="badge {{statusbadge}}">{{status}}</span></td>
+                    <td>
+                        {{#canactivate}}
+                        <form method="post" action="{{formaction}}" class="d-inline">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="activate">
+                            <input type="hidden" name="seasonid" value="{{id}}">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                {{str_activate}}
+                            </button>
+                        </form>
+                        {{/canactivate}}
+                        {{#canclose}}
+                        <form method="post" action="{{formaction}}" class="d-inline">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="close">
+                            <input type="hidden" name="seasonid" value="{{id}}">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                {{str_close}}
+                            </button>
+                        </form>
+                        {{/canclose}}
+                    </td>
+                </tr>
+                {{/seasons}}
+            </tbody>
+        </table>
+    </div>
+    {{/noseasons}}
+
+</div>

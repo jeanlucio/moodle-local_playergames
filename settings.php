@@ -208,6 +208,17 @@ if ($hassiteconfig) {
 
     $ADMIN->add('playergames', $page3);
 
+    // Season management.
+    $ADMIN->add(
+        'playergames',
+        new admin_externalpage(
+            'local_playergames_manage_seasons',
+            get_string('season_manage_pagetitle', 'local_playergames'),
+            new moodle_url('/local/playergames/manage_seasons.php'),
+            'moodle/site:config'
+        )
+    );
+
     // Player Hub.
     $ADMIN->add(
         'playergames',
