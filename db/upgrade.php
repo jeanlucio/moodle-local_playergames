@@ -549,5 +549,29 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026060105, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026060106) {
+        $table = new xmldb_table('local_playergames_season_games');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('seasonid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('gametype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+            $table->add_field('enabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1');
+            $table->add_field('source', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'cartridge');
+            $table->add_field('cartridgeids', XMLDB_TYPE_TEXT, null, null, null);
+            $table->add_field('auxid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key(
+                'fk_season',
+                XMLDB_KEY_FOREIGN,
+                ['seasonid'],
+                'local_playergames_seasons',
+                ['id']
+            );
+            $table->add_key('uq_season_gametype', XMLDB_KEY_UNIQUE, ['seasonid', 'gametype']);
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, 2026060106, 'local', 'playergames');
+    }
+
     return true;
 }

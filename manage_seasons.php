@@ -100,15 +100,19 @@ foreach ($seasons as $season) {
         $statusbadge = 'bg-secondary text-white';
     }
     $seasondata[] = [
-        'id'          => (int) $season->id,
-        'name'        => format_string($season->name),
-        'startdate'   => userdate($season->startdate, get_string('strftimedatefullshort', 'langconfig')),
-        'enddate'     => userdate($season->enddate, get_string('strftimedatefullshort', 'langconfig')),
-        'status'      => get_string('season_status_' . $season->status, 'local_playergames'),
-        'statusbadge' => $statusbadge,
-        'players'     => $playercount,
-        'canactivate' => $season->status === season_manager::STATUS_UPCOMING,
-        'canclose'    => $season->status === season_manager::STATUS_ACTIVE,
+        'id'             => (int) $season->id,
+        'name'           => format_string($season->name),
+        'startdate'      => userdate($season->startdate, get_string('strftimedatefullshort', 'langconfig')),
+        'enddate'        => userdate($season->enddate, get_string('strftimedatefullshort', 'langconfig')),
+        'status'         => get_string('season_status_' . $season->status, 'local_playergames'),
+        'statusbadge'    => $statusbadge,
+        'players'        => $playercount,
+        'canactivate'    => $season->status === season_manager::STATUS_UPCOMING,
+        'canclose'       => $season->status === season_manager::STATUS_ACTIVE,
+        'gameconfigurl'  => (new moodle_url(
+            '/local/playergames/manage_season_games.php',
+            ['seasonid' => (int) $season->id]
+        ))->out(false),
     ];
 }
 
@@ -138,7 +142,8 @@ $templatedata = [
     'str_noseasons' => get_string('season_no_seasons', 'local_playergames'),
     'str_save'      => get_string('savechanges'),
     'str_status'    => get_string('season_col_status', 'local_playergames'),
-    'str_actions'   => get_string('season_col_actions', 'local_playergames'),
+    'str_actions'         => get_string('season_col_actions', 'local_playergames'),
+    'str_configure_games' => get_string('season_game_configure', 'local_playergames'),
 ];
 
 echo $OUTPUT->header();

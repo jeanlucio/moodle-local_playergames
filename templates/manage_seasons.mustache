@@ -32,7 +32,8 @@
                 "statusbadge": "bg-success text-white",
                 "players": 12,
                 "canactivate": false,
-                "canclose": true
+                "canclose": true,
+                "gameconfigurl": "/local/playergames/manage_season_games.php?seasonid=1"
             }
         ],
         "noseasons": false,
@@ -51,7 +52,8 @@
         "str_noseasons": "No seasons yet. Create the first one below.",
         "str_save": "Save changes",
         "str_status": "Status",
-        "str_actions": "Actions"
+        "str_actions": "Actions",
+        "str_configure_games": "Configure games"
     }
 }}
 <div class="local-playergames-manage-seasons">
@@ -128,6 +130,10 @@
                     <td>{{players}}</td>
                     <td><span class="badge {{statusbadge}}">{{status}}</span></td>
                     <td>
+                        <a href="{{gameconfigurl}}" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="fa fa-gamepad me-1" aria-hidden="true"></i>
+                            {{str_configure_games}}
+                        </a>
                         {{#canactivate}}
                         <form method="post" action="{{formaction}}" class="d-inline">
                             <input type="hidden" name="sesskey" value="{{sesskey}}">

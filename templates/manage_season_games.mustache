@@ -1,0 +1,155 @@
+{{!
+    @template local_playergames/manage_season_games
+
+    Per-season game configuration: enable/disable games and set content sources.
+
+    Example context (json):
+    {
+        "seasonname": "Season 1",
+        "formaction": "/local/playergames/manage_season_games.php?seasonid=1",
+        "sesskey": "abc123",
+        "backurl": "/local/playergames/manage_seasons.php",
+        "str_back": "Back to seasons",
+        "str_enabled": "Enabled",
+        "str_source": "Question source",
+        "str_cartridges": "Cartridges",
+        "str_cartridges_all": "All active cartridges",
+        "str_nocartridges": "No cartridges of this type available.",
+        "str_auxhint": "0 = no filter",
+        "str_save": "Save changes",
+        "str_heading": "Game configuration — Season 1",
+        "gamerows": [
+            {
+                "gametype": "quiz",
+                "gamename": "PlayerQuiz",
+                "family": "quiz",
+                "enabled": true,
+                "sourceoptions": [
+                    {"value": "cartridge", "label": "Cartridge only", "selected": true},
+                    {"value": "questionbank", "label": "Question bank only", "selected": false},
+                    {"value": "both", "label": "Both", "selected": false}
+                ],
+                "cartridges": [
+                    {"id": 1, "name": "Biology Q1 2026", "checked": true}
+                ],
+                "nocartridges": false,
+                "auxid": 0,
+                "auxlabel": "Question bank category ID",
+                "showsecondary": false,
+                "showcartridges": true
+            }
+        ]
+    }
+}}
+<div class="local-playergames-season-games">
+
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{backurl}}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+            {{str_back}}
+        </a>
+        <h2 class="mb-0">{{str_heading}}</h2>
+    </div>
+
+    <form method="post" action="{{formaction}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+
+        {{#gamerows}}
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+                <div class="form-check form-switch me-3 mb-0">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           role="switch"
+                           id="pg-enabled-{{gametype}}"
+                           name="enabled_{{gametype}}"
+                           value="1"
+                           {{#enabled}}checked{{/enabled}}
+                           aria-label="{{gamename}} — {{str_enabled}}">
+                </div>
+                <h5 class="mb-0">{{gamename}}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+
+                    {{! Source selection }}
+                    <div class="col-md-4">
+                        <fieldset>
+                            <legend class="form-label fw-semibold">{{str_source}}</legend>
+                            {{#sourceoptions}}
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="source_{{gametype}}"
+                                       id="pg-source-{{gametype}}-{{value}}"
+                                       value="{{value}}"
+                                       {{#selected}}checked{{/selected}}>
+                                <label class="form-check-label"
+                                       for="pg-source-{{gametype}}-{{value}}">
+                                    {{label}}
+                                </label>
+                            </div>
+                            {{/sourceoptions}}
+                        </fieldset>
+                    </div>
+
+                    {{! Cartridge selection }}
+                    <div class="col-md-5">
+                        <fieldset>
+                            <legend class="form-label fw-semibold">{{str_cartridges}}</legend>
+                            {{#nocartridges}}
+                            <p class="text-muted small">{{str_nocartridges}}</p>
+                            {{/nocartridges}}
+                            {{^nocartridges}}
+                            <p class="text-muted small mb-2">{{str_cartridges_all}}</p>
+                            {{#cartridges}}
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="cartridges_{{gametype}}[]"
+                                       id="pg-cart-{{gametype}}-{{id}}"
+                                       value="{{id}}"
+                                       {{#checked}}checked{{/checked}}
+                                       aria-label="{{name}}">
+                                <label class="form-check-label"
+                                       for="pg-cart-{{gametype}}-{{id}}">
+                                    {{name}}
+                                </label>
+                            </div>
+                            {{/cartridges}}
+                            {{/nocartridges}}
+                        </fieldset>
+                    </div>
+
+                    {{! Aux ID }}
+                    <div class="col-md-3">
+                        <label for="pg-auxid-{{gametype}}" class="form-label fw-semibold">
+                            {{auxlabel}}
+                        </label>
+                        <input type="number"
+                               id="pg-auxid-{{gametype}}"
+                               name="auxid_{{gametype}}"
+                               value="{{auxid}}"
+                               min="0"
+                               class="form-control">
+                        <div class="form-text">{{str_auxhint}}</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {{/gamerows}}
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save me-1" aria-hidden="true"></i>
+                {{str_save}}
+            </button>
+            <a href="{{backurl}}" class="btn btn-outline-secondary ms-2">
+                {{str_back}}
+            </a>
+        </div>
+
+    </form>
+
+</div>

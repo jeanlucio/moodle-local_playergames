@@ -28,6 +28,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\quiz_loader;
+use local_playergames\games\season_game_config;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\xp_manager;
 
@@ -99,11 +100,19 @@ $questions   = [];
 $noquestions = false;
 
 if (!$alreadyplayed) {
-    $sources    = (string) (get_config('local_playergames', 'quiz_sources') ?: 'both');
-    $categoryid = (int) (get_config('local_playergames', 'quiz_qbank_categoryid') ?: 0);
+    $gameconfig = season_game_config::get_for_active_season('quiz');
+    if ($gameconfig !== null) {
+        $sources      = $gameconfig->source;
+        $categoryid   = (int) $gameconfig->auxid;
+        $cartridgeids = $gameconfig->cartridgeids;
+    } else {
+        $sources      = (string) (get_config('local_playergames', 'quiz_sources') ?: 'both');
+        $categoryid   = (int) (get_config('local_playergames', 'quiz_qbank_categoryid') ?: 0);
+        $cartridgeids = null;
+    }
 
     $loader = new quiz_loader();
-    $loaded = $loader->load_session(20, $sources, $categoryid);
+    $loaded = $loader->load_session(20, $sources, $categoryid, $cartridgeids);
 
     if (empty($loaded)) {
         $noquestions = true;

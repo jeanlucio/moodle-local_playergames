@@ -240,6 +240,23 @@
         <INDEX NAME="idx_userid_timecreated" UNIQUE="false" FIELDS="userid, timecreated"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="local_playergames_season_games" COMMENT="Game configuration per season">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="cartridge"/>
+        <FIELD NAME="cartridgeids" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="auxid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_season" TYPE="foreign" FIELDS="seasonid"
+             REFTABLE="local_playergames_seasons" REFFIELDS="id"/>
+        <KEY NAME="uq_season_gametype" TYPE="unique" FIELDS="seasonid, gametype"/>
+      </KEYS>
+    </TABLE>
     <TABLE NAME="local_playergames_concept_questions" COMMENT="MCQ questions linked to a cartridge">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
