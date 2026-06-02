@@ -35,6 +35,9 @@ class quiz_loader {
     /** @var string Draw from the Moodle question bank only. */
     const SOURCE_QUESTIONBANK = 'questionbank';
 
+    /** @var string Draw from the Moodle glossary only (not used directly by quiz_loader). */
+    const SOURCE_GLOSSARY = 'glossary';
+
     /** @var string Draw from both sources and merge. */
     const SOURCE_BOTH = 'both';
 
@@ -44,13 +47,19 @@ class quiz_loader {
      * @param int $sessionsize Number of questions to return.
      * @param string $sources One of the SOURCE_* constants.
      * @param int $qbankcategoryid Moodle question category id; 0 = system context.
+     * @param string|null $cartridgeids JSON-encoded array of cartridge IDs; null = all active quiz cartridges.
      * @return quiz_question[]
      */
-    public function load_session(int $sessionsize, string $sources, int $qbankcategoryid = 0): array {
+    public function load_session(
+        int $sessionsize,
+        string $sources,
+        int $qbankcategoryid = 0,
+        ?string $cartridgeids = null
+    ): array {
         $pool = [];
 
         if ($sources === self::SOURCE_CARTRIDGES || $sources === self::SOURCE_BOTH) {
-            $pool = array_merge($pool, $this->load_from_cartridges($sessionsize));
+            $pool = array_merge($pool, $this->load_from_cartridges($sessionsize, $cartridgeids));
         }
 
         if ($sources === self::SOURCE_QUESTIONBANK || $sources === self::SOURCE_BOTH) {
@@ -62,31 +71,51 @@ class quiz_loader {
     }
 
     /**
-     * Loads questions from active cartridges in random order.
+     * Loads questions from cartridges in the pool.
      *
+     * When $cartridgeids is provided, only those cartridges are queried.
+     * When null, all cartridges with active=1 and type='quiz' are used.
      * Fetches double the limit to account for questions with incomplete answer
      * sets, then filters and slices.
      *
      * @param int $limit Maximum number of questions to return.
+     * @param string|null $cartridgeids JSON-encoded array of cartridge IDs.
      * @return quiz_question[]
      */
-    private function load_from_cartridges(int $limit): array {
+    private function load_from_cartridges(int $limit, ?string $cartridgeids = null): array {
         global $DB;
 
-        $sql = "SELECT cq.id, cq.questiontext
-                  FROM {local_playergames_concept_questions} cq
-                  JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
-                 WHERE c.active = 1
-                   AND c.type = 'quiz'
-              ORDER BY " . $DB->sql_random();
+        if ($cartridgeids !== null) {
+            $ids = json_decode($cartridgeids, true);
+            if (empty($ids)) {
+                return [];
+            }
+            [$insql, $params] = $DB->get_in_or_equal(
+                array_map('intval', $ids),
+                SQL_PARAMS_NAMED,
+                'cid'
+            );
+            $sql = "SELECT cq.id, cq.questiontext
+                      FROM {local_playergames_concept_questions} cq
+                      JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
+                     WHERE c.id $insql
+                       AND c.type = 'quiz'";
+        } else {
+            $sql = "SELECT cq.id, cq.questiontext
+                      FROM {local_playergames_concept_questions} cq
+                      JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
+                     WHERE c.active = 1
+                       AND c.type = 'quiz'";
+            $params = [];
+        }
 
-        $rows = $DB->get_records_sql($sql, [], 0, $limit * 2);
+        $rows = $DB->get_records_sql($sql, $params, 0, $limit * 2);
         if (empty($rows)) {
             return [];
         }
 
         $questionids = array_keys($rows);
-        [$insql, $inparams] = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED);
+        [$insql, $inparams] = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED, 'qid');
         $answers = $DB->get_records_select(
             'local_playergames_concept_answers',
             "questionid $insql",
@@ -148,22 +177,22 @@ class quiz_loader {
         if ($categoryid > 0) {
             $sql = "SELECT q.id, q.questiontext
                       FROM {question} q
-                     WHERE q.category = :catid
+                      JOIN {question_versions} qv ON qv.questionid = q.id
+                      JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                     WHERE qbe.questioncategoryid = :catid
                        AND q.qtype = 'multichoice'
-                       AND q.hidden = 0
-                       AND q.parent = 0
-                  ORDER BY " . $DB->sql_random();
+                       AND qv.status = 'ready'";
             $params = ['catid' => $categoryid];
         } else {
             $systemctxid = \context_system::instance()->id;
             $sql = "SELECT q.id, q.questiontext
                       FROM {question} q
-                      JOIN {question_categories} qc ON qc.id = q.category
+                      JOIN {question_versions} qv ON qv.questionid = q.id
+                      JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                      JOIN {question_categories} qc ON qc.id = qbe.questioncategoryid
                      WHERE qc.contextid = :ctxid
                        AND q.qtype = 'multichoice'
-                       AND q.hidden = 0
-                       AND q.parent = 0
-                  ORDER BY " . $DB->sql_random();
+                       AND qv.status = 'ready'";
             $params = ['ctxid' => $systemctxid];
         }
 
@@ -211,7 +240,7 @@ class quiz_loader {
             $dto->questiontext = $q->questiontext;
             $dto->answers = array_map(function ($a): quiz_answer {
                 $ans = new quiz_answer();
-                $ans->text = $a->answertext;
+                $ans->text = $a->answer;
                 $ans->correct = (float) $a->fraction > 0;
                 return $ans;
             }, $selected);
