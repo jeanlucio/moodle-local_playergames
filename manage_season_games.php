@@ -46,10 +46,10 @@ $PAGE->set_heading($pagetitle);
 // Quiz family: use quiz cartridges or Moodle question bank.
 // Concept family: use concept cartridges or Moodle glossary.
 $gametypes = [
-    ['type' => 'quiz',   'family' => 'quiz'],
+    ['type' => 'quiz', 'family' => 'quiz'],
     ['type' => 'battle', 'family' => 'quiz'],
-    ['type' => 'guess',  'family' => 'concept'],
-    ['type' => 'fill',   'family' => 'concept'],
+    ['type' => 'guess', 'family' => 'concept'],
+    ['type' => 'fill', 'family' => 'concept'],
 ];
 
 // POST: save configuration.
@@ -95,8 +95,13 @@ if (data_submitted()) {
 }
 
 // Load cartridges by family type.
-$quizcartridges    = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'],    'name ASC', 'id, name');
-$conceptcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'concept'], 'name ASC', 'id, name');
+$quizcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'], 'name ASC', 'id, name');
+$conceptcartridges = $DB->get_records(
+    'local_playergames_cartridges',
+    ['type' => 'concept'],
+    'name ASC',
+    'id, name'
+);
 
 // Load saved config, keyed by gametype.
 $savedconfigs = season_game_config::get_all_for_season($seasonid);
@@ -130,16 +135,40 @@ foreach ($gametypes as $game) {
     // Source options depend on family.
     if ($family === 'quiz') {
         $sourceoptions = [
-            ['value' => season_game_config::SOURCE_CARTRIDGE,   'label' => get_string('season_game_source_cartridge', 'local_playergames'),    'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE],
-            ['value' => season_game_config::SOURCE_QUESTIONBANK, 'label' => get_string('season_game_source_questionbank', 'local_playergames'), 'selected' => $currentsource === season_game_config::SOURCE_QUESTIONBANK],
-            ['value' => season_game_config::SOURCE_BOTH,         'label' => get_string('season_game_source_both', 'local_playergames'),         'selected' => $currentsource === season_game_config::SOURCE_BOTH],
+            [
+                'value' => season_game_config::SOURCE_CARTRIDGE,
+                'label' => get_string('season_game_source_cartridge', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE,
+            ],
+            [
+                'value' => season_game_config::SOURCE_QUESTIONBANK,
+                'label' => get_string('season_game_source_questionbank', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_QUESTIONBANK,
+            ],
+            [
+                'value' => season_game_config::SOURCE_BOTH,
+                'label' => get_string('season_game_source_both', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_BOTH,
+            ],
         ];
         $auxlabel = get_string('season_game_auxid_qbank', 'local_playergames');
     } else {
         $sourceoptions = [
-            ['value' => season_game_config::SOURCE_CARTRIDGE, 'label' => get_string('season_game_source_cartridge', 'local_playergames'), 'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE],
-            ['value' => season_game_config::SOURCE_GLOSSARY,  'label' => get_string('season_game_source_glossary', 'local_playergames'),  'selected' => $currentsource === season_game_config::SOURCE_GLOSSARY],
-            ['value' => season_game_config::SOURCE_BOTH,      'label' => get_string('season_game_source_both', 'local_playergames'),      'selected' => $currentsource === season_game_config::SOURCE_BOTH],
+            [
+                'value' => season_game_config::SOURCE_CARTRIDGE,
+                'label' => get_string('season_game_source_cartridge', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE,
+            ],
+            [
+                'value' => season_game_config::SOURCE_GLOSSARY,
+                'label' => get_string('season_game_source_glossary', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_GLOSSARY,
+            ],
+            [
+                'value' => season_game_config::SOURCE_BOTH,
+                'label' => get_string('season_game_source_both', 'local_playergames'),
+                'selected' => $currentsource === season_game_config::SOURCE_BOTH,
+            ],
         ];
         $auxlabel = get_string('season_game_auxid_glossary', 'local_playergames');
     }
