@@ -102,34 +102,6 @@
         <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="local_playergames_concept_questions" COMMENT="Quiz questions generated for cartridge concepts">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="conceptid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="questiontext" TYPE="text" NOTNULL="true"/>
-        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="ai"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="fk_concept" TYPE="foreign" FIELDS="conceptid" REFTABLE="local_playergames_concepts" REFFIELDS="id"/>
-        <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
-      </KEYS>
-    </TABLE>
-    <TABLE NAME="local_playergames_concept_answers" COMMENT="Answer options for concept quiz questions">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="answertext" TYPE="text" NOTNULL="true"/>
-        <FIELD NAME="iscorrect" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
-        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="fk_question" TYPE="foreign" FIELDS="questionid" REFTABLE="local_playergames_concept_questions" REFFIELDS="id"/>
-      </KEYS>
-    </TABLE>
     <TABLE NAME="local_playergames_daily_assignments" COMMENT="Daily concept assignment per game type">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
