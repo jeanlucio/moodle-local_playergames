@@ -27,6 +27,7 @@ namespace local_playergames\cartridge;
 use local_playergames\event\cartridge_deleted;
 use local_playergames\event\cartridge_imported;
 use local_playergames\output\cartridge as cartridge_shell;
+use local_playergames\cartridge\quiz_generator;
 
 /**
  * Handles POST dispatch and page data assembly for the cartridge management page.
@@ -44,14 +45,29 @@ class controller {
     /** @var int Concept ID to pre-fill the inline edit form, or 0. */
     private int $editconceptid;
 
-    /** @var array|null AI preview concepts after a successful generation. */
+    /** @var string Active AI sub-tab: 'concepts' or 'quiz'. */
+    private string $aisubtab = 'concepts';
+
+    /** @var array|null AI preview concepts after a successful concept generation. */
     private ?array $aipreview = null;
 
-    /** @var \stdClass|null AI form values for repopulation after generation. */
+    /** @var \stdClass|null AI form values for repopulation after concept generation. */
     private ?\stdClass $aiformdata = null;
 
-    /** @var string Error message from a failed AI generation, or empty string. */
+    /** @var string Error message from a failed concept AI generation, or empty string. */
     private string $aierror = '';
+
+    /** @var array|null AI preview questions after a successful quiz generation. */
+    private ?array $quizpreview = null;
+
+    /** @var \stdClass|null Quiz AI form values for repopulation. */
+    private ?\stdClass $quizformdata = null;
+
+    /** @var string Error message from a failed quiz AI generation, or empty string. */
+    private string $quizerror = '';
+
+    /** @var int Quiz question ID to pre-fill the inline edit form, or 0. */
+    private int $editquestionid;
 
     /**
      * Constructor.
@@ -60,17 +76,23 @@ class controller {
      * @param string $tab Active tab slug.
      * @param int $cartridgeid Cartridge ID to edit, or 0.
      * @param int $editconceptid Concept ID to pre-fill the edit form, or 0.
+     * @param string $aisubtab Active AI sub-tab: 'concepts' or 'quiz'.
+     * @param int $editquestionid Quiz question ID to pre-fill the edit form, or 0.
      */
     public function __construct(
         \context $context,
         string $tab,
         int $cartridgeid,
-        int $editconceptid
+        int $editconceptid,
+        string $aisubtab = 'concepts',
+        int $editquestionid = 0
     ) {
         $this->context = $context;
         $this->tab = $tab;
         $this->cartridgeid = $cartridgeid;
         $this->editconceptid = $editconceptid;
+        $this->aisubtab = in_array($aisubtab, ['concepts', 'quiz'], true) ? $aisubtab : 'concepts';
+        $this->editquestionid = $editquestionid;
     }
 
     /**
@@ -154,6 +176,10 @@ class controller {
             $this->action_generate_ai();
         } else if ($postaction === 'save_ai_cartridge') {
             $this->action_save_ai_cartridge();
+        } else if ($postaction === 'generate_ai_quiz') {
+            $this->action_generate_ai_quiz();
+        } else if ($postaction === 'save_ai_quiz_cartridge') {
+            $this->action_save_ai_quiz_cartridge();
         } else if ($postaction === 'create_cartridge') {
             $this->action_create_cartridge();
         } else if ($postaction === 'add_concept') {
@@ -172,6 +198,12 @@ class controller {
             $this->action_rename_category();
         } else if ($postaction === 'delete_category') {
             $this->action_delete_category();
+        } else if ($postaction === 'add_quiz_question') {
+            $this->action_add_quiz_question();
+        } else if ($postaction === 'edit_quiz_question') {
+            $this->action_edit_quiz_question();
+        } else if ($postaction === 'delete_quiz_question') {
+            $this->action_delete_quiz_question();
         }
     }
 
@@ -214,6 +246,7 @@ class controller {
         $allcartridges = $db->get_records('local_playergames_cartridges', null, 'timecreated DESC');
 
         $conceptcounts = [];
+        $questioncounts = [];
         if (!empty($allcartridges)) {
             $cartridgeids = array_keys($allcartridges);
             [$insql, $inparams] = $db->get_in_or_equal($cartridgeids);
@@ -226,6 +259,17 @@ class controller {
             );
             foreach ($rows as $row) {
                 $conceptcounts[(int) $row->cartridgeid] = (int) $row->cnt;
+            }
+            [$insql2, $inparams2] = $db->get_in_or_equal($cartridgeids);
+            $qrows = $db->get_records_sql(
+                "SELECT cartridgeid, COUNT(id) AS cnt
+                   FROM {local_playergames_concept_questions}
+                  WHERE cartridgeid {$insql2}
+               GROUP BY cartridgeid",
+                $inparams2
+            );
+            foreach ($qrows as $row) {
+                $questioncounts[(int) $row->cartridgeid] = (int) $row->cnt;
             }
         }
 
@@ -255,12 +299,18 @@ class controller {
                 'action' => 'export_cartridge',
                 'cartridgeid' => $cartridge->id,
             ]))->out(false);
+            $cartridgetype = $cartridge->type ?? 'concept';
+            $itemscount = $cartridgetype === 'quiz'
+                ? ($questioncounts[(int) $cartridge->id] ?? 0)
+                : ($conceptcounts[(int) $cartridge->id] ?? 0);
             $cartridgerows[] = [
                 'id' => $cartridge->id,
                 'name' => format_string($cartridge->name),
                 'language' => s($cartridge->language),
                 'version' => s($cartridge->version),
-                'concepts_count' => $cartridge->concepts_count,
+                'items_count' => $itemscount,
+                'is_quiz' => $cartridgetype === 'quiz',
+                'is_concept' => $cartridgetype !== 'quiz',
                 'is_active' => (bool) $cartridge->active,
                 'is_inactive' => !(bool) $cartridge->active,
                 'created_date' => userdate(
@@ -315,29 +365,55 @@ class controller {
      */
     private function render_tab_ai(\renderer_base $output, string $baseurl): string {
         $gen = new ai_generator();
+
         $aipreviewdata = null;
         if ($this->aipreview !== null) {
             $aipreviewdata = [
                 'cartridge_name' => s($this->aipreview['cartridge_name']),
-                'language' => s($this->aipreview['language']),
-                'concepts' => $this->aipreview['concepts'],
+                'language'       => s($this->aipreview['language']),
+                'concepts'       => $this->aipreview['concepts'],
             ];
         }
+
+        $quizpreviewdata = null;
+        if ($this->quizpreview !== null) {
+            $quizpreviewdata = [
+                'cartridge_name' => s($this->quizpreview['cartridge_name']),
+                'language'       => s($this->quizpreview['language']),
+                'questions'      => $this->quizpreview['questions'],
+            ];
+        }
+
         $ctx = [
-            'action_url' => (new \moodle_url($baseurl))->out(false),
-            'sesskey' => sesskey(),
-            'has_ai_key' => $gen->has_key(),
-            'has_ai_error' => $this->aierror !== '',
-            'ai_error' => s($this->aierror),
-            'has_ai_preview' => $aipreviewdata !== null,
-            'ai_preview' => $aipreviewdata,
-            'ai_form_topic' => $this->aiformdata ? s($this->aiformdata->topic) : '',
-            'ai_form_context' => $this->aiformdata ? s($this->aiformdata->context ?? '') : '',
-            'ai_form_language' => $this->aiformdata ? s($this->aiformdata->language) : '',
-            'ai_form_quantity' => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
-            'ai_form_difficulty' => $this->aiformdata ? (int) $this->aiformdata->difficulty : 3,
-            'ai_form_categories' => $this->aiformdata
+            'action_url'          => (new \moodle_url($baseurl))->out(false),
+            'sesskey'             => sesskey(),
+            'has_ai_key'          => $gen->has_key(),
+            'subtab_concepts'     => $this->aisubtab === 'concepts',
+            'subtab_quiz'         => $this->aisubtab === 'quiz',
+            // Concepts sub-tab.
+            'has_ai_error'        => $this->aierror !== '',
+            'ai_error'            => s($this->aierror),
+            'has_ai_preview'      => $aipreviewdata !== null,
+            'ai_preview'          => $aipreviewdata,
+            'ai_form_topic'       => $this->aiformdata ? s($this->aiformdata->topic) : '',
+            'ai_form_context'     => $this->aiformdata
+                ? s($this->aiformdata->context ?? '') : '',
+            'ai_form_language'    => $this->aiformdata ? s($this->aiformdata->language) : '',
+            'ai_form_quantity'    => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
+            'ai_form_difficulty'  => $this->aiformdata
+                ? (int) $this->aiformdata->difficulty : 3,
+            'ai_form_categories'  => $this->aiformdata
                 ? s($this->aiformdata->categories ?? '') : '',
+            // Quiz sub-tab.
+            'has_quiz_error'      => $this->quizerror !== '',
+            'quiz_error'          => s($this->quizerror),
+            'has_quiz_preview'    => $quizpreviewdata !== null,
+            'quiz_preview'        => $quizpreviewdata,
+            'quiz_form_topic'     => $this->quizformdata ? s($this->quizformdata->topic) : '',
+            'quiz_form_language'  => $this->quizformdata
+                ? s($this->quizformdata->language) : '',
+            'quiz_form_quantity'  => $this->quizformdata
+                ? (int) $this->quizformdata->quantity : 20,
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_ai', $ctx);
     }
@@ -351,6 +427,13 @@ class controller {
      * @return string Rendered HTML.
      */
     private function render_tab_editor(\renderer_base $output, \moodle_database $db, string $baseurl): string {
+        if ($this->cartridgeid > 0) {
+            $cartridge = $db->get_record('local_playergames_cartridges', ['id' => $this->cartridgeid]);
+            if ($cartridge && ($cartridge->type ?? 'concept') === 'quiz') {
+                return $this->render_tab_quiz_editor($output, $db, $baseurl, $cartridge);
+            }
+        }
+
         $editcartridge = null;
         $concepts = [];
         $editconcept = null;
@@ -838,6 +921,21 @@ class controller {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $DB->delete_records('local_playergames_concepts', ['cartridgeid' => $postcartridgeid]);
         $DB->delete_records('local_playergames_categories', ['cartridgeid' => $postcartridgeid]);
+        $qids = $DB->get_fieldset_select(
+            'local_playergames_concept_questions',
+            'id',
+            'cartridgeid = :cid',
+            ['cid' => $postcartridgeid]
+        );
+        if (!empty($qids)) {
+            [$insql, $inparams] = $DB->get_in_or_equal($qids, SQL_PARAMS_NAMED);
+            $DB->delete_records_select('local_playergames_concept_answers', "questionid $insql", $inparams);
+            $DB->delete_records_select(
+                'local_playergames_concept_questions',
+                "id $insql",
+                $inparams
+            );
+        }
         $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
         if ($cartridgerow) {
             $DB->delete_records('local_playergames_cartridges', ['id' => $postcartridgeid]);
@@ -912,6 +1010,116 @@ class controller {
     }
 
     /**
+     * Handles the generate_ai_quiz POST action.
+     *
+     * Calls the AI to generate standalone MCQ previews, then re-renders the AI tab
+     * with the quiz sub-tab active so the user can review before saving.
+     */
+    private function action_generate_ai_quiz(): void {
+        $topic    = required_param('topic', PARAM_TEXT);
+        $language = optional_param('ai_language', '', PARAM_TEXT);
+        $quantity = max(5, min(50, (int) required_param('quantity', PARAM_INT)));
+
+        $this->aisubtab = 'quiz';
+        $this->quizformdata = new \stdClass();
+        $this->quizformdata->topic    = $topic;
+        $this->quizformdata->language = $language;
+        $this->quizformdata->quantity = $quantity;
+        $this->tab = 'ai';
+
+        try {
+            $gen = new quiz_generator();
+            $questions = $gen->generate_preview($topic, $language, $quantity);
+            $indexed = [];
+            foreach ($questions as $i => $q) {
+                $indexed[] = [
+                    'index'        => $i,
+                    'questiontext' => s($q['questiontext']),
+                    'correct'      => s($q['correct']),
+                    'distractors'  => array_map('s', $q['distractors']),
+                ];
+            }
+            $this->quizpreview = [
+                'cartridge_name' => $topic,
+                'language'       => $language,
+                'questions'      => $indexed,
+            ];
+        } catch (\moodle_exception $e) {
+            $this->quizerror = $e->getMessage();
+        }
+    }
+
+    /**
+     * Handles the save_ai_quiz_cartridge POST action.
+     *
+     * Creates a quiz-type cartridge and saves the AI-generated MCQs to it.
+     */
+    private function action_save_ai_quiz_cartridge(): void {
+        global $DB, $USER;
+
+        $cartridgename  = required_param('ai_cartridge_name', PARAM_TEXT);
+        $cartridgelang  = optional_param('ai_language', '', PARAM_TEXT);
+        $aiauthor       = optional_param('ai_author', '', PARAM_TEXT);
+        $rawquestions   = isset($_POST['questions']) && is_array($_POST['questions'])
+            ? $_POST['questions'] : [];
+
+        $newcartridge               = new \stdClass();
+        $newcartridge->name         = \core_text::substr(
+            clean_param($cartridgename, PARAM_TEXT),
+            0,
+            255
+        );
+        $newcartridge->version      = '1.0';
+        $newcartridge->language     = \core_text::substr(
+            clean_param($cartridgelang, PARAM_TEXT),
+            0,
+            20
+        );
+        $newcartridge->author       = $aiauthor !== ''
+            ? \core_text::substr(clean_param($aiauthor, PARAM_TEXT), 0, 255) : null;
+        $newcartridge->type         = 'quiz';
+        $newcartridge->active       = 1;
+        $now = time();
+        $newcartridge->timecreated  = $now;
+        $newcartridge->timemodified = $now;
+        $newcartridge->uploadedby   = (int) $USER->id;
+        $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
+
+        $questions = [];
+        foreach ($rawquestions as $q) {
+            $qtext       = trim(clean_param($q['questiontext'] ?? '', PARAM_TEXT));
+            $correct     = trim(clean_param($q['correct'] ?? '', PARAM_TEXT));
+            $distractors = [];
+            foreach ((array) ($q['distractors'] ?? []) as $d) {
+                $distractors[] = trim(clean_param($d, PARAM_TEXT));
+            }
+            if ($qtext !== '' && $correct !== '' && count($distractors) >= 4) {
+                $questions[] = [
+                    'questiontext' => $qtext,
+                    'correct'      => $correct,
+                    'distractors'  => array_slice($distractors, 0, 4),
+                ];
+            }
+        }
+
+        $gen = new quiz_generator();
+        $gen->save_standalone($newcartridgeid, $questions);
+
+        $event = cartridge_imported::create([
+            'context'  => $this->context,
+            'objectid' => $newcartridgeid,
+        ]);
+        $event->trigger();
+
+        redirect(
+            $this->url(['tab' => 'library']),
+            get_string('cartridge_created', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
+
+    /**
      * Handles the delete_category POST action.
      */
     private function action_delete_category(): void {
@@ -922,6 +1130,300 @@ class controller {
         redirect(
             $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
             get_string('category_deleted', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
+
+    /**
+     * Renders the quiz question editor tab for a quiz-type cartridge.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param \moodle_database $db Database instance.
+     * @param string $baseurl Base page URL string.
+     * @param \stdClass $cartridge The quiz cartridge record.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_quiz_editor(
+        \renderer_base $output,
+        \moodle_database $db,
+        string $baseurl,
+        \stdClass $cartridge
+    ): string {
+        $questions = $db->get_records(
+            'local_playergames_concept_questions',
+            ['cartridgeid' => (int) $cartridge->id],
+            'id ASC'
+        );
+
+        $allqids = array_keys($questions);
+        $answersbyquestion = [];
+        if (!empty($allqids)) {
+            [$insql, $inparams] = $db->get_in_or_equal($allqids);
+            $answers = $db->get_records_sql(
+                "SELECT * FROM {local_playergames_concept_answers}
+                  WHERE questionid {$insql}
+                  ORDER BY sortorder ASC",
+                $inparams
+            );
+            foreach ($answers as $ans) {
+                $answersbyquestion[(int) $ans->questionid][] = $ans;
+            }
+        }
+
+        $editquestion = null;
+        if ($this->editquestionid > 0) {
+            $editquestion = $db->get_record(
+                'local_playergames_concept_questions',
+                ['id' => $this->editquestionid, 'cartridgeid' => (int) $cartridge->id]
+            ) ?: null;
+        }
+
+        $formaction = 'add_quiz_question';
+        $formquestionid = 0;
+        $formquestiontext = '';
+        $formcorrect = '';
+        $formdistractors = ['', '', '', ''];
+        $editingquestion = false;
+
+        if ($editquestion !== null) {
+            $formaction = 'edit_quiz_question';
+            $formquestionid = (int) $editquestion->id;
+            $formquestiontext = $editquestion->questiontext;
+            $editingquestion = true;
+            $qanswers = $answersbyquestion[(int) $editquestion->id] ?? [];
+            $di = 0;
+            foreach ($qanswers as $ans) {
+                if ($ans->iscorrect) {
+                    $formcorrect = $ans->answertext;
+                } else if ($di < 4) {
+                    $formdistractors[$di++] = $ans->answertext;
+                }
+            }
+        }
+
+        $questionrows = [];
+        foreach ($questions as $q) {
+            $qanswers = $answersbyquestion[(int) $q->id] ?? [];
+            $correct = '';
+            $distractors = [];
+            foreach ($qanswers as $ans) {
+                if ($ans->iscorrect) {
+                    $correct = s($ans->answertext);
+                } else {
+                    $distractors[] = s($ans->answertext);
+                }
+            }
+            $editurl = (new \moodle_url($baseurl, [
+                'tab' => 'editor',
+                'cartridgeid' => (int) $cartridge->id,
+                'editquestion' => (int) $q->id,
+            ]))->out(false);
+            $questionrows[] = [
+                'id' => (int) $q->id,
+                'questiontext' => format_string($q->questiontext),
+                'correct' => $correct,
+                'distractors' => $distractors,
+                'edit_url' => $editurl,
+                'sesskey' => sesskey(),
+                'cartridgeid' => (int) $cartridge->id,
+            ];
+        }
+
+        $cancelurl = (new \moodle_url($baseurl, [
+            'tab' => 'editor',
+            'cartridgeid' => (int) $cartridge->id,
+        ]))->out(false);
+
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'has_editor_cartridge' => true,
+            'editor_cartridge_id' => (int) $cartridge->id,
+            'editor_cartridge_name' => format_string($cartridge->name),
+            'url_tab_library' => (new \moodle_url($baseurl, ['tab' => 'library']))->out(false),
+            'url_cancel_edit' => $cancelurl,
+            'editing_question' => $editingquestion,
+            'form_action' => $formaction,
+            'form_question_id' => $formquestionid,
+            'form_questiontext' => s($formquestiontext),
+            'form_correct' => s($formcorrect),
+            'form_distractor_0' => s($formdistractors[0]),
+            'form_distractor_1' => s($formdistractors[1]),
+            'form_distractor_2' => s($formdistractors[2]),
+            'form_distractor_3' => s($formdistractors[3]),
+            'questions' => $questionrows,
+            'questions_empty' => empty($questionrows),
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_quiz_editor', $ctx);
+    }
+
+    /**
+     * Handles the add_quiz_question POST action.
+     */
+    private function action_add_quiz_question(): void {
+        global $DB;
+
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $cartridge = $DB->get_record(
+            'local_playergames_cartridges',
+            ['id' => $postcartridgeid, 'type' => 'quiz'],
+            '*',
+            MUST_EXIST
+        );
+
+        $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
+        $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
+        $distractors = [];
+        for ($i = 0; $i < 4; $i++) {
+            $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
+            $distractors[] = $d;
+        }
+
+        if ($qtext === '' || $correct === '') {
+            redirect(
+                $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
+                get_string('error_concept_empty_term', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+
+        $now = time();
+        $qrecord = new \stdClass();
+        $qrecord->conceptid = null;
+        $qrecord->cartridgeid = $postcartridgeid;
+        $qrecord->questiontext = $qtext;
+        $qrecord->source = 'manual';
+        $qrecord->timecreated = $now;
+        $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
+
+        $correctrec = new \stdClass();
+        $correctrec->questionid = $questionid;
+        $correctrec->answertext = $correct;
+        $correctrec->iscorrect = 1;
+        $correctrec->sortorder = 0;
+        $DB->insert_record('local_playergames_concept_answers', $correctrec, false);
+
+        foreach ($distractors as $i => $dtext) {
+            $dist = new \stdClass();
+            $dist->questionid = $questionid;
+            $dist->answertext = $dtext;
+            $dist->iscorrect = 0;
+            $dist->sortorder = $i + 1;
+            $DB->insert_record('local_playergames_concept_answers', $dist, false);
+        }
+
+        $DB->set_field(
+            'local_playergames_cartridges',
+            'timemodified',
+            $now,
+            ['id' => $postcartridgeid]
+        );
+        redirect(
+            $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
+            get_string('quiz_editor_question_saved', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
+
+    /**
+     * Handles the edit_quiz_question POST action.
+     */
+    private function action_edit_quiz_question(): void {
+        global $DB;
+
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $postquestionid = required_param('question_id', PARAM_INT);
+        $DB->get_record(
+            'local_playergames_concept_questions',
+            ['id' => $postquestionid, 'cartridgeid' => $postcartridgeid],
+            '*',
+            MUST_EXIST
+        );
+
+        $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
+        $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
+        $distractors = [];
+        for ($i = 0; $i < 4; $i++) {
+            $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
+            $distractors[] = $d;
+        }
+
+        if ($qtext === '' || $correct === '') {
+            redirect(
+                $this->url([
+                    'tab' => 'editor',
+                    'cartridgeid' => $postcartridgeid,
+                    'editquestion' => $postquestionid,
+                ]),
+                get_string('error_concept_empty_term', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+
+        $DB->set_field(
+            'local_playergames_concept_questions',
+            'questiontext',
+            $qtext,
+            ['id' => $postquestionid]
+        );
+        $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);
+
+        $correctrec = new \stdClass();
+        $correctrec->questionid = $postquestionid;
+        $correctrec->answertext = $correct;
+        $correctrec->iscorrect = 1;
+        $correctrec->sortorder = 0;
+        $DB->insert_record('local_playergames_concept_answers', $correctrec, false);
+
+        foreach ($distractors as $i => $dtext) {
+            $dist = new \stdClass();
+            $dist->questionid = $postquestionid;
+            $dist->answertext = $dtext;
+            $dist->iscorrect = 0;
+            $dist->sortorder = $i + 1;
+            $DB->insert_record('local_playergames_concept_answers', $dist, false);
+        }
+
+        $DB->set_field(
+            'local_playergames_cartridges',
+            'timemodified',
+            time(),
+            ['id' => $postcartridgeid]
+        );
+        redirect(
+            $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
+            get_string('quiz_editor_question_saved', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
+
+    /**
+     * Handles the delete_quiz_question POST action.
+     */
+    private function action_delete_quiz_question(): void {
+        global $DB;
+
+        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
+        $postquestionid = required_param('question_id', PARAM_INT);
+        $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);
+        $DB->delete_records(
+            'local_playergames_concept_questions',
+            ['id' => $postquestionid, 'cartridgeid' => $postcartridgeid]
+        );
+        $DB->set_field(
+            'local_playergames_cartridges',
+            'timemodified',
+            time(),
+            ['id' => $postcartridgeid]
+        );
+        redirect(
+            $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
+            get_string('quiz_editor_question_deleted', 'local_playergames'),
             null,
             \core\output\notification::NOTIFY_SUCCESS
         );

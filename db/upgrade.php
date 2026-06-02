@@ -457,5 +457,97 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026060101, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026060102) {
+        // Create concept_questions table.
+        $table = new xmldb_table('local_playergames_concept_questions');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('conceptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('cartridgeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('questiontext', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $table->add_field('source', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'ai');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key(
+                'fk_concept',
+                XMLDB_KEY_FOREIGN,
+                ['conceptid'],
+                'local_playergames_concepts',
+                ['id']
+            );
+            $table->add_key(
+                'fk_cartridge',
+                XMLDB_KEY_FOREIGN,
+                ['cartridgeid'],
+                'local_playergames_cartridges',
+                ['id']
+            );
+            $dbman->create_table($table);
+        }
+
+        // Create concept_answers table.
+        $table = new xmldb_table('local_playergames_concept_answers');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('answertext', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $table->add_field('iscorrect', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key(
+                'fk_question',
+                XMLDB_KEY_FOREIGN,
+                ['questionid'],
+                'local_playergames_concept_questions',
+                ['id']
+            );
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026060102, 'local', 'playergames');
+    }
+
+    if ($oldversion < 2026060103) {
+        upgrade_plugin_savepoint(true, 2026060103, 'local', 'playergames');
+    }
+
+    if ($oldversion < 2026060105) {
+        // Add type field to cartridges (concept | quiz) if not already present.
+        $table = new xmldb_table('local_playergames_cartridges');
+        $typefield = new xmldb_field('type', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'concept');
+        if (!$dbman->field_exists($table, $typefield)) {
+            $dbman->add_field($table, $typefield);
+            $DB->execute("UPDATE {local_playergames_cartridges} SET type = 'concept'");
+        }
+
+        // Make conceptid nullable so quiz-type cartridges can store standalone questions.
+        $qtable = new xmldb_table('local_playergames_concept_questions');
+        if ($dbman->table_exists($qtable)) {
+            // Drop index on conceptid — change_field_notnull requires no dependent indexes.
+            $conindex = new xmldb_index('con', XMLDB_INDEX_NOTUNIQUE, ['conceptid']);
+            if ($dbman->index_exists($qtable, $conindex)) {
+                $dbman->drop_index($qtable, $conindex);
+            }
+
+            $conceptidfield = new xmldb_field(
+                'conceptid',
+                XMLDB_TYPE_INTEGER,
+                '10',
+                null,
+                null,
+                null,
+                null
+            );
+            $dbman->change_field_notnull($qtable, $conceptidfield);
+
+            // Re-add index for queries that filter concept-based questions by conceptid.
+            if (!$dbman->index_exists($qtable, $conindex)) {
+                $dbman->add_index($qtable, $conindex);
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026060105, 'local', 'playergames');
+    }
+
     return true;
 }

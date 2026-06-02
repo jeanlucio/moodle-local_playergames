@@ -1,0 +1,96 @@
+{{!
+    @template local_playergames/play_quiz
+}}
+{{!
+    Daily PlayerQuiz game — one question at a time; wrong answer loads next concept.
+
+    Example context (json):
+    {
+        "sesskey": "abc123",
+        "formaction": "/local/playergames/play_quiz.php",
+        "already_played": false,
+        "no_questions": false,
+        "huburl": "/local/playergames/hub.php",
+        "str_already_played": "You have already played PlayerQuiz today.",
+        "str_no_questions": "No questions available.",
+        "str_completed": "Correct!",
+        "str_attempt": "Attempt",
+        "str_result_xp": "XP earned:",
+        "str_back_to_hub": "Back to Hub",
+        "questions": [
+            {
+                "index": 1,
+                "questiontext": "What is photosynthesis?",
+                "answers": [
+                    {"letter": "A", "text": "A process converting light into sugar.", "correct": true},
+                    {"letter": "B", "text": "A method of cell division.", "correct": false},
+                    {"letter": "C", "text": "A type of fungal reproduction.", "correct": false},
+                    {"letter": "D", "text": "The breakdown of starch by saliva.", "correct": false},
+                    {"letter": "E", "text": "A form of animal digestion.", "correct": false}
+                ]
+            }
+        ]
+    }
+}}
+<div class="local-playergames-play-quiz container py-4" style="max-width: 700px;">
+
+    {{#already_played}}
+    <div class="alert alert-info" role="alert">
+        <i class="fa fa-check-circle me-2" aria-hidden="true"></i>
+        {{str_already_played}}
+        <div class="mt-3">
+            <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
+        </div>
+    </div>
+    {{/already_played}}
+
+    {{#no_questions}}
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-exclamation-triangle me-2" aria-hidden="true"></i>
+        {{str_no_questions}}
+    </div>
+    {{/no_questions}}
+
+    {{^already_played}}{{^no_questions}}
+    <div id="pg-quiz-container"
+         data-action="{{formaction}}"
+         data-sesskey="{{sesskey}}"
+         data-str-attempt="{{str_attempt}}">
+
+        <div class="mb-4">
+            <div id="pg-quiz-progress-text" class="text-muted small mb-1">&nbsp;</div>
+        </div>
+
+        {{#questions}}
+        <div class="pg-quiz-question" data-index="{{index}}" style="display:none;">
+            <p class="fs-5 fw-semibold mb-4">{{{questiontext}}}</p>
+            <div class="d-grid gap-2">
+                {{#answers}}
+                <button type="button"
+                        class="pg-quiz-answer btn btn-outline-primary text-start"
+                        data-correct="{{#correct}}1{{/correct}}{{^correct}}0{{/correct}}">
+                    <span class="pg-answer-letter fw-bold me-2">{{letter}}.</span>
+                    {{{text}}}
+                </button>
+                {{/answers}}
+            </div>
+        </div>
+        {{/questions}}
+
+        <div id="pg-quiz-result" style="display:none;">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h3 class="mb-3">
+                    <i class="fa fa-star text-warning me-2" aria-hidden="true"></i>
+                    {{str_completed}}
+                </h3>
+                <p class="text-success fw-bold fs-4">
+                    {{str_result_xp}} <span id="pg-quiz-xp-count">…</span>
+                </p>
+                <a href="{{huburl}}" class="btn btn-primary mt-3">{{str_back_to_hub}}</a>
+            </div>
+        </div>
+
+    </div>
+    {{/no_questions}}{{/already_played}}
+
+</div>

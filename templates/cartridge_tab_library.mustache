@@ -1,7 +1,7 @@
 {{!
     @template local_playergames/cartridge_tab_library
 
-    Library tab: lists all concept cartridges with actions.
+    Library tab: lists all cartridges (concept and quiz types) with actions.
 
     Example context (json):
     {
@@ -12,7 +12,9 @@
                 "id": 1,
                 "name": "Gamification Fundamentals",
                 "language": "en",
-                "concepts_count": 42,
+                "items_count": 42,
+                "is_quiz": false,
+                "is_concept": true,
                 "is_active": true,
                 "is_inactive": false,
                 "created_date": "27 Apr 2026, 10:00",
@@ -62,7 +64,7 @@
                 <tr>
                     <th scope="col">{{#str}}cartridge_name, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_language, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_concepts_count, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}cartridge_items_count, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_uploaded, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_timemodified, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}cartridge_author, local_playergames{{/str}}</th>
@@ -75,6 +77,11 @@
                 <tr>
                     <td>
                         {{name}}
+                        {{#is_quiz}}
+                        <span class="badge bg-info ms-1">
+                            {{#str}}cartridge_type_quiz, local_playergames{{/str}}
+                        </span>
+                        {{/is_quiz}}
                         {{#is_active}}
                         <span class="badge bg-success ms-1">
                             {{#str}}cartridge_active, local_playergames{{/str}}
@@ -87,15 +94,22 @@
                         {{/is_inactive}}
                     </td>
                     <td>{{language}}</td>
-                    <td>{{concepts_count}}</td>
+                    <td>{{items_count}}</td>
                     <td>{{created_date}}</td>
                     <td>{{modified_date}}</td>
                     <td>{{author}}</td>
                     <td>{{uploadedby_fullname}}</td>
                     <td class="pg-cartridge-actions">
+                        {{#is_concept}}
                         <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
                             {{#str}}cartridge_edit_concepts, local_playergames{{/str}}
                         </a>
+                        {{/is_concept}}
+                        {{#is_quiz}}
+                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
+                            {{#str}}cartridge_edit_questions, local_playergames{{/str}}
+                        </a>
+                        {{/is_quiz}}
                         <a href="{{export_url}}" class="btn btn-sm btn-outline-secondary me-1">
                             {{#str}}cartridge_export, local_playergames{{/str}}
                         </a>

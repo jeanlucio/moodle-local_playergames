@@ -91,7 +91,7 @@ class ai_generator {
      * @param int $conceptcount Number of concepts returned.
      * @return void
      */
-    private function log_usage(string $provider, string $model, string $topic, int $conceptcount): void {
+    protected function log_usage(string $provider, string $model, string $topic, int $conceptcount): void {
         global $DB, $USER;
         $record = new \stdClass();
         $record->userid = (int) $USER->id;

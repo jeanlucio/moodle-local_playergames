@@ -467,10 +467,13 @@
                     <div class="row row-cols-2 row-cols-md-4 g-3">
                         {{#games}}
                         <div class="col">
-                            <div class="pg-hub-game-card text-center p-3 rounded
+                            <div class="pg-hub-game-card text-center p-3 rounded position-relative
                                 {{#done}}pg-game-done{{/done}}
                                 {{#locked}}pg-game-locked{{/locked}}
                                 {{#pending}}pg-game-pending{{/pending}}">
+                                {{#pending}}{{#url}}
+                                <a href="{{url}}" class="stretched-link" aria-label="{{name}}"></a>
+                                {{/url}}{{/pending}}
                                 <i class="fa {{icon}} fs-3 mb-2
                                     {{#done}}text-success{{/done}}
                                     {{#locked}}text-muted{{/locked}}

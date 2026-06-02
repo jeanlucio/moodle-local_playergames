@@ -1,46 +1,83 @@
 {{!
     @template local_playergames/cartridge_tab_ai
-
-    AI generation tab: generate concepts using an AI provider, then review and save.
+}}
+{{!
+    AI generation tab with two sub-tabs: Concepts and Quiz.
 
     Example context (json):
     {
         "action_url": "/local/playergames/cartridge.php",
         "sesskey": "abc123",
         "has_ai_key": true,
+        "subtab_concepts": true,
+        "subtab_quiz": false,
         "has_ai_error": false,
         "ai_error": "",
         "has_ai_preview": false,
+        "ai_preview": null,
         "ai_form_topic": "",
         "ai_form_context": "",
         "ai_form_language": "",
         "ai_form_quantity": 20,
         "ai_form_difficulty": 3,
         "ai_form_categories": "",
-        "ai_preview": null
+        "has_quiz_error": false,
+        "quiz_error": "",
+        "has_quiz_preview": false,
+        "quiz_preview": null,
+        "quiz_form_topic": "",
+        "quiz_form_language": "",
+        "quiz_form_quantity": 20
     }
 }}
 <div class="pg-tab-ai">
 
+    {{! ── Sub-tab navigation ── }}
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a href="{{action_url}}?tab=ai&amp;ai_subtab=concepts"
+               class="nav-link{{#subtab_concepts}} active{{/subtab_concepts}}"
+               role="tab"
+               aria-selected="{{#subtab_concepts}}true{{/subtab_concepts}}{{^subtab_concepts}}false{{/subtab_concepts}}">
+                <i class="fa fa-book me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_ai_tab_concepts, local_playergames{{/str}}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a href="{{action_url}}?tab=ai&amp;ai_subtab=quiz"
+               class="nav-link{{#subtab_quiz}} active{{/subtab_quiz}}"
+               role="tab"
+               aria-selected="{{#subtab_quiz}}true{{/subtab_quiz}}{{^subtab_quiz}}false{{/subtab_quiz}}">
+                <i class="fa fa-question-circle me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_ai_tab_quiz, local_playergames{{/str}}
+            </a>
+        </li>
+    </ul>
+
+    {{^has_ai_key}}
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <i class="fa fa-exclamation-triangle fa-lg me-3" aria-hidden="true"></i>
+        <div>{{#str}}cartridge_ai_nokey, local_playergames{{/str}}</div>
+    </div>
+    {{/has_ai_key}}
+
+    {{#has_ai_key}}
+
+    {{! ══════════════════════════════════════════════════ }}
+    {{! SUB-TAB: Conceitos                                 }}
+    {{! ══════════════════════════════════════════════════ }}
+    {{#subtab_concepts}}
     <div class="card shadow-sm mb-4">
         <div class="card-header fw-bold">
             <i class="fa fa-magic me-2" aria-hidden="true"></i>
             {{#str}}cartridge_ai_heading, local_playergames{{/str}}
         </div>
         <div class="card-body">
-
-            {{^has_ai_key}}
-            <div class="alert alert-warning d-flex align-items-center" role="alert">
-                <i class="fa fa-exclamation-triangle fa-lg me-3" aria-hidden="true"></i>
-                <div>{{#str}}cartridge_ai_nokey, local_playergames{{/str}}</div>
-            </div>
-            {{/has_ai_key}}
-
-            {{#has_ai_key}}
             <form method="post" action="{{action_url}}">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
                 <input type="hidden" name="action" value="generate_ai">
                 <input type="hidden" name="tab" value="ai">
+                <input type="hidden" name="ai_subtab" value="concepts">
                 <div class="row g-3">
                     <div class="col-12">
                         <label for="pg-ai-topic" class="form-label">
@@ -101,7 +138,6 @@
                     </button>
                 </div>
             </form>
-            {{/has_ai_key}}
 
             {{#has_ai_error}}
             <div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">
@@ -109,7 +145,6 @@
                 <div>{{ai_error}}</div>
             </div>
             {{/has_ai_error}}
-
         </div>
     </div>
 
@@ -124,6 +159,7 @@
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
                 <input type="hidden" name="action" value="save_ai_cartridge">
                 <input type="hidden" name="tab" value="ai">
+                <input type="hidden" name="ai_subtab" value="concepts">
                 <div class="row g-2 mb-3">
                     <div class="col-md-5">
                         <label for="pg-ai-name" class="form-label">
@@ -160,28 +196,23 @@
                             {{#ai_preview.concepts}}
                             <tr>
                                 <td>
-                                    <input type="text"
-                                           name="concepts[{{index}}][term]"
+                                    <input type="text" name="concepts[{{index}}][term]"
                                            value="{{term}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="text"
-                                           name="concepts[{{index}}][definition]"
+                                    <input type="text" name="concepts[{{index}}][definition]"
                                            value="{{definition}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="text"
-                                           name="concepts[{{index}}][category]"
+                                    <input type="text" name="concepts[{{index}}][category]"
                                            value="{{category}}"
                                            class="form-control form-control-sm pg-category-input">
                                 </td>
                                 <td>
-                                    <input type="number"
-                                           name="concepts[{{index}}][difficulty]"
-                                           value="{{difficulty}}"
-                                           min="1" max="5"
+                                    <input type="number" name="concepts[{{index}}][difficulty]"
+                                           value="{{difficulty}}" min="1" max="5"
                                            class="form-control form-control-sm pg-difficulty-input">
                                 </td>
                             </tr>
@@ -193,7 +224,8 @@
                     <i class="fa fa-save me-1" aria-hidden="true"></i>
                     {{#str}}cartridge_preview_save, local_playergames{{/str}}
                 </button>
-                <a href="{{action_url}}?tab=ai" class="btn btn-outline-secondary ms-2">
+                <a href="{{action_url}}?tab=ai&amp;ai_subtab=concepts"
+                   class="btn btn-outline-secondary ms-2">
                     <i class="fa fa-trash me-1" aria-hidden="true"></i>
                     {{#str}}cartridge_preview_discard, local_playergames{{/str}}
                 </a>
@@ -201,5 +233,162 @@
         </div>
     </div>
     {{/has_ai_preview}}
+    {{/subtab_concepts}}
+
+    {{! ══════════════════════════════════════════════════ }}
+    {{! SUB-TAB: Quiz                                      }}
+    {{! ══════════════════════════════════════════════════ }}
+    {{#subtab_quiz}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">
+            <i class="fa fa-magic me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_ai_tab_quiz, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="generate_ai_quiz">
+                <input type="hidden" name="tab" value="ai">
+                <input type="hidden" name="ai_subtab" value="quiz">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="pg-quiz-topic" class="form-label">
+                            {{#str}}cartridge_ai_topic, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-topic" name="topic"
+                               value="{{quiz_form_topic}}" class="form-control" required
+                               placeholder="{{#str}}cartridge_ai_topic_desc, local_playergames{{/str}}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-quiz-language" class="form-label">
+                            {{#str}}cartridge_ai_language, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-language" name="ai_language"
+                               value="{{quiz_form_language}}" class="form-control"
+                               placeholder="Português">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-quiz-quantity" class="form-label">
+                            {{#str}}cartridge_ai_quantity, local_playergames{{/str}}
+                        </label>
+                        <input type="number" id="pg-quiz-quantity" name="quantity"
+                               value="{{quiz_form_quantity}}" min="5" max="50"
+                               class="form-control">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-magic me-1" aria-hidden="true"></i>
+                        {{#str}}cartridge_ai_quiz_generate, local_playergames{{/str}}
+                    </button>
+                </div>
+            </form>
+
+            {{#has_quiz_error}}
+            <div class="alert alert-danger mt-3 d-flex align-items-center" role="alert">
+                <i class="fa fa-times-circle fa-lg me-3" aria-hidden="true"></i>
+                <div>{{quiz_error}}</div>
+            </div>
+            {{/has_quiz_error}}
+        </div>
+    </div>
+
+    {{#has_quiz_preview}}
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-eye me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_quiz_preview_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="save_ai_quiz_cartridge">
+                <input type="hidden" name="tab" value="ai">
+                <input type="hidden" name="ai_subtab" value="quiz">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-5">
+                        <label for="pg-quiz-save-name" class="form-label">
+                            {{#str}}cartridge_name, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-save-name" name="ai_cartridge_name"
+                               value="{{quiz_preview.cartridge_name}}"
+                               class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pg-quiz-save-lang" class="form-label">
+                            {{#str}}cartridge_language, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-save-lang" name="ai_language"
+                               value="{{quiz_preview.language}}" class="form-control">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="pg-quiz-save-author" class="form-label">
+                            {{#str}}cartridge_author, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-save-author" name="ai_author"
+                               class="form-control">
+                    </div>
+                </div>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm pg-quiz-preview-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">
+                                    {{#str}}cartridge_quiz_preview_question, local_playergames{{/str}}
+                                </th>
+                                <th scope="col">
+                                    {{#str}}cartridge_quiz_preview_correct, local_playergames{{/str}}
+                                </th>
+                                <th scope="col">
+                                    {{#str}}cartridge_quiz_preview_distractors, local_playergames{{/str}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#quiz_preview.questions}}
+                            <tr>
+                                <td class="text-muted small align-top pt-2">{{index}}</td>
+                                <td>
+                                    <input type="text"
+                                           name="questions[{{index}}][questiontext]"
+                                           value="{{questiontext}}"
+                                           class="form-control form-control-sm">
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           name="questions[{{index}}][correct]"
+                                           value="{{correct}}"
+                                           class="form-control form-control-sm">
+                                </td>
+                                <td>
+                                    {{#distractors}}
+                                    <input type="text"
+                                           name="questions[{{index}}][distractors][]"
+                                           value="{{.}}"
+                                           class="form-control form-control-sm mb-1">
+                                    {{/distractors}}
+                                </td>
+                            </tr>
+                            {{/quiz_preview.questions}}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-success">
+                    <i class="fa fa-save me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_quiz_preview_save, local_playergames{{/str}}
+                </button>
+                <a href="{{action_url}}?tab=ai&amp;ai_subtab=quiz"
+                   class="btn btn-outline-secondary ms-2">
+                    <i class="fa fa-trash me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_preview_discard, local_playergames{{/str}}
+                </a>
+            </form>
+        </div>
+    </div>
+    {{/has_quiz_preview}}
+    {{/subtab_quiz}}
+
+    {{/has_ai_key}}
 
 </div>{{! .pg-tab-ai }}

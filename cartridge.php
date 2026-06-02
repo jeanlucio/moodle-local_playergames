@@ -29,7 +29,9 @@ use local_playergames\cartridge\controller;
 $tab = optional_param('tab', 'library', PARAM_ALPHA);
 $cartridgeid = optional_param('cartridgeid', 0, PARAM_INT);
 $editconceptid = optional_param('editconcept', 0, PARAM_INT);
+$editquestionid = optional_param('editquestion', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
+$aisubtab = optional_param('ai_subtab', 'concepts', PARAM_ALPHA);
 
 require_login();
 $context = context_system::instance();
@@ -44,7 +46,7 @@ $PAGE->set_pagelayout('admin');
 $PAGE->set_title(get_string('cartridge_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('cartridge_pagetitle', 'local_playergames'));
 
-$controller = new controller($context, $tab, $cartridgeid, $editconceptid);
+$controller = new controller($context, $tab, $cartridgeid, $editconceptid, $aisubtab, $editquestionid);
 
 if (data_submitted()) {
     require_sesskey();

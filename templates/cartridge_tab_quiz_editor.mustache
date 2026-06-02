@@ -1,0 +1,176 @@
+{{!
+    @template local_playergames/cartridge_tab_quiz_editor
+
+    Manual editor tab for quiz-type cartridges: add, edit and delete MCQ questions.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123",
+        "has_editor_cartridge": true,
+        "editor_cartridge_id": 13,
+        "editor_cartridge_name": "História do Brasil",
+        "url_tab_library": "/local/playergames/cartridge.php?tab=library",
+        "url_cancel_edit": "/local/playergames/cartridge.php?tab=editor&cartridgeid=13",
+        "editing_question": false,
+        "form_action": "add_quiz_question",
+        "form_question_id": 0,
+        "form_questiontext": "",
+        "form_correct": "",
+        "form_distractor_0": "",
+        "form_distractor_1": "",
+        "form_distractor_2": "",
+        "form_distractor_3": "",
+        "questions": [],
+        "questions_empty": true
+    }
+}}
+<div class="pg-tab-editor">
+
+    {{^has_editor_cartridge}}
+    <p class="text-muted">{{#str}}error_cartridge_notfound, local_playergames{{/str}}</p>
+    {{/has_editor_cartridge}}
+
+    {{#has_editor_cartridge}}
+    {{! ── Editor header ── }}
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{url_tab_library}}" class="btn btn-outline-secondary btn-sm"
+               aria-label="{{#str}}cartridge_back_to_library, local_playergames{{/str}}">
+                <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_back_to_library, local_playergames{{/str}}
+            </a>
+            <h4 class="mb-0">{{editor_cartridge_name}}</h4>
+        </div>
+    </div>
+
+    {{! ── Add / edit question form ── }}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-question-circle me-2" aria-hidden="true"></i>
+            {{#editing_question}}
+            {{#str}}quiz_editor_heading_edit, local_playergames{{/str}}
+            {{/editing_question}}
+            {{^editing_question}}
+            {{#str}}quiz_editor_heading_add, local_playergames{{/str}}
+            {{/editing_question}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="{{form_action}}">
+                <input type="hidden" name="cartridgeid" value="{{editor_cartridge_id}}">
+                <input type="hidden" name="tab" value="editor">
+                {{#editing_question}}
+                <input type="hidden" name="question_id" value="{{form_question_id}}">
+                {{/editing_question}}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="pg-q-text" class="form-label">
+                            {{#str}}quiz_editor_question, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-q-text" name="questiontext"
+                               value="{{form_questiontext}}" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-q-correct" class="form-label fw-semibold text-success">
+                            {{#str}}quiz_editor_correct, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-q-correct" name="correct"
+                               value="{{form_correct}}" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-q-d0" class="form-label text-muted">
+                            {{#str}}quiz_editor_distractor, local_playergames{{/str}} 1
+                        </label>
+                        <input type="text" id="pg-q-d0" name="distractor_0"
+                               value="{{form_distractor_0}}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-q-d1" class="form-label text-muted">
+                            {{#str}}quiz_editor_distractor, local_playergames{{/str}} 2
+                        </label>
+                        <input type="text" id="pg-q-d1" name="distractor_1"
+                               value="{{form_distractor_1}}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-q-d2" class="form-label text-muted">
+                            {{#str}}quiz_editor_distractor, local_playergames{{/str}} 3
+                        </label>
+                        <input type="text" id="pg-q-d2" name="distractor_2"
+                               value="{{form_distractor_2}}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pg-q-d3" class="form-label text-muted">
+                            {{#str}}quiz_editor_distractor, local_playergames{{/str}} 4
+                        </label>
+                        <input type="text" id="pg-q-d3" name="distractor_3"
+                               value="{{form_distractor_3}}" class="form-control">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        {{#str}}quiz_editor_save, local_playergames{{/str}}
+                    </button>
+                    {{#editing_question}}
+                    <a href="{{url_cancel_edit}}" class="btn btn-outline-secondary btn-sm ms-1">
+                        {{#str}}cancel, core{{/str}}
+                    </a>
+                    {{/editing_question}}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{! ── Question list ── }}
+    {{#questions_empty}}
+    <p class="text-muted">{{#str}}quiz_editor_list_empty, local_playergames{{/str}}</p>
+    {{/questions_empty}}
+
+    {{^questions_empty}}
+    <div class="table-responsive">
+        <table class="table table-sm pg-concept-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">{{#str}}quiz_editor_question, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}quiz_editor_correct, local_playergames{{/str}}</th>
+                    <th scope="col">{{#str}}quiz_editor_distractor, local_playergames{{/str}}s</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#questions}}
+                <tr>
+                    <td>{{id}}</td>
+                    <td>{{questiontext}}</td>
+                    <td class="text-success fw-semibold">{{correct}}</td>
+                    <td class="text-muted small">
+                        {{#distractors}}{{.}}<br>{{/distractors}}
+                    </td>
+                    <td class="pg-concept-actions">
+                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
+                            {{#str}}concept_edit, local_playergames{{/str}}
+                        </a>
+                        <form method="post" action="{{action_url}}" class="d-inline"
+                              data-pg-confirm="{{#str}}quiz_editor_confirm_delete, local_playergames{{/str}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="delete_quiz_question">
+                            <input type="hidden" name="cartridgeid" value="{{cartridgeid}}">
+                            <input type="hidden" name="question_id" value="{{id}}">
+                            <input type="hidden" name="tab" value="editor">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                {{#str}}concept_delete, local_playergames{{/str}}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {{/questions}}
+            </tbody>
+        </table>
+    </div>
+    {{/questions_empty}}
+
+    {{/has_editor_cartridge}}
+
+</div>{{! .pg-tab-editor }}

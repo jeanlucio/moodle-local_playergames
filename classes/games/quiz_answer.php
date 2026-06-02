@@ -15,18 +15,22 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Quiz answer DTO.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_playergames\games;
 
-$plugin->version   = 2026060105;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->component = 'local_playergames';
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+/**
+ * Represents a single answer option in a quiz question.
+ */
+class quiz_answer {
+    /** @var string Answer text. */
+    public string $text = '';
+
+    /** @var bool Whether this is the correct answer. */
+    public bool $correct = false;
+}

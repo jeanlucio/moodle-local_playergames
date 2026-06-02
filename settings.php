@@ -206,6 +206,28 @@ if ($hassiteconfig) {
         $conceptdayoptions
     ));
 
+    // Quiz sources.
+    $quizsources = [
+        'both'         => get_string('settings_quiz_sources_both', 'local_playergames'),
+        'cartridges'   => get_string('settings_quiz_sources_cartridges', 'local_playergames'),
+        'questionbank' => get_string('settings_quiz_sources_questionbank', 'local_playergames'),
+    ];
+    $page3->add(new admin_setting_configselect(
+        'local_playergames/quiz_sources',
+        get_string('settings_quiz_sources', 'local_playergames'),
+        get_string('settings_quiz_sources_desc', 'local_playergames'),
+        'both',
+        $quizsources
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/quiz_qbank_categoryid',
+        get_string('settings_quiz_qbank_categoryid', 'local_playergames'),
+        get_string('settings_quiz_qbank_categoryid_desc', 'local_playergames'),
+        '0',
+        PARAM_INT
+    ));
+
     $ADMIN->add('playergames', $page3);
 
     // Season management.

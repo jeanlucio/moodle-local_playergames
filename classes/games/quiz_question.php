@@ -15,18 +15,31 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Quiz question DTO.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_playergames\games;
 
-$plugin->version   = 2026060105;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->component = 'local_playergames';
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+/**
+ * Represents a single quiz question with its answer options.
+ *
+ * Source-agnostic: questions from cartridges and from the Moodle question bank
+ * are both normalised into this structure before being sent to the template.
+ */
+class quiz_question {
+    /** @var string Origin of the question: 'cartridge' or 'questionbank'. */
+    public string $source = '';
+
+    /** @var int Primary key of the source record. */
+    public int $sourceid = 0;
+
+    /** @var string Question stem text. */
+    public string $questiontext = '';
+
+    /** @var quiz_answer[] Five answer options, pre-shuffled. */
+    public array $answers = [];
+}

@@ -396,17 +396,25 @@ class hub implements renderable, templatable {
             'fill'   => 'hub_game_fill',
             'battle' => 'hub_game_battle',
         ];
+        $gameurls = [
+            'quiz'   => (new \moodle_url('/local/playergames/play_quiz.php'))->out(false),
+            'guess'  => '',
+            'fill'   => '',
+            'battle' => '',
+        ];
         $result = [];
         foreach ($gametypes as $gametype) {
             $done    = isset($played[$gametype]);
             $locked  = !$hascartridge && !$done;
+            $pending = !$done && !$locked;
             $result[] = [
                 'gametype' => $gametype,
                 'name'     => get_string($namekeys[$gametype], 'local_playergames'),
                 'icon'     => self::GAME_ICONS[$gametype],
                 'done'     => $done,
                 'locked'   => $locked,
-                'pending'  => !$done && !$locked,
+                'pending'  => $pending,
+                'url'      => $pending ? ($gameurls[$gametype] ?? '') : '',
                 'str_done'    => get_string('hub_game_done', 'local_playergames'),
                 'str_pending' => get_string('hub_game_pending', 'local_playergames'),
                 'str_locked'  => get_string('hub_game_locked', 'local_playergames'),
