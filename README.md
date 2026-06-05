@@ -37,7 +37,7 @@
 * 🎯 **Player Hub — Missions:** Daily, streak-based, cumulative XP, and victory-based missions with configurable XP rewards.
 * 🏅 **Player Hub — Achievements:** Permanent achievements that persist across seasons.
 * 🏷️ **Player Hub — Titles:** Level-based titles visible in Moodle profiles, forums, and courses.
-* 📦 **Cartridge System:** Import concept packs for the mini-games. Five ways to populate: JSON upload, AI generation (Gemini/Groq/OpenAI), manual editor, Moodle Question Bank (imported directly from any question category), and Moodle Glossary (terms and definitions reused as-is). Supports multiple active cartridges simultaneously.
+* 📦 **Cartridge System:** Content source for the mini-games, split by game type: PlayerQuiz and PlayerBattle draw from the **Moodle Question Bank**; PlayerGuess and PlayerFill draw from the **Moodle Glossary**. Four ways to populate: manual creation (JSON upload or inline editor), AI generation (Gemini/Groq/OpenAI), Moodle Question Bank (any question category), and Moodle Glossary (terms and definitions reused as-is). Supports multiple active cartridges simultaneously.
 * 🧠 **PlayerQuiz:** Daily multiple-choice mini-game using concepts from the active cartridge. Wrong answer → new concept; correct answer → XP.
 * 📅 **Season Management:** Create, close, and auto-renew seasons with configuration snapshots. Historical data is preserved when a season closes.
 
@@ -247,7 +247,7 @@ O **PlayerGames** (`local_playergames`) é o hub central do ecossistema de gamif
 * 🎯 **Player Hub — Missões:** Missões diárias, por streak, cumulativas de XP e por vitória, com recompensas de XP configuráveis.
 * 🏅 **Player Hub — Conquistas:** Conquistas permanentes que persistem entre temporadas.
 * 🏷️ **Player Hub — Títulos:** Títulos baseados em nível visíveis no perfil Moodle, fóruns e cursos.
-* 📦 **Sistema de Cartuchos:** Importe pacotes de conceitos para os minijogos. Cinco formas de popular: upload de JSON, geração com IA (Gemini/Groq/OpenAI), editor manual, Banco de Questões do Moodle (importado diretamente de qualquer categoria de questões) e Glossário do Moodle (termos e definições reaproveitados sem configuração adicional). Múltiplos cartuchos ativos simultaneamente.
+* 📦 **Sistema de Cartuchos:** Fonte de conteúdo para os minijogos, dividida por tipo de jogo: PlayerQuiz e PlayerBattle puxam do **Banco de Questões do Moodle**; PlayerGuess e PlayerFill puxam do **Glossário do Moodle**. Quatro formas de popular: criação manual (upload de JSON ou editor inline), geração com IA (Gemini/Groq/OpenAI), Banco de Questões do Moodle (qualquer categoria de questões) e Glossário do Moodle (termos e definições reaproveitados sem configuração adicional). Múltiplos cartuchos ativos simultaneamente.
 * 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo. Errou → novo conceito; acertou → XP.
 * 📅 **Gerenciamento de Temporadas:** Criar, fechar e renovar automaticamente temporadas com snapshots de configuração. O histórico é preservado ao fechar uma temporada.
 
