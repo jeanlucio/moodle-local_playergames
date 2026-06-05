@@ -3,9 +3,9 @@
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-local_playergames/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-local_playergames/actions/workflows/ci.yml)
 ![Moodle](https://img.shields.io/badge/Moodle-4.5%2B-orange?style=flat-square&logo=moodle&logoColor=white)
 ![License](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow?style=flat-square)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square)
 [![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat-square&logo=gamepad&logoColor=white)](https://moodle.org/plugins/browse.php?list=contributor&id=3970322)
-![Core Component](https://img.shields.io/badge/Role-Hub_Central-198754?style=flat-square)
+![Core Component](https://img.shields.io/badge/Role-Central%20Hub-198754?style=flat-square)
 
 > ⚠️ **This plugin is under active development.** It is not yet published on the Moodle Plugin Directory. Some features described below are planned and not yet implemented.
 
