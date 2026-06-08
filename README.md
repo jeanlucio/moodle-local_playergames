@@ -81,6 +81,26 @@ PlayerGames selects an AI provider using a fixed priority order. The first provi
 
 > **Provider order beats key origin.** If a Gemini key exists only at level 4 (PlayerHUD site config) and a Groq key exists at level 2 (PlayerGames site config), Gemini is used because it is tested first.
 
+**Integration API for other plugins:**
+
+Other plugins in the Player ecosystem can delegate AI calls to PlayerGames without managing keys themselves:
+
+```php
+use local_playergames\cartridge\ai_generator;
+use local_playergames\api_key_helper;
+
+// Check availability before showing any AI UI
+if (class_exists(ai_generator::class) && api_key_helper::has_any_key()) {
+    $gen = new ai_generator();
+    $result = $gen->send('Your custom prompt here');
+    // $result['success'] (bool), $result['data'] (string), $result['provider'] (string)
+}
+```
+
+- `api_key_helper::has_any_key()` — returns `true` if at least one provider is configured.
+- `ai_generator::send(string $prompt): array` — sends a raw prompt through the full provider chain and returns the raw text response. Use this when the calling plugin has its own prompt format and response parser.
+- `ai_generator::generate(...)` — use only when you need concept arrays in `{term, definition, category, difficulty}` format.
+
 ---
 
 ### 📦 Cartridge Format
@@ -293,6 +313,26 @@ O PlayerGames seleciona um provedor de IA seguindo uma ordem de prioridade fixa.
 | 4 | Chave global cadastrada pelo admin nas configurações do **block_playerhud** (se instalado) |
 
 > **A ordem do provedor prevalece sobre a origem da chave.** Se uma chave Gemini existe apenas no nível 4 (config global do PlayerHUD) e uma chave Groq existe no nível 2 (config global do PlayerGames), o Gemini é utilizado porque é testado primeiro.
+
+**API de integração para outros plugins:**
+
+Outros plugins do ecossistema Player podem delegar chamadas de IA ao PlayerGames sem gerenciar chaves diretamente:
+
+```php
+use local_playergames\cartridge\ai_generator;
+use local_playergames\api_key_helper;
+
+// Verificar disponibilidade antes de exibir qualquer interface de IA
+if (class_exists(ai_generator::class) && api_key_helper::has_any_key()) {
+    $gen = new ai_generator();
+    $result = $gen->send('Seu prompt personalizado aqui');
+    // $result['success'] (bool), $result['data'] (string), $result['provider'] (string)
+}
+```
+
+- `api_key_helper::has_any_key()` — retorna `true` se ao menos um provedor estiver configurado.
+- `ai_generator::send(string $prompt): array` — envia um prompt livre pela cadeia completa de provedores e retorna o texto bruto. Use quando o plugin chamador tem seu próprio formato de prompt e parser de resposta.
+- `ai_generator::generate(...)` — use apenas quando precisar de arrays de conceitos no formato `{term, definition, category, difficulty}`.
 
 ---
 

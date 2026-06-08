@@ -74,6 +74,19 @@ class ai_generator {
     }
 
     /**
+     * Sends a raw prompt to the configured AI provider and returns the result array.
+     *
+     * Allows external plugins to use the provider chain without coupling to the
+     * concept-generation prompt format of {@see generate()}.
+     *
+     * @param string $prompt The full prompt text.
+     * @return array Result with keys: success (bool), data (string), message (string), provider (string).
+     */
+    public function send(string $prompt): array {
+        return $this->call_api($prompt);
+    }
+
+    /**
      * Returns whether at least one AI provider key is currently available.
      *
      * @return bool
