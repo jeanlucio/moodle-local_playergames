@@ -5,6 +5,15 @@ Versions align with `$plugin->release` in `version.php`.
 
 ---
 
+## 0.1.2 — 2026-06-15
+
+- The Moodle `core_ai` manager is now retrieved through the dependency container
+  (`\core\di::get(\core_ai\manager::class)`), the documented retrieval pattern,
+  instead of a reflection-based constructor shim. Behaviour is unchanged; the
+  code now matches the official AI usage example.
+
+---
+
 ## 0.1.1 — 2026-06-15
 
 - AI provider resolution is now **level-first** and consistent with the rest of

@@ -304,20 +304,15 @@ class ai_generator {
     }
 
     /**
-     * Instantiates core_ai manager for the current Moodle version.
+     * Instantiates core_ai manager through the Moodle dependency container.
      *
-     * Reflects on get_providers_for_actions — the method used in call_core_ai — so
-     * the staticness check is consistent between availability detection and actual calls.
+     * This is the documented retrieval pattern for the manager (the container
+     * injects the required dependencies for the running Moodle version).
      *
      * @return \core_ai\manager
      */
     private function make_core_ai_manager(): \core_ai\manager {
-        global $DB;
-        $reflection = new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions');
-        if ($reflection->isStatic()) {
-            return new \core_ai\manager();
-        }
-        return new \core_ai\manager($DB);
+        return \core\di::get(\core_ai\manager::class);
     }
 
     /**
