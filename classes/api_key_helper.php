@@ -17,11 +17,13 @@
 /**
  * AI API key helper for local_playergames.
  *
- * Resolution chain (highest priority first):
- * 1. User preference  local_playergames_{provider}_key  (opt-in personal key in this hub)
- * 2. Hub site config  local_playergames / {provider}_key
- * 3. User preference  block_playerhud_{provider}_key  (personal key set inside PlayerHUD)
- * 4. Legacy block site config  block_playerhud / apikey_{provider}  (backward compat)
+ * This hub owns the canonical key store. Resolution is level-first:
+ * 1. Personal key  local_playergames_{provider}_key   (opt-in, per user)
+ * 2. Site key      local_playergames / {provider}_key  (admin-wide)
+ *
+ * core_ai is consulted by the generator after both, as the institutional default.
+ * Keys are pg-only here: each plugin reads its own store directly and this hub
+ * separately, so there is no cross-plugin key bridging.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -31,7 +33,7 @@
 namespace local_playergames;
 
 /**
- * Resolves AI API keys following the three-level fallback chain.
+ * Resolves AI API keys for the hub, personal-first then site.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -48,41 +50,61 @@ class api_key_helper {
     const PROVIDER_OPENAI = 'openai';
 
     /**
-     * Returns the resolved API key for the given provider.
+     * Returns the personal (per-user, opt-in) API key for a provider, or '' if unset.
      *
-     * Returns an empty string when no key is configured at any level.
+     * @param string $provider One of the PROVIDER_* constants.
+     * @param int|null $userid Defaults to $USER->id.
+     * @return string
+     */
+    public static function get_personal_key(string $provider, ?int $userid = null): string {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        return (string) get_user_preferences('local_playergames_' . $provider . '_key', '', $userid);
+    }
+
+    /**
+     * Returns the site-wide (admin-configured) API key for a provider, or '' if unset.
+     *
+     * @param string $provider One of the PROVIDER_* constants.
+     * @return string
+     */
+    public static function get_site_key(string $provider): string {
+        return (string) get_config('local_playergames', $provider . '_key');
+    }
+
+    /**
+     * Returns true when the user has at least one personal key set (any provider).
+     *
+     * @param int|null $userid Defaults to $USER->id.
+     * @return bool
+     */
+    public static function has_personal_key(?int $userid = null): bool {
+        $providers = [self::PROVIDER_GEMINI, self::PROVIDER_GROQ, self::PROVIDER_OPENAI];
+        foreach ($providers as $provider) {
+            if (self::get_personal_key($provider, $userid) !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the resolved API key for a provider: personal first, then site.
+     *
+     * Returns an empty string when no key is configured. core_ai is handled
+     * separately by the generator.
      *
      * @param string $provider One of the PROVIDER_* constants.
      * @param int|null $userid User whose personal key is checked first. Defaults to $USER->id.
      * @return string
      */
     public static function get_key(string $provider, ?int $userid = null): string {
-        global $USER;
-
-        $userid = $userid ?? (int) $USER->id;
-
-        // Level 1: user personal preference (opt-in via mykeys.php).
-        $prefname = 'local_playergames_' . $provider . '_key';
-        $personal = get_user_preferences($prefname, '', $userid);
+        $personal = self::get_personal_key($provider, $userid);
         if ($personal !== '') {
             return $personal;
         }
-
-        // Level 2: hub site config.
-        $hub = (string) get_config('local_playergames', $provider . '_key');
-        if ($hub !== '') {
-            return $hub;
-        }
-
-        // Level 3: legacy block_playerhud user preference (personal key set by the user in PlayerHUD).
-        $legacypref = get_user_preferences('block_playerhud_' . $provider . '_key', '', $userid);
-        if ($legacypref !== '') {
-            return $legacypref;
-        }
-
-        // Level 4: legacy block_playerhud site config (admin-wide key set in PlayerHUD settings).
-        // block_playerhud uses 'apikey_{provider}' (e.g. apikey_gemini), not '{provider}_key'.
-        return (string) get_config('block_playerhud', 'apikey_' . $provider);
+        return self::get_site_key($provider);
     }
 
     /**

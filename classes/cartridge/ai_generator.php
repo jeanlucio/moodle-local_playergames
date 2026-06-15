@@ -27,9 +27,10 @@ namespace local_playergames\cartridge;
 use local_playergames\api_key_helper;
 
 /**
- * Generates concept cartridge content by prompting configured AI providers.
+ * Generates AI content by prompting configured providers, level-first.
  *
- * Provider priority: Gemini → Groq → OpenAI-compatible (first key found wins).
+ * Resolution: personal keys (any provider) → site keys (any provider) → Moodle
+ * core_ai. Within a tier the provider order is Gemini → Groq → OpenAI-compatible.
  */
 class ai_generator {
     /** @var int HTTP timeout in seconds for AI API calls. */
@@ -56,7 +57,7 @@ class ai_generator {
         string $context = ''
     ): array {
         $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames, $context);
-        $result = $this->call_api($prompt);
+        $result = $this->call_api('', $prompt, true);
         if (!$result['success']) {
             if (empty($result['message'])) {
                 throw new \moodle_exception('error_no_ai_key', 'local_playergames');
@@ -83,7 +84,35 @@ class ai_generator {
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
     public function send(string $prompt): array {
-        return $this->call_api($prompt);
+        return $this->call_api('', $prompt, true);
+    }
+
+    /**
+     * Generates free text from a system + user prompt pair via the provider chain.
+     *
+     * Stable generic entry point for plugins that build their own prompts (course
+     * generation, etc.). Returns the raw provider text; the caller decodes it.
+     *
+     * @param string $system System instruction (role/rules); may be empty.
+     * @param string $user User prompt text.
+     * @param bool $jsonmode Request structured JSON output (default false for free text).
+     * @return string The generated text.
+     * @throws \moodle_exception If no AI source is available or the request fails.
+     */
+    public function generate_text(string $system, string $user, bool $jsonmode = false): string {
+        $result = $this->call_api($system, $user, $jsonmode);
+        if (!$result['success']) {
+            if (empty($result['message'])) {
+                throw new \moodle_exception('error_no_ai_key', 'local_playergames');
+            }
+            throw new \moodle_exception(
+                'error_ai_request_failed',
+                'local_playergames',
+                '',
+                $result['message']
+            );
+        }
+        return (string) $result['data'];
     }
 
     /**
@@ -177,22 +206,37 @@ class ai_generator {
     }
 
     /**
-     * Tries configured providers in priority order:
-     * Moodle core_ai → Gemini → Groq → OpenAI-compatible.
+     * Resolves a provider and generates content, level-first.
      *
-     * If a provider is unavailable or its call fails (network error, timeout, HTTP error),
-     * the next available provider is tried automatically. The error from the last
-     * attempted provider is returned only when all options are exhausted.
+     * Order: personal keys (any provider) → site keys (any provider) → Moodle
+     * core_ai. Within a tier the provider order is Gemini → Groq → OpenAI. If a
+     * provider call fails (network error, timeout, HTTP error), the next available
+     * one is tried. The error from the last attempt is returned only when all
+     * options are exhausted.
      *
-     * @param string $prompt The prompt text.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
+     * @param bool $jsonmode Whether to request structured JSON output from providers.
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
-    protected function call_api(string $prompt): array {
+    protected function call_api(string $system, string $user, bool $jsonmode): array {
         $lasterror = ['success' => false, 'message' => ''];
 
-        // Priority 0: Moodle core_ai subsystem (Moodle 4.5+).
+        // Tier 1: personal keys (the user's own, opt-in).
+        $result = $this->try_key_tier($system, $user, $jsonmode, true, $lasterror);
+        if ($result !== null) {
+            return $result;
+        }
+
+        // Tier 2: site keys (admin-wide).
+        $result = $this->try_key_tier($system, $user, $jsonmode, false, $lasterror);
+        if ($result !== null) {
+            return $result;
+        }
+
+        // Tier 3: Moodle core_ai — institutional default at the bottom.
         if (api_key_helper::has_core_ai_provider()) {
-            $result = $this->call_core_ai($prompt);
+            $result = $this->call_core_ai($system, $user);
             if ($result['success']) {
                 return $result;
             }
@@ -201,40 +245,62 @@ class ai_generator {
             }
         }
 
-        // Priority 1: Gemini.
-        $geminikey = api_key_helper::get_gemini_key();
+        return $lasterror;
+    }
+
+    /**
+     * Tries Gemini → Groq → OpenAI for a single key tier (personal or site).
+     *
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
+     * @param bool $jsonmode Whether to request structured JSON output.
+     * @param bool $personal True for the personal-key tier, false for the site-key tier.
+     * @param array $lasterror Updated in place with the last failing provider result.
+     * @return array|null A successful result, or null when no provider in this tier succeeded.
+     */
+    private function try_key_tier(
+        string $system,
+        string $user,
+        bool $jsonmode,
+        bool $personal,
+        array &$lasterror
+    ): ?array {
+        $key = function (string $provider) use ($personal): string {
+            return $personal
+                ? api_key_helper::get_personal_key($provider)
+                : api_key_helper::get_site_key($provider);
+        };
+
+        $geminikey = $key(api_key_helper::PROVIDER_GEMINI);
         if ($geminikey !== '') {
-            $result = $this->call_gemini($prompt, $geminikey);
+            $result = $this->call_gemini($system, $user, $geminikey, $jsonmode);
             if ($result['success']) {
                 return $result;
             }
             $lasterror = $result;
         }
 
-        // Priority 2: Groq.
-        $groqkey = api_key_helper::get_groq_key();
+        $groqkey = $key(api_key_helper::PROVIDER_GROQ);
         if ($groqkey !== '') {
-            $result = $this->call_groq($prompt, $groqkey);
+            $result = $this->call_groq($system, $user, $groqkey, $jsonmode);
             if ($result['success']) {
                 return $result;
             }
             $lasterror = $result;
         }
 
-        // Priority 3: OpenAI-compatible.
-        $openaikey = api_key_helper::get_openai_key();
+        $openaikey = $key(api_key_helper::PROVIDER_OPENAI);
         $openaiurl = api_key_helper::get_openai_baseurl();
         if ($openaikey !== '' && $this->is_safe_url($openaiurl)) {
-            $url = $openaiurl;
             $model = api_key_helper::get_openai_model();
-            $result = $this->call_openai_compatible($prompt, $openaikey, $url, $model);
+            $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
             if ($result['success']) {
                 return $result;
             }
             $lasterror = $result;
         }
 
-        return $lasterror;
+        return null;
     }
 
     /**
@@ -257,12 +323,15 @@ class ai_generator {
     /**
      * Generates text via the Moodle core_ai subsystem.
      *
-     * Falls back silently (empty message) when no providers are configured.
+     * core_ai's generate_text action has no separate system field, so the system
+     * instruction is prepended to the user prompt. Falls back silently (empty
+     * message) when no providers are configured.
      *
-     * @param string $prompt The prompt text.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
-    protected function call_core_ai(string $prompt): array {
+    protected function call_core_ai(string $system, string $user): array {
         global $USER;
 
         try {
@@ -274,10 +343,11 @@ class ai_generator {
                 return ['success' => false, 'message' => ''];
             }
 
+            $prompttext = $system !== '' ? ($system . "\n\n" . $user) : $user;
             $action = new \core_ai\aiactions\generate_text(
                 contextid: \context_system::instance()->id,
                 userid: (int) $USER->id,
-                prompttext: $prompt,
+                prompttext: $prompttext,
             );
 
             $response = $manager->process_action($action);
@@ -305,17 +375,22 @@ class ai_generator {
      * Uses responseMimeType=application/json to force structured output and
      * avoid truncated or wrapped responses for large concept counts.
      *
-     * @param string $prompt The prompt text.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
      * @param string $key Gemini API key.
+     * @param bool $jsonmode Whether to force JSON output.
      * @return array HTTP result array.
      */
-    protected function call_gemini(string $prompt, string $key): array {
+    protected function call_gemini(string $system, string $user, string $key, bool $jsonmode): array {
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
             . 'gemini-flash-latest:generateContent';
-        $data = [
-            'contents' => [['parts' => [['text' => $prompt]]]],
-            'generationConfig' => ['responseMimeType' => 'application/json'],
-        ];
+        $data = ['contents' => [['parts' => [['text' => $user]]]]];
+        if ($system !== '') {
+            $data['systemInstruction'] = ['parts' => [['text' => $system]]];
+        }
+        if ($jsonmode) {
+            $data['generationConfig'] = ['responseMimeType' => 'application/json'];
+        }
         return $this->http_post(
             $url,
             json_encode($data),
@@ -327,17 +402,21 @@ class ai_generator {
     /**
      * Calls the Groq inference API.
      *
-     * @param string $prompt The prompt text.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
      * @param string $key Groq API key.
+     * @param bool $jsonmode Whether to force JSON output.
      * @return array HTTP result array.
      */
-    protected function call_groq(string $prompt, string $key): array {
+    protected function call_groq(string $system, string $user, string $key, bool $jsonmode): array {
         $url = 'https://api.groq.com/openai/v1/chat/completions';
         $data = [
             'model' => 'llama-3.3-70b-versatile',
-            'messages' => [['role' => 'user', 'content' => $prompt]],
-            'response_format' => ['type' => 'json_object'],
+            'messages' => $this->build_chat_messages($system, $user),
         ];
+        if ($jsonmode) {
+            $data['response_format'] = ['type' => 'json_object'];
+        }
         return $this->http_post(
             $url,
             json_encode($data),
@@ -349,30 +428,52 @@ class ai_generator {
     /**
      * Calls any OpenAI-compatible /chat/completions endpoint.
      *
-     * @param string $prompt The prompt text.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
      * @param string $key API key.
      * @param string $endpointurl Full URL to the chat completions endpoint.
      * @param string $model Model identifier (e.g. gpt-4o-mini).
+     * @param bool $jsonmode Whether to force JSON output.
      * @return array HTTP result array.
      */
     protected function call_openai_compatible(
-        string $prompt,
+        string $system,
+        string $user,
         string $key,
         string $endpointurl,
-        string $model
+        string $model,
+        bool $jsonmode
     ): array {
         $modelname = $model !== '' ? $model : 'gpt-4o-mini';
         $data = [
             'model' => $modelname,
-            'messages' => [['role' => 'user', 'content' => $prompt]],
-            'response_format' => ['type' => 'json_object'],
+            'messages' => $this->build_chat_messages($system, $user),
         ];
+        if ($jsonmode) {
+            $data['response_format'] = ['type' => 'json_object'];
+        }
         return $this->http_post(
             $endpointurl,
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'OpenAI'
         ) + ['model' => $modelname];
+    }
+
+    /**
+     * Builds an OpenAI-style messages array with an optional system message.
+     *
+     * @param string $system System instruction (omitted when empty).
+     * @param string $user User prompt text.
+     * @return array The messages array.
+     */
+    private function build_chat_messages(string $system, string $user): array {
+        $messages = [];
+        if ($system !== '') {
+            $messages[] = ['role' => 'system', 'content' => $system];
+        }
+        $messages[] = ['role' => 'user', 'content' => $user];
+        return $messages;
     }
 
     /**
