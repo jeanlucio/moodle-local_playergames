@@ -42,6 +42,11 @@ body.path-local-playergames .pg-gap-3 {
 
 /* ── Ecosystem dashboard ─────────────────────────────────────────── */
 
+body.path-local-playergames .local-playergames-dashboard {
+    --pg-edge-missing: #cbd5e1;
+    --pg-node-missing-stroke: #94a3b8;
+}
+
 body.path-local-playergames .local-playergames-dashboard .pg-nav-card {
     border: 1px solid var(--border-color, #dee2e6);
     border-radius: 0.5rem;
@@ -72,7 +77,7 @@ body.path-local-playergames .local-playergames-dashboard .pg-edge {
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-edge-missing {
-    stroke: #cbd5e1;
+    stroke: var(--pg-edge-missing);
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-arrow-marker {
@@ -89,19 +94,19 @@ body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-node:focu
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-node-hub circle {
-    stroke: #fff;
+    stroke: var(--white, #fff);
     stroke-width: 3;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-node-missing circle {
-    stroke: #94a3b8;
+    stroke: var(--pg-node-missing-stroke);
     stroke-width: 2;
     stroke-dasharray: 7 4;
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-node-abbr {
-    fill: #fff;
+    fill: var(--white, #fff);
     font-size: 0.875rem;
     font-weight: 700;
     font-family: inherit;
@@ -115,4 +120,28 @@ body.path-local-playergames .local-playergames-dashboard .pg-node-label {
     font-family: inherit;
     pointer-events: none;
     user-select: none;
+}
+
+/* ── Quiz ────────────────────────────────────────────────────────── */
+
+body.path-local-playergames .pg-play-quiz-wrap {
+    max-width: 700px;
+}
+
+body.path-local-playergames .pg-quiz-question {
+    display: none;
+}
+
+body.path-local-playergames #pg-quiz-result {
+    display: none;
+}
+
+/* ── Hub: ranking table and mission progress bar ─────────────────── */
+
+body.path-local-playergames .pg-hub-rank-pos-col {
+    width: 3rem;
+}
+
+body.path-local-playergames .pg-hub-mission-progress {
+    height: 6px;
 }

@@ -93,6 +93,7 @@ class mykeys {
             'ailog_empty_label'     => get_string('mykeys_ailog_empty', 'local_playergames'),
             'ailog_topic_label'     => get_string('mykeys_ailog_topic', 'local_playergames'),
             'ailog_concepts_label'  => get_string('mykeys_ailog_concepts', 'local_playergames'),
+            'ailog_date_label'      => get_string('mykeys_ailog_date', 'local_playergames'),
             'ailog_model_label'     => get_string('mykeys_ailog_model', 'local_playergames'),
             'ailog_rows'            => $logrows,
             'ailog_has_rows'        => !empty($logrows),

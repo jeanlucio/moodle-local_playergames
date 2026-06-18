@@ -228,12 +228,10 @@ class mission_manager {
         }
         [$insql, $params] = $DB->get_in_or_equal($missionids, SQL_PARAMS_NAMED, 'mid');
         $params['seasonid'] = $seasonid;
-        $DB->execute(
-            "UPDATE {local_playergames_mission_progress}
-                SET completed = 0, currentvalue = 0, timecompleted = NULL
-              WHERE missionid {$insql} AND seasonid = :seasonid",
-            $params
-        );
+        $where = "missionid {$insql} AND seasonid = :seasonid";
+        $DB->set_field_select('local_playergames_mission_progress', 'completed', 0, $where, $params);
+        $DB->set_field_select('local_playergames_mission_progress', 'currentvalue', 0, $where, $params);
+        $DB->set_field_select('local_playergames_mission_progress', 'timecompleted', null, $where, $params);
     }
 
     /**
@@ -270,13 +268,8 @@ class mission_manager {
         [$notinsql, $params] = $DB->get_in_or_equal($checkedinuserids, SQL_PARAMS_NAMED, 'uid', false);
         $params['mid'] = $missionid;
         $params['sid'] = $seasonid;
-        $DB->execute(
-            "UPDATE {local_playergames_mission_progress}
-                SET currentvalue = 0
-              WHERE missionid = :mid AND seasonid = :sid AND currentvalue > 0
-                AND userid {$notinsql}",
-            $params
-        );
+        $where = "missionid = :mid AND seasonid = :sid AND currentvalue > 0 AND userid {$notinsql}";
+        $DB->set_field_select('local_playergames_mission_progress', 'currentvalue', 0, $where, $params);
     }
 
     /**

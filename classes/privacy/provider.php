@@ -58,6 +58,12 @@ class provider implements user_preference_provider {
             'local_playergames_openai_key',
             'privacy:pref_openai_key'
         );
+
+        $aifields = ['content' => 'privacy:external_ai_content'];
+        $collection->add_external_location_link('google_gemini', $aifields, 'privacy:external_gemini');
+        $collection->add_external_location_link('groq', $aifields, 'privacy:external_groq');
+        $collection->add_external_location_link('openai', $aifields, 'privacy:external_openai');
+
         return $collection;
     }
 

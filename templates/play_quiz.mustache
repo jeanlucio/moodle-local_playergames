@@ -31,7 +31,7 @@
         ]
     }
 }}
-<div class="local-playergames-play-quiz container py-4" style="max-width: 700px;">
+<div class="local-playergames-play-quiz pg-play-quiz-wrap container py-4">
 
     {{#already_played}}
     <div class="alert alert-info" role="alert">
@@ -61,7 +61,7 @@
         </div>
 
         {{#questions}}
-        <div class="pg-quiz-question" data-index="{{index}}" style="display:none;">
+        <div class="pg-quiz-question" data-index="{{index}}">
             <p class="fs-5 fw-semibold mb-4">{{{questiontext}}}</p>
             <div class="d-grid gap-2">
                 {{#answers}}
@@ -76,7 +76,7 @@
         </div>
         {{/questions}}
 
-        <div id="pg-quiz-result" style="display:none;">
+        <div id="pg-quiz-result">
             <div class="card border-0 shadow-sm text-center p-4">
                 <h3 class="mb-3">
                     <i class="fa fa-star text-warning me-2" aria-hidden="true"></i>

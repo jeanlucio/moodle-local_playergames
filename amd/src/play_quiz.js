@@ -38,10 +38,10 @@ define([], function() {
      */
     const showQuestion = (index) => {
         questions.forEach(q => {
-            q.style.display = 'none';
+            q.classList.add('d-none');
         });
         if (questions.length > 0) {
-            questions[index].style.display = '';
+            questions[index].classList.remove('d-none');
         }
         const progressText = document.getElementById('pg-quiz-progress-text');
         if (progressText) {
@@ -124,15 +124,15 @@ define([], function() {
      */
     const showResult = () => {
         questions.forEach(q => {
-            q.style.display = 'none';
+            q.classList.add('d-none');
         });
         const progressText = document.getElementById('pg-quiz-progress-text');
         if (progressText) {
-            progressText.style.display = 'none';
+            progressText.classList.add('d-none');
         }
         const result = document.getElementById('pg-quiz-result');
         if (result) {
-            result.style.display = '';
+            result.classList.remove('d-none');
         }
     };
 

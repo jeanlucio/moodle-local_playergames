@@ -63,7 +63,7 @@
     {{#has_ai_key}}
 
     {{! ══════════════════════════════════════════════════ }}
-    {{! SUB-TAB: Conceitos                                 }}
+    {{! SUB-TAB: Concepts                                  }}
     {{! ══════════════════════════════════════════════════ }}
     {{#subtab_concepts}}
     <div class="card shadow-sm mb-4">
@@ -197,21 +197,25 @@
                                 <td>
                                     <input type="text" name="concepts[{{index}}][term]"
                                            value="{{term}}"
+                                           aria-label="{{#str}}concept_term, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
                                     <input type="text" name="concepts[{{index}}][definition]"
                                            value="{{definition}}"
+                                           aria-label="{{#str}}concept_definition, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
                                     <input type="text" name="concepts[{{index}}][category]"
                                            value="{{category}}"
+                                           aria-label="{{#str}}concept_category, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-category-input">
                                 </td>
                                 <td>
                                     <input type="number" name="concepts[{{index}}][difficulty]"
                                            value="{{difficulty}}" min="1" max="5"
+                                           aria-label="{{#str}}concept_difficulty, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-difficulty-input">
                                 </td>
                             </tr>
