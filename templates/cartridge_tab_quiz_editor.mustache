@@ -32,7 +32,17 @@
     {{/has_editor_cartridge}}
 
     {{#has_editor_cartridge}}
-    {{! ── Editor header ── }}
+    {{! ── Breadcrumb + editor header ── }}
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{url_tab_library}}">
+                    {{#str}}cartridge_tab_library, local_playergames{{/str}}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{editor_cartridge_name}}</li>
+        </ol>
+    </nav>
     <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
         <div class="d-flex align-items-center gap-3">
             <a href="{{url_tab_library}}" class="btn btn-outline-secondary btn-sm"
@@ -41,6 +51,15 @@
                 {{#str}}cartridge_back_to_library, local_playergames{{/str}}
             </a>
             <h4 class="mb-0">{{editor_cartridge_name}}</h4>
+            <span class="badge pg-cart-badge-quiz">
+                {{#str}}cartridge_type_quiz, local_playergames{{/str}}
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{export_url}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-download me-1" aria-hidden="true"></i>
+                {{#str}}cartridge_export, local_playergames{{/str}}
+            </a>
         </div>
     </div>
 

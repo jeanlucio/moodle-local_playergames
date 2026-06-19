@@ -1,18 +1,17 @@
 {{!
     @template local_playergames/cartridge_tab_editor
 
-    Manual editor tab: create a new cartridge or edit concepts of an existing one.
-    When has_editor_cartridge is false, shows the "create new" form.
-    When has_editor_cartridge is true, shows the full concept editor.
+    Concept editor (level 2): edit categories and concepts of a concept cartridge.
+    Reached only with a valid cartridge id; the shell hides the tab bar.
 
     Example context (json):
     {
         "action_url": "/local/playergames/cartridge.php",
         "sesskey": "abc123",
-        "has_editor_cartridge": false,
-        "editor_cartridge_id": 0,
-        "editor_cartridge_name": "",
-        "export_url": "",
+        "has_editor_cartridge": true,
+        "editor_cartridge_id": 7,
+        "editor_cartridge_name": "Gamification Fundamentals",
+        "export_url": "/local/playergames/cartridge.php?action=export_cartridge&cartridgeid=7",
         "url_tab_library": "/local/playergames/cartridge.php?tab=library",
         "editing_concept": false,
         "form_action": "add_concept",
@@ -30,52 +29,17 @@
 }}
 <div class="pg-tab-editor">
 
-    {{^has_editor_cartridge}}
-    {{! ── New cartridge form ── }}
-    <div class="card shadow-sm">
-        <div class="card-header fw-bold">
-            <i class="fa fa-pencil me-2" aria-hidden="true"></i>
-            {{#str}}cartridge_new_heading, local_playergames{{/str}}
-        </div>
-        <div class="card-body">
-            <form method="post" action="{{action_url}}" class="row g-3 align-items-end">
-                <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <input type="hidden" name="action" value="create_cartridge">
-                <input type="hidden" name="tab" value="editor">
-                <div class="col-md-4">
-                    <label for="pg-new-name" class="form-label">
-                        {{#str}}cartridge_name, local_playergames{{/str}}
-                    </label>
-                    <input type="text" id="pg-new-name" name="cartridge_name"
-                           class="form-control" required>
-                </div>
-                <div class="col-md-2">
-                    <label for="pg-new-lang" class="form-label">
-                        {{#str}}cartridge_language, local_playergames{{/str}}
-                    </label>
-                    <input type="text" id="pg-new-lang" name="cartridge_language"
-                           class="form-control" placeholder="pt_BR">
-                </div>
-                <div class="col-md-4">
-                    <label for="pg-new-author" class="form-label">
-                        {{#str}}cartridge_author, local_playergames{{/str}}
-                    </label>
-                    <input type="text" id="pg-new-author" name="cartridge_author"
-                           class="form-control">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-plus me-1" aria-hidden="true"></i>
-                        {{#str}}cartridge_new_create, local_playergames{{/str}}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    {{/has_editor_cartridge}}
-
-    {{#has_editor_cartridge}}
-    {{! ── Editor header: cartridge name + actions ── }}
+    {{! ── Breadcrumb + editor header: cartridge name + actions ── }}
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{url_tab_library}}">
+                    {{#str}}cartridge_tab_library, local_playergames{{/str}}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{editor_cartridge_name}}</li>
+        </ol>
+    </nav>
     <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
         <div class="d-flex align-items-center gap-3">
             <a href="{{url_tab_library}}" class="btn btn-outline-secondary btn-sm"
@@ -84,12 +48,11 @@
                 {{#str}}cartridge_back_to_library, local_playergames{{/str}}
             </a>
             <h4 class="mb-0">{{editor_cartridge_name}}</h4>
+            <span class="badge pg-cart-badge-concept">
+                {{#str}}cartridge_type_concept, local_playergames{{/str}}
+            </span>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{url_tab_editor_new}}" class="btn btn-outline-primary btn-sm">
-                <i class="fa fa-plus me-1" aria-hidden="true"></i>
-                {{#str}}cartridge_new_create, local_playergames{{/str}}
-            </a>
             <a href="{{export_url}}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa fa-download me-1" aria-hidden="true"></i>
                 {{#str}}cartridge_export, local_playergames{{/str}}
@@ -315,7 +278,5 @@
         </table>
     </div>
     {{/concepts_empty}}
-
-    {{/has_editor_cartridge}}
 
 </div>{{! .pg-tab-editor }}

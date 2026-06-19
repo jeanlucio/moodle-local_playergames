@@ -1,0 +1,104 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/cartridge_tab_create
+
+    Create-from-scratch tab: choose a cartridge type and basic metadata.
+    On submit the page redirects to the matching editor (concepts or quiz).
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123"
+    }
+}}
+<div class="pg-tab-create">
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-plus-circle me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_new_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="create_cartridge">
+                <input type="hidden" name="tab" value="create">
+
+                <fieldset class="mb-4">
+                    <legend class="form-label fw-semibold">
+                        {{#str}}cartridge_create_type, local_playergames{{/str}}
+                    </legend>
+                    <div class="form-check pg-create-type">
+                        <input class="form-check-input" type="radio" name="cartridge_type"
+                               id="pg-type-concept" value="concept" checked>
+                        <label class="form-check-label" for="pg-type-concept">
+                            <span class="fw-semibold">
+                                {{#str}}cartridge_type_concept, local_playergames{{/str}}
+                            </span>
+                            <span class="d-block text-muted small">
+                                {{#str}}cartridge_create_concept_desc, local_playergames{{/str}}
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-check pg-create-type">
+                        <input class="form-check-input" type="radio" name="cartridge_type"
+                               id="pg-type-quiz" value="quiz">
+                        <label class="form-check-label" for="pg-type-quiz">
+                            <span class="fw-semibold">
+                                {{#str}}cartridge_type_quiz, local_playergames{{/str}}
+                            </span>
+                            <span class="d-block text-muted small">
+                                {{#str}}cartridge_create_quiz_desc, local_playergames{{/str}}
+                            </span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="pg-new-name" class="form-label">
+                            {{#str}}cartridge_name, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-new-name" name="cartridge_name"
+                               class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pg-new-lang" class="form-label">
+                            {{#str}}cartridge_language, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-new-lang" name="cartridge_language"
+                               class="form-control" placeholder="pt_BR">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="pg-new-author" class="form-label">
+                            {{#str}}cartridge_author, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-new-author" name="cartridge_author"
+                               class="form-control">
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-plus me-1" aria-hidden="true"></i>
+                        {{#str}}cartridge_new_create, local_playergames{{/str}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>{{! .pg-tab-create }}

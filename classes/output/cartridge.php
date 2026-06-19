@@ -34,21 +34,26 @@ use moodle_url;
  * Follows the PlayerHUD manage_layout pattern: heading + server-side nav tabs + content_html.
  */
 class cartridge implements renderable, templatable {
-    /** @var string Active tab slug: 'library', 'import', 'ai', or 'editor'. */
+    /** @var string Active tab slug: 'library', 'import', 'ai', or 'create'. */
     private string $tab;
 
     /** @var string Pre-rendered HTML for the active tab content area. */
     private string $contenthtml;
+
+    /** @var bool Whether the page is editing a specific cartridge (level 2). */
+    private bool $editing;
 
     /**
      * Constructor.
      *
      * @param string $tab Active tab slug.
      * @param string $contenthtml Pre-rendered HTML for the tab content area.
+     * @param bool $editing Whether a specific cartridge is being edited (hides the tab bar).
      */
-    public function __construct(string $tab, string $contenthtml) {
+    public function __construct(string $tab, string $contenthtml, bool $editing = false) {
         $this->tab = $tab;
         $this->contenthtml = $contenthtml;
+        $this->editing = $editing;
     }
 
     /**
@@ -80,15 +85,16 @@ class cartridge implements renderable, templatable {
                 'icon' => '<i class="fa fa-magic" aria-hidden="true"></i>',
             ],
             [
-                'active' => $this->tab === 'editor',
-                'url' => (new moodle_url($baseurl, ['tab' => 'editor']))->out(false),
-                'text' => get_string('cartridge_tab_editor', 'local_playergames'),
-                'icon' => '<i class="fa fa-pencil" aria-hidden="true"></i>',
+                'active' => $this->tab === 'create',
+                'url' => (new moodle_url($baseurl, ['tab' => 'create']))->out(false),
+                'text' => get_string('cartridge_tab_create', 'local_playergames'),
+                'icon' => '<i class="fa fa-plus-circle" aria-hidden="true"></i>',
             ],
         ];
 
         return [
             'heading' => get_string('cartridge_heading', 'local_playergames'),
+            'editing' => $this->editing,
             'tabs' => $tabs,
             'content_html' => $this->contenthtml,
         ];

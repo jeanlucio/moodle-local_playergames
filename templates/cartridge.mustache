@@ -7,11 +7,12 @@
     Example context (json):
     {
         "heading": "Concept cartridges",
+        "editing": false,
         "tabs": [
             { "active": true,  "url": "/local/playergames/cartridge.php?tab=library", "text": "Library",    "icon": "<i class='fa fa-list' aria-hidden='true'></i>" },
             { "active": false, "url": "/local/playergames/cartridge.php?tab=import",  "text": "Import JSON", "icon": "<i class='fa fa-upload' aria-hidden='true'></i>" },
             { "active": false, "url": "/local/playergames/cartridge.php?tab=ai",      "text": "Generate with AI", "icon": "<i class='fa fa-magic' aria-hidden='true'></i>" },
-            { "active": false, "url": "/local/playergames/cartridge.php?tab=editor",  "text": "Manual editor", "icon": "<i class='fa fa-pencil' aria-hidden='true'></i>" }
+            { "active": false, "url": "/local/playergames/cartridge.php?tab=create",  "text": "Create cartridge", "icon": "<i class='fa fa-plus-circle' aria-hidden='true'></i>" }
         ],
         "content_html": "<p>Tab content rendered server-side.</p>"
     }
@@ -25,7 +26,8 @@
         <div class="d-flex"></div>
     </div>
 
-    {{! ── Navigation tabs (server-side GET) ── }}
+    {{! ── Navigation tabs (server-side GET) — hidden while editing a cartridge ── }}
+    {{^editing}}
     <ul class="nav nav-tabs mb-4" id="pg-cartridge-tabs">
         {{#tabs}}
         <li class="nav-item">
@@ -35,6 +37,7 @@
         </li>
         {{/tabs}}
     </ul>
+    {{/editing}}
 
     {{! ── Tab content (rendered server-side) ── }}
     <div class="pg-cartridge-content">

@@ -220,17 +220,41 @@ class controller {
         $baseurl = '/local/playergames/cartridge.php';
         $contenthtml = '';
 
-        if ($this->tab === 'library') {
-            $contenthtml = $this->render_tab_library($output, $DB, $baseurl);
-        } else if ($this->tab === 'import') {
+        // Level 2: editing a specific cartridge. A cartridge id always means edit mode,
+        // regardless of the tab slug — the tab bar is hidden in this case.
+        $editing = $this->cartridgeid > 0;
+
+        if ($editing) {
+            $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $this->cartridgeid]);
+            if (!$cartridge) {
+                redirect(
+                    $this->url(['tab' => 'library']),
+                    get_string('error_cartridge_notfound', 'local_playergames'),
+                    null,
+                    \core\output\notification::NOTIFY_ERROR
+                );
+            }
+            if (($cartridge->type ?? 'concept') === 'quiz') {
+                $contenthtml = $this->render_tab_quiz_editor($output, $DB, $baseurl, $cartridge);
+            } else {
+                $contenthtml = $this->render_tab_editor($output, $DB, $baseurl, $cartridge);
+            }
+            $shell = new cartridge_shell($this->tab, $contenthtml, true);
+            return $shell->export_for_template($output);
+        }
+
+        // Level 1: ways to obtain a cartridge. Legacy 'editor' with no id falls back to 'create'.
+        if ($this->tab === 'import') {
             $contenthtml = $this->render_tab_import($output, $baseurl);
         } else if ($this->tab === 'ai') {
             $contenthtml = $this->render_tab_ai($output, $baseurl);
-        } else if ($this->tab === 'editor') {
-            $contenthtml = $this->render_tab_editor($output, $DB, $baseurl);
+        } else if ($this->tab === 'create' || $this->tab === 'editor') {
+            $contenthtml = $this->render_tab_create($output, $baseurl);
+        } else {
+            $contenthtml = $this->render_tab_library($output, $DB, $baseurl);
         }
 
-        $shell = new cartridge_shell($this->tab, $contenthtml);
+        $shell = new cartridge_shell($this->tab, $contenthtml, false);
         return $shell->export_for_template($output);
     }
 
@@ -292,7 +316,6 @@ class controller {
             $cartridge->concepts_count = $conceptcounts[(int) $cartridge->id] ?? 0;
             $cartridge->uploadedby_fullname = $uploaders[(int) $cartridge->uploadedby] ?? '';
             $editurl = (new \moodle_url($baseurl, [
-                'tab' => 'editor',
                 'cartridgeid' => $cartridge->id,
             ]))->out(false);
             $exporturl = (new \moodle_url($baseurl, [
@@ -336,7 +359,7 @@ class controller {
             'cartridges_empty' => empty($cartridgerows),
             'url_tab_import' => (new \moodle_url($baseurl, ['tab' => 'import']))->out(false),
             'url_tab_ai' => (new \moodle_url($baseurl, ['tab' => 'ai']))->out(false),
-            'url_tab_editor' => (new \moodle_url($baseurl, ['tab' => 'editor']))->out(false),
+            'url_tab_create' => (new \moodle_url($baseurl, ['tab' => 'create']))->out(false),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_library', $ctx);
     }
@@ -354,6 +377,21 @@ class controller {
             'sesskey' => sesskey(),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_import', $ctx);
+    }
+
+    /**
+     * Renders the "create cartridge from scratch" tab HTML.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_create(\renderer_base $output, string $baseurl): string {
+        $ctx = [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+        ];
+        return $output->render_from_template('local_playergames/cartridge_tab_create', $ctx);
     }
 
     /**
@@ -419,48 +457,36 @@ class controller {
     }
 
     /**
-     * Renders the manual editor tab HTML.
+     * Renders the concept editor for a validated concept-type cartridge.
      *
      * @param \renderer_base $output The active renderer.
      * @param \moodle_database $db Database instance.
      * @param string $baseurl Base page URL string.
+     * @param \stdClass $editcartridge The concept cartridge record being edited.
      * @return string Rendered HTML.
      */
-    private function render_tab_editor(\renderer_base $output, \moodle_database $db, string $baseurl): string {
-        if ($this->cartridgeid > 0) {
-            $cartridge = $db->get_record('local_playergames_cartridges', ['id' => $this->cartridgeid]);
-            if ($cartridge && ($cartridge->type ?? 'concept') === 'quiz') {
-                return $this->render_tab_quiz_editor($output, $db, $baseurl, $cartridge);
-            }
-        }
-
-        $editcartridge = null;
-        $concepts = [];
+    private function render_tab_editor(
+        \renderer_base $output,
+        \moodle_database $db,
+        string $baseurl,
+        \stdClass $editcartridge
+    ): string {
         $editconcept = null;
-        $categories = [];
 
-        if ($this->cartridgeid > 0) {
-            $editcartridge = $db->get_record(
-                'local_playergames_cartridges',
-                ['id' => $this->cartridgeid]
-            );
-            if ($editcartridge) {
-                $catmgr = new category_manager();
-                $categories = $catmgr->get_categories($this->cartridgeid);
-                $concepts = array_values(
-                    $db->get_records(
-                        'local_playergames_concepts',
-                        ['cartridgeid' => $this->cartridgeid],
-                        'id ASC'
-                    )
-                );
-                if ($this->editconceptid > 0) {
-                    $editconcept = $db->get_record(
-                        'local_playergames_concepts',
-                        ['id' => $this->editconceptid, 'cartridgeid' => $this->cartridgeid]
-                    ) ?: null;
-                }
-            }
+        $catmgr = new category_manager();
+        $categories = $catmgr->get_categories($this->cartridgeid);
+        $concepts = array_values(
+            $db->get_records(
+                'local_playergames_concepts',
+                ['cartridgeid' => $this->cartridgeid],
+                'id ASC'
+            )
+        );
+        if ($this->editconceptid > 0) {
+            $editconcept = $db->get_record(
+                'local_playergames_concepts',
+                ['id' => $this->editconceptid, 'cartridgeid' => $this->cartridgeid]
+            ) ?: null;
         }
 
         $catnamelookup = [];
@@ -531,22 +557,19 @@ class controller {
             'cartridgeid' => $this->cartridgeid,
         ]))->out(false);
 
-        $exporturl = $this->cartridgeid > 0
-            ? (new \moodle_url($baseurl, [
-                'action' => 'export_cartridge',
-                'cartridgeid' => $this->cartridgeid,
-            ]))->out(false)
-            : '';
+        $exporturl = (new \moodle_url($baseurl, [
+            'action' => 'export_cartridge',
+            'cartridgeid' => $this->cartridgeid,
+        ]))->out(false);
 
         $ctx = [
             'action_url' => (new \moodle_url($baseurl))->out(false),
             'sesskey' => sesskey(),
-            'has_editor_cartridge' => $editcartridge !== null,
+            'has_editor_cartridge' => true,
             'editor_cartridge_id' => $this->cartridgeid,
-            'editor_cartridge_name' => $editcartridge ? format_string($editcartridge->name) : '',
+            'editor_cartridge_name' => format_string($editcartridge->name),
             'export_url' => $exporturl,
             'url_tab_library' => (new \moodle_url($baseurl, ['tab' => 'library']))->out(false),
-            'url_tab_editor_new' => (new \moodle_url($baseurl, ['tab' => 'editor']))->out(false),
             'url_cancel_edit' => $cancelurl,
             'editing_concept' => $editingconcept,
             'form_action' => $formaction,
@@ -743,6 +766,8 @@ class controller {
 
         $cartridgename = required_param('cartridge_name', PARAM_TEXT);
         $cartridgelang = optional_param('cartridge_language', '', PARAM_TEXT);
+        $cartridgetype = optional_param('cartridge_type', 'concept', PARAM_ALPHA);
+        $cartridgetype = in_array($cartridgetype, ['concept', 'quiz'], true) ? $cartridgetype : 'concept';
         $cartridgeauthor = \core_text::substr(
             clean_param(optional_param('cartridge_author', '', PARAM_TEXT), PARAM_TEXT),
             0,
@@ -757,6 +782,7 @@ class controller {
             0,
             20
         );
+        $newcartridge->type = $cartridgetype;
         $createtime = time();
         $newcartridge->timecreated = $createtime;
         $newcartridge->timemodified = $createtime;
@@ -1112,7 +1138,7 @@ class controller {
         $event->trigger();
 
         redirect(
-            $this->url(['tab' => 'library']),
+            $this->url(['cartridgeid' => $newcartridgeid]),
             get_string('cartridge_created', 'local_playergames'),
             null,
             \core\output\notification::NOTIFY_SUCCESS
@@ -1241,6 +1267,10 @@ class controller {
             'has_editor_cartridge' => true,
             'editor_cartridge_id' => (int) $cartridge->id,
             'editor_cartridge_name' => format_string($cartridge->name),
+            'export_url' => (new \moodle_url($baseurl, [
+                'action' => 'export_cartridge',
+                'cartridgeid' => (int) $cartridge->id,
+            ]))->out(false),
             'url_tab_library' => (new \moodle_url($baseurl, ['tab' => 'library']))->out(false),
             'url_cancel_edit' => $cancelurl,
             'editing_question' => $editingquestion,

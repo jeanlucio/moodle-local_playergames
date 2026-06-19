@@ -5,6 +5,22 @@ Versions align with `$plugin->release` in `version.php`.
 
 ---
 
+## 0.1.3 — 2026-06-19
+
+- Reorganised the cartridge management page into two levels. The top tab bar now
+  lists only ways to obtain a cartridge — Library, Import JSON, Generate with AI
+  and the renamed **Create cartridge** tab. Editing a specific cartridge is no
+  longer a tab: it opens a dedicated editor screen with a breadcrumb and the tab
+  bar hidden, so the active tab no longer mislabels AI-generated or imported
+  cartridges as "manual".
+- The Create cartridge tab now offers a **type selector** (Concepts or Quiz).
+  Manually created quiz cartridges open straight into the question editor, which
+  was previously unreachable except for AI-generated quizzes.
+- The concept and quiz editors now share a consistent header (breadcrumb, type
+  badge and Export action).
+
+---
+
 ## 0.1.2 — 2026-06-15
 
 - The Moodle `core_ai` manager is now retrieved through the dependency container
