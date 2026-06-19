@@ -246,21 +246,15 @@ body.path-local-playergames .pg-tab-library .pg-cart-label-banner {
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-concept .pg-cart-label-banner {
-    background: linear-gradient(
-        135deg, var(--pg-concept-banner-from) 0%, var(--pg-concept-banner-to) 100%
-    );
+    background: linear-gradient(135deg, var(--pg-concept-banner-from) 0%, var(--pg-concept-banner-to) 100%);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-quiz .pg-cart-label-banner {
-    background: linear-gradient(
-        135deg, var(--pg-quiz-banner-from) 0%, var(--pg-quiz-banner-to) 100%
-    );
+    background: linear-gradient(135deg, var(--pg-quiz-banner-from) 0%, var(--pg-quiz-banner-to) 100%);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-inactive .pg-cart-label-banner {
-    background: linear-gradient(
-        135deg, var(--pg-inactive-banner-from) 0%, var(--pg-inactive-banner-to) 100%
-    );
+    background: linear-gradient(135deg, var(--pg-inactive-banner-from) 0%, var(--pg-inactive-banner-to) 100%);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-label-content {
@@ -414,11 +408,7 @@ body.path-local-playergames .pg-tab-library .pg-cart-btn-danger:hover {
 /* Gold connector pins at the bottom */
 body.path-local-playergames .pg-tab-library .pg-cart-pins {
     height: 16px;
-    background: repeating-linear-gradient(
-        90deg,
-        var(--pg-pin-gold) 0px, var(--pg-pin-gold) 7px,
-        var(--pg-card-edge) 7px, var(--pg-card-edge) 10px
-    );
+    background: repeating-linear-gradient(90deg, var(--pg-pin-gold) 0, var(--pg-pin-gold) 7px, var(--pg-card-edge) 7px, var(--pg-card-edge) 10px);
     border-top: 2px solid rgba(0, 0, 0, 0.45);
     flex-shrink: 0;
 }

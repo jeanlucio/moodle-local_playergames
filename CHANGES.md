@@ -18,6 +18,9 @@ Versions align with `$plugin->release` in `version.php`.
   was previously unreachable except for AI-generated quizzes.
 - The concept and quiz editors now share a consistent header (breadcrumb, type
   badge and Export action).
+- Exporting a quiz cartridge now serialises its questions, correct answers and
+  distractors (with a `"type"` field), instead of producing an empty concept
+  payload. Concept exports also carry the `"type"` field now.
 
 ---
 

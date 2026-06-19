@@ -116,9 +116,33 @@ class controller {
             throw new \moodle_exception('error_cartridge_notfound', 'local_playergames');
         }
 
+        if (($cartridge->type ?? 'concept') === 'quiz') {
+            $exportdata = self::build_quiz_export($cartridge);
+        } else {
+            $exportdata = self::build_concept_export($cartridge);
+        }
+
+        $json = json_encode($exportdata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $filename = preg_replace('/[^a-z0-9_-]/i', '_', $cartridge->name) . '.json';
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($json));
+        echo $json;
+        die();
+    }
+
+    /**
+     * Builds the export payload for a concept-type cartridge.
+     *
+     * @param \stdClass $cartridge The cartridge record.
+     * @return array Associative array ready for JSON encoding.
+     */
+    private static function build_concept_export(\stdClass $cartridge): array {
+        global $DB;
+
         $concepts = $DB->get_records(
             'local_playergames_concepts',
-            ['cartridgeid' => $cartridgeid],
+            ['cartridgeid' => (int) $cartridge->id],
             'id ASC'
         );
 
@@ -145,20 +169,70 @@ class controller {
             ];
         }
 
-        $exportdata = [
+        return [
             'name' => $cartridge->name,
             'version' => $cartridge->version,
             'language' => $cartridge->language,
+            'type' => 'concept',
             'concepts' => $conceptsdata,
         ];
+    }
 
-        $json = json_encode($exportdata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        $filename = preg_replace('/[^a-z0-9_-]/i', '_', $cartridge->name) . '.json';
-        header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($json));
-        echo $json;
-        die();
+    /**
+     * Builds the export payload for a quiz-type cartridge.
+     * Answers are loaded in bulk to avoid per-question queries.
+     *
+     * @param \stdClass $cartridge The cartridge record.
+     * @return array Associative array ready for JSON encoding.
+     */
+    private static function build_quiz_export(\stdClass $cartridge): array {
+        global $DB;
+
+        $questions = $DB->get_records(
+            'local_playergames_concept_questions',
+            ['cartridgeid' => (int) $cartridge->id],
+            'id ASC'
+        );
+
+        $answersbyquestion = [];
+        if (!empty($questions)) {
+            [$insql, $inparams] = $DB->get_in_or_equal(array_keys($questions));
+            $answers = $DB->get_records_sql(
+                "SELECT * FROM {local_playergames_concept_answers}
+                  WHERE questionid {$insql}
+                  ORDER BY sortorder ASC",
+                $inparams
+            );
+            foreach ($answers as $ans) {
+                $answersbyquestion[(int) $ans->questionid][] = $ans;
+            }
+        }
+
+        $questionsdata = [];
+        foreach ($questions as $q) {
+            $correct = '';
+            $distractors = [];
+            foreach ($answersbyquestion[(int) $q->id] ?? [] as $ans) {
+                if ($ans->iscorrect) {
+                    $correct = $ans->answertext;
+                } else {
+                    $distractors[] = $ans->answertext;
+                }
+            }
+            $questionsdata[] = [
+                'questiontext' => $q->questiontext,
+                'correct' => $correct,
+                'distractors' => $distractors,
+            ];
+        }
+
+        return [
+            'name' => $cartridge->name,
+            'version' => $cartridge->version,
+            'language' => $cartridge->language,
+            'type' => 'quiz',
+            'questions' => $questionsdata,
+        ];
     }
 
     /**
