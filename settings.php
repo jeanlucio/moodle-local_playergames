@@ -26,10 +26,26 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
     $ADMIN->add(
-        'root',
+        'localplugins',
         new admin_category(
             'playergames',
             get_string('pluginname', 'local_playergames')
+        )
+    );
+
+    $ADMIN->add(
+        'playergames',
+        new admin_category(
+            'playergames_settings',
+            get_string('admin_category_settings', 'local_playergames')
+        )
+    );
+
+    $ADMIN->add(
+        'playergames',
+        new admin_category(
+            'playergames_management',
+            get_string('admin_category_management', 'local_playergames')
         )
     );
 
@@ -82,7 +98,7 @@ if ($hassiteconfig) {
         PARAM_TEXT
     ));
 
-    $ADMIN->add('playergames', $page);
+    $ADMIN->add('playergames_settings', $page);
 
     // Seasons.
     $page2 = new admin_settingpage(
@@ -164,7 +180,7 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames', $page2);
+    $ADMIN->add('playergames_settings', $page2);
 
     // Games.
     $page3 = new admin_settingpage(
@@ -228,11 +244,11 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames', $page3);
+    $ADMIN->add('playergames_settings', $page3);
 
     // Season management.
     $ADMIN->add(
-        'playergames',
+        'playergames_management',
         new admin_externalpage(
             'local_playergames_manage_seasons',
             get_string('season_manage_pagetitle', 'local_playergames'),
@@ -243,7 +259,7 @@ if ($hassiteconfig) {
 
     // Player Hub.
     $ADMIN->add(
-        'playergames',
+        'playergames_management',
         new admin_externalpage(
             'local_playergames_hub',
             get_string('hub_pagetitle', 'local_playergames'),
@@ -254,7 +270,7 @@ if ($hassiteconfig) {
 
     // Achievements.
     $ADMIN->add(
-        'playergames',
+        'playergames_management',
         new admin_externalpage(
             'local_playergames_achievements',
             get_string('achievements_pagetitle', 'local_playergames'),
@@ -265,7 +281,7 @@ if ($hassiteconfig) {
 
     // Engagement meter.
     $ADMIN->add(
-        'playergames',
+        'playergames_management',
         new admin_externalpage(
             'local_playergames_engagementmeter',
             get_string('engmeter_pagetitle', 'local_playergames'),
@@ -276,7 +292,7 @@ if ($hassiteconfig) {
 
     // Ecosystem dashboard.
     $ADMIN->add(
-        'playergames',
+        'playergames_management',
         new admin_externalpage(
             'local_playergames_dashboard',
             get_string('dashboard_pagetitle', 'local_playergames'),
