@@ -108,6 +108,7 @@ $string['cartridge_tab_editor'] = 'Editor manual';
 $string['cartridge_tab_import'] = 'Importar JSON';
 $string['cartridge_tab_library'] = 'Biblioteca';
 $string['cartridge_timemodified'] = 'Modificado em';
+$string['cartridge_type_concept'] = 'Conceitos';
 $string['cartridge_type_quiz'] = 'Quiz';
 $string['cartridge_uploaded'] = 'Criado em';
 $string['cartridge_uploadedby'] = 'Enviado por';

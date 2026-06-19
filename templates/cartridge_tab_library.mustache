@@ -1,7 +1,7 @@
 {{!
     @template local_playergames/cartridge_tab_library
 
-    Library tab: lists all cartridges (concept and quiz types) with actions.
+    Library tab: lists all cartridges (concept and quiz types) as cartridge cards.
 
     Example context (json):
     {
@@ -39,7 +39,7 @@
         <div class="card-body text-center py-5">
             <i class="fa fa-inbox fa-3x text-muted mb-3" aria-hidden="true"></i>
             <p class="text-muted mb-3">{{#str}}cartridge_list_empty, local_playergames{{/str}}</p>
-            <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <div class="d-flex justify-content-center flex-wrap pg-gap-2">
                 <a href="{{url_tab_import}}" class="btn btn-outline-primary">
                     <i class="fa fa-upload me-1" aria-hidden="true"></i>
                     {{#str}}cartridge_tab_import, local_playergames{{/str}}
@@ -58,90 +58,126 @@
     {{/cartridges_empty}}
 
     {{^cartridges_empty}}
-    <div class="table-responsive">
-        <table class="table table-striped table-hover pg-cartridge-table">
-            <thead>
-                <tr>
-                    <th scope="col">{{#str}}cartridge_name, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_language, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_items_count, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_uploaded, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_timemodified, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_author, local_playergames{{/str}}</th>
-                    <th scope="col">{{#str}}cartridge_uploadedby, local_playergames{{/str}}</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#cartridges}}
-                <tr>
-                    <td>
-                        {{name}}
+    <div class="pg-cartridges-grid">
+        {{#cartridges}}
+        <div class="pg-cart-card{{#is_concept}} pg-cart-concept{{/is_concept}}{{#is_quiz}} pg-cart-quiz{{/is_quiz}}{{#is_inactive}} pg-cart-inactive{{/is_inactive}}">
+
+            <div class="pg-cart-slot" aria-hidden="true">
+                <div class="pg-cart-slot-inner"></div>
+            </div>
+
+            <div class="pg-cart-label">
+                <div class="pg-cart-label-banner" aria-hidden="true"></div>
+                <div class="pg-cart-label-content">
+                    <div class="pg-cart-badges">
+                        {{#is_concept}}
+                        <span class="pg-cart-badge pg-cart-badge-concept">
+                            {{#str}}cartridge_type_concept, local_playergames{{/str}}
+                        </span>
+                        {{/is_concept}}
                         {{#is_quiz}}
-                        <span class="badge bg-info ms-1">
+                        <span class="pg-cart-badge pg-cart-badge-quiz">
                             {{#str}}cartridge_type_quiz, local_playergames{{/str}}
                         </span>
                         {{/is_quiz}}
                         {{#is_active}}
-                        <span class="badge bg-success ms-1">
+                        <span class="pg-cart-badge pg-cart-badge-active">
                             {{#str}}cartridge_active, local_playergames{{/str}}
                         </span>
                         {{/is_active}}
                         {{#is_inactive}}
-                        <span class="badge bg-secondary ms-1">
+                        <span class="pg-cart-badge pg-cart-badge-inactive">
                             {{#str}}cartridge_inactive, local_playergames{{/str}}
                         </span>
                         {{/is_inactive}}
-                    </td>
-                    <td>{{language}}</td>
-                    <td>{{items_count}}</td>
-                    <td>{{created_date}}</td>
-                    <td>{{modified_date}}</td>
-                    <td>{{author}}</td>
-                    <td>{{uploadedby_fullname}}</td>
-                    <td class="pg-cartridge-actions">
-                        {{#is_concept}}
-                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
-                            {{#str}}cartridge_edit_concepts, local_playergames{{/str}}
-                        </a>
-                        {{/is_concept}}
-                        {{#is_quiz}}
-                        <a href="{{edit_url}}" class="btn btn-sm btn-outline-secondary me-1">
-                            {{#str}}cartridge_edit_questions, local_playergames{{/str}}
-                        </a>
-                        {{/is_quiz}}
-                        <a href="{{export_url}}" class="btn btn-sm btn-outline-secondary me-1">
-                            {{#str}}cartridge_export, local_playergames{{/str}}
-                        </a>
-                        <form method="post" action="{{action_url}}" class="d-inline">
-                            <input type="hidden" name="sesskey" value="{{sesskey}}">
-                            <input type="hidden" name="action" value="toggle_active">
-                            <input type="hidden" name="cartridgeid" value="{{id}}">
-                            {{#is_active}}
-                            <button type="submit" class="btn btn-sm btn-outline-warning me-1">
-                                {{#str}}cartridge_deactivate, local_playergames{{/str}}
-                            </button>
-                            {{/is_active}}
-                            {{#is_inactive}}
-                            <button type="submit" class="btn btn-sm btn-outline-success me-1">
-                                {{#str}}cartridge_activate, local_playergames{{/str}}
-                            </button>
-                            {{/is_inactive}}
-                        </form>
-                        <form method="post" action="{{action_url}}" class="d-inline"
-                              data-pg-confirm="{{#str}}cartridge_confirm_delete, local_playergames{{/str}}">
-                            <input type="hidden" name="sesskey" value="{{sesskey}}">
-                            <input type="hidden" name="action" value="delete_cartridge">
-                            <input type="hidden" name="cartridgeid" value="{{id}}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                {{#str}}cartridge_delete, local_playergames{{/str}}
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {{/cartridges}}
-            </tbody>
-        </table>
+                    </div>
+
+                    <div class="pg-cart-title">{{name}}</div>
+
+                    <div class="pg-cart-meta">
+                        <div class="pg-cart-meta-row">
+                            <i class="fa fa-th-list" aria-hidden="true"></i>
+                            <span>{{items_count}}</span>
+                        </div>
+                        {{#language}}
+                        <div class="pg-cart-meta-row">
+                            <i class="fa fa-globe" aria-hidden="true"></i>
+                            <span>{{language}}</span>
+                        </div>
+                        {{/language}}
+                        <div class="pg-cart-meta-row">
+                            <i class="fa fa-calendar" aria-hidden="true"></i>
+                            <span>{{created_date}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pg-cart-footer">
+                <i class="fa fa-user" aria-hidden="true"></i>
+                <span class="pg-cart-author" title="{{uploadedby_fullname}}">{{uploadedby_fullname}}</span>
+            </div>
+
+            <div class="pg-cart-actions">
+                {{#is_concept}}
+                <a href="{{edit_url}}"
+                   class="btn btn-sm pg-cart-btn-action"
+                   aria-label="{{#str}}cartridge_edit_concepts, local_playergames{{/str}}"
+                   title="{{#str}}cartridge_edit_concepts, local_playergames{{/str}}">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                </a>
+                {{/is_concept}}
+                {{#is_quiz}}
+                <a href="{{edit_url}}"
+                   class="btn btn-sm pg-cart-btn-action"
+                   aria-label="{{#str}}cartridge_edit_questions, local_playergames{{/str}}"
+                   title="{{#str}}cartridge_edit_questions, local_playergames{{/str}}">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                </a>
+                {{/is_quiz}}
+                <a href="{{export_url}}"
+                   class="btn btn-sm pg-cart-btn-action"
+                   aria-label="{{#str}}cartridge_export, local_playergames{{/str}}"
+                   title="{{#str}}cartridge_export, local_playergames{{/str}}">
+                    <i class="fa fa-download" aria-hidden="true"></i>
+                </a>
+                <form method="post" action="{{action_url}}" class="d-inline">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="action" value="toggle_active">
+                    <input type="hidden" name="cartridgeid" value="{{id}}">
+                    {{#is_active}}
+                    <button type="submit"
+                            class="btn btn-sm pg-cart-btn-action pg-cart-btn-warning"
+                            aria-label="{{#str}}cartridge_deactivate, local_playergames{{/str}}"
+                            title="{{#str}}cartridge_deactivate, local_playergames{{/str}}">
+                        <i class="fa fa-pause" aria-hidden="true"></i>
+                    </button>
+                    {{/is_active}}
+                    {{#is_inactive}}
+                    <button type="submit"
+                            class="btn btn-sm pg-cart-btn-action pg-cart-btn-success"
+                            aria-label="{{#str}}cartridge_activate, local_playergames{{/str}}"
+                            title="{{#str}}cartridge_activate, local_playergames{{/str}}">
+                        <i class="fa fa-play" aria-hidden="true"></i>
+                    </button>
+                    {{/is_inactive}}
+                </form>
+                <form method="post" action="{{action_url}}" class="d-inline"
+                      data-pg-confirm="{{#str}}cartridge_confirm_delete, local_playergames{{/str}}">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="action" value="delete_cartridge">
+                    <input type="hidden" name="cartridgeid" value="{{id}}">
+                    <button type="submit"
+                            class="btn btn-sm pg-cart-btn-action pg-cart-btn-danger"
+                            aria-label="{{#str}}cartridge_delete, local_playergames{{/str}}">
+                        <i class="fa fa-trash" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="pg-cart-pins" aria-hidden="true"></div>
+        </div>
+        {{/cartridges}}
     </div>
     {{/cartridges_empty}}
 
