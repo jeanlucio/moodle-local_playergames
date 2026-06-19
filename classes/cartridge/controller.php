@@ -243,7 +243,7 @@ class controller {
      * @return string Rendered HTML.
      */
     private function render_tab_library(\renderer_base $output, \moodle_database $db, string $baseurl): string {
-        $allcartridges = $db->get_records('local_playergames_cartridges', null, 'timecreated DESC');
+        $allcartridges = $db->get_records('local_playergames_cartridges', null, 'active DESC, name ASC');
 
         $conceptcounts = [];
         $questioncounts = [];

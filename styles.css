@@ -148,6 +148,31 @@ body.path-local-playergames .pg-hub-mission-progress {
 
 /* ── Cartridge Library: card grid ────────────────────────────────── */
 
+/* Design palette — all cartridge-specific hex values live here */
+body.path-local-playergames .local-playergames-cartridge {
+    --pg-concept-body: #1e3a5f;
+    --pg-concept-border: #0d1f38;
+    --pg-quiz-body: #1a4d2e;
+    --pg-quiz-border: #0d2a18;
+    --pg-inactive-body: #2d3748;
+    --pg-inactive-border: #1a202c;
+    --pg-card-edge: #0d1117;
+    --pg-concept-banner-from: #1e40af;
+    --pg-concept-banner-to: #3b82f6;
+    --pg-quiz-banner-from: #166534;
+    --pg-quiz-banner-to: #22c55e;
+    --pg-inactive-banner-from: #374151;
+    --pg-inactive-banner-to: #6b7280;
+    --pg-label-bg-from: #fefcf3;
+    --pg-label-bg-to: #f5f0e0;
+    --pg-badge-concept: #1d4ed8;
+    --pg-badge-quiz: #15803d;
+    --pg-badge-active: #15803d;
+    --pg-badge-inactive: #6b7280;
+    --pg-pin-gold: #b8860b;
+    --pg-tab-active: #fbbf24;
+}
+
 body.path-local-playergames .pg-tab-library .pg-cartridges-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -160,7 +185,7 @@ body.path-local-playergames .pg-tab-library .pg-cart-card {
     display: flex;
     flex-direction: column;
     border-radius: 5px 5px 2px 2px;
-    border: 3px solid #0d1117;
+    border: 3px solid var(--pg-card-edge);
     box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.55);
     overflow: hidden;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -172,18 +197,18 @@ body.path-local-playergames .pg-tab-library .pg-cart-card:hover {
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-concept {
-    background: #1e3a5f;
-    border-color: #0d1f38;
+    background: var(--pg-concept-body);
+    border-color: var(--pg-concept-border);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-quiz {
-    background: #5f1e1e;
-    border-color: #380d0d;
+    background: var(--pg-quiz-body);
+    border-color: var(--pg-quiz-border);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-inactive {
-    background: #2d3748;
-    border-color: #1a202c;
+    background: var(--pg-inactive-body);
+    border-color: var(--pg-inactive-border);
     filter: saturate(0.35);
 }
 
@@ -221,19 +246,25 @@ body.path-local-playergames .pg-tab-library .pg-cart-label-banner {
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-concept .pg-cart-label-banner {
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    background: linear-gradient(
+        135deg, var(--pg-concept-banner-from) 0%, var(--pg-concept-banner-to) 100%
+    );
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-quiz .pg-cart-label-banner {
-    background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+    background: linear-gradient(
+        135deg, var(--pg-quiz-banner-from) 0%, var(--pg-quiz-banner-to) 100%
+    );
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-inactive .pg-cart-label-banner {
-    background: linear-gradient(135deg, #374151 0%, #6b7280 100%);
+    background: linear-gradient(
+        135deg, var(--pg-inactive-banner-from) 0%, var(--pg-inactive-banner-to) 100%
+    );
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-label-content {
-    background: linear-gradient(160deg, #fefcf3 0%, #f5f0e0 100%);
+    background: linear-gradient(160deg, var(--pg-label-bg-from) 0%, var(--pg-label-bg-to) 100%);
     padding: 8px 10px 10px;
     flex: 1;
     display: flex;
@@ -260,19 +291,19 @@ body.path-local-playergames .pg-tab-library .pg-cart-badge {
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-badge-concept {
-    background: #1d4ed8;
+    background: var(--pg-badge-concept);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-badge-quiz {
-    background: #b91c1c;
+    background: var(--pg-badge-quiz);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-badge-active {
-    background: #15803d;
+    background: var(--pg-badge-active);
 }
 
 body.path-local-playergames .pg-tab-library .pg-cart-badge-inactive {
-    background: #6b7280;
+    background: var(--pg-badge-inactive);
 }
 
 /* Cartridge title */
@@ -385,9 +416,47 @@ body.path-local-playergames .pg-tab-library .pg-cart-pins {
     height: 16px;
     background: repeating-linear-gradient(
         90deg,
-        #b8860b 0px, #b8860b 7px,
-        #0d1117 7px, #0d1117 10px
+        var(--pg-pin-gold) 0px, var(--pg-pin-gold) 7px,
+        var(--pg-card-edge) 7px, var(--pg-card-edge) 10px
     );
     border-top: 2px solid rgba(0, 0, 0, 0.45);
     flex-shrink: 0;
+}
+
+/* ── Cartridge page: nav tabs ────────────────────────────────────── */
+
+body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs {
+    border-bottom: 3px solid var(--pg-pin-gold);
+    background: var(--pg-concept-body);
+    border-radius: 6px 6px 0 0;
+    padding: 0 4px;
+}
+
+body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav-item {
+    margin-bottom: 0;
+}
+
+body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav-link {
+    color: rgba(255, 255, 255, 0.6);
+    background: transparent;
+    border: none;
+    border-top: 3px solid transparent;
+    border-radius: 0;
+    padding: 0.65rem 1.1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0;
+    transition: color 0.15s ease, background 0.15s ease, border-top-color 0.15s ease;
+}
+
+body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav-link:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.08);
+    border-top-color: rgba(184, 134, 11, 0.5);
+}
+
+body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav-link.active {
+    color: var(--pg-tab-active);
+    background: rgba(0, 0, 0, 0.25);
+    border-top-color: var(--pg-tab-active);
 }
