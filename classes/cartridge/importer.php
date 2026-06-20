@@ -169,7 +169,12 @@ class importer {
     public function save_questions(int $cartridgeid, array $questions): \stdClass {
         global $DB;
 
+        if ($this->catmgr === null) {
+            $this->catmgr = new category_manager();
+        }
+
         $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
+        $catmap = [];
         $count = 0;
         $now = time();
 
@@ -184,11 +189,22 @@ class importer {
                 $distractors[] = trim(clean_param($d, PARAM_TEXT));
             }
 
+            $catname = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            $categoryid = null;
+            if ($catname !== '') {
+                if (!array_key_exists($catname, $catmap)) {
+                    $catmap[$catname] = $this->catmgr->ensure_category($cartridgeid, $catname);
+                }
+                $categoryid = $catmap[$catname] ?: null;
+            }
+
             $qrecord = new \stdClass();
             $qrecord->conceptid = null;
             $qrecord->cartridgeid = $cartridgeid;
             $qrecord->questiontext = $qtext;
             $qrecord->source = 'import';
+            $qrecord->difficulty = max(1, min(5, (int) ($raw['difficulty'] ?? 3)));
+            $qrecord->categoryid = $categoryid;
             $qrecord->timecreated = $now;
             $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
 
