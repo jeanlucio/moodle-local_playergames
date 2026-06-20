@@ -5,6 +5,18 @@ Versions align with `$plugin->release` in `version.php`.
 
 ---
 
+## 0.1.5 — 2026-06-20
+
+- Completed the privacy provider. It now declares all personal-data tables
+  (player profile, streaks, daily and battle scores, mission progress, earned
+  achievements, AI request log and uploaded cartridges) and fully implements
+  export and deletion: `get_contexts_for_userid`, `get_users_in_context`,
+  `export_user_data`, `delete_data_for_user`, `delete_data_for_users` and
+  `delete_data_for_all_users_in_context`. Shared cartridges are preserved on
+  deletion with the uploader link anonymised. Adds the matching PHPUnit tests.
+
+---
+
 ## 0.1.4 — 2026-06-20
 
 - Quiz cartridges now carry category and difficulty per question, mirroring
