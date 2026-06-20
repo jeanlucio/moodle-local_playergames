@@ -703,9 +703,12 @@ class controller {
                 'objectid' => $result->cartridgeid,
             ]);
             $event->trigger();
+            $successkey = ($result->type ?? 'concept') === 'quiz'
+                ? 'cartridge_import_success_quiz'
+                : 'cartridge_import_success';
             redirect(
-                $this->url(['tab' => 'editor', 'cartridgeid' => $result->cartridgeid]),
-                get_string('cartridge_import_success', 'local_playergames', $result),
+                $this->url(['cartridgeid' => $result->cartridgeid]),
+                get_string($successkey, 'local_playergames', $result),
                 null,
                 \core\output\notification::NOTIFY_SUCCESS
             );

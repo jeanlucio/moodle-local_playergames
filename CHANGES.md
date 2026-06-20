@@ -21,6 +21,9 @@ Versions align with `$plugin->release` in `version.php`.
 - Exporting a quiz cartridge now serialises its questions, correct answers and
   distractors (with a `"type"` field), instead of producing an empty concept
   payload. Concept exports also carry the `"type"` field now.
+- The JSON importer now accepts quiz cartridges as well as concept cartridges,
+  detected by the `"type"` field (or inferred from a `questions` array). Quiz and
+  concept exports are therefore round-trippable.
 
 ---
 

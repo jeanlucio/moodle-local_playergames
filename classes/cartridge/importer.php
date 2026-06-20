@@ -39,6 +39,9 @@ class importer {
     /** @var int Maximum number of concepts per cartridge. */
     const MAX_CONCEPTS = 2000;
 
+    /** @var int Maximum number of questions per quiz cartridge. */
+    const MAX_QUESTIONS = 2000;
+
     /**
      * Parses a JSON string, validates its schema, and persists the cartridge to the database.
      *
@@ -55,8 +58,33 @@ class importer {
             throw new \moodle_exception('error_cartridge_invalid_json', 'local_playergames');
         }
 
-        $this->validate_schema($data);
+        // A quiz payload is flagged by its type, or inferred from a questions array
+        // when there are no concepts.
+        $isquiz = (($data['type'] ?? '') === 'quiz')
+            || (empty($data['concepts']) && !empty($data['questions']));
 
+        if ($isquiz) {
+            $this->validate_quiz_schema($data);
+            $cartridge = $this->build_cartridge_record($data, $uploaderid, 'quiz');
+            $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
+            return $this->save_questions($cartridgeid, $data['questions']);
+        }
+
+        $this->validate_schema($data);
+        $cartridge = $this->build_cartridge_record($data, $uploaderid, 'concept');
+        $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
+        return $this->save_concepts($cartridgeid, $data['concepts']);
+    }
+
+    /**
+     * Builds the cartridge stdClass shared by concept and quiz imports.
+     *
+     * @param array $data Decoded cartridge associative array.
+     * @param int $uploaderid Moodle user ID who initiated the import.
+     * @param string $type Cartridge type: 'concept' or 'quiz'.
+     * @return \stdClass Cartridge record ready for DB insertion.
+     */
+    private function build_cartridge_record(array $data, int $uploaderid, string $type): \stdClass {
         $cartridge = new \stdClass();
         $cartridge->name = \core_text::substr(
             clean_param($data['name'], PARAM_TEXT),
@@ -73,6 +101,7 @@ class importer {
             0,
             20
         );
+        $cartridge->type = $type;
         $now = time();
         $cartridge->timecreated = $now;
         $cartridge->timemodified = $now;
@@ -81,10 +110,7 @@ class importer {
             ? \core_text::substr(clean_param($data['author'], PARAM_TEXT), 0, 255)
             : null;
         $cartridge->active = 1;
-
-        $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
-
-        return $this->save_concepts($cartridgeid, $data['concepts']);
+        return $cartridge;
     }
 
     /**
@@ -129,6 +155,68 @@ class importer {
         $result->count = $count;
         $result->categories = !empty($catmap) ? implode(', ', array_keys($catmap)) : '—';
         $result->language = $cartridge ? $cartridge->language : '';
+        $result->type = 'concept';
+        return $result;
+    }
+
+    /**
+     * Saves a pre-validated array of raw question arrays to an existing quiz cartridge.
+     *
+     * @param int $cartridgeid Target cartridge ID.
+     * @param array $questions Array of raw question arrays (questiontext, correct, distractors).
+     * @return \stdClass Result with properties: cartridgeid, count, categories, language, type.
+     */
+    public function save_questions(int $cartridgeid, array $questions): \stdClass {
+        global $DB;
+
+        $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
+        $count = 0;
+        $now = time();
+
+        foreach ($questions as $raw) {
+            $qtext = trim(clean_param($raw['questiontext'] ?? '', PARAM_TEXT));
+            $correct = trim(clean_param($raw['correct'] ?? '', PARAM_TEXT));
+            if ($qtext === '' || $correct === '') {
+                continue;
+            }
+            $distractors = [];
+            foreach ((array) ($raw['distractors'] ?? []) as $d) {
+                $distractors[] = trim(clean_param($d, PARAM_TEXT));
+            }
+
+            $qrecord = new \stdClass();
+            $qrecord->conceptid = null;
+            $qrecord->cartridgeid = $cartridgeid;
+            $qrecord->questiontext = $qtext;
+            $qrecord->source = 'import';
+            $qrecord->timecreated = $now;
+            $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
+
+            $correctrec = new \stdClass();
+            $correctrec->questionid = $questionid;
+            $correctrec->answertext = $correct;
+            $correctrec->iscorrect = 1;
+            $correctrec->sortorder = 0;
+            $DB->insert_record('local_playergames_concept_answers', $correctrec, false);
+
+            foreach (array_slice($distractors, 0, 4) as $i => $dtext) {
+                $dist = new \stdClass();
+                $dist->questionid = $questionid;
+                $dist->answertext = $dtext;
+                $dist->iscorrect = 0;
+                $dist->sortorder = $i + 1;
+                $DB->insert_record('local_playergames_concept_answers', $dist, false);
+            }
+
+            $count++;
+        }
+
+        $result = new \stdClass();
+        $result->cartridgeid = $cartridgeid;
+        $result->count = $count;
+        $result->categories = '—';
+        $result->language = $cartridge ? $cartridge->language : '';
+        $result->type = 'quiz';
         return $result;
     }
 
@@ -164,6 +252,42 @@ class importer {
             }
             if (empty($concept['definition'])) {
                 throw new \moodle_exception('error_concept_empty_definition', 'local_playergames');
+            }
+        }
+    }
+
+    /**
+     * Validates the required fields and structure of a decoded quiz cartridge.
+     *
+     * @param array $data Decoded cartridge associative array.
+     * @throws \moodle_exception On schema violation.
+     */
+    protected function validate_quiz_schema(array $data): void {
+        if (empty($data['name'])) {
+            throw new \moodle_exception(
+                'error_cartridge_missing_field',
+                'local_playergames',
+                '',
+                'name'
+            );
+        }
+        if (empty($data['questions']) || !is_array($data['questions'])) {
+            throw new \moodle_exception('error_cartridge_no_questions', 'local_playergames');
+        }
+        if (count($data['questions']) > self::MAX_QUESTIONS) {
+            throw new \moodle_exception(
+                'error_cartridge_tooquestions',
+                'local_playergames',
+                '',
+                self::MAX_QUESTIONS
+            );
+        }
+        foreach ($data['questions'] as $question) {
+            if (empty($question['questiontext'])) {
+                throw new \moodle_exception('error_question_empty_text', 'local_playergames');
+            }
+            if (empty($question['correct'])) {
+                throw new \moodle_exception('error_question_empty_correct', 'local_playergames');
             }
         }
     }
