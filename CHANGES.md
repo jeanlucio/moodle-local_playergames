@@ -24,6 +24,11 @@ Versions align with `$plugin->release` in `version.php`.
 - The JSON importer now accepts quiz cartridges as well as concept cartridges,
   detected by the `"type"` field (or inferred from a `questions` array). Quiz and
   concept exports are therefore round-trippable.
+- Export logic was moved into a dedicated `cartridge\exporter` class (internal
+  refactor, no behaviour change).
+- Added the first PHPUnit suite: cartridge import/export (with round-trip),
+  category management, quiz response parsing, and the hub XP, streak and season
+  logic.
 
 ---
 
