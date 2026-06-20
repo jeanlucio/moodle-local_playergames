@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Uninstall hook: drops all plugin tables and cleans user preferences.
+ * Pre-uninstallation hook: removes plugin data that core does not clean up.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -23,42 +23,19 @@
  */
 
 /**
- * Drops all local_playergames tables and removes user preferences.
+ * Removes the plugin's user preferences before core uninstalls the plugin.
+ *
+ * This hook only handles cleanup that core does NOT perform automatically.
+ * During uninstall, core (uninstall_plugin() in lib/adminlib.php) already
+ * drops every table declared in db/install.xml (drop_plugin_tables) and
+ * removes all admin settings (unset_all_config_for_plugin), so neither is
+ * repeated here. User preferences live in the core {user_preferences} table,
+ * which core never touches, so the plugin must clean its own here.
  *
  * @return bool
  */
 function xmldb_local_playergames_uninstall(): bool {
     global $DB;
-
-    $dbman = $DB->get_manager();
-
-    // Listed child-first so foreign-key references are dropped before their parents.
-    $tables = [
-        'local_playergames_concept_answers',
-        'local_playergames_concept_questions',
-        'local_playergames_user_achievements',
-        'local_playergames_achievements',
-        'local_playergames_mission_progress',
-        'local_playergames_missions',
-        'local_playergames_battle_scores',
-        'local_playergames_daily_scores',
-        'local_playergames_daily_assignments',
-        'local_playergames_season_games',
-        'local_playergames_categories',
-        'local_playergames_concepts',
-        'local_playergames_cartridges',
-        'local_playergames_streaks',
-        'local_playergames_player_profile',
-        'local_playergames_ai_log',
-        'local_playergames_seasons',
-    ];
-
-    foreach ($tables as $tablename) {
-        $table = new xmldb_table($tablename);
-        if ($dbman->table_exists($table)) {
-            $dbman->drop_table($table);
-        }
-    }
 
     $DB->delete_records_select(
         'user_preferences',
