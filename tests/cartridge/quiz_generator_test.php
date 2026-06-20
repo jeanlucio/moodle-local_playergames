@@ -127,4 +127,57 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame(5, $result[0]['conceptid']);
         $this->assertSame('Known', $result[0]['questiontext']);
     }
+
+    public function test_save_standalone_persists_category_and_difficulty(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $now = time();
+        $cartridgeid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Quiz',
+            'version' => '1.0',
+            'language' => 'en',
+            'type' => 'quiz',
+            'timecreated' => $now,
+            'timemodified' => $now,
+            'uploadedby' => 0,
+            'active' => 1,
+        ]);
+
+        $questions = [
+            [
+                'questiontext' => 'Q1', 'correct' => 'C1',
+                'distractors' => ['a', 'b', 'c', 'd'], 'category' => 'Science', 'difficulty' => 2,
+            ],
+            [
+                'questiontext' => 'Q2', 'correct' => 'C2',
+                'distractors' => ['a', 'b', 'c', 'd'], 'category' => 'Science', 'difficulty' => 9,
+            ],
+            [
+                'questiontext' => 'Q3', 'correct' => 'C3',
+                'distractors' => ['a', 'b', 'c', 'd'],
+            ],
+        ];
+
+        $saved = (new quiz_generator())->save_standalone($cartridgeid, $questions);
+
+        $this->assertSame(3, $saved);
+        // The two questions sharing a category name create a single category.
+        $this->assertSame(1, $DB->count_records('local_playergames_categories', [
+            'cartridgeid' => $cartridgeid,
+        ]));
+
+        $rows = array_values($DB->get_records(
+            'local_playergames_concept_questions',
+            ['cartridgeid' => $cartridgeid],
+            'id ASC'
+        ));
+        $this->assertSame('ai', $rows[0]->source);
+        $this->assertSame(2, (int) $rows[0]->difficulty);
+        $this->assertNotNull($rows[0]->categoryid);
+        // Difficulty 9 is clamped to the 1-5 range.
+        $this->assertSame(5, (int) $rows[1]->difficulty);
+        // No category given falls back to null with the default difficulty 3.
+        $this->assertNull($rows[2]->categoryid);
+        $this->assertSame(3, (int) $rows[2]->difficulty);
+    }
 }
