@@ -43,6 +43,8 @@
   * **PlayerGuess and PlayerFill:** also accept the **Moodle Glossary** (terms and definitions reused as-is).
 * 🧠 **PlayerQuiz:** Daily multiple-choice mini-game using concepts from the active cartridge. Wrong answer → new concept; correct answer → XP.
 * 📅 **Season Management:** Create, close, and auto-renew seasons with configuration snapshots. Historical data is preserved when a season closes.
+* 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of all stored personal data; shared cartridges are preserved with the uploader anonymised.
+* 🧪 **Automated Tests:** 110-case PHPUnit suite, green across the full CI matrix (see the Automated Tests section).
 
 #### ⏳ In Development / Planned
 
@@ -52,8 +54,7 @@
 * ⚔️ **PlayerBattle:** Match-3 RPG mini-game (8×8 grid) with turn-based combat against a boss powered by Phaser 3. Combining mana pieces charges a question; correct answer → triple damage; wrong answer → player takes damage.
 * 📦 **Phaser Centralized:** `local_playergames` will serve `phaser.min.js` to all Player plugins via `local_playergames_get_phaser_url()`, removing duplicated copies from each plugin.
 * 🧩 **block_playergames:** Companion sidebar block showing the user's current XP, level, streak, and daily game status on any Moodle page, linking to the full Player Hub.
-* 🔐 **Privacy Provider (complete):** Full GDPR export and deletion covering all stored personal data (profiles, streaks, scores, mission progress, achievements, preferences).
-* 🛡️ **PHPCS / Publication Polish:** Zero PHPCS errors, full accessibility audit, Behat acceptance tests.
+* 🛡️ **Publication Polish:** Full accessibility audit and Behat acceptance tests (PHPUnit suite and PHPCS compliance are already in place).
 
 ---
 
@@ -214,6 +215,46 @@ PlayerGames is the hub of a broader gamification ecosystem. Together, these plug
 
 ---
 
+### 🧪 Automated Tests
+
+PlayerGames ships with a PHPUnit suite covering the gamification engine, the cartridge pipeline, scheduled tasks, privacy and events. Every CI push runs the full matrix (Moodle 4.5 → 5.2, PostgreSQL & MariaDB).
+
+#### PHPUnit — Unit & Integration Tests
+
+| Test file | Cases | What is covered |
+|-----------|------:|-----------------|
+| `cartridge/importer_test.php` | 9 | Concept and quiz import; type inference; difficulty clamping; category dedup; schema-error paths |
+| `cartridge/exporter_test.php` | 4 | Concept/quiz export structure and full import→export round-trip including root metadata |
+| `cartridge/category_manager_test.php` | 7 | Category CRUD, incrementing sortorder, idempotent `ensure`, ownership guard, concept null-on-delete |
+| `cartridge/quiz_generator_test.php` | 7 | Quiz response parsing, category/difficulty defaults, `save_standalone` persistence |
+| `cartridge/ai_generator_test.php` | 5 | Concept response parser: wrapped/bare/fenced JSON, invalid and missing-concepts errors |
+| `hub/xp_manager_test.php` | 7 | Level thresholds, daily cap enforcement, uncapped mission award, level-up event |
+| `hub/streak_manager_test.php` | 8 | Streak start/continue/reset, freeze consumption, overnight break processing |
+| `hub/season_manager_test.php` | 8 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next` |
+| `hub/mission_manager_test.php` | 6 | Mission sync, progress/completion with XP reward, daily and missed check-in resets |
+| `hub/achievement_manager_test.php` | 5 | Achievement sync, granting (first game/level/all-games-day), idempotency |
+| `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |
+| `observer_test.php` | 3 | `game_completed` and `user_loggedin`: streak/mission/achievement/check-in integration |
+| `games/quiz_loader_test.php` | 6 | Cartridge source: completeness filter, session size, active-only, id filter, metadata passthrough |
+| `games/season_game_config_test.php` | 5 | Source helpers; enabled-record lookup; per-season listing |
+| `task/assign_daily_games_test.php` | 3 | Per-game concept assignment, idempotency, no-cartridge case |
+| `task/reset_daily_missions_test.php` | 1 | Daily mission reset + streak break orchestration |
+| `task/close_expired_seasons_test.php` | 2 | Closes expired season; auto-renew creates and activates next |
+| `task/purge_old_scores_test.php` | 2 | Retention-window purge; keep-within-window no-op |
+| `privacy/provider_test.php` | 8 | Metadata, contexts, userlist, export, and the three deletion paths |
+| `api_key_helper_test.php` | 4 | Personal/site key resolution, OpenAI defaults, `has_any_key` |
+| `local/engagement_report_test.php` | 4 | Empty metrics, course counting, player-course detection, scope split |
+| `ecosystem/plugin_registry_test.php` | 2 | Catalog structure and unique components |
+| `ecosystem/plugin_status_test.php` | 1 | Installed status keyed by component; hub reported installed |
+| `event/events_test.php` | 1 | All nine events trigger, are captured and render a description |
+| **Total** | **110** | |
+
+```bash
+vendor/bin/phpunit --testsuite local_playergames
+```
+
+---
+
 ### 🔎 Third-party Service Disclosure
 
 PlayerGames includes optional AI-powered features for content generation (cartridges) and cartridge AI generation. These are entirely optional — all content can be created manually.
@@ -276,6 +317,8 @@ O **PlayerGames** (`local_playergames`) é o hub central do ecossistema de gamif
   * **PlayerGuess e PlayerFill:** aceitam também o **Glossário do Moodle** (termos e definições reaproveitados sem configuração adicional).
 * 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo. Errou → novo conceito; acertou → XP.
 * 📅 **Gerenciamento de Temporadas:** Criar, fechar e renovar automaticamente temporadas com snapshots de configuração. O histórico é preservado ao fechar uma temporada.
+* 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o autor anonimizado.
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 110 casos, verde na matriz completa do CI (ver a seção Testes Automatizados).
 
 #### ⏳ Em Desenvolvimento / Planejado
 
@@ -285,8 +328,7 @@ O **PlayerGames** (`local_playergames`) é o hub central do ecossistema de gamif
 * ⚔️ **PlayerBattle:** Minijogo match-3 RPG (grid 8×8) com combate por turnos contra um boss, movido pelo Phaser 3. Combinar peças de mana carrega uma pergunta do cartucho; acertar → dano triplo no boss; errar → o jogador leva dano.
 * 📦 **Phaser Centralizado:** O `local_playergames` passará a servir o `phaser.min.js` para todos os plugins Player via `local_playergames_get_phaser_url()`, eliminando cópias duplicadas em cada plugin.
 * 🧩 **block_playergames:** Bloco sidebar companheiro exibindo XP, nível, streak e status dos jogos diários do usuário em qualquer página do Moodle, com link para o Player Hub completo.
-* 🔐 **Privacy Provider (completo):** Export e deleção LGPD completos cobrindo todos os dados pessoais armazenados (perfis, streaks, pontuações, progresso de missões, conquistas, preferências).
-* 🛡️ **PHPCS / Polimento para Publicação:** Zero erros PHPCS, auditoria completa de acessibilidade, testes de aceitação Behat.
+* 🛡️ **Polimento para Publicação:** Auditoria completa de acessibilidade e testes de aceitação Behat (a suíte PHPUnit e a conformidade PHPCS já estão prontas).
 
 ---
 
@@ -444,6 +486,46 @@ O PlayerGames é o hub de um ecossistema mais amplo de gamificação. Juntos, es
 1. Acesse o **Player Hub** para ver seu XP, nível, posição no ranking, streak e missões do dia.
 2. Jogue os minijogos diários para ganhar XP.
 3. Marque ou desmarque "Aparecer no ranking" no seu perfil para controlar sua visibilidade.
+
+---
+
+### 🧪 Testes Automatizados
+
+O PlayerGames acompanha uma suíte PHPUnit que cobre o motor de gamificação, o pipeline de cartuchos, as tarefas agendadas, a privacidade e os eventos. Cada push no CI roda a matriz completa (Moodle 4.5 → 5.2, PostgreSQL e MariaDB).
+
+#### PHPUnit — Testes de Unidade e Integração
+
+| Arquivo de teste | Casos | O que é coberto |
+|------------------|------:|-----------------|
+| `cartridge/importer_test.php` | 9 | Importação de conceito e quiz; inferência de tipo; clamp de dificuldade; dedup de categoria; erros de schema |
+| `cartridge/exporter_test.php` | 4 | Estrutura do export concept/quiz e round-trip completo import→export incluindo metadados de raiz |
+| `cartridge/category_manager_test.php` | 7 | CRUD de categoria, sortorder incremental, `ensure` idempotente, checagem de posse, conceito null ao excluir |
+| `cartridge/quiz_generator_test.php` | 7 | Parsing da resposta de quiz, defaults de categoria/dificuldade, persistência em `save_standalone` |
+| `cartridge/ai_generator_test.php` | 5 | Parser de conceitos: JSON encapsulado/puro/com fences, JSON inválido e ausência de conceitos |
+| `hub/xp_manager_test.php` | 7 | Limiares de nível, cap diário, recompensa de missão sem cap, evento de subida de nível |
+| `hub/streak_manager_test.php` | 8 | Início/continuação/reset de streak, consumo de freeze, processamento de quebra |
+| `hub/season_manager_test.php` | 8 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next` |
+| `hub/mission_manager_test.php` | 6 | Sync de missão, progresso/conclusão com recompensa de XP, resets diário e de check-in perdido |
+| `hub/achievement_manager_test.php` | 5 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
+| `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
+| `observer_test.php` | 3 | `game_completed` e `user_loggedin`: integração streak/missão/conquista/check-in |
+| `games/quiz_loader_test.php` | 6 | Fonte de cartucho: filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados |
+| `games/season_game_config_test.php` | 5 | Helpers de fonte; busca do registro habilitado; listagem por temporada |
+| `task/assign_daily_games_test.php` | 3 | Atribuição de conceito por jogo, idempotência, caso sem cartucho |
+| `task/reset_daily_missions_test.php` | 1 | Orquestração do reset diário de missões + quebra de streak |
+| `task/close_expired_seasons_test.php` | 2 | Fecha temporada expirada; auto-renovação cria e ativa a próxima |
+| `task/purge_old_scores_test.php` | 2 | Purga pela janela de retenção; no-op dentro da janela |
+| `privacy/provider_test.php` | 8 | Metadata, contextos, userlist, export e as três rotas de deleção |
+| `api_key_helper_test.php` | 4 | Resolução de chave pessoal/site, defaults do OpenAI, `has_any_key` |
+| `local/engagement_report_test.php` | 4 | Métricas vazias, contagem de cursos, detecção de curso Player, divisão por escopo |
+| `ecosystem/plugin_registry_test.php` | 2 | Estrutura do catálogo e componentes únicos |
+| `ecosystem/plugin_status_test.php` | 1 | Status de instalação por componente; hub reportado como instalado |
+| `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |
+| **Total** | **110** | |
+
+```bash
+vendor/bin/phpunit --testsuite local_playergames
+```
 
 ---
 
