@@ -73,10 +73,10 @@ class cartridge implements renderable, templatable {
                 'icon' => '<i class="fa fa-list" aria-hidden="true"></i>',
             ],
             [
-                'active' => $this->tab === 'import',
-                'url' => (new moodle_url($baseurl, ['tab' => 'import']))->out(false),
-                'text' => get_string('cartridge_tab_import', 'local_playergames'),
-                'icon' => '<i class="fa fa-upload" aria-hidden="true"></i>',
+                'active' => $this->tab === 'create',
+                'url' => (new moodle_url($baseurl, ['tab' => 'create']))->out(false),
+                'text' => get_string('cartridge_tab_create', 'local_playergames'),
+                'icon' => '<i class="fa fa-plus-circle" aria-hidden="true"></i>',
             ],
             [
                 'active' => $this->tab === 'ai',
@@ -85,10 +85,10 @@ class cartridge implements renderable, templatable {
                 'icon' => '<i class="fa fa-magic" aria-hidden="true"></i>',
             ],
             [
-                'active' => $this->tab === 'create',
-                'url' => (new moodle_url($baseurl, ['tab' => 'create']))->out(false),
-                'text' => get_string('cartridge_tab_create', 'local_playergames'),
-                'icon' => '<i class="fa fa-plus-circle" aria-hidden="true"></i>',
+                'active' => $this->tab === 'import',
+                'url' => (new moodle_url($baseurl, ['tab' => 'import']))->out(false),
+                'text' => get_string('cartridge_tab_import', 'local_playergames'),
+                'icon' => '<i class="fa fa-upload" aria-hidden="true"></i>',
             ],
         ];
 
