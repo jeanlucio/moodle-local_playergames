@@ -418,6 +418,12 @@ class controller {
                 ? s($this->quizformdata->language) : '',
             'quiz_form_quantity'  => $this->quizformdata
                 ? (int) $this->quizformdata->quantity : 20,
+            'quiz_form_difficulty' => $this->quizformdata
+                ? (int) ($this->quizformdata->difficulty ?? 3) : 3,
+            'quiz_form_context'   => $this->quizformdata
+                ? s($this->quizformdata->context ?? '') : '',
+            'quiz_form_categories' => $this->quizformdata
+                ? s($this->quizformdata->categories ?? '') : '',
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_ai', $ctx);
     }
@@ -1011,20 +1017,43 @@ class controller {
      * with the quiz sub-tab active so the user can review before saving.
      */
     private function action_generate_ai_quiz(): void {
-        $topic    = required_param('topic', PARAM_TEXT);
-        $language = optional_param('ai_language', '', PARAM_TEXT);
-        $quantity = max(5, min(50, (int) required_param('quantity', PARAM_INT)));
+        $topic      = required_param('topic', PARAM_TEXT);
+        $language   = optional_param('ai_language', '', PARAM_TEXT);
+        $quantity   = max(5, min(50, (int) required_param('quantity', PARAM_INT)));
+        $difficulty = max(1, min(5, (int) optional_param('difficulty', 3, PARAM_INT)));
+        $aicontext  = optional_param('ai_context', '', PARAM_TEXT);
+        $categoriesraw = optional_param('ai_categories', '', PARAM_TEXT);
+
+        $categorynames = [];
+        if ($categoriesraw !== '') {
+            foreach (explode(',', $categoriesraw) as $catname) {
+                $catname = trim(clean_param($catname, PARAM_TEXT));
+                if ($catname !== '') {
+                    $categorynames[] = $catname;
+                }
+            }
+        }
 
         $this->aisubtab = 'quiz';
         $this->quizformdata = new \stdClass();
-        $this->quizformdata->topic    = $topic;
-        $this->quizformdata->language = $language;
-        $this->quizformdata->quantity = $quantity;
+        $this->quizformdata->topic      = $topic;
+        $this->quizformdata->language   = $language;
+        $this->quizformdata->quantity   = $quantity;
+        $this->quizformdata->difficulty = $difficulty;
+        $this->quizformdata->context    = $aicontext;
+        $this->quizformdata->categories = $categoriesraw;
         $this->tab = 'ai';
 
         try {
             $gen = new quiz_generator();
-            $questions = $gen->generate_preview($topic, $language, $quantity);
+            $questions = $gen->generate_preview(
+                $topic,
+                $language,
+                $quantity,
+                $difficulty,
+                $categorynames,
+                $aicontext
+            );
             $indexed = [];
             foreach ($questions as $i => $q) {
                 $indexed[] = [
@@ -1032,6 +1061,8 @@ class controller {
                     'questiontext' => s($q['questiontext']),
                     'correct'      => s($q['correct']),
                     'distractors'  => array_map('s', $q['distractors']),
+                    'category'     => s($q['category'] ?? ''),
+                    'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
                 ];
             }
             $this->quizpreview = [
@@ -1093,6 +1124,8 @@ class controller {
                     'questiontext' => $qtext,
                     'correct'      => $correct,
                     'distractors'  => array_slice($distractors, 0, 4),
+                    'category'     => trim(clean_param($q['category'] ?? '', PARAM_TEXT)),
+                    'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
                 ];
             }
         }
@@ -1166,6 +1199,13 @@ class controller {
             }
         }
 
+        $catmgr = new category_manager();
+        $categories = $catmgr->get_categories((int) $cartridge->id);
+        $catnamelookup = [];
+        foreach ($categories as $cat) {
+            $catnamelookup[(int) $cat->id] = format_string($cat->name);
+        }
+
         $editquestion = null;
         if ($this->editquestionid > 0) {
             $editquestion = $db->get_record(
@@ -1179,12 +1219,16 @@ class controller {
         $formquestiontext = '';
         $formcorrect = '';
         $formdistractors = ['', '', '', ''];
+        $formcategoryid = 0;
+        $formdifficulty = 3;
         $editingquestion = false;
 
         if ($editquestion !== null) {
             $formaction = 'edit_quiz_question';
             $formquestionid = (int) $editquestion->id;
             $formquestiontext = $editquestion->questiontext;
+            $formcategoryid = isset($editquestion->categoryid) ? (int) $editquestion->categoryid : 0;
+            $formdifficulty = (int) $editquestion->difficulty;
             $editingquestion = true;
             $qanswers = $answersbyquestion[(int) $editquestion->id] ?? [];
             $di = 0;
@@ -1195,6 +1239,25 @@ class controller {
                     $formdistractors[$di++] = $ans->answertext;
                 }
             }
+        }
+
+        $categoryoptions = [];
+        foreach ($categories as $cat) {
+            $categoryoptions[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'selected' => (int) $cat->id === $formcategoryid,
+            ];
+        }
+
+        $catrows = [];
+        foreach ($categories as $cat) {
+            $catrows[] = [
+                'id' => (int) $cat->id,
+                'name' => format_string($cat->name),
+                'cartridgeid' => (int) $cartridge->id,
+                'sesskey' => sesskey(),
+            ];
         }
 
         $questionrows = [];
@@ -1214,11 +1277,15 @@ class controller {
                 'cartridgeid' => (int) $cartridge->id,
                 'editquestion' => (int) $q->id,
             ]))->out(false);
+            $qcatid = isset($q->categoryid) ? (int) $q->categoryid : 0;
             $questionrows[] = [
                 'id' => (int) $q->id,
                 'questiontext' => format_string($q->questiontext),
                 'correct' => $correct,
                 'distractors' => $distractors,
+                'category' => $qcatid > 0 && isset($catnamelookup[$qcatid])
+                    ? $catnamelookup[$qcatid] : '',
+                'difficulty' => (int) $q->difficulty,
                 'edit_url' => $editurl,
                 'sesskey' => sesskey(),
                 'cartridgeid' => (int) $cartridge->id,
@@ -1251,10 +1318,34 @@ class controller {
             'form_distractor_1' => s($formdistractors[1]),
             'form_distractor_2' => s($formdistractors[2]),
             'form_distractor_3' => s($formdistractors[3]),
+            'form_categoryid' => $formcategoryid,
+            'form_difficulty' => $formdifficulty,
+            'category_options' => $categoryoptions,
+            'categories' => $catrows,
+            'categories_empty' => empty($catrows),
             'questions' => $questionrows,
             'questions_empty' => empty($questionrows),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_quiz_editor', $ctx);
+    }
+
+    /**
+     * Validates that a category belongs to the cartridge before it is stored.
+     *
+     * @param int $categoryid Posted category id (0 = none).
+     * @param int $cartridgeid Owning cartridge id.
+     * @return int|null The category id if it belongs to the cartridge, otherwise null.
+     */
+    private function valid_category_id(int $categoryid, int $cartridgeid): ?int {
+        global $DB;
+        if ($categoryid <= 0) {
+            return null;
+        }
+        $exists = $DB->record_exists(
+            'local_playergames_categories',
+            ['id' => $categoryid, 'cartridgeid' => $cartridgeid]
+        );
+        return $exists ? $categoryid : null;
     }
 
     /**
@@ -1273,6 +1364,11 @@ class controller {
 
         $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
         $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
+        $categoryid = $this->valid_category_id(
+            optional_param('categoryid', 0, PARAM_INT),
+            $postcartridgeid
+        );
+        $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
             $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
@@ -1294,6 +1390,8 @@ class controller {
         $qrecord->cartridgeid = $postcartridgeid;
         $qrecord->questiontext = $qtext;
         $qrecord->source = 'manual';
+        $qrecord->difficulty = $difficulty;
+        $qrecord->categoryid = $categoryid;
         $qrecord->timecreated = $now;
         $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
 
@@ -1344,6 +1442,11 @@ class controller {
 
         $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
         $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
+        $categoryid = $this->valid_category_id(
+            optional_param('categoryid', 0, PARAM_INT),
+            $postcartridgeid
+        );
+        $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
             $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
@@ -1363,12 +1466,12 @@ class controller {
             );
         }
 
-        $DB->set_field(
-            'local_playergames_concept_questions',
-            'questiontext',
-            $qtext,
-            ['id' => $postquestionid]
-        );
+        $updated = new \stdClass();
+        $updated->id = $postquestionid;
+        $updated->questiontext = $qtext;
+        $updated->difficulty = $difficulty;
+        $updated->categoryid = $categoryid;
+        $DB->update_record('local_playergames_concept_questions', $updated);
         $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);
 
         $correctrec = new \stdClass();

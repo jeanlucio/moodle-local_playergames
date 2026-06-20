@@ -62,6 +62,7 @@ $string['cartridge_ai_nokey'] = 'Nenhuma chave de IA configurada. Adicione uma c
 $string['cartridge_ai_quantity'] = 'Número de conceitos';
 $string['cartridge_ai_quantity_desc'] = 'Quantos conceitos gerar (10–100).';
 $string['cartridge_ai_quiz_generate'] = 'Gerar questões de quiz';
+$string['cartridge_ai_quiz_quantity'] = 'Número de perguntas';
 $string['cartridge_ai_tab_concepts'] = 'Conceitos';
 $string['cartridge_ai_tab_quiz'] = 'Quiz';
 $string['cartridge_ai_topic'] = 'Tópico';

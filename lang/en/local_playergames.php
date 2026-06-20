@@ -62,6 +62,7 @@ $string['cartridge_ai_nokey'] = 'No AI key is configured. Add a key in AI API Ke
 $string['cartridge_ai_quantity'] = 'Number of concepts';
 $string['cartridge_ai_quantity_desc'] = 'How many concepts to generate (10–100).';
 $string['cartridge_ai_quiz_generate'] = 'Generate quiz questions';
+$string['cartridge_ai_quiz_quantity'] = 'Number of questions';
 $string['cartridge_ai_tab_concepts'] = 'Concepts';
 $string['cartridge_ai_tab_quiz'] = 'Quiz';
 $string['cartridge_ai_topic'] = 'Topic';

@@ -26,7 +26,10 @@
         "quiz_preview": null,
         "quiz_form_topic": "",
         "quiz_form_language": "",
-        "quiz_form_quantity": 20
+        "quiz_form_quantity": 20,
+        "quiz_form_difficulty": 3,
+        "quiz_form_context": "",
+        "quiz_form_categories": ""
     }
 }}
 <div class="pg-tab-ai">
@@ -262,7 +265,15 @@
                                value="{{quiz_form_topic}}" class="form-control" required
                                placeholder="{{#str}}cartridge_ai_topic_desc, local_playergames{{/str}}">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12">
+                        <label for="pg-quiz-context" class="form-label">
+                            {{#str}}cartridge_ai_context, local_playergames{{/str}}
+                        </label>
+                        <textarea id="pg-quiz-context" name="ai_context" rows="4"
+                                  class="form-control"
+                                  placeholder="{{#str}}cartridge_ai_context_desc, local_playergames{{/str}}">{{quiz_form_context}}</textarea>
+                    </div>
+                    <div class="col-md-4">
                         <label for="pg-quiz-language" class="form-label">
                             {{#str}}cartridge_ai_language, local_playergames{{/str}}
                         </label>
@@ -270,12 +281,31 @@
                                value="{{quiz_form_language}}" class="form-control"
                                placeholder="Português">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <label for="pg-quiz-categories" class="form-label">
+                            {{#str}}cartridge_ai_categories, local_playergames{{/str}}
+                        </label>
+                        <input type="text" id="pg-quiz-categories" name="ai_categories"
+                               value="{{quiz_form_categories}}" class="form-control"
+                               placeholder="{{#str}}cartridge_ai_categories_desc, local_playergames{{/str}}">
+                        <div class="form-text">
+                            {{#str}}cartridge_ai_categories_help, local_playergames{{/str}}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
                         <label for="pg-quiz-quantity" class="form-label">
-                            {{#str}}cartridge_ai_quantity, local_playergames{{/str}}
+                            {{#str}}cartridge_ai_quiz_quantity, local_playergames{{/str}}
                         </label>
                         <input type="number" id="pg-quiz-quantity" name="quantity"
                                value="{{quiz_form_quantity}}" min="5" max="50"
+                               class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pg-quiz-difficulty" class="form-label">
+                            {{#str}}cartridge_ai_difficulty, local_playergames{{/str}}
+                        </label>
+                        <input type="number" id="pg-quiz-difficulty" name="difficulty"
+                               value="{{quiz_form_difficulty}}" min="1" max="5"
                                class="form-control">
                     </div>
                 </div>
@@ -346,6 +376,8 @@
                                 <th scope="col">
                                     {{#str}}cartridge_quiz_preview_distractors, local_playergames{{/str}}
                                 </th>
+                                <th scope="col">{{#str}}concept_category, local_playergames{{/str}}</th>
+                                <th scope="col">{{#str}}concept_difficulty, local_playergames{{/str}}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -371,6 +403,20 @@
                                            value="{{.}}"
                                            class="form-control form-control-sm mb-1">
                                     {{/distractors}}
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           name="questions[{{index}}][category]"
+                                           value="{{category}}"
+                                           aria-label="{{#str}}concept_category, local_playergames{{/str}} {{index}}"
+                                           class="form-control form-control-sm pg-category-input">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           name="questions[{{index}}][difficulty]"
+                                           value="{{difficulty}}" min="1" max="5"
+                                           aria-label="{{#str}}concept_difficulty, local_playergames{{/str}} {{index}}"
+                                           class="form-control form-control-sm pg-difficulty-input">
                                 </td>
                             </tr>
                             {{/quiz_preview.questions}}
