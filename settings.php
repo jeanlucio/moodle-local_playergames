@@ -257,28 +257,6 @@ if ($hassiteconfig) {
         )
     );
 
-    // Player Hub.
-    $ADMIN->add(
-        'playergames_management',
-        new admin_externalpage(
-            'local_playergames_hub',
-            get_string('hub_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/hub.php'),
-            'local/playergames:viewhub'
-        )
-    );
-
-    // Achievements.
-    $ADMIN->add(
-        'playergames_management',
-        new admin_externalpage(
-            'local_playergames_achievements',
-            get_string('achievements_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/achievements.php'),
-            'local/playergames:viewhub'
-        )
-    );
-
     // Engagement meter.
     $ADMIN->add(
         'playergames_management',

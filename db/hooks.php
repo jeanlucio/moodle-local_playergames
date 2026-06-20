@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Hook callbacks registration.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,9 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_playergames';
-$plugin->version   = 2026062003;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.6';
+$callbacks = [
+    [
+        'hook' => \core\hook\navigation\primary_extend::class,
+        'callback' => \local_playergames\hook_callbacks::class . '::extend_primary_navigation',
+    ],
+];
