@@ -95,13 +95,13 @@ class quiz_loader {
                 SQL_PARAMS_NAMED,
                 'cid'
             );
-            $sql = "SELECT cq.id, cq.questiontext
+            $sql = "SELECT cq.id, cq.questiontext, cq.difficulty, cq.categoryid
                       FROM {local_playergames_concept_questions} cq
                       JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
                      WHERE c.id $insql
                        AND c.type = 'quiz'";
         } else {
-            $sql = "SELECT cq.id, cq.questiontext
+            $sql = "SELECT cq.id, cq.questiontext, cq.difficulty, cq.categoryid
                       FROM {local_playergames_concept_questions} cq
                       JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
                      WHERE c.active = 1
@@ -147,6 +147,8 @@ class quiz_loader {
             $dto->source = 'cartridge';
             $dto->sourceid = $qid;
             $dto->questiontext = $q->questiontext;
+            $dto->difficulty = (int) $q->difficulty;
+            $dto->categoryid = isset($q->categoryid) ? (int) $q->categoryid : null;
             $dto->answers = array_map(function ($a): quiz_answer {
                 $ans = new quiz_answer();
                 $ans->text = $a->answertext;

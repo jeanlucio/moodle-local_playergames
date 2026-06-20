@@ -573,5 +573,45 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026060106, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062000) {
+        // Add difficulty and category to quiz questions, mirroring concepts.
+        $table = new xmldb_table('local_playergames_concept_questions');
+
+        $difficultyfield = new xmldb_field(
+            'difficulty',
+            XMLDB_TYPE_INTEGER,
+            '1',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '3',
+            'source'
+        );
+        if (!$dbman->field_exists($table, $difficultyfield)) {
+            $dbman->add_field($table, $difficultyfield);
+        }
+
+        $categoryidfield = new xmldb_field(
+            'categoryid',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            null,
+            null,
+            null,
+            'difficulty'
+        );
+        if (!$dbman->field_exists($table, $categoryidfield)) {
+            $dbman->add_field($table, $categoryidfield);
+        }
+
+        $categoryindex = new xmldb_index('idx_categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
+        if (!$dbman->index_exists($table, $categoryindex)) {
+            $dbman->add_index($table, $categoryindex);
+        }
+
+        upgrade_plugin_savepoint(true, 2026062000, 'local', 'playergames');
+    }
+
     return true;
 }

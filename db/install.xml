@@ -264,6 +264,8 @@
         <FIELD NAME="cartridgeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="questiontext" TYPE="text" NOTNULL="true"/>
         <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="ai"/>
+        <FIELD NAME="difficulty" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="3"/>
+        <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
       </FIELDS>
       <KEYS>
@@ -271,6 +273,9 @@
         <KEY NAME="fk_concept" TYPE="foreign" FIELDS="conceptid" REFTABLE="local_playergames_concepts" REFFIELDS="id"/>
         <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_categoryid" UNIQUE="false" FIELDS="categoryid"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="local_playergames_concept_answers" COMMENT="Answer options for concept questions">
       <FIELDS>

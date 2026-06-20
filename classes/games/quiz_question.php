@@ -40,6 +40,12 @@ class quiz_question {
     /** @var string Question stem text. */
     public string $questiontext = '';
 
+    /** @var int Difficulty 1–5 (0 when not applicable, e.g. question-bank source). */
+    public int $difficulty = 0;
+
+    /** @var int|null Cartridge category id, or null when uncategorised. */
+    public ?int $categoryid = null;
+
     /** @var quiz_answer[] Five answer options, pre-shuffled. */
     public array $answers = [];
 }
