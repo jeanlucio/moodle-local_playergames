@@ -86,6 +86,7 @@ class exporter {
             'name' => $cartridge->name,
             'version' => $cartridge->version,
             'language' => $cartridge->language,
+            'author' => $cartridge->author,
             'type' => 'concept',
             'concepts' => $conceptsdata,
         ];
@@ -143,6 +144,7 @@ class exporter {
             'name' => $cartridge->name,
             'version' => $cartridge->version,
             'language' => $cartridge->language,
+            'author' => $cartridge->author,
             'type' => 'quiz',
             'questions' => $questionsdata,
         ];

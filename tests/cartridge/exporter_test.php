@@ -43,8 +43,9 @@ final class exporter_test extends \advanced_testcase {
     private function concept_json(): string {
         return json_encode([
             'name' => 'Concept pack',
-            'version' => '1.0',
+            'version' => '2.3',
             'language' => 'en',
+            'author' => 'Jean Lúcio',
             'concepts' => [
                 ['term' => 'Alpha', 'definition' => 'First', 'category' => 'Greek', 'difficulty' => 1],
                 ['term' => 'Beta', 'definition' => 'Second', 'category' => 'Greek', 'difficulty' => 2],
@@ -61,8 +62,9 @@ final class exporter_test extends \advanced_testcase {
     private function quiz_json(): string {
         return json_encode([
             'name' => 'Quiz pack',
-            'version' => '1.0',
+            'version' => '1.4',
             'language' => 'pt_br',
+            'author' => 'Quiz Author',
             'type' => 'quiz',
             'questions' => [
                 [
@@ -85,6 +87,9 @@ final class exporter_test extends \advanced_testcase {
 
         $this->assertSame('concept', $data['type']);
         $this->assertSame('Concept pack', $data['name']);
+        $this->assertSame('2.3', $data['version']);
+        $this->assertSame('en', $data['language']);
+        $this->assertSame('Jean Lúcio', $data['author']);
         $this->assertArrayHasKey('concepts', $data);
         $this->assertCount(3, $data['concepts']);
 
@@ -104,6 +109,10 @@ final class exporter_test extends \advanced_testcase {
         $data = (new exporter())->build($cartridge);
 
         $this->assertSame('quiz', $data['type']);
+        $this->assertSame('Quiz pack', $data['name']);
+        $this->assertSame('1.4', $data['version']);
+        $this->assertSame('pt_br', $data['language']);
+        $this->assertSame('Quiz Author', $data['author']);
         $this->assertArrayHasKey('questions', $data);
         $this->assertCount(1, $data['questions']);
         $q = $data['questions'][0];
@@ -131,11 +140,16 @@ final class exporter_test extends \advanced_testcase {
             '*',
             MUST_EXIST
         );
+        // Root metadata must survive the import.
         $this->assertSame('concept', $secondcartridge->type);
+        $this->assertSame('Concept pack', $secondcartridge->name);
+        $this->assertSame('2.3', $secondcartridge->version);
+        $this->assertSame('en', $secondcartridge->language);
+        $this->assertSame('Jean Lúcio', $secondcartridge->author);
 
         $reexported = (new exporter())->build($secondcartridge);
-        // The re-exported payload must match the first export exactly.
-        $this->assertEquals($exported['concepts'], $reexported['concepts']);
+        // The whole payload — metadata and concepts — must match the first export.
+        $this->assertEquals($exported, $reexported);
     }
 
     public function test_quiz_round_trip(): void {
@@ -156,8 +170,13 @@ final class exporter_test extends \advanced_testcase {
             MUST_EXIST
         );
         $this->assertSame('quiz', $secondcartridge->type);
+        $this->assertSame('Quiz pack', $secondcartridge->name);
+        $this->assertSame('1.4', $secondcartridge->version);
+        $this->assertSame('pt_br', $secondcartridge->language);
+        $this->assertSame('Quiz Author', $secondcartridge->author);
 
         $reexported = (new exporter())->build($secondcartridge);
-        $this->assertEquals($exported['questions'], $reexported['questions']);
+        // The whole payload — metadata and questions — must match the first export.
+        $this->assertEquals($exported, $reexported);
     }
 }
