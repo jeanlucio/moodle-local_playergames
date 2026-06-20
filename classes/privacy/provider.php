@@ -127,6 +127,10 @@ class provider implements
         ], 'privacy:metadata:local_playergames_cartridges');
 
         $collection->add_user_preference(
+            'local_playergames_gamification',
+            'privacy:pref_gamification'
+        );
+        $collection->add_user_preference(
             'local_playergames_gemini_key',
             'privacy:pref_gemini_key'
         );
@@ -349,6 +353,19 @@ class provider implements
                     get_string($stringkey, 'local_playergames')
                 );
             }
+        }
+
+        // The gamification opt-in flag is not sensitive, so export its value.
+        $gamification = get_user_preferences('local_playergames_gamification', null, $userid);
+        if ($gamification !== null) {
+            writer::with_context(
+                context_system::instance()
+            )->export_user_preference(
+                'local_playergames',
+                'local_playergames_gamification',
+                $gamification,
+                get_string('privacy:pref_gamification', 'local_playergames')
+            );
         }
     }
 }

@@ -25,6 +25,7 @@
 namespace local_playergames;
 
 use core\hook\navigation\primary_extend;
+use local_playergames\local\preferences;
 
 /**
  * Hook listener callbacks for local_playergames.
@@ -44,12 +45,19 @@ class hook_callbacks {
      * @param primary_extend $hook The primary navigation hook.
      */
     public static function extend_primary_navigation(primary_extend $hook): void {
+        global $USER;
+
         if (!isloggedin() || isguestuser()) {
             return;
         }
 
         $context = \context_system::instance();
         if (!has_capability('local/playergames:viewhub', $context)) {
+            return;
+        }
+
+        // Respect the per-user gamification opt-out.
+        if (!preferences::is_gamification_enabled($USER->id)) {
             return;
         }
 

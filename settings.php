@@ -140,6 +140,13 @@ if ($hassiteconfig) {
         $participantoptions
     ));
 
+    $page2->add(new admin_setting_configcheckbox(
+        'local_playergames/gamificationdefault',
+        get_string('settings_gamificationdefault', 'local_playergames'),
+        get_string('settings_gamificationdefault_desc', 'local_playergames'),
+        1
+    ));
+
     $page2->add(new admin_setting_heading(
         'local_playergames/xp_heading',
         get_string('settings_xp_heading', 'local_playergames'),
