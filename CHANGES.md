@@ -5,6 +5,17 @@ Versions align with `$plugin->release` in `version.php`.
 
 ---
 
+## 0.1.6 — 2026-06-20
+
+- Fixed the `streak_broken` event: it now receives the `previousstreak` value its
+  description renders, instead of `currentstreak` (which left the description with
+  an undefined key). Surfaced while adding event tests.
+- Broadened automated test coverage to the remaining units: quiz loader,
+  scheduled tasks, season game config, API key helper, engagement report,
+  ecosystem registry/status, the concept-generator parser and all events.
+
+---
+
 ## 0.1.5 — 2026-06-20
 
 - Completed the privacy provider. It now declares all personal-data tables

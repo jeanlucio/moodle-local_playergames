@@ -118,6 +118,7 @@ class streak_manager {
                 ]);
                 $event->trigger();
             } else {
+                $previousstreak = (int) $streak->currentstreak;
                 $streak->currentstreak = 0;
                 $DB->update_record('local_playergames_streaks', $streak);
 
@@ -125,7 +126,7 @@ class streak_manager {
                     'objectid' => $streak->id,
                     'context'  => \context_system::instance(),
                     'userid'   => (int) $streak->userid,
-                    'other'    => ['currentstreak' => 0],
+                    'other'    => ['previousstreak' => $previousstreak],
                 ]);
                 $event->trigger();
                 $broken++;
