@@ -32,18 +32,24 @@ function xmldb_local_playergames_uninstall(): bool {
 
     $dbman = $DB->get_manager();
 
+    // Listed child-first so foreign-key references are dropped before their parents.
     $tables = [
+        'local_playergames_concept_answers',
+        'local_playergames_concept_questions',
         'local_playergames_user_achievements',
         'local_playergames_achievements',
         'local_playergames_mission_progress',
         'local_playergames_missions',
-        'local_playergames_bounce_scores',
+        'local_playergames_battle_scores',
         'local_playergames_daily_scores',
         'local_playergames_daily_assignments',
+        'local_playergames_season_games',
+        'local_playergames_categories',
         'local_playergames_concepts',
         'local_playergames_cartridges',
         'local_playergames_streaks',
-        'local_playergames_staff_profile',
+        'local_playergames_player_profile',
+        'local_playergames_ai_log',
         'local_playergames_seasons',
     ];
 
