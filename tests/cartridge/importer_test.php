@@ -72,11 +72,15 @@ final class importer_test extends \advanced_testcase {
                     'questiontext' => 'Who discovered Brazil?',
                     'correct' => 'Pedro Álvares Cabral',
                     'distractors' => ['Vasco da Gama', 'Cristóvão Colombo', 'Américo Vespúcio', 'Bartolomeu Dias'],
+                    'category' => 'Discoveries',
+                    'difficulty' => 2,
                 ],
                 [
                     'questiontext' => 'In what year?',
                     'correct' => '1500',
                     'distractors' => ['1492', '1498', '1502', '1510'],
+                    'category' => 'Discoveries',
+                    'difficulty' => 9,
                 ],
             ],
         ], $overrides);
@@ -142,6 +146,8 @@ final class importer_test extends \advanced_testcase {
 
         $first = reset($questions);
         $this->assertSame('import', $first->source);
+        $this->assertSame(2, (int) $first->difficulty);
+        $this->assertNotNull($first->categoryid);
         $answers = $DB->get_records(
             'local_playergames_concept_answers',
             ['questionid' => $first->id],
@@ -153,6 +159,14 @@ final class importer_test extends \advanced_testcase {
         $this->assertCount(1, $correct);
         $this->assertSame('Pedro Álvares Cabral', $correct[0]->answertext);
         $this->assertSame(0, (int) $correct[0]->sortorder);
+
+        // The two questions share one category name, so a single category is created.
+        $this->assertSame(1, $DB->count_records('local_playergames_categories', [
+            'cartridgeid' => $result->cartridgeid,
+        ]));
+        // Difficulty 9 in the payload is clamped to the 1-5 range.
+        $second = end($questions);
+        $this->assertSame(5, (int) $second->difficulty);
     }
 
     public function test_import_quiz_inferred_without_type(): void {

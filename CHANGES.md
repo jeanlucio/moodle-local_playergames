@@ -5,6 +5,23 @@ Versions align with `$plugin->release` in `version.php`.
 
 ---
 
+## 0.1.4 — 2026-06-20
+
+- Quiz cartridges now carry category and difficulty per question, mirroring
+  concept cartridges. A schema upgrade adds `categoryid` and `difficulty` to the
+  question table. These fields are foundation for upcoming player plugins that
+  will select and weight quiz questions by category and difficulty.
+- AI quiz generation now accepts the same inputs as concept generation:
+  additional context, desired categories and a target difficulty. The generated
+  questions are tagged with a category and difficulty in the review screen.
+- The manual quiz editor gained category management and a category/difficulty
+  selector per question, identical to the concept editor.
+- Quiz export and import now round-trip category and difficulty.
+- Fixed a latent bug where AI quiz generation called the provider with the wrong
+  argument count and would fail; the call now matches the concept generator.
+
+---
+
 ## 0.1.3 — 2026-06-19
 
 - Reorganised the cartridge management page into two levels. The top tab bar now

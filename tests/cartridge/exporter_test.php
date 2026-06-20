@@ -71,6 +71,8 @@ final class exporter_test extends \advanced_testcase {
                     'questiontext' => 'Capital of France?',
                     'correct' => 'Paris',
                     'distractors' => ['London', 'Berlin', 'Madrid', 'Rome'],
+                    'category' => 'Geography',
+                    'difficulty' => 4,
                 ],
             ],
         ]);
@@ -119,6 +121,8 @@ final class exporter_test extends \advanced_testcase {
         $this->assertSame('Paris', $q['correct']);
         $this->assertCount(4, $q['distractors']);
         $this->assertContains('London', $q['distractors']);
+        $this->assertSame('Geography', $q['category']);
+        $this->assertSame(4, $q['difficulty']);
     }
 
     public function test_concept_round_trip(): void {

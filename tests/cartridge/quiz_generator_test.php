@@ -57,6 +57,8 @@ final class quiz_generator_test extends \advanced_testcase {
                 'questiontext' => 'Q1',
                 'correct' => 'C1',
                 'distractors' => ['a', 'b', 'c', 'd'],
+                'category' => 'Cat',
+                'difficulty' => 4,
             ],
         ]]);
 
@@ -66,6 +68,20 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame('Q1', $result[0]['questiontext']);
         $this->assertSame('C1', $result[0]['correct']);
         $this->assertCount(4, $result[0]['distractors']);
+        $this->assertSame('Cat', $result[0]['category']);
+        $this->assertSame(4, $result[0]['difficulty']);
+    }
+
+    public function test_parse_standalone_defaults_category_and_difficulty(): void {
+        $json = json_encode(['questions' => [
+            ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => ['a', 'b', 'c', 'd']],
+        ]]);
+
+        $result = $this->invoke('parse_standalone_response', [$json]);
+
+        // Missing metadata falls back to empty category and difficulty 3.
+        $this->assertSame('', $result[0]['category']);
+        $this->assertSame(3, $result[0]['difficulty']);
     }
 
     public function test_parse_standalone_strips_code_fences(): void {
