@@ -36,6 +36,7 @@ $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/mykeys.php'));
 $PAGE->set_title(get_string('mykeys_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('mykeys_pagetitle', 'local_playergames'));
+$PAGE->set_pagelayout('base');
 $PAGE->requires->js_call_amd('local_playergames/mykeys', 'init');
 
 // Handle POST — save all three keys at once.
@@ -65,5 +66,9 @@ $output = $PAGE->get_renderer('core');
 $renderable = new \local_playergames\output\mykeys($USER->id);
 
 echo $output->header();
+echo $output->render_from_template(
+    'local_playergames/nav_header',
+    (new \local_playergames\output\nav_header('mykeys'))->export_for_template($output)
+);
 echo $renderable->render_content($output);
 echo $output->footer();

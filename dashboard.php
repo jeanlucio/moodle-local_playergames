@@ -41,7 +41,7 @@ if (!access::is_staff()) {
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/dashboard.php'));
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('base');
 
 $title = get_string('dashboard_pagetitle', 'local_playergames');
 $PAGE->set_title($title);
@@ -50,6 +50,10 @@ $PAGE->set_heading($title);
 $PAGE->requires->js_call_amd('local_playergames/dashboard', 'init');
 
 echo $OUTPUT->header();
+echo $OUTPUT->render_from_template(
+    'local_playergames/nav_header',
+    (new \local_playergames\output\nav_header('ecosystem'))->export_for_template($OUTPUT)
+);
 
 $renderable = new dashboard();
 echo $OUTPUT->render_from_template(

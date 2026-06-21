@@ -43,12 +43,16 @@ $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/achievements.php'));
 $PAGE->set_title(get_string('achievements_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('achievements_pagetitle', 'local_playergames'));
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('base');
 
 $achdata = new \local_playergames\output\achievements($USER->id);
 $output  = $PAGE->get_renderer('core');
 
 echo $output->header();
+echo $output->render_from_template(
+    'local_playergames/nav_header',
+    (new \local_playergames\output\nav_header('achievements'))->export_for_template($output)
+);
 echo $output->render_from_template(
     'local_playergames/achievements',
     $achdata->export_for_template($output)

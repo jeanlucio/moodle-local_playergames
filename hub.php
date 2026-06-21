@@ -73,13 +73,17 @@ $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/hub.php'));
 $PAGE->set_title(get_string('hub_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('hub_pagetitle', 'local_playergames'));
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('base');
 $PAGE->requires->js_call_amd('local_playergames/hub', 'init');
 
 $hubdata = new \local_playergames\output\hub($USER->id, $isstaff, $isadmin, $allowed);
 $output  = $PAGE->get_renderer('core');
 
 echo $output->header();
+echo $output->render_from_template(
+    'local_playergames/nav_header',
+    (new \local_playergames\output\nav_header('hub'))->export_for_template($output)
+);
 echo $output->render_from_template(
     'local_playergames/hub',
     $hubdata->export_for_template($output)

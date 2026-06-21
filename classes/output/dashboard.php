@@ -24,14 +24,11 @@
 
 namespace local_playergames\output;
 
-use context_system;
-use moodle_url;
 use renderable;
 use renderer_base;
 use templatable;
 use local_playergames\ecosystem\plugin_registry;
 use local_playergames\ecosystem\plugin_status;
-use local_playergames\local\engagement_report;
 
 /**
  * Prepares all data needed by the dashboard Mustache template.
@@ -62,17 +59,11 @@ class dashboard implements renderable, templatable {
      * @return array
      */
     public function export_for_template(renderer_base $output): array {
-        $context = context_system::instance();
-        $actions = $this->build_action_links($context);
-
-        [$groups, $cards, $edges] = $this->build_ecosystem($actions);
+        [$groups, $cards, $edges] = $this->build_ecosystem();
 
         return [
-            'str_heading_nav'       => get_string('dashboard_heading_nav', 'local_playergames'),
             'str_heading_ecosystem' => get_string('dashboard_heading_ecosystem', 'local_playergames'),
             'str_legend'            => get_string('dashboard_legend_heading', 'local_playergames'),
-            'navcards'              => $actions,
-            'hasnavcards'           => !empty($actions),
             'groups'                => $groups,
             'cards'                 => $cards,
             'legend'                => $this->build_legend(),
@@ -86,10 +77,9 @@ class dashboard implements renderable, templatable {
     /**
      * Builds grouped cards, a flat card list and the directed edge list.
      *
-     * @param array $hubactions Action links attached to the hub card.
      * @return array Three-element array: [groups[], cards[], edges[]].
      */
-    private function build_ecosystem(array $hubactions): array {
+    private function build_ecosystem(): array {
         $catalog   = plugin_registry::get_catalog();
         $statusmap = plugin_status::get_installed();
 
@@ -98,9 +88,8 @@ class dashboard implements renderable, templatable {
             $bycomponent[$def['component']] = $def;
         }
 
-        $edges       = $this->build_edges($catalog, $bycomponent);
-        $adjacency   = $this->build_adjacency($edges);
-        $hubcomponent = $catalog[0]['component'];
+        $edges     = $this->build_edges($catalog, $bycomponent);
+        $adjacency = $this->build_adjacency($edges);
 
         $cards     = [];
         $bygroup   = [];
@@ -108,9 +97,8 @@ class dashboard implements renderable, templatable {
             $component = $def['component'];
             $status    = $statusmap[$component] ?? ['installed' => false, 'version' => ''];
             $installed = (bool) $status['installed'];
-            $ishub     = $component === $hubcomponent;
 
-            $groups = $this->build_connection_groups($adjacency[$component] ?? [], $bycomponent);
+            $connections = $this->build_connection_groups($adjacency[$component] ?? [], $bycomponent);
 
             $card = [
                 'component'         => $component,
@@ -127,10 +115,8 @@ class dashboard implements renderable, templatable {
                 'version'           => $status['version'],
                 'hasversion'        => $status['version'] !== '',
                 'description'       => get_string('plugin_desc_' . $component, 'local_playergames'),
-                'connectiongroups'  => $groups,
-                'hasconnections'    => !empty($groups),
-                'hasactions'        => $ishub && !empty($hubactions),
-                'actions'           => $ishub ? $hubactions : [],
+                'connectiongroups'  => $connections,
+                'hasconnections'    => !empty($connections),
             ];
 
             $cards[] = $card;
@@ -238,61 +224,5 @@ class dashboard implements renderable, templatable {
             ];
         }
         return $legend;
-    }
-
-    /**
-     * Returns capability-filtered action links for the user.
-     *
-     * Shared by the quick-access cards and the hub-card modal so both surfaces
-     * stay in sync. Cartridge management and site settings are intentionally
-     * absent: they live in the site administration tree, not on this end-user
-     * landing. The engagement meter only appears when the user actually teaches
-     * at least one course, since the card links to the own-courses scope.
-     *
-     * @param context_system $context System context for capability checks.
-     * @return array
-     */
-    private function build_action_links(context_system $context): array {
-        global $USER;
-
-        $actions = [];
-
-        if (has_capability('local/playergames:viewhub', $context)) {
-            $actions[] = [
-                'icon'       => 'fa-trophy',
-                'label'      => get_string('dashboard_card_hub', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/hub.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-            $actions[] = [
-                'icon'       => 'fa-award',
-                'label'      => get_string('dashboard_card_achievements', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/achievements.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        $teaches = !empty((new engagement_report())->get_teacher_courseids($USER->id));
-        if (has_capability('local/playergames:viewengagementmeter', $context) && $teaches) {
-            $actions[] = [
-                'icon'       => 'fa-chart-line',
-                'label'      => get_string('dashboard_card_engmeter', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/engagement_meter.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        $actions[] = [
-            'icon'       => 'fa-key',
-            'label'      => get_string('dashboard_card_mykeys', 'local_playergames'),
-            'url'        => (new moodle_url('/local/playergames/mykeys.php'))->out(false),
-            'disabled'   => false,
-            'comingsoon' => false,
-        ];
-
-        return $actions;
     }
 }

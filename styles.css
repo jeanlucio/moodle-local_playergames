@@ -49,16 +49,21 @@ body.path-local-playergames .local-playergames-dashboard {
     --pg-c-planned: #9ca3af;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-nav-card {
-    border: 1px solid var(--border-color, #dee2e6);
-    border-radius: 0.5rem;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
-    color: inherit;
+body.path-local-playergames .pg-nav {
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+    padding-bottom: 0.5rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-nav-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+body.path-local-playergames .pg-nav .pg-nav-list {
+    gap: 0.25rem;
+}
+
+body.path-local-playergames .pg-nav .pg-nav-link {
+    color: var(--body-color, #1d2125);
+}
+
+body.path-local-playergames .pg-nav .pg-nav-link:hover:not(.active) {
+    background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.05));
 }
 
 /* ── Ecosystem map: legend ───────────────────────────────────────── */

@@ -31,13 +31,8 @@
 
     Example context (json):
     {
-        "str_heading_nav": "Quick access",
         "str_heading_ecosystem": "Plugin map",
         "str_legend": "Connections",
-        "hasnavcards": true,
-        "navcards": [
-            {"icon": "fa-trophy", "label": "Player Hub", "url": "/x", "disabled": false, "comingsoon": false}
-        ],
         "legend": [
             {"cssclass": "pg-edge-requires", "label": "Direct dependency"},
             {"cssclass": "pg-edge-ai", "label": "Optional AI"},
@@ -63,9 +58,7 @@
                         "hasconnections": true,
                         "connectiongroups": [
                             {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
-                        ],
-                        "hasactions": false,
-                        "actions": []
+                        ]
                     }
                 ]
             }
@@ -86,34 +79,13 @@
                 "hasconnections": true,
                 "connectiongroups": [
                     {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
-                ],
-                "hasactions": false,
-                "actions": []
+                ]
             }
         ],
         "edgesjson": "[{\"from\":\"block_playerhud\",\"to\":\"local_playergames\",\"type\":\"ai\"}]"
     }
 }}
 <div class="local-playergames-dashboard">
-
-    {{#hasnavcards}}
-    <h2 class="h5 mb-3">{{str_heading_nav}}</h2>
-    <div class="row g-3 mb-5">
-        {{#navcards}}
-        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
-            <a href="{{url}}"
-               class="card text-center text-decoration-none pg-nav-card h-100{{#disabled}} opacity-50 pe-none{{/disabled}}"
-               {{#disabled}}aria-disabled="true"{{/disabled}}>
-                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3 gap-2">
-                    <i class="fa {{icon}} fa-2x" aria-hidden="true"></i>
-                    <span class="small fw-semibold">{{label}}</span>
-                    {{#comingsoon}}<span class="badge bg-secondary">{{comingsoon}}</span>{{/comingsoon}}
-                </div>
-            </a>
-        </div>
-        {{/navcards}}
-    </div>
-    {{/hasnavcards}}
 
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 pg-gap-2">
         <h2 class="h5 mb-0">{{str_heading_ecosystem}}</h2>
@@ -183,18 +155,6 @@
         {{/connectiongroups}}
     </ul>
     {{/hasconnections}}
-    {{#hasactions}}
-    <hr class="my-3">
-    <div class="list-group list-group-flush">
-        {{#actions}}
-        <a href="{{url}}"
-           class="list-group-item list-group-item-action{{#disabled}} disabled{{/disabled}}">
-            <i class="fa {{icon}} me-2" aria-hidden="true"></i>{{label}}
-            {{#comingsoon}}<span class="badge bg-secondary ms-2">{{comingsoon}}</span>{{/comingsoon}}
-        </a>
-        {{/actions}}
-    </div>
-    {{/hasactions}}
 </div>
 {{/cards}}
 

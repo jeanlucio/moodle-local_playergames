@@ -108,16 +108,11 @@
     {{/noseason}}
 
     {{^noseason}}
-    <div class="pg-hub-header d-flex align-items-center justify-content-between flex-wrap mb-4 gap-2">
-        <div>
-            <span class="badge bg-secondary pg-season-badge">
-                <i class="fa fa-calendar-alt me-1" aria-hidden="true"></i>
-                {{str_season_label}}: {{season_name}}
-            </span>
-        </div>
-        <a href="{{achievementsurl}}" class="btn btn-sm btn-outline-warning">
-            <i class="fa fa-trophy me-1" aria-hidden="true"></i>{{str_achievements}}
-        </a>
+    <div class="pg-hub-header mb-4">
+        <span class="badge bg-secondary pg-season-badge">
+            <i class="fa fa-calendar-alt me-1" aria-hidden="true"></i>
+            {{str_season_label}}: {{season_name}}
+        </span>
     </div>
 
     <div class="row g-4">

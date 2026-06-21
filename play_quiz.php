@@ -86,7 +86,7 @@ if (data_submitted()) {
 // GET: render game page.
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/play_quiz.php'));
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('base');
 $PAGE->set_title(get_string('quiz_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('quiz_pagetitle', 'local_playergames'));
 

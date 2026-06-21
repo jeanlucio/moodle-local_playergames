@@ -39,11 +39,10 @@ class hook_callbacks {
     /**
      * Add the PlayerGames link to the primary navigation.
      *
-     * The destination depends on the user's role: staff who can view the
-     * ecosystem dashboard land on the plugin map (with cards for the hub,
-     * achievements, engagement meter and API keys), while students go straight
-     * to the Player Hub. The dashboard map is a staff-oriented technical view,
-     * so students never see it.
+     * Everyone lands on the Player Hub, the secondary header on each page then
+     * exposes the other sections by role. The only exception is staff who have
+     * opted out of gamification: with no hub to show, they land on the ecosystem
+     * dashboard, where their tools live.
      *
      * @param primary_extend $hook The primary navigation hook.
      */
@@ -55,20 +54,20 @@ class hook_callbacks {
         }
 
         $context = \context_system::instance();
-        if (!has_capability('local/playergames:viewhub', $context)) {
+        $hasgamification = has_capability('local/playergames:viewhub', $context)
+            && preferences::is_gamification_enabled((int) $USER->id);
+        $isstaff = access::is_staff();
+
+        // Show the entry only when the user has at least one PlayerGames page.
+        if (!$hasgamification && !$isstaff) {
             return;
         }
 
-        // Respect the per-user gamification opt-out.
-        if (!preferences::is_gamification_enabled($USER->id)) {
-            return;
-        }
-
-        if (access::is_staff()) {
-            $url = new \moodle_url('/local/playergames/dashboard.php');
-        } else {
-            $url = new \moodle_url('/local/playergames/hub.php');
-        }
+        // Players land on the hub. Staff who opted out of gamification land on
+        // the ecosystem dashboard instead, where their tools live.
+        $url = $hasgamification
+            ? new \moodle_url('/local/playergames/hub.php')
+            : new \moodle_url('/local/playergames/dashboard.php');
 
         $view = $hook->get_primaryview();
 

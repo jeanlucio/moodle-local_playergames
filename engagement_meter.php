@@ -50,6 +50,7 @@ $PAGE->set_url(new moodle_url(
 ));
 $PAGE->set_title(get_string('engmeter_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('engmeter_pagetitle', 'local_playergames'));
+$PAGE->set_pagelayout('base');
 
 // Staff-only: site managers/admins, or teachers of at least one course.
 if (!\local_playergames\local\access::is_staff()) {
@@ -145,6 +146,10 @@ $summary = [
 ];
 
 echo $OUTPUT->header();
+echo $OUTPUT->render_from_template(
+    'local_playergames/nav_header',
+    (new \local_playergames\output\nav_header('engmeter'))->export_for_template($OUTPUT)
+);
 
 $templatedata = [
     'pageurl'         => (new moodle_url('/local/playergames/engagement_meter.php'))->out(false),
