@@ -36,11 +36,12 @@ use local_playergames\local\preferences;
  */
 class hook_callbacks {
     /**
-     * Add Player Hub and Achievements links to the primary navigation.
+     * Add the Player Hub link to the primary navigation.
      *
-     * Both pages are end-user facing (students and teachers) but were only
-     * reachable through the site administration tree, which those users cannot
-     * access. This surfaces them in the top primary navigation instead.
+     * The hub is end-user facing (students and teachers) but was only reachable
+     * through the site administration tree, which those users cannot access.
+     * This surfaces it in the top primary navigation instead. Achievements are
+     * reachable from inside the hub, so they get no separate top-level entry.
      *
      * @param primary_extend $hook The primary navigation hook.
      */
@@ -69,14 +70,6 @@ class hook_callbacks {
             \navigation_node::TYPE_ROOTNODE,
             null,
             'local_playergames_hub'
-        );
-
-        $view->add(
-            get_string('achievements_pagetitle', 'local_playergames'),
-            new \moodle_url('/local/playergames/achievements.php'),
-            \navigation_node::TYPE_ROOTNODE,
-            null,
-            'local_playergames_achievements'
         );
     }
 }
