@@ -38,7 +38,9 @@ $capabilities = [
         'captype'      => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [
-            'user' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'teacher'        => CAP_ALLOW,
+            'manager'        => CAP_ALLOW,
         ],
     ],
     'local/playergames:playgames' => [

@@ -613,5 +613,33 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062000, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062102) {
+        // The manageownkeys capability used to be granted to the 'user'
+        // archetype, so every logged-in user (including students) could reach
+        // mykeys.php directly. Restrict it to staff: grant the staff roles
+        // explicitly and drop the capability from the authenticated-user role.
+        $systemcontext = context_system::instance();
+
+        foreach (['editingteacher', 'teacher', 'manager'] as $archetype) {
+            foreach (get_archetype_roles($archetype) as $role) {
+                assign_capability(
+                    'local/playergames:manageownkeys',
+                    CAP_ALLOW,
+                    $role->id,
+                    $systemcontext->id,
+                    true
+                );
+            }
+        }
+
+        foreach (get_archetype_roles('user') as $role) {
+            unassign_capability('local/playergames:manageownkeys', $role->id);
+        }
+
+        $systemcontext->mark_dirty();
+
+        upgrade_plugin_savepoint(true, 2026062102, 'local', 'playergames');
+    }
+
     return true;
 }
