@@ -17,65 +17,80 @@
 {{!
     @template local_playergames/dashboard
 
-    Player ecosystem dashboard: quick-access nav cards and SVG plugin map.
+    Player ecosystem dashboard: quick-access cards and a grouped, clickable
+    plugin map whose typed relations are drawn as connector lines by JS.
 
     Classes required for JS:
-    * pg-ecosystem-node — SVG <g> element for each plugin node (click opens modal).
+    * pg-eco-card    — clickable plugin card (click/Enter/Space opens modal).
+    * pg-eco         — positioning context for the connector overlay.
+    * pg-eco-overlay — empty SVG the JS fills with connector paths.
 
-    Data attributes required for JS:
-    * data-component — plugin frankenstyle component.
-    * data-name      — plugin display name (used as modal title).
+    Data attributes / nodes required for JS:
+    * data-component on each card — plugin frankenstyle component.
+    * script#pg-ecosystem-edges   — JSON array of {from, to, type} edges.
 
     Example context (json):
     {
         "str_heading_nav": "Quick access",
-        "str_heading_ecosystem": "Plugin ecosystem",
+        "str_heading_ecosystem": "Plugin map",
+        "str_legend": "Connections",
         "hasnavcards": true,
         "navcards": [
-            {
-                "icon": "fa-box-archive",
-                "label": "Concept Cartridges",
-                "url": "/local/playergames/cartridge.php",
-                "disabled": false,
-                "comingsoon": false
-            }
+            {"icon": "fa-trophy", "label": "Player Hub", "url": "/x", "disabled": false, "comingsoon": false}
         ],
-        "svgviewbox": "0 0 700 500",
-        "svgedges": [
-            {
-                "x1": 350, "y1": 129, "x2": 350, "y2": 188,
-                "cssclass": "pg-edge-installed",
-                "strokedash": ""
-            }
+        "legend": [
+            {"cssclass": "pg-edge-requires", "label": "Direct dependency"},
+            {"cssclass": "pg-edge-ai", "label": "Optional AI"},
+            {"cssclass": "pg-edge-assoc", "label": "Association"},
+            {"cssclass": "pg-edge-planned", "label": "Planned"}
         ],
-        "svgnodes": [
+        "groups": [
             {
-                "component": "local_playergames",
-                "displayname": "Player Games",
-                "abbr": "PG",
-                "cx": 350, "cy": 240, "labelcy": 302, "r": 44,
-                "ishub": true,
-                "fill": "#4f46e5",
-                "cssclass": "pg-ecosystem-node pg-node-hub pg-node-installed",
-                "installed": "1",
-                "isinstalled": true,
-                "description": "Hub plugin for the Player ecosystem.",
-                "version": "0.9.0",
-                "hasversion": true,
-                "statuslabel": "Installed",
-                "statusbadge": "bg-success",
-                "hasactions": true,
-                "actions": [
+                "key": "core",
+                "label": "Core",
+                "cards": [
                     {
-                        "icon": "fa-box-archive",
-                        "label": "Concept Cartridges",
-                        "url": "/local/playergames/cartridge.php",
-                        "disabled": false,
-                        "comingsoon": false
+                        "component": "local_playergames",
+                        "displayname": "PlayerGames",
+                        "abbr": "PG",
+                        "color": "#4f46e5",
+                        "isinstalled": true,
+                        "statuslabel": "Installed",
+                        "statusbadge": "bg-success",
+                        "version": "0.1.6",
+                        "hasversion": true,
+                        "description": "AI and gamification hub.",
+                        "hasconnections": true,
+                        "connections": [
+                            {"abbr": "HUD", "targetname": "Player HUD", "cssclass": "pg-chip-ai"}
+                        ],
+                        "hasactions": false,
+                        "actions": []
                     }
                 ]
             }
-        ]
+        ],
+        "cards": [
+            {
+                "component": "local_playergames",
+                "displayname": "PlayerGames",
+                "abbr": "PG",
+                "color": "#4f46e5",
+                "isinstalled": true,
+                "statuslabel": "Installed",
+                "statusbadge": "bg-success",
+                "version": "0.1.6",
+                "hasversion": true,
+                "description": "AI and gamification hub.",
+                "hasconnections": true,
+                "connections": [
+                    {"abbr": "HUD", "targetname": "Player HUD", "cssclass": "pg-chip-ai"}
+                ],
+                "hasactions": false,
+                "actions": []
+            }
+        ],
+        "edgesjson": "[{\"from\":\"block_playerhud\",\"to\":\"local_playergames\",\"type\":\"ai\"}]"
     }
 }}
 <div class="local-playergames-dashboard">
@@ -99,65 +114,76 @@
     </div>
     {{/hasnavcards}}
 
-    <h2 class="h5 mb-3">{{str_heading_ecosystem}}</h2>
-    <div class="pg-ecosystem-wrap">
-        <svg viewBox="{{svgviewbox}}"
-             class="pg-ecosystem-svg"
-             role="img"
-             aria-label="{{str_heading_ecosystem}}">
-            <title>{{str_heading_ecosystem}}</title>
-            <defs>
-                <marker id="pg-arrow"
-                        markerWidth="8"
-                        markerHeight="6"
-                        refX="7"
-                        refY="3"
-                        orient="auto"
-                        aria-hidden="true">
-                    <polygon points="0 0, 8 3, 0 6" class="pg-arrow-marker"/>
-                </marker>
-            </defs>
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 pg-gap-2">
+        <h2 class="h5 mb-0">{{str_heading_ecosystem}}</h2>
+        <ul class="pg-eco-legend list-unstyled d-flex flex-wrap mb-0 pg-gap-3" aria-label="{{str_legend}}">
+            {{#legend}}
+            <li class="pg-eco-legend-item">
+                <span class="pg-eco-legend-swatch {{cssclass}}" aria-hidden="true"></span>
+                <span class="small">{{label}}</span>
+            </li>
+            {{/legend}}
+        </ul>
+    </div>
 
-            {{#svgedges}}
-            <line x1="{{x1}}" y1="{{y1}}" x2="{{x2}}" y2="{{y2}}"
-                  class="pg-edge {{cssclass}}"
-                  stroke-dasharray="{{strokedash}}"
-                  marker-end="url(#pg-arrow)"
-                  aria-hidden="true"/>
-            {{/svgedges}}
-
-            {{#svgnodes}}
-            <g class="{{cssclass}}"
-               data-component="{{component}}"
-               data-name="{{displayname}}"
-               role="button"
-               tabindex="0"
-               aria-label="{{displayname}}, {{statuslabel}}">
-                <circle cx="{{cx}}" cy="{{cy}}" r="{{r}}" fill="{{fill}}"/>
-                <text x="{{cx}}" y="{{cy}}"
-                      text-anchor="middle"
-                      dominant-baseline="central"
-                      class="pg-node-abbr"
-                      aria-hidden="true">{{abbr}}</text>
-                <text x="{{cx}}" y="{{labelcy}}"
-                      text-anchor="middle"
-                      class="pg-node-label"
-                      aria-hidden="true">{{displayname}}</text>
-            </g>
-            {{/svgnodes}}
-        </svg>
+    <div class="pg-eco">
+        <svg class="pg-eco-overlay" aria-hidden="true" focusable="false"></svg>
+        <div class="pg-eco-groups">
+            {{#groups}}
+            <section class="pg-eco-group pg-eco-group-{{key}}" aria-label="{{label}}">
+                <h3 class="pg-eco-group-title">{{label}}</h3>
+                <div class="pg-eco-group-cards">
+                    {{#cards}}
+                    <div class="pg-eco-card{{^isinstalled}} pg-eco-card-missing{{/isinstalled}}"
+                         data-component="{{component}}"
+                         role="button"
+                         tabindex="0"
+                         aria-label="{{displayname}}, {{statuslabel}}">
+                        <div class="pg-eco-card-head">
+                            <svg class="pg-eco-badge" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+                                <circle cx="20" cy="20" r="20" fill="{{color}}"/>
+                                <text x="20" y="21" text-anchor="middle" dominant-baseline="central"
+                                      class="pg-eco-badge-text">{{abbr}}</text>
+                            </svg>
+                            <div class="pg-eco-card-titles">
+                                <span class="pg-eco-card-name">{{displayname}}</span>
+                                <span class="badge {{statusbadge}} pg-eco-status">{{statuslabel}}</span>
+                            </div>
+                            <i class="fa fa-arrow-right pg-eco-card-go" aria-hidden="true"></i>
+                        </div>
+                        {{#hasconnections}}
+                        <div class="pg-eco-card-chips" aria-hidden="true">
+                            {{#connections}}
+                            <span class="pg-eco-chip {{cssclass}}" title="{{targetname}}">{{abbr}}</span>
+                            {{/connections}}
+                        </div>
+                        {{/hasconnections}}
+                    </div>
+                    {{/cards}}
+                </div>
+            </section>
+            {{/groups}}
+        </div>
     </div>
 
 </div>
 
 {{! Hidden modal content blocks — one per plugin, read by dashboard.js }}
-{{#svgnodes}}
+{{#cards}}
 <div id="pg-modal-{{component}}" class="d-none">
     <p class="mb-2">{{description}}</p>
     <p class="mb-0">
         <span class="badge {{statusbadge}}">{{statuslabel}}</span>
         {{#hasversion}}<small class="text-muted ms-2">v{{version}}</small>{{/hasversion}}
     </p>
+    {{#hasconnections}}
+    <hr class="my-3">
+    <div class="d-flex flex-wrap pg-gap-2">
+        {{#connections}}
+        <span class="pg-eco-chip {{cssclass}}">{{abbr}} · {{targetname}}</span>
+        {{/connections}}
+    </div>
+    {{/hasconnections}}
     {{#hasactions}}
     <hr class="my-3">
     <div class="list-group list-group-flush">
@@ -171,4 +197,6 @@
     </div>
     {{/hasactions}}
 </div>
-{{/svgnodes}}
+{{/cards}}
+
+<script type="application/json" id="pg-ecosystem-edges">{{{edgesjson}}}</script>

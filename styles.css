@@ -43,8 +43,10 @@ body.path-local-playergames .pg-gap-3 {
 /* ── Ecosystem dashboard ─────────────────────────────────────────── */
 
 body.path-local-playergames .local-playergames-dashboard {
-    --pg-edge-missing: #cbd5e1;
-    --pg-node-missing-stroke: #94a3b8;
+    --pg-c-requires: #2563eb;
+    --pg-c-ai: #0d9488;
+    --pg-c-assoc: #6b7280;
+    --pg-c-planned: #9ca3af;
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-nav-card {
@@ -59,67 +61,229 @@ body.path-local-playergames .local-playergames-dashboard .pg-nav-card:hover {
     transform: translateY(-2px);
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-wrap {
-    overflow-x: auto;
+/* ── Ecosystem map: legend ───────────────────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-svg {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch {
+    display: inline-block;
+    width: 1.6rem;
+    height: 0;
+    vertical-align: middle;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.pg-edge-requires {
+    border-top: 3px solid var(--pg-c-requires);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.pg-edge-ai {
+    border-top: 3px dashed var(--pg-c-ai);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.pg-edge-assoc {
+    border-top: 3px dotted var(--pg-c-assoc);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.pg-edge-planned {
+    border-top: 3px dotted var(--pg-c-planned);
+}
+
+/* ── Ecosystem map: layout and overlay ───────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco {
+    position: relative;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-overlay {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    max-width: 700px;
-    display: block;
-    margin-inline: auto;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-edge {
-    stroke: var(--text-muted, #6c757d);
-    stroke-width: 1.5;
-    fill: none;
+body.path-local-playergames .local-playergames-dashboard .pg-eco-groups {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-edge-missing {
-    stroke: var(--pg-edge-missing);
+body.path-local-playergames .local-playergames-dashboard .pg-eco-group {
+    flex: 1 1 200px;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-arrow-marker {
-    fill: var(--text-muted, #6c757d);
+body.path-local-playergames .local-playergames-dashboard .pg-eco-group-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #6c757d);
+    margin: 0;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-node {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-group-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* ── Ecosystem map: cards ────────────────────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
     cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-ecosystem-node:focus {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card:hover,
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card.pg-eco-card-active {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card:focus {
     outline: 3px solid var(--primary, #0f6cbf);
-    outline-offset: 4px;
+    outline-offset: 2px;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-node-hub circle {
-    stroke: var(--white, #fff);
-    stroke-width: 3;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-missing {
+    border-style: dashed;
+    opacity: 0.7;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-node-missing circle {
-    stroke: var(--pg-node-missing-stroke);
-    stroke-width: 2;
-    stroke-dasharray: 7 4;
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-node-abbr {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-badge {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-badge-text {
     fill: var(--white, #fff);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 700;
     font-family: inherit;
-    pointer-events: none;
-    user-select: none;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-node-label {
-    fill: var(--body-color, #1d2125);
-    font-size: 0.75rem;
-    font-family: inherit;
-    pointer-events: none;
-    user-select: none;
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-titles {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
+    flex-grow: 1;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-name {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-status {
+    font-size: 0.65rem;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-go {
+    color: var(--text-muted, #6c757d);
+    margin-inline-start: auto;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.05rem 0.4rem;
+    border-radius: 1rem;
+    border: 1px solid currentColor;
+    line-height: 1.4;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-chip-requires {
+    color: var(--pg-c-requires);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-chip-ai {
+    color: var(--pg-c-ai);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-chip-assoc {
+    color: var(--pg-c-assoc);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-chip-planned {
+    color: var(--pg-c-planned);
+}
+
+/* ── Ecosystem map: connector edges ──────────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-edge {
+    fill: none;
+    stroke-width: 2;
+    transition: opacity 0.15s ease, stroke-width 0.15s ease;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge-requires {
+    stroke: var(--pg-c-requires);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge-ai {
+    stroke: var(--pg-c-ai);
+    stroke-dasharray: 6 4;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge-assoc {
+    stroke: var(--pg-c-assoc);
+    stroke-dasharray: 2 5;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-edge-planned {
+    stroke: var(--pg-c-planned);
+    stroke-dasharray: 1 6;
+    opacity: 0.7;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-edge-active {
+    stroke-width: 3.5;
+    opacity: 1;
+}
+
+/* ── Ecosystem map: hover dimming ────────────────────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-dim .pg-eco-card:not(.pg-eco-card-active):not(.pg-eco-card-linked) {
+    opacity: 0.35;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-dim .pg-eco-edge:not(.pg-eco-edge-active) {
+    opacity: 0.12;
 }
 
 /* ── Quiz ────────────────────────────────────────────────────────── */

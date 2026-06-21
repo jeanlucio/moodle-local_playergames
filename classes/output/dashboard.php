@@ -37,33 +37,23 @@ use local_playergames\local\engagement_report;
  * Prepares all data needed by the dashboard Mustache template.
  *
  * Responsibilities:
- *   - Compute SVG node positions (radial layout, 6 peripheral plugins).
- *   - Compute SVG edge endpoints (clipped to circle edges, with arrowhead clearance).
- *   - Build capability-filtered admin navigation cards.
- *   - Build per-plugin modal content (status, version, action links).
+ *   - Build the capability-filtered quick-access action links.
+ *   - Build grouped, clickable plugin cards with install status.
+ *   - Build the typed relation edges (drawn as connectors by dashboard.js).
+ *   - Build the relation-type legend.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class dashboard implements renderable, templatable {
-    /** @var int SVG hub node centre X. */
-    private const HUB_CX = 350;
-
-    /** @var int SVG hub node centre Y. */
-    private const HUB_CY = 240;
-
-    /** @var int Radial distance from hub centre to peripheral node centres. */
-    private const PERIPHERAL_RADIUS = 155;
-
-    /** @var int Radius of every SVG node circle. */
-    private const NODE_RADIUS = 44;
-
-    /** @var int Extra gap added to node radius when calculating arrowhead clearance. */
-    private const ARROW_GAP = 10;
-
-    /** @var string Hex fill and stroke colour for not-installed plugin nodes. */
-    private const COLOR_MISSING = '#94a3b8';
+    /** @var string[] Relation types, in legend order. */
+    private const EDGE_TYPES = [
+        plugin_registry::REL_REQUIRES,
+        plugin_registry::REL_AI,
+        plugin_registry::REL_ASSOC,
+        plugin_registry::REL_PLANNED,
+    ];
 
     /**
      * Exports data for the dashboard Mustache template.
@@ -72,149 +62,177 @@ class dashboard implements renderable, templatable {
      * @return array
      */
     public function export_for_template(renderer_base $output): array {
-        $context   = context_system::instance();
-        $catalog   = plugin_registry::get_catalog();
-        $statusmap = plugin_status::get_installed();
-
-        // The quick-access cards and the hub-node modal share one action list.
+        $context = context_system::instance();
         $actions = $this->build_action_links($context);
 
-        [$svgnodes, $svgedges] = $this->build_svg($catalog, $statusmap, $actions);
+        [$groups, $cards, $edges] = $this->build_ecosystem($actions);
 
         return [
             'str_heading_nav'       => get_string('dashboard_heading_nav', 'local_playergames'),
             'str_heading_ecosystem' => get_string('dashboard_heading_ecosystem', 'local_playergames'),
+            'str_legend'            => get_string('dashboard_legend_heading', 'local_playergames'),
             'navcards'              => $actions,
             'hasnavcards'           => !empty($actions),
-            'svgviewbox'            => '0 0 700 500',
-            'svgnodes'              => $svgnodes,
-            'svgedges'              => $svgedges,
+            'groups'                => $groups,
+            'cards'                 => $cards,
+            'legend'                => $this->build_legend(),
+            'edgesjson'             => json_encode(
+                $edges,
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+            ),
         ];
     }
 
     /**
-     * Calculates SVG node and edge data for all plugins.
+     * Builds grouped cards, a flat card list and the directed edge list.
      *
-     * @param array $catalog Plugin definitions from the plugin registry.
-     * @param array $statusmap Installation status keyed by component name.
-     * @param array $hubactions Action links shown in the hub-node modal.
-     * @return array Two-element array: [nodes[], edges[]] for the SVG template.
+     * @param array $hubactions Action links attached to the hub card.
+     * @return array Three-element array: [groups[], cards[], edges[]].
      */
-    private function build_svg(array $catalog, array $statusmap, array $hubactions): array {
-        $hubcx     = self::HUB_CX;
-        $hubcy     = self::HUB_CY;
-        $r         = self::NODE_RADIUS;
-        $arrowend  = $r + self::ARROW_GAP;
-        $nodes     = [];
-        $edges     = [];
+    private function build_ecosystem(array $hubactions): array {
+        $catalog   = plugin_registry::get_catalog();
+        $statusmap = plugin_status::get_installed();
 
-        // Hub — first catalog entry, always installed.
-        $hubdef  = $catalog[0];
-        $nodes[] = $this->build_node(
-            $hubdef,
-            $hubcx,
-            $hubcy,
-            true,
-            true,
-            '',
-            $hubactions
-        );
+        $bycomponent = [];
+        foreach ($catalog as $def) {
+            $bycomponent[$def['component']] = $def;
+        }
 
-        // Peripheral plugins arranged in a circle.
-        $peripherals  = array_slice($catalog, 1);
-        $count        = count($peripherals);
-        $angleoffset  = -M_PI / 2; // Start at the top of the circle.
+        $edges       = $this->build_edges($catalog, $bycomponent);
+        $adjacency   = $this->build_adjacency($edges);
+        $hubcomponent = $catalog[0]['component'];
 
-        foreach ($peripherals as $i => $def) {
-            $angle     = $angleoffset + ($i * 2 * M_PI / $count);
-            $nx        = (int) round($hubcx + self::PERIPHERAL_RADIUS * cos($angle));
-            $ny        = (int) round($hubcy + self::PERIPHERAL_RADIUS * sin($angle));
-            $status    = $statusmap[$def['component']] ?? ['installed' => false, 'version' => ''];
-            $installed = $status['installed'];
-            $version   = $status['version'];
+        $cards     = [];
+        $bygroup   = [];
+        foreach ($catalog as $def) {
+            $component = $def['component'];
+            $status    = $statusmap[$component] ?? ['installed' => false, 'version' => ''];
+            $installed = (bool) $status['installed'];
+            $ishub     = $component === $hubcomponent;
 
-            $nodes[] = $this->build_node($def, $nx, $ny, $installed, false, $version, []);
+            $card = [
+                'component'      => $component,
+                'displayname'    => $def['displayname'],
+                'abbr'           => $def['abbr'],
+                'color'          => $installed ? $def['color'] : '#94a3b8',
+                'isinstalled'    => $installed,
+                'statuslabel'    => get_string(
+                    $installed ? 'dashboard_plugin_installed' : 'dashboard_plugin_notinstalled',
+                    'local_playergames'
+                ),
+                'statusbadge'    => $installed ? 'bg-success' : 'bg-secondary',
+                'version'        => $status['version'],
+                'hasversion'     => $status['version'] !== '',
+                'description'    => get_string('plugin_desc_' . $component, 'local_playergames'),
+                'connections'    => $this->build_chips($adjacency[$component] ?? [], $bycomponent),
+                'hasconnections' => !empty($adjacency[$component] ?? []),
+                'hasactions'     => $ishub && !empty($hubactions),
+                'actions'        => $ishub ? $hubactions : [],
+            ];
 
-            // Edge from peripheral to hub, clipped to circle edges.
-            $dx   = $hubcx - $nx;
-            $dy   = $hubcy - $ny;
-            $dist = sqrt($dx * $dx + $dy * $dy);
+            $cards[] = $card;
+            $bygroup[$def['group']][] = $card;
+        }
 
-            if ($dist > 1) {
+        $groups = [];
+        foreach (plugin_registry::GROUPS as $key) {
+            if (empty($bygroup[$key])) {
+                continue;
+            }
+            $groups[] = [
+                'key'   => $key,
+                'label' => get_string('dashboard_group_' . $key, 'local_playergames'),
+                'cards' => $bygroup[$key],
+            ];
+        }
+
+        return [$groups, $cards, $edges];
+    }
+
+    /**
+     * Flattens the catalog relations into a directed edge list for the JS overlay.
+     *
+     * @param array $catalog Plugin catalog.
+     * @param array $bycomponent Catalog indexed by component name.
+     * @return array<int, array{from: string, to: string, type: string}>
+     */
+    private function build_edges(array $catalog, array $bycomponent): array {
+        $edges = [];
+        foreach ($catalog as $def) {
+            foreach ($def['relations'] as $relation) {
+                if (!isset($bycomponent[$relation['target']])) {
+                    continue;
+                }
                 $edges[] = [
-                    'x1'        => (int) round($nx + ($dx / $dist) * $r),
-                    'y1'        => (int) round($ny + ($dy / $dist) * $r),
-                    'x2'        => (int) round($hubcx - ($dx / $dist) * $arrowend),
-                    'y2'        => (int) round($hubcy - ($dy / $dist) * $arrowend),
-                    'cssclass'  => $installed ? 'pg-edge-installed' : 'pg-edge-missing',
-                    'strokedash' => $installed ? '' : '7 4',
+                    'from' => $def['component'],
+                    'to'   => $relation['target'],
+                    'type' => $relation['type'],
                 ];
             }
         }
-
-        return [$nodes, $edges];
+        return $edges;
     }
 
     /**
-     * Builds the data array for a single SVG node.
+     * Builds an undirected adjacency map (component => [[neighbour, type], ...]).
      *
-     * @param array $def Plugin registry definition.
-     * @param int $cx Node centre X in SVG coordinates.
-     * @param int $cy Node centre Y in SVG coordinates.
-     * @param bool $installed Whether the plugin is installed.
-     * @param bool $ishub Whether this is the centre hub node.
-     * @param string $version Release version string, or empty.
-     * @param array $actions Capability-filtered action links.
+     * @param array $edges Directed edge list.
+     * @return array<string, array<int, array{0: string, 1: string}>>
+     */
+    private function build_adjacency(array $edges): array {
+        $adjacency = [];
+        foreach ($edges as $edge) {
+            $adjacency[$edge['from']][] = [$edge['to'], $edge['type']];
+            $adjacency[$edge['to']][]   = [$edge['from'], $edge['type']];
+        }
+        return $adjacency;
+    }
+
+    /**
+     * Builds connection chips for a card from its adjacency entries.
+     *
+     * @param array $neighbours List of [component, type] pairs.
+     * @param array $bycomponent Catalog indexed by component name.
      * @return array
      */
-    private function build_node(
-        array $def,
-        int $cx,
-        int $cy,
-        bool $installed,
-        bool $ishub,
-        string $version,
-        array $actions
-    ): array {
-        $component   = $def['component'];
-        $fill        = $installed ? $def['color'] : self::COLOR_MISSING;
-        $cssparts    = ['pg-ecosystem-node'];
-        $cssparts[]  = $installed ? 'pg-node-installed' : 'pg-node-missing';
-        if ($ishub) {
-            $cssparts[] = 'pg-node-hub';
+    private function build_chips(array $neighbours, array $bycomponent): array {
+        $chips = [];
+        $seen  = [];
+        foreach ($neighbours as [$component, $type]) {
+            $key = $component . '|' . $type;
+            if (isset($seen[$key]) || !isset($bycomponent[$component])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $chips[] = [
+                'abbr'       => $bycomponent[$component]['abbr'],
+                'targetname' => $bycomponent[$component]['displayname'],
+                'cssclass'   => 'pg-chip-' . $type,
+            ];
         }
-        $statuslabel = get_string(
-            $installed ? 'dashboard_plugin_installed' : 'dashboard_plugin_notinstalled',
-            'local_playergames'
-        );
+        return $chips;
+    }
 
-        return [
-            'component'   => $component,
-            'displayname' => $def['displayname'],
-            'abbr'        => $def['abbr'],
-            'cx'          => $cx,
-            'cy'          => $cy,
-            'labelcy'     => $cy + self::NODE_RADIUS + 18,
-            'r'           => self::NODE_RADIUS,
-            'ishub'       => $ishub,
-            'fill'        => $fill,
-            'cssclass'    => implode(' ', $cssparts),
-            'installed'   => $installed ? '1' : '0',
-            'isinstalled' => $installed,
-            'description' => get_string('plugin_desc_' . $component, 'local_playergames'),
-            'version'     => $version,
-            'hasversion'  => $version !== '',
-            'statuslabel' => $statuslabel,
-            'statusbadge' => $installed ? 'bg-success' : 'bg-secondary',
-            'hasactions'  => !empty($actions),
-            'actions'     => $actions,
-        ];
+    /**
+     * Builds the relation-type legend.
+     *
+     * @return array
+     */
+    private function build_legend(): array {
+        $legend = [];
+        foreach (self::EDGE_TYPES as $type) {
+            $legend[] = [
+                'cssclass' => 'pg-edge-' . $type,
+                'label'    => get_string('dashboard_edge_' . $type, 'local_playergames'),
+            ];
+        }
+        return $legend;
     }
 
     /**
      * Returns capability-filtered action links for the user.
      *
-     * Shared by the quick-access cards and the hub-node modal so both surfaces
+     * Shared by the quick-access cards and the hub-card modal so both surfaces
      * stay in sync. Cartridge management and site settings are intentionally
      * absent: they live in the site administration tree, not on this end-user
      * landing. The engagement meter only appears when the user actually teaches
