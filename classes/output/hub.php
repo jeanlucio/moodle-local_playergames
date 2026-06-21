@@ -132,11 +132,20 @@ class hub implements renderable, templatable {
         $selfinstudents = $this->find_self_rank($studentranking);
         $selfinstaff    = $this->find_self_rank($staffranking);
 
+        $seasonlabel = get_string('hub_season_label', 'local_playergames');
+        $seasonname  = format_string($season->name);
+        // Auto-generated names are "Season N", which next to the "Season:" label
+        // reads as "Season: Season 1". Drop a redundant leading label word so the
+        // badge shows "Season: 1"; custom names without the prefix are untouched.
+        $stripped = preg_replace('/^' . preg_quote($seasonlabel, '/') . '\s*/iu', '', $seasonname);
+        $seasondisplay = ($stripped !== '' && $stripped !== null) ? $stripped : $seasonname;
+
         return [
             'noseason'           => false,
             'str_pagetitle'      => get_string('hub_pagetitle', 'local_playergames'),
-            'season_name'        => format_string($season->name),
-            'str_season_label'   => get_string('hub_season_label', 'local_playergames'),
+            'str_achievements'   => get_string('achievements_pagetitle', 'local_playergames'),
+            'season_name'        => $seasondisplay,
+            'str_season_label'   => $seasonlabel,
             'level'              => $level,
             'title'              => $title,
             'xp'                 => $profile->xp,

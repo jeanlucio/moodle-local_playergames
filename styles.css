@@ -450,3 +450,7 @@ body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav
     background: rgba(0, 0, 0, 0.25);
     border-top-color: var(--pg-tab-active);
 }
+
+body.path-local-playergames .badge.pg-season-badge {
+    color: var(--bs-dark, #000);
+}
