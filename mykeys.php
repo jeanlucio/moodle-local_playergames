@@ -26,7 +26,11 @@ require(__DIR__ . '/../../config.php');
 require_login();
 
 $context = context_system::instance();
-require_capability('local/playergames:manageownkeys', $context);
+
+// Staff-only: site managers/admins, or teachers of at least one course.
+if (!\local_playergames\local\access::is_staff()) {
+    throw new moodle_exception('nopermissions', 'error', '', get_string('mykeys_pagetitle', 'local_playergames'));
+}
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/mykeys.php'));

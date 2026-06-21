@@ -27,12 +27,17 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_playergames\local\access;
 use local_playergames\output\dashboard;
 
 require_login();
 
 $context = context_system::instance();
-require_capability('local/playergames:viewdashboard', $context);
+
+// The dashboard is the staff landing. Non-staff (students) go to the hub.
+if (!access::is_staff()) {
+    redirect(new moodle_url('/local/playergames/hub.php'));
+}
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/dashboard.php'));

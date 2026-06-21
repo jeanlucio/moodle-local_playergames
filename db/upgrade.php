@@ -641,5 +641,28 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062102, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062103) {
+        // PlayerGames is a site-wide hub, but students and teachers usually get
+        // their role from course enrolments, whose capabilities never reach the
+        // system context. Grant viewhub to all authenticated users so they can
+        // reach the hub; participation is gated by the allowed_participants
+        // setting and the per-user opt-out.
+        $systemcontext = context_system::instance();
+
+        foreach (get_archetype_roles('user') as $role) {
+            assign_capability(
+                'local/playergames:viewhub',
+                CAP_ALLOW,
+                $role->id,
+                $systemcontext->id,
+                true
+            );
+        }
+
+        $systemcontext->mark_dirty();
+
+        upgrade_plugin_savepoint(true, 2026062103, 'local', 'playergames');
+    }
+
     return true;
 }

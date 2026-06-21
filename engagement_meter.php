@@ -51,7 +51,10 @@ $PAGE->set_url(new moodle_url(
 $PAGE->set_title(get_string('engmeter_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('engmeter_pagetitle', 'local_playergames'));
 
-require_capability('local/playergames:viewengagementmeter', $context);
+// Staff-only: site managers/admins, or teachers of at least one course.
+if (!\local_playergames\local\access::is_staff()) {
+    throw new moodle_exception('nopermissions', 'error', '', get_string('engmeter_pagetitle', 'local_playergames'));
+}
 
 $report = new \local_playergames\local\engagement_report();
 

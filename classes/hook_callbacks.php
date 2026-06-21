@@ -25,6 +25,7 @@
 namespace local_playergames;
 
 use core\hook\navigation\primary_extend;
+use local_playergames\local\access;
 use local_playergames\local\preferences;
 
 /**
@@ -63,7 +64,7 @@ class hook_callbacks {
             return;
         }
 
-        if (has_capability('local/playergames:viewdashboard', $context)) {
+        if (access::is_staff()) {
             $url = new \moodle_url('/local/playergames/dashboard.php');
         } else {
             $url = new \moodle_url('/local/playergames/hub.php');

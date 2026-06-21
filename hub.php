@@ -40,7 +40,7 @@ if (!\local_playergames\local\preferences::is_gamification_enabled($USER->id)) {
 }
 
 $allowed  = get_config('local_playergames', 'allowed_participants') ?: 'students';
-$isstaff  = has_capability('moodle/course:manageactivities', $context);
+$isstaff  = \local_playergames\local\access::is_staff();
 $isadmin  = has_capability('moodle/site:config', $context);
 
 // Access control: enforce participant group restriction.
