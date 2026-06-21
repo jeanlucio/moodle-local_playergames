@@ -77,6 +77,7 @@ class plugin_registry {
                 'displayname' => 'PlayerGames',
                 'abbr'        => 'PG',
                 'color'       => '#4f46e5',
+                'icon'        => 'fa-gamepad',
                 'group'       => 'core',
                 'relations'   => [],
             ],
@@ -87,6 +88,7 @@ class plugin_registry {
                 'displayname' => 'PlayerGroup',
                 'abbr'        => 'GRP',
                 'color'       => '#7c3aed',
+                'icon'        => 'fa-users',
                 'group'       => 'activity',
                 'relations'   => [],
             ],
@@ -95,6 +97,7 @@ class plugin_registry {
                 'displayname' => 'PlayerWords',
                 'abbr'        => 'PW',
                 'color'       => '#16a34a',
+                'icon'        => 'fa-font',
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -106,6 +109,7 @@ class plugin_registry {
                 'displayname' => 'PlayerPuzzle',
                 'abbr'        => 'PPz',
                 'color'       => '#dc2626',
+                'icon'        => 'fa-puzzle-piece',
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -116,6 +120,7 @@ class plugin_registry {
                 'displayname' => 'PlayerRaid',
                 'abbr'        => 'RAID',
                 'color'       => '#ea580c',
+                'icon'        => 'fa-dragon',
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_PLANNED],
@@ -126,6 +131,7 @@ class plugin_registry {
                 'displayname' => 'PlayerLand',
                 'abbr'        => 'LAND',
                 'color'       => '#ca8a04',
+                'icon'        => 'fa-mountain',
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_PLANNED],
@@ -138,6 +144,7 @@ class plugin_registry {
                 'displayname' => 'Player HUD',
                 'abbr'        => 'HUD',
                 'color'       => '#0891b2',
+                'icon'        => 'fa-gauge',
                 'group'       => 'interface',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -150,6 +157,7 @@ class plugin_registry {
                 'displayname' => 'HUD Filter',
                 'abbr'        => 'FIL',
                 'color'       => '#0e7490',
+                'icon'        => 'fa-filter',
                 'group'       => 'interface',
                 'relations'   => [
                     ['target' => 'block_playerhud', 'type' => self::REL_REQUIRES],
@@ -161,6 +169,7 @@ class plugin_registry {
                 'displayname' => 'HUD Availability',
                 'abbr'        => 'AVL',
                 'color'       => '#0d9488',
+                'icon'        => 'fa-lock',
                 'group'       => 'interface',
                 'relations'   => [
                     ['target' => 'block_playerhud', 'type' => self::REL_REQUIRES],
@@ -173,6 +182,7 @@ class plugin_registry {
                 'displayname' => 'Report Unlocker',
                 'abbr'        => 'UNL',
                 'color'       => '#2563eb',
+                'icon'        => 'fa-unlock',
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -185,6 +195,7 @@ class plugin_registry {
                 'displayname' => 'StudioLMS',
                 'abbr'        => 'STU',
                 'color'       => '#9333ea',
+                'icon'        => 'fa-wand-magic-sparkles',
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -197,6 +208,7 @@ class plugin_registry {
                 'displayname' => 'StudioLMS (Tiny)',
                 'abbr'        => 'TIN',
                 'color'       => '#a855f7',
+                'icon'        => 'fa-pen-nib',
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'local_playergames', 'type' => self::REL_AI],
@@ -207,6 +219,7 @@ class plugin_registry {
                 'displayname' => 'Late Penalty',
                 'abbr'        => 'LATE',
                 'color'       => '#b91c1c',
+                'icon'        => 'fa-clock',
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'mod_playergroup', 'type' => self::REL_ASSOC],
@@ -217,6 +230,7 @@ class plugin_registry {
                 'displayname' => 'Virtual Lab',
                 'abbr'        => 'LAB',
                 'color'       => '#0284c7',
+                'icon'        => 'fa-flask',
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'block_teacher_checklist', 'type' => self::REL_ASSOC],
@@ -229,6 +243,7 @@ class plugin_registry {
                 'displayname' => 'Teacher Checklist',
                 'abbr'        => 'CHK',
                 'color'       => '#059669',
+                'icon'        => 'fa-list-check',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],
@@ -237,6 +252,7 @@ class plugin_registry {
                 'displayname' => 'Resource Stats',
                 'abbr'        => 'RST',
                 'color'       => '#475569',
+                'icon'        => 'fa-chart-column',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],
@@ -245,6 +261,7 @@ class plugin_registry {
                 'displayname' => 'Plugins View',
                 'abbr'        => 'PV',
                 'color'       => '#64748b',
+                'icon'        => 'fa-plug',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],
@@ -253,6 +270,7 @@ class plugin_registry {
                 'displayname' => 'Quick Poll',
                 'abbr'        => 'QP',
                 'color'       => '#db2777',
+                'icon'        => 'fa-square-poll-vertical',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],
@@ -261,6 +279,7 @@ class plugin_registry {
                 'displayname' => 'Reflect',
                 'abbr'        => 'REF',
                 'color'       => '#7c2d12',
+                'icon'        => 'fa-book',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],
@@ -269,6 +288,7 @@ class plugin_registry {
                 'displayname' => 'Lore Theme',
                 'abbr'        => 'LORE',
                 'color'       => '#334155',
+                'icon'        => 'fa-palette',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],

@@ -110,24 +110,27 @@ class dashboard implements renderable, templatable {
             $installed = (bool) $status['installed'];
             $ishub     = $component === $hubcomponent;
 
+            $groups = $this->build_connection_groups($adjacency[$component] ?? [], $bycomponent);
+
             $card = [
-                'component'      => $component,
-                'displayname'    => $def['displayname'],
-                'abbr'           => $def['abbr'],
-                'color'          => $installed ? $def['color'] : '#94a3b8',
-                'isinstalled'    => $installed,
-                'statuslabel'    => get_string(
+                'component'         => $component,
+                'displayname'       => $def['displayname'],
+                'abbr'              => $def['abbr'],
+                'icon'              => $def['icon'],
+                'color'             => $installed ? $def['color'] : '#94a3b8',
+                'isinstalled'       => $installed,
+                'statuslabel'       => get_string(
                     $installed ? 'dashboard_plugin_installed' : 'dashboard_plugin_notinstalled',
                     'local_playergames'
                 ),
-                'statusbadge'    => $installed ? 'bg-success' : 'bg-secondary',
-                'version'        => $status['version'],
-                'hasversion'     => $status['version'] !== '',
-                'description'    => get_string('plugin_desc_' . $component, 'local_playergames'),
-                'connections'    => $this->build_chips($adjacency[$component] ?? [], $bycomponent),
-                'hasconnections' => !empty($adjacency[$component] ?? []),
-                'hasactions'     => $ishub && !empty($hubactions),
-                'actions'        => $ishub ? $hubactions : [],
+                'statusbadge'       => $installed ? 'bg-success' : 'bg-secondary',
+                'version'           => $status['version'],
+                'hasversion'        => $status['version'] !== '',
+                'description'       => get_string('plugin_desc_' . $component, 'local_playergames'),
+                'connectiongroups'  => $groups,
+                'hasconnections'    => !empty($groups),
+                'hasactions'        => $ishub && !empty($hubactions),
+                'actions'           => $ishub ? $hubactions : [],
             ];
 
             $cards[] = $card;
@@ -189,28 +192,36 @@ class dashboard implements renderable, templatable {
     }
 
     /**
-     * Builds connection chips for a card from its adjacency entries.
+     * Groups a card's connections by relation type for the modal listing.
      *
      * @param array $neighbours List of [component, type] pairs.
      * @param array $bycomponent Catalog indexed by component name.
      * @return array
      */
-    private function build_chips(array $neighbours, array $bycomponent): array {
-        $chips = [];
-        $seen  = [];
+    private function build_connection_groups(array $neighbours, array $bycomponent): array {
+        $bytype = [];
+        $seen   = [];
         foreach ($neighbours as [$component, $type]) {
             $key = $component . '|' . $type;
             if (isset($seen[$key]) || !isset($bycomponent[$component])) {
                 continue;
             }
             $seen[$key] = true;
-            $chips[] = [
-                'abbr'       => $bycomponent[$component]['abbr'],
-                'targetname' => $bycomponent[$component]['displayname'],
-                'cssclass'   => 'pg-chip-' . $type,
+            $bytype[$type][] = $bycomponent[$component]['displayname'];
+        }
+
+        $groups = [];
+        foreach (self::EDGE_TYPES as $type) {
+            if (empty($bytype[$type])) {
+                continue;
+            }
+            $groups[] = [
+                'typelabel' => get_string('dashboard_edge_' . $type, 'local_playergames'),
+                'cssclass'  => 'pg-chip-' . $type,
+                'names'     => implode(', ', $bytype[$type]),
             ];
         }
-        return $chips;
+        return $groups;
     }
 
     /**

@@ -61,8 +61,8 @@
                         "hasversion": true,
                         "description": "AI and gamification hub.",
                         "hasconnections": true,
-                        "connections": [
-                            {"abbr": "HUD", "targetname": "Player HUD", "cssclass": "pg-chip-ai"}
+                        "connectiongroups": [
+                            {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
                         ],
                         "hasactions": false,
                         "actions": []
@@ -75,6 +75,7 @@
                 "component": "local_playergames",
                 "displayname": "PlayerGames",
                 "abbr": "PG",
+                "icon": "fa-gamepad",
                 "color": "#4f46e5",
                 "isinstalled": true,
                 "statuslabel": "Installed",
@@ -83,8 +84,8 @@
                 "hasversion": true,
                 "description": "AI and gamification hub.",
                 "hasconnections": true,
-                "connections": [
-                    {"abbr": "HUD", "targetname": "Player HUD", "cssclass": "pg-chip-ai"}
+                "connectiongroups": [
+                    {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
                 ],
                 "hasactions": false,
                 "actions": []
@@ -140,24 +141,19 @@
                          tabindex="0"
                          aria-label="{{displayname}}, {{statuslabel}}">
                         <div class="pg-eco-card-head">
-                            <svg class="pg-eco-badge" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
-                                <circle cx="20" cy="20" r="20" fill="{{color}}"/>
-                                <text x="20" y="21" text-anchor="middle" dominant-baseline="central"
-                                      class="pg-eco-badge-text">{{abbr}}</text>
-                            </svg>
+                            <span class="pg-eco-badge">
+                                <svg class="pg-eco-badge-circle" viewBox="0 0 40 40"
+                                     aria-hidden="true" focusable="false">
+                                    <circle cx="20" cy="20" r="20" fill="{{color}}"/>
+                                </svg>
+                                <i class="fa {{icon}} pg-eco-badge-icon" aria-hidden="true"></i>
+                            </span>
                             <div class="pg-eco-card-titles">
                                 <span class="pg-eco-card-name">{{displayname}}</span>
                                 <span class="badge {{statusbadge}} pg-eco-status">{{statuslabel}}</span>
                             </div>
                             <i class="fa fa-arrow-right pg-eco-card-go" aria-hidden="true"></i>
                         </div>
-                        {{#hasconnections}}
-                        <div class="pg-eco-card-chips" aria-hidden="true">
-                            {{#connections}}
-                            <span class="pg-eco-chip {{cssclass}}" title="{{targetname}}">{{abbr}}</span>
-                            {{/connections}}
-                        </div>
-                        {{/hasconnections}}
                     </div>
                     {{/cards}}
                 </div>
@@ -178,11 +174,14 @@
     </p>
     {{#hasconnections}}
     <hr class="my-3">
-    <div class="d-flex flex-wrap pg-gap-2">
-        {{#connections}}
-        <span class="pg-eco-chip {{cssclass}}">{{abbr}} · {{targetname}}</span>
-        {{/connections}}
-    </div>
+    <ul class="list-unstyled mb-0">
+        {{#connectiongroups}}
+        <li class="mb-2 d-flex align-items-start pg-gap-2">
+            <span class="pg-eco-chip {{cssclass}}">{{typelabel}}</span>
+            <span>{{names}}</span>
+        </li>
+        {{/connectiongroups}}
+    </ul>
     {{/hasconnections}}
     {{#hasactions}}
     <hr class="my-3">
