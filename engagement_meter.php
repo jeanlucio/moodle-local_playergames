@@ -34,17 +34,32 @@ if (!in_array($days, [30, 60, 90], true)) {
     $days = 30;
 }
 
-$PAGE->set_url(new moodle_url('/local/playergames/engagement_meter.php', ['days' => $days]));
+// Scope is driven by the entry point, not by role. The site administration
+// entry links to ?scope=all (every course); the PlayerGames dashboard card
+// uses the default own-courses scope. This lets a user who is both admin and
+// teacher see the site-wide view from the admin tree and their own-courses
+// view from the dashboard.
+$scope = optional_param('scope', 'own', PARAM_ALPHA);
+if (!in_array($scope, ['own', 'all'], true)) {
+    $scope = 'own';
+}
+
+$PAGE->set_url(new moodle_url(
+    '/local/playergames/engagement_meter.php',
+    ['days' => $days, 'scope' => $scope]
+));
 $PAGE->set_title(get_string('engmeter_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('engmeter_pagetitle', 'local_playergames'));
 
 require_capability('local/playergames:viewengagementmeter', $context);
 
-$report  = new \local_playergames\local\engagement_report();
-$isadmin = has_capability('local/playergames:viewdashboard', $context);
+$report = new \local_playergames\local\engagement_report();
 
-$scopeids = null;
-if (!$isadmin) {
+// The capability guard stops a teacher forcing scope=all via the URL.
+$canseeall = has_capability('moodle/site:config', $context);
+if ($scope === 'all' && $canseeall) {
+    $scopeids = null;
+} else {
     $scopeids = $report->get_teacher_courseids($USER->id);
 }
 
@@ -130,6 +145,7 @@ echo $OUTPUT->header();
 
 $templatedata = [
     'pageurl'         => (new moodle_url('/local/playergames/engagement_meter.php'))->out(false),
+    'scope'           => $scope,
     'days'            => $days,
     'day_options'     => $dayoptions,
     'has_data'        => $with['course_count'] > 0 || $without['course_count'] > 0,

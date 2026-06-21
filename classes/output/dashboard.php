@@ -31,6 +31,7 @@ use renderer_base;
 use templatable;
 use local_playergames\ecosystem\plugin_registry;
 use local_playergames\ecosystem\plugin_status;
+use local_playergames\local\engagement_report;
 
 /**
  * Prepares all data needed by the dashboard Mustache template.
@@ -75,14 +76,16 @@ class dashboard implements renderable, templatable {
         $catalog   = plugin_registry::get_catalog();
         $statusmap = plugin_status::get_installed();
 
-        [$svgnodes, $svgedges] = $this->build_svg($catalog, $statusmap, $context);
-        $navcards = $this->build_nav_cards($context);
+        // The quick-access cards and the hub-node modal share one action list.
+        $actions = $this->build_action_links($context);
+
+        [$svgnodes, $svgedges] = $this->build_svg($catalog, $statusmap, $actions);
 
         return [
             'str_heading_nav'       => get_string('dashboard_heading_nav', 'local_playergames'),
             'str_heading_ecosystem' => get_string('dashboard_heading_ecosystem', 'local_playergames'),
-            'navcards'              => $navcards,
-            'hasnavcards'           => !empty($navcards),
+            'navcards'              => $actions,
+            'hasnavcards'           => !empty($actions),
             'svgviewbox'            => '0 0 700 500',
             'svgnodes'              => $svgnodes,
             'svgedges'              => $svgedges,
@@ -94,10 +97,10 @@ class dashboard implements renderable, templatable {
      *
      * @param array $catalog Plugin definitions from the plugin registry.
      * @param array $statusmap Installation status keyed by component name.
-     * @param context_system $context System context for capability checks.
+     * @param array $hubactions Action links shown in the hub-node modal.
      * @return array Two-element array: [nodes[], edges[]] for the SVG template.
      */
-    private function build_svg(array $catalog, array $statusmap, context_system $context): array {
+    private function build_svg(array $catalog, array $statusmap, array $hubactions): array {
         $hubcx     = self::HUB_CX;
         $hubcy     = self::HUB_CY;
         $r         = self::NODE_RADIUS;
@@ -114,7 +117,7 @@ class dashboard implements renderable, templatable {
             true,
             true,
             '',
-            $this->build_hub_actions($context)
+            $hubactions
         );
 
         // Peripheral plugins arranged in a circle.
@@ -209,24 +212,21 @@ class dashboard implements renderable, templatable {
     }
 
     /**
-     * Returns capability-filtered action links shown in the hub node modal.
+     * Returns capability-filtered action links for the user.
+     *
+     * Shared by the quick-access cards and the hub-node modal so both surfaces
+     * stay in sync. Cartridge management and site settings are intentionally
+     * absent: they live in the site administration tree, not on this end-user
+     * landing. The engagement meter only appears when the user actually teaches
+     * at least one course, since the card links to the own-courses scope.
      *
      * @param context_system $context System context for capability checks.
      * @return array
      */
-    private function build_hub_actions(context_system $context): array {
-        $comingsoon = get_string('dashboard_card_comingsoon', 'local_playergames');
-        $actions    = [];
+    private function build_action_links(context_system $context): array {
+        global $USER;
 
-        if (has_capability('local/playergames:managecartridges', $context)) {
-            $actions[] = [
-                'icon'       => 'fa-box-archive',
-                'label'      => get_string('dashboard_card_cartridges', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/cartridge.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
+        $actions = [];
 
         if (has_capability('local/playergames:viewhub', $context)) {
             $actions[] = [
@@ -236,9 +236,17 @@ class dashboard implements renderable, templatable {
                 'disabled'   => false,
                 'comingsoon' => false,
             ];
+            $actions[] = [
+                'icon'       => 'fa-award',
+                'label'      => get_string('dashboard_card_achievements', 'local_playergames'),
+                'url'        => (new moodle_url('/local/playergames/achievements.php'))->out(false),
+                'disabled'   => false,
+                'comingsoon' => false,
+            ];
         }
 
-        if (has_capability('local/playergames:viewengagementmeter', $context)) {
+        $teaches = !empty((new engagement_report())->get_teacher_courseids($USER->id));
+        if (has_capability('local/playergames:viewengagementmeter', $context) && $teaches) {
             $actions[] = [
                 'icon'       => 'fa-chart-line',
                 'label'      => get_string('dashboard_card_engmeter', 'local_playergames'),
@@ -256,83 +264,6 @@ class dashboard implements renderable, templatable {
             'comingsoon' => false,
         ];
 
-        if (has_capability('moodle/site:config', $context)) {
-            $actions[] = [
-                'icon'       => 'fa-gear',
-                'label'      => get_string('dashboard_card_settings', 'local_playergames'),
-                'url'        => (new moodle_url(
-                    '/admin/settings.php',
-                    ['section' => 'local_playergames_seasons']
-                ))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
         return $actions;
-    }
-
-    /**
-     * Builds the quick-access nav cards shown above the SVG.
-     *
-     * @param context_system $context System context.
-     * @return array
-     */
-    private function build_nav_cards(context_system $context): array {
-        $comingsoon = get_string('dashboard_card_comingsoon', 'local_playergames');
-        $cards      = [];
-
-        if (has_capability('local/playergames:managecartridges', $context)) {
-            $cards[] = [
-                'icon'       => 'fa-box-archive',
-                'label'      => get_string('dashboard_card_cartridges', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/cartridge.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        if (has_capability('local/playergames:viewhub', $context)) {
-            $cards[] = [
-                'icon'       => 'fa-trophy',
-                'label'      => get_string('dashboard_card_hub', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/hub.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        if (has_capability('local/playergames:viewengagementmeter', $context)) {
-            $cards[] = [
-                'icon'       => 'fa-chart-line',
-                'label'      => get_string('dashboard_card_engmeter', 'local_playergames'),
-                'url'        => (new moodle_url('/local/playergames/engagement_meter.php'))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        $cards[] = [
-            'icon'       => 'fa-key',
-            'label'      => get_string('dashboard_card_mykeys', 'local_playergames'),
-            'url'        => (new moodle_url('/local/playergames/mykeys.php'))->out(false),
-            'disabled'   => false,
-            'comingsoon' => false,
-        ];
-
-        if (has_capability('moodle/site:config', $context)) {
-            $cards[] = [
-                'icon'       => 'fa-gear',
-                'label'      => get_string('dashboard_card_settings', 'local_playergames'),
-                'url'        => (new moodle_url(
-                    '/admin/settings.php',
-                    ['section' => 'local_playergames_seasons']
-                ))->out(false),
-                'disabled'   => false,
-                'comingsoon' => false,
-            ];
-        }
-
-        return $cards;
     }
 }

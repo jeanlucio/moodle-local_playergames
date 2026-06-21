@@ -4,6 +4,7 @@
     Example context (json):
     {
         "pageurl": "/local/playergames/engagement_meter.php",
+        "scope": "own",
         "days": 30,
         "day_options": [
             {"value": 30, "label": "Last 30 days", "selected": true},
@@ -32,6 +33,7 @@
     {{! Period selector }}
     <div class="d-flex flex-wrap align-items-center pg-gap-3 mb-4">
         <form method="get" action="{{pageurl}}" class="d-flex align-items-center pg-gap-2 mb-0">
+            <input type="hidden" name="scope" value="{{scope}}">
             <label for="pg-engmeter-period" class="fw-semibold text-nowrap mb-0">
                 {{#str}} engmeter_period, local_playergames {{/str}}
             </label>

@@ -36,12 +36,13 @@ use local_playergames\local\preferences;
  */
 class hook_callbacks {
     /**
-     * Add the Player Hub link to the primary navigation.
+     * Add the PlayerGames link to the primary navigation.
      *
-     * The hub is end-user facing (students and teachers) but was only reachable
-     * through the site administration tree, which those users cannot access.
-     * This surfaces it in the top primary navigation instead. Achievements are
-     * reachable from inside the hub, so they get no separate top-level entry.
+     * The destination depends on the user's role: staff who can view the
+     * ecosystem dashboard land on the plugin map (with cards for the hub,
+     * achievements, engagement meter and API keys), while students go straight
+     * to the Player Hub. The dashboard map is a staff-oriented technical view,
+     * so students never see it.
      *
      * @param primary_extend $hook The primary navigation hook.
      */
@@ -62,11 +63,17 @@ class hook_callbacks {
             return;
         }
 
+        if (has_capability('local/playergames:viewdashboard', $context)) {
+            $url = new \moodle_url('/local/playergames/dashboard.php');
+        } else {
+            $url = new \moodle_url('/local/playergames/hub.php');
+        }
+
         $view = $hook->get_primaryview();
 
         $view->add(
-            get_string('hub_pagetitle', 'local_playergames'),
-            new \moodle_url('/local/playergames/hub.php'),
+            get_string('pluginname', 'local_playergames'),
+            $url,
             \navigation_node::TYPE_ROOTNODE,
             null,
             'local_playergames_hub'

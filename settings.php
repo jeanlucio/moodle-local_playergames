@@ -264,14 +264,25 @@ if ($hassiteconfig) {
         )
     );
 
-    // Engagement meter.
+    // Concept cartridges.
+    $ADMIN->add(
+        'playergames_management',
+        new admin_externalpage(
+            'local_playergames_cartridge',
+            get_string('cartridge_pagetitle', 'local_playergames'),
+            new moodle_url('/local/playergames/cartridge.php'),
+            'local/playergames:managecartridges'
+        )
+    );
+
+    // Engagement meter (site-wide view: every course).
     $ADMIN->add(
         'playergames_management',
         new admin_externalpage(
             'local_playergames_engagementmeter',
             get_string('engmeter_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/engagement_meter.php'),
-            'local/playergames:viewengagementmeter'
+            new moodle_url('/local/playergames/engagement_meter.php', ['scope' => 'all']),
+            'moodle/site:config'
         )
     );
 
