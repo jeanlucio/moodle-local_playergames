@@ -42,13 +42,31 @@ final class plugin_registry_test extends \advanced_testcase {
         // The hub is always the first entry.
         $this->assertSame('local_playergames', $catalog[0]['component']);
 
+        $components = array_column($catalog, 'component');
+        $validtypes = [
+            plugin_registry::REL_REQUIRES,
+            plugin_registry::REL_AI,
+            plugin_registry::REL_ASSOC,
+            plugin_registry::REL_PLANNED,
+        ];
+
         foreach ($catalog as $entry) {
             $this->assertArrayHasKey('component', $entry);
             $this->assertArrayHasKey('displayname', $entry);
             $this->assertArrayHasKey('abbr', $entry);
             $this->assertArrayHasKey('color', $entry);
-            $this->assertArrayHasKey('dependencies', $entry);
-            $this->assertIsArray($entry['dependencies']);
+            $this->assertArrayHasKey('icon', $entry);
+            $this->assertArrayHasKey('group', $entry);
+            $this->assertContains($entry['group'], plugin_registry::GROUPS);
+            $this->assertArrayHasKey('relations', $entry);
+            $this->assertIsArray($entry['relations']);
+
+            foreach ($entry['relations'] as $relation) {
+                $this->assertArrayHasKey('target', $relation);
+                $this->assertArrayHasKey('type', $relation);
+                $this->assertContains($relation['target'], $components);
+                $this->assertContains($relation['type'], $validtypes);
+            }
         }
     }
 
