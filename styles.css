@@ -305,14 +305,6 @@ body.path-local-playergames .pg-play-quiz-wrap {
     max-width: 700px;
 }
 
-body.path-local-playergames .pg-quiz-question {
-    display: none;
-}
-
-body.path-local-playergames #pg-quiz-result {
-    display: none;
-}
-
 /* ── Hub: ranking table and mission progress bar ─────────────────── */
 
 body.path-local-playergames .pg-hub-rank-pos-col {
