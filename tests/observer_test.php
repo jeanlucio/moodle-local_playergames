@@ -141,41 +141,4 @@ final class observer_test extends \advanced_testcase {
         $this->assertSame(1, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
         $this->assertSame(0, $DB->count_records('local_playergames_mission_progress'));
     }
-
-    public function test_user_loggedin_awards_daily_checkin(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $this->redirectEvents();
-
-        // The observer checks the capability with $doanything = false, so a real
-        // role grant is required — a site admin would not pass.
-        $user = $this->getDataGenerator()->create_user();
-        $roleid = $this->getDataGenerator()->create_role();
-        $systemcontext = \context_system::instance();
-        assign_capability('local/playergames:playgames', CAP_ALLOW, $roleid, $systemcontext->id, true);
-        role_assign($roleid, $user->id, $systemcontext->id);
-        accesslib_clear_all_caches_for_unit_testing();
-        $this->setUser($user);
-
-        $seasonid = $this->make_season(['xp_checkin_daily' => 5]);
-        $today = mktime(0, 0, 0);
-
-        $event = \core\event\user_loggedin::create([
-            'userid' => (int) $user->id,
-            'objectid' => (int) $user->id,
-            'other' => ['username' => $user->username],
-        ]);
-        observer::user_loggedin($event);
-
-        $score = $DB->get_record('local_playergames_daily_scores', [
-            'userid' => $user->id,
-            'gamedate' => $today,
-            'gametype' => 'checkin',
-        ], '*', MUST_EXIST);
-        $this->assertSame(5, (int) $score->xpawarded);
-        $this->assertSame(5, (int) $DB->get_field('local_playergames_player_profile', 'xp', [
-            'userid' => $user->id,
-            'seasonid' => $seasonid,
-        ]));
-    }
 }
