@@ -30,6 +30,7 @@ use moodle_url;
 use renderable;
 use renderer_base;
 use templatable;
+use local_playergames\hub\level_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\streak_manager;
@@ -159,7 +160,7 @@ class hub implements renderable, templatable {
             'xp_in_level'        => $leveldata['xp_in_level'],
             'level_range'        => $leveldata['level_range'],
             'progress_pct'       => $leveldata['progress_pct'],
-            'maxlevel'           => $level >= xp_manager::MAX_LEVEL,
+            'maxlevel'           => $level >= level_manager::max_level(),
             'streak'             => (int) $streak->currentstreak,
             'freezes'            => (int) $streak->freezesavailable,
             'checkin_done'       => $checkindone,
@@ -208,11 +209,11 @@ class hub implements renderable, templatable {
      * Computes XP progress bar data for the current level.
      *
      * @param int $xp   Total season XP.
-     * @param int $level Current level (1–MAX_LEVEL).
+     * @param int $level Current level (1–max level).
      * @return array{xp_next: int, xp_in_level: int, level_range: int, progress_pct: int}
      */
     private function build_level_data(int $xp, int $level): array {
-        if ($level >= xp_manager::MAX_LEVEL) {
+        if ($level >= level_manager::max_level()) {
             return ['xp_next' => 0, 'xp_in_level' => 0, 'level_range' => 0, 'progress_pct' => 100];
         }
         $current    = xp_manager::get_xp_for_level($level);

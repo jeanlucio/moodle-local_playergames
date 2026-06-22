@@ -25,37 +25,24 @@
 namespace local_playergames\hub;
 
 /**
- * Maps player levels to display titles using lang strings.
+ * Maps player levels to display titles.
  *
- * Titles are shown on user profiles and in forum posts (Phase 6).
- * Each level maps to a lang string key of the form level_title_{n}.
+ * Titles are shown on user profiles and in forum posts (Phase 6). The titles
+ * live in the configurable level ladder; this is a thin facade over
+ * {@see level_manager} kept for existing callers.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class title_manager {
-    /** @var int Highest level with a defined title (mirrors xp_manager::MAX_LEVEL). */
-    const MAX_LEVEL = 20;
-
     /**
-     * Returns the lang string key for a given level.
+     * Returns the configured title for a given level (clamped to the range).
      *
-     * @param int $level Player level (1–MAX_LEVEL).
-     * @return string Lang string key, e.g. 'level_title_5'.
-     */
-    public static function get_string_key(int $level): string {
-        $clamped = max(1, min($level, self::MAX_LEVEL));
-        return 'level_title_' . $clamped;
-    }
-
-    /**
-     * Returns the translated title for a given level.
-     *
-     * @param int $level Player level (1–MAX_LEVEL).
-     * @return string Translated title string.
+     * @param int $level Player level.
+     * @return string Title string.
      */
     public static function get_title(int $level): string {
-        return get_string(self::get_string_key($level), 'local_playergames');
+        return level_manager::title_for_level($level);
     }
 }

@@ -192,7 +192,7 @@ class achievement_manager {
         }
 
         if ($type === 'season_champion') {
-            return isset($context['level']) && (int) $context['level'] >= xp_manager::MAX_LEVEL;
+            return isset($context['level']) && (int) $context['level'] >= level_manager::max_level();
         }
 
         if ($type === 'streak') {

@@ -290,6 +290,17 @@ if ($hassiteconfig) {
         )
     );
 
+    // Level ladder.
+    $ADMIN->add(
+        'playergames_management',
+        new admin_externalpage(
+            'local_playergames_manage_levels',
+            get_string('levels_pagetitle', 'local_playergames'),
+            new moodle_url('/local/playergames/manage_levels.php'),
+            'moodle/site:config'
+        )
+    );
+
     // Concept cartridges.
     $ADMIN->add(
         'playergames_management',

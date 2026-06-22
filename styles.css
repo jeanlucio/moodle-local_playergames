@@ -305,6 +305,16 @@ body.path-local-playergames .pg-play-quiz-wrap {
     max-width: 700px;
 }
 
+/* ── Level configuration table ───────────────────────────────────── */
+
+body.path-local-playergames .pg-levels-num-col {
+    width: 5rem;
+}
+
+body.path-local-playergames .pg-levels-xp-col {
+    width: 12rem;
+}
+
 /* ── Hub: ranking table and mission progress bar ─────────────────── */
 
 body.path-local-playergames .pg-hub-rank-pos-col {

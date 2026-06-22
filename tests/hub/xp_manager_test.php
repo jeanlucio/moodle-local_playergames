@@ -78,6 +78,7 @@ final class xp_manager_test extends \advanced_testcase {
     }
 
     public function test_get_level_boundaries(): void {
+        $this->resetAfterTest();
         $this->assertSame(1, xp_manager::get_level(0));
         $this->assertSame(1, xp_manager::get_level(99));
         $this->assertSame(2, xp_manager::get_level(100));
@@ -89,6 +90,7 @@ final class xp_manager_test extends \advanced_testcase {
     }
 
     public function test_get_xp_for_level_clamps(): void {
+        $this->resetAfterTest();
         $this->assertSame(0, xp_manager::get_xp_for_level(1));
         $this->assertSame(100, xp_manager::get_xp_for_level(2));
         $this->assertSame(19000, xp_manager::get_xp_for_level(20));

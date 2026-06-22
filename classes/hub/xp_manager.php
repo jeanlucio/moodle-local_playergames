@@ -45,39 +45,6 @@ use stdClass;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class xp_manager {
-    /** @var int Maximum achievable level. */
-    const MAX_LEVEL = 20;
-
-    /**
-     * Minimum cumulative XP required to reach each level (1-indexed).
-     *
-     * Level 20 aligns with ~180 days of full daily activity in a 6-month season.
-     *
-     * @var array<int, int>
-     */
-    const LEVEL_THRESHOLDS = [
-        1  => 0,
-        2  => 100,
-        3  => 300,
-        4  => 600,
-        5  => 1000,
-        6  => 1500,
-        7  => 2100,
-        8  => 2800,
-        9  => 3600,
-        10 => 4500,
-        11 => 5500,
-        12 => 6600,
-        13 => 7800,
-        14 => 9100,
-        15 => 10500,
-        16 => 12000,
-        17 => 13600,
-        18 => 15300,
-        19 => 17100,
-        20 => 19000,
-    ];
-
     /**
      * Game types that bypass the daily XP cap (e.g. mission rewards).
      *
@@ -182,29 +149,20 @@ class xp_manager {
      * Returns the level corresponding to a given XP total.
      *
      * @param int $xp Total cumulative XP.
-     * @return int Level (1–MAX_LEVEL).
+     * @return int Level (1–max level).
      */
     public static function get_level(int $xp): int {
-        $level = 1;
-        foreach (self::LEVEL_THRESHOLDS as $lvl => $threshold) {
-            if ($xp >= $threshold) {
-                $level = $lvl;
-            } else {
-                break;
-            }
-        }
-        return min($level, self::MAX_LEVEL);
+        return level_manager::level_for_xp($xp);
     }
 
     /**
      * Returns the minimum XP required to reach a specific level.
      *
-     * @param int $level Target level (1–MAX_LEVEL).
+     * @param int $level Target level (1–max level).
      * @return int XP threshold.
      */
     public static function get_xp_for_level(int $level): int {
-        $clamped = max(1, min($level, self::MAX_LEVEL));
-        return self::LEVEL_THRESHOLDS[$clamped];
+        return level_manager::minxp_for_level($level);
     }
 
     /**

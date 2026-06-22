@@ -684,5 +684,24 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062108, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062109) {
+        // Create the configurable level ladder table.
+        $table = new xmldb_table('local_playergames_levels');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('level', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_field('minxp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('title', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('uq_level', XMLDB_KEY_UNIQUE, ['level']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Seed the default ladder so existing installs keep the same progression.
+        \local_playergames\hub\level_manager::seed_defaults();
+
+        upgrade_plugin_savepoint(true, 2026062109, 'local', 'playergames');
+    }
+
     return true;
 }
