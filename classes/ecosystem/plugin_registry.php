@@ -54,7 +54,7 @@ class plugin_registry {
     public const REL_PLANNED = 'planned';
 
     /** @var string[] Ordered group keys used for layout columns. */
-    public const GROUPS = ['core', 'activity', 'interface', 'integration', 'standalone'];
+    public const GROUPS = ['interface', 'activity', 'core', 'integration', 'standalone'];
 
     /**
      * Returns the catalog of ecosystem plugins.

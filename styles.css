@@ -44,9 +44,9 @@ body.path-local-playergames .pg-gap-3 {
 
 body.path-local-playergames .local-playergames-dashboard {
     --pg-c-requires: #2563eb;
-    --pg-c-ai: #0d9488;
-    --pg-c-assoc: #6b7280;
-    --pg-c-planned: #9ca3af;
+    --pg-c-ai: #9333ea;
+    --pg-c-assoc: #16a34a;
+    --pg-c-planned: #dc2626;
 }
 
 body.path-local-playergames .pg-nav {
@@ -98,7 +98,7 @@ body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.p
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-eco-legend-swatch.pg-edge-planned {
-    border-top: 3px dotted var(--pg-c-planned);
+    border-top: 3px dashed var(--pg-c-planned);
 }
 
 /* ── Ecosystem map: layout and overlay ───────────────────────────── */
@@ -279,7 +279,7 @@ body.path-local-playergames .local-playergames-dashboard .pg-edge-assoc {
 
 body.path-local-playergames .local-playergames-dashboard .pg-edge-planned {
     stroke: var(--pg-c-planned);
-    stroke-dasharray: 1 6;
+    stroke-dasharray: 8 5;
 }
 
 /* Connectors are hidden by default and revealed only for the hovered card. */
