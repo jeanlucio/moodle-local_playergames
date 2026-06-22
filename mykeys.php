@@ -41,9 +41,11 @@ $PAGE->requires->js_call_amd('local_playergames/mykeys', 'init');
 
 // Handle POST — save all three keys at once.
 if (data_submitted() && confirm_sesskey()) {
-    $geminikey = optional_param('gemini_key', '', PARAM_RAW_TRIMMED);
-    $groqkey   = optional_param('groq_key', '', PARAM_RAW_TRIMMED);
-    $openaikey = optional_param('openai_key', '', PARAM_RAW_TRIMMED);
+    $geminikey   = optional_param('gemini_key', '', PARAM_RAW_TRIMMED);
+    $groqkey     = optional_param('groq_key', '', PARAM_RAW_TRIMMED);
+    $openaikey   = optional_param('openai_key', '', PARAM_RAW_TRIMMED);
+    $openaiurl   = optional_param('openai_url', '', PARAM_URL);
+    $openaimodel = optional_param('openai_model', '', PARAM_TEXT);
 
     \local_playergames\api_key_helper::save_user_key(
         \local_playergames\api_key_helper::PROVIDER_GEMINI,
@@ -57,6 +59,8 @@ if (data_submitted() && confirm_sesskey()) {
         \local_playergames\api_key_helper::PROVIDER_OPENAI,
         $openaikey
     );
+    \local_playergames\api_key_helper::save_user_openai_url(trim($openaiurl));
+    \local_playergames\api_key_helper::save_user_openai_model(trim($openaimodel));
 
     \core\notification::success(get_string('apikey_saved', 'local_playergames'));
     redirect(new moodle_url('/local/playergames/mykeys.php'));

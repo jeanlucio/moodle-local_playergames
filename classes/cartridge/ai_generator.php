@@ -290,14 +290,30 @@ class ai_generator {
         }
 
         $openaikey = $key(api_key_helper::PROVIDER_OPENAI);
-        $openaiurl = $this->resolve_openai_url(api_key_helper::get_openai_baseurl());
-        if ($openaikey !== '' && $this->is_safe_url($openaiurl)) {
-            $model = api_key_helper::get_openai_model();
-            $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
-            if ($result['success']) {
-                return $result;
+        if ($openaikey !== '') {
+            // URL and model follow the same tier as the key: the personal tier
+            // prefers the user's own endpoint/model, falling back to the site value.
+            if ($personal) {
+                $rawurl = api_key_helper::get_personal_openai_url();
+                if ($rawurl === '') {
+                    $rawurl = api_key_helper::get_openai_baseurl();
+                }
+                $model = api_key_helper::get_personal_openai_model();
+                if ($model === '') {
+                    $model = api_key_helper::get_openai_model();
+                }
+            } else {
+                $rawurl = api_key_helper::get_openai_baseurl();
+                $model = api_key_helper::get_openai_model();
             }
-            $lasterror = $result;
+            $openaiurl = $this->resolve_openai_url($rawurl);
+            if ($this->is_safe_url($openaiurl)) {
+                $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
+                if ($result['success']) {
+                    return $result;
+                }
+                $lasterror = $result;
+            }
         }
 
         return null;

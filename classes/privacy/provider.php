@@ -151,6 +151,14 @@ class provider implements
             'local_playergames_openai_key',
             'privacy:pref_openai_key'
         );
+        $collection->add_user_preference(
+            'local_playergames_openai_url',
+            'privacy:pref_openai_url'
+        );
+        $collection->add_user_preference(
+            'local_playergames_openai_model',
+            'privacy:pref_openai_model'
+        );
 
         $aifields = ['content' => 'privacy:external_ai_content'];
         $collection->add_external_location_link('google_gemini', $aifields, 'privacy:external_gemini');
@@ -364,17 +372,24 @@ class provider implements
             }
         }
 
-        // The gamification opt-in flag is not sensitive, so export its value.
-        $gamification = get_user_preferences('local_playergames_gamification', null, $userid);
-        if ($gamification !== null) {
-            writer::with_context(
-                context_system::instance()
-            )->export_user_preference(
-                'local_playergames',
-                'local_playergames_gamification',
-                $gamification,
-                get_string('privacy:pref_gamification', 'local_playergames')
-            );
+        // The endpoint URL and model are not sensitive, so export their values.
+        $plainprefs = [
+            'local_playergames_openai_url'   => 'privacy:pref_openai_url',
+            'local_playergames_openai_model' => 'privacy:pref_openai_model',
+            'local_playergames_gamification' => 'privacy:pref_gamification',
+        ];
+        foreach ($plainprefs as $prefname => $stringkey) {
+            $value = get_user_preferences($prefname, null, $userid);
+            if ($value !== null) {
+                writer::with_context(
+                    context_system::instance()
+                )->export_user_preference(
+                    'local_playergames',
+                    $prefname,
+                    $value,
+                    get_string($stringkey, 'local_playergames')
+                );
+            }
         }
     }
 }

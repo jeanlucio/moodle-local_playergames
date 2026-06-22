@@ -21,11 +21,13 @@
         "save_label": "Save",
         "show_hide_label": "Show or hide key",
         "openai_advanced_label": "Advanced settings (URL & model)",
-        "openai_advanced_hint": "The endpoint URL and model are global settings managed by your administrator.",
+        "openai_advanced_hint": "Leave blank to use the site default shown as placeholder.",
         "openai_url_label": "Base URL",
-        "openai_url": "https://api.openai.com/v1",
+        "openai_url": "",
+        "openai_url_placeholder": "https://api.openai.com/v1",
         "openai_model_label": "Model name",
-        "openai_model": "gpt-4o-mini",
+        "openai_model": "",
+        "openai_model_placeholder": "gpt-4o-mini",
         "ailog_heading": "Recent AI usage",
         "ailog_empty_label": "No AI generations recorded yet.",
         "ailog_topic_label": "Topic",
@@ -145,14 +147,28 @@
                                 <div class="collapse" id="pg-openai-advanced">
                                     <div class="mt-2 ps-3 border-start">
                                         <p class="text-muted small mb-2">{{openai_advanced_hint}}</p>
-                                        <p class="mb-1 small">
-                                            <span class="fw-semibold">{{openai_url_label}}:</span>
-                                            <code class="ms-1">{{openai_url}}</code>
-                                        </p>
-                                        <p class="mb-0 small">
-                                            <span class="fw-semibold">{{openai_model_label}}:</span>
-                                            <code class="ms-1">{{openai_model}}</code>
-                                        </p>
+                                        <div class="mb-2">
+                                            <label class="fw-semibold form-label small mb-1" for="pg-openai-url">
+                                                {{openai_url_label}}
+                                            </label>
+                                            <input type="url"
+                                                   class="form-control form-control-sm"
+                                                   id="pg-openai-url"
+                                                   name="openai_url"
+                                                   value="{{openai_url}}"
+                                                   placeholder="{{openai_url_placeholder}}">
+                                        </div>
+                                        <div class="mb-0">
+                                            <label class="fw-semibold form-label small mb-1" for="pg-openai-model">
+                                                {{openai_model_label}}
+                                            </label>
+                                            <input type="text"
+                                                   class="form-control form-control-sm"
+                                                   id="pg-openai-model"
+                                                   name="openai_model"
+                                                   value="{{openai_model}}"
+                                                   placeholder="{{openai_model_placeholder}}">
+                                        </div>
                                     </div>
                                 </div>
                             </div>

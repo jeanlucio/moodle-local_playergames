@@ -67,7 +67,7 @@ final class api_key_helper_test extends \advanced_testcase {
     public function test_openai_baseurl_and_model_defaults(): void {
         $this->resetAfterTest();
         $this->assertSame(
-            'https://api.openai.com/v1/chat/completions',
+            'https://api.openai.com/v1',
             api_key_helper::get_openai_baseurl()
         );
         $this->assertSame('gpt-4o-mini', api_key_helper::get_openai_model());
@@ -76,6 +76,28 @@ final class api_key_helper_test extends \advanced_testcase {
         set_config('openai_model', 'custom-model', 'local_playergames');
         $this->assertSame('https://example.test/v1', api_key_helper::get_openai_baseurl());
         $this->assertSame('custom-model', api_key_helper::get_openai_model());
+    }
+
+    public function test_personal_openai_url_and_model(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $userid = (int) $user->id;
+
+        // Unset by default.
+        $this->assertSame('', api_key_helper::get_personal_openai_url($userid));
+        $this->assertSame('', api_key_helper::get_personal_openai_model($userid));
+
+        // Saved values are returned.
+        api_key_helper::save_user_openai_url('https://openrouter.ai/api/v1', $userid);
+        api_key_helper::save_user_openai_model('deepseek-chat', $userid);
+        $this->assertSame('https://openrouter.ai/api/v1', api_key_helper::get_personal_openai_url($userid));
+        $this->assertSame('deepseek-chat', api_key_helper::get_personal_openai_model($userid));
+
+        // An empty value clears the preference.
+        api_key_helper::save_user_openai_url('', $userid);
+        api_key_helper::save_user_openai_model('', $userid);
+        $this->assertSame('', api_key_helper::get_personal_openai_url($userid));
+        $this->assertSame('', api_key_helper::get_personal_openai_model($userid));
     }
 
     public function test_has_any_key_true_with_site_key(): void {

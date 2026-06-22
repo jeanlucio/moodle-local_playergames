@@ -164,6 +164,76 @@ class api_key_helper {
     }
 
     /**
+     * Returns the personal (per-user, opt-in) OpenAI-compatible base URL, or '' if unset.
+     *
+     * Lets a user point their personal key at a different OpenAI-compatible
+     * provider than the site default. Falls back to the site value at resolution
+     * time when empty.
+     *
+     * @param int|null $userid Defaults to $USER->id.
+     * @return string
+     */
+    public static function get_personal_openai_url(?int $userid = null): string {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        return (string) get_user_preferences('local_playergames_openai_url', '', $userid);
+    }
+
+    /**
+     * Returns the personal (per-user, opt-in) OpenAI-compatible model name, or '' if unset.
+     *
+     * @param int|null $userid Defaults to $USER->id.
+     * @return string
+     */
+    public static function get_personal_openai_model(?int $userid = null): string {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        return (string) get_user_preferences('local_playergames_openai_model', '', $userid);
+    }
+
+    /**
+     * Saves the personal OpenAI-compatible base URL as a user preference.
+     *
+     * Pass an empty string to remove a previously saved value (falls back to the site default).
+     *
+     * @param string $url The base URL (empty to clear).
+     * @param int|null $userid Defaults to $USER->id.
+     * @return void
+     */
+    public static function save_user_openai_url(string $url, ?int $userid = null): void {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        if ($url === '') {
+            unset_user_preference('local_playergames_openai_url', $userid);
+        } else {
+            set_user_preference('local_playergames_openai_url', $url, $userid);
+        }
+    }
+
+    /**
+     * Saves the personal OpenAI-compatible model name as a user preference.
+     *
+     * Pass an empty string to remove a previously saved value (falls back to the site default).
+     *
+     * @param string $model The model identifier (empty to clear).
+     * @param int|null $userid Defaults to $USER->id.
+     * @return void
+     */
+    public static function save_user_openai_model(string $model, ?int $userid = null): void {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        if ($model === '') {
+            unset_user_preference('local_playergames_openai_model', $userid);
+        } else {
+            set_user_preference('local_playergames_openai_model', $model, $userid);
+        }
+    }
+
+    /**
      * Saves a personal API key as a user preference.
      *
      * Pass an empty string to remove a previously saved key.
