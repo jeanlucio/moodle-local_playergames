@@ -163,4 +163,20 @@ final class streak_manager_test extends \advanced_testcase {
         $streak = streak_manager::get_or_create((int) $user->id);
         $this->assertSame(3, (int) $streak->freezesavailable);
     }
+
+    public function test_add_freezes_respects_the_cap(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        set_config('freeze_max', 2, 'local_playergames');
+
+        $first  = streak_manager::add_freezes((int) $user->id, 1);
+        $second = streak_manager::add_freezes((int) $user->id, 5);
+        $third  = streak_manager::add_freezes((int) $user->id, 1);
+
+        // Cap is 2: the second call tops up to 2, the third adds nothing.
+        $this->assertSame(1, $first);
+        $this->assertSame(1, $second);
+        $this->assertSame(0, $third);
+        $this->assertSame(2, (int) streak_manager::get_or_create((int) $user->id)->freezesavailable);
+    }
 }

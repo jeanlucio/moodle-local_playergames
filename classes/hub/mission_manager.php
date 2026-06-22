@@ -54,44 +54,49 @@ class mission_manager {
      */
     private const MISSIONS = [
         [
-            'type'        => 'daily',
-            'targetvalue' => 1,
-            'xpreward'    => 5,
-            'namestring'  => 'mission_daily_name',
-            'descstring'  => 'mission_daily_desc',
-            'icon'        => 'fa-play',
+            'type'         => 'daily',
+            'targetvalue'  => 1,
+            'xpreward'     => 5,
+            'freezereward' => 0,
+            'namestring'   => 'mission_daily_name',
+            'descstring'   => 'mission_daily_desc',
+            'icon'         => 'fa-play',
         ],
         [
-            'type'        => 'streak',
-            'targetvalue' => 7,
-            'xpreward'    => 50,
-            'namestring'  => 'mission_streak_name',
-            'descstring'  => 'mission_streak_desc',
-            'icon'        => 'fa-fire',
+            'type'         => 'streak',
+            'targetvalue'  => 7,
+            'xpreward'     => 50,
+            'freezereward' => 1,
+            'namestring'   => 'mission_streak_name',
+            'descstring'   => 'mission_streak_desc',
+            'icon'         => 'fa-fire',
         ],
         [
-            'type'        => 'cumulative',
-            'targetvalue' => 100,
-            'xpreward'    => 20,
-            'namestring'  => 'mission_cumulative_name',
-            'descstring'  => 'mission_cumulative_desc',
-            'icon'        => 'fa-star',
+            'type'         => 'cumulative',
+            'targetvalue'  => 100,
+            'xpreward'     => 20,
+            'freezereward' => 0,
+            'namestring'   => 'mission_cumulative_name',
+            'descstring'   => 'mission_cumulative_desc',
+            'icon'         => 'fa-star',
         ],
         [
-            'type'        => 'battle_win',
-            'targetvalue' => 1,
-            'xpreward'    => 30,
-            'namestring'  => 'mission_battle_win_name',
-            'descstring'  => 'mission_battle_win_desc',
-            'icon'        => 'fa-trophy',
+            'type'         => 'battle_win',
+            'targetvalue'  => 1,
+            'xpreward'     => 30,
+            'freezereward' => 0,
+            'namestring'   => 'mission_battle_win_name',
+            'descstring'   => 'mission_battle_win_desc',
+            'icon'         => 'fa-trophy',
         ],
         [
-            'type'        => 'checkin_streak',
-            'targetvalue' => 7,
-            'xpreward'    => 15,
-            'namestring'  => 'mission_checkin_streak_name',
-            'descstring'  => 'mission_checkin_streak_desc',
-            'icon'        => 'fa-calendar-check',
+            'type'         => 'checkin_streak',
+            'targetvalue'  => 7,
+            'xpreward'     => 15,
+            'freezereward' => 1,
+            'namestring'   => 'mission_checkin_streak_name',
+            'descstring'   => 'mission_checkin_streak_desc',
+            'icon'         => 'fa-calendar-check',
         ],
     ];
 
@@ -320,5 +325,15 @@ class mission_manager {
         $progress->timecompleted = time();
         $DB->update_record('local_playergames_mission_progress', $progress);
         xp_manager::award_uncapped($userid, (int) $mission->xpreward, $seasonid);
+
+        $freezereward = (int) ($mission->freezereward ?? 0);
+        if ($freezereward > 0) {
+            $granted = streak_manager::add_freezes($userid, $freezereward);
+            if ($granted > 0 && !CLI_SCRIPT) {
+                \core\notification::success(
+                    get_string('mission_freeze_earned', 'local_playergames', $granted)
+                );
+            }
+        }
     }
 }

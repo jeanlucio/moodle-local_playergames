@@ -205,6 +205,14 @@ if ($hassiteconfig) {
         $streaksources
     ));
 
+    $page2->add(new admin_setting_configtext(
+        'local_playergames/freeze_max',
+        get_string('settings_freeze_max', 'local_playergames'),
+        get_string('settings_freeze_max_desc', 'local_playergames'),
+        '3',
+        PARAM_INT
+    ));
+
     $ADMIN->add('playergames_settings', $page2);
 
     // Games.

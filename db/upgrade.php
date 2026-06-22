@@ -664,5 +664,25 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062103, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062108) {
+        // Add the per-mission freeze reward column.
+        $table = new xmldb_table('local_playergames_missions');
+        $field = new xmldb_field('freezereward', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'xpreward');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Grant one freeze on the streak-based missions for existing installs.
+        $DB->set_field_select(
+            'local_playergames_missions',
+            'freezereward',
+            1,
+            'type IN (:streak, :checkinstreak)',
+            ['streak' => 'streak', 'checkinstreak' => 'checkin_streak']
+        );
+
+        upgrade_plugin_savepoint(true, 2026062108, 'local', 'playergames');
+    }
+
     return true;
 }

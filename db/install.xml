@@ -166,6 +166,7 @@
         <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true"/>
         <FIELD NAME="targetvalue" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="xpreward" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="freezereward" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true"/>
         <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true"/>
         <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="false"/>

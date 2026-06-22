@@ -140,6 +140,21 @@ final class mission_manager_test extends \advanced_testcase {
         $this->assertSame(1, (int) $progress->completed);
     }
 
+    public function test_streak_mission_grants_a_freeze(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season();
+
+        // Completing the streak mission (freezereward = 1) banks one freeze.
+        mission_manager::update((int) $user->id, $seasonid, 'streak_updated', ['streak' => 7]);
+
+        $this->assertSame(
+            1,
+            (int) streak_manager::get_or_create((int) $user->id)->freezesavailable
+        );
+    }
+
     public function test_reset_daily_clears_progress(): void {
         global $DB;
         $this->resetAfterTest();
