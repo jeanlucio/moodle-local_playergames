@@ -100,6 +100,19 @@ final class quiz_loader_test extends \advanced_testcase {
         }
     }
 
+    public function test_season_config_singular_cartridge_source_loads_questions(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        $this->add_question($cartridgeid);
+        $this->add_question($cartridgeid);
+
+        // Season config saves the cartridge-only source as the singular
+        // 'cartridge'; the loader must treat it like its own 'cartridges'.
+        $questions = (new quiz_loader())->load_session(10, season_game_config::SOURCE_CARTRIDGE);
+
+        $this->assertCount(2, $questions);
+    }
+
     public function test_skips_questions_with_too_few_distractors(): void {
         $this->resetAfterTest();
         $cartridgeid = $this->make_cartridge();
