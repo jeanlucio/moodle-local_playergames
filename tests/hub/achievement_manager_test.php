@@ -121,6 +121,24 @@ final class achievement_manager_test extends \advanced_testcase {
         $this->assertSame(1, $this->earned_count((int) $user->id));
     }
 
+    public function test_checkin_row_does_not_count_as_game(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+
+        // A daily check-in writes a completed daily_scores row, but it is not a
+        // game and must never unlock the first-game achievement on its own.
+        $this->play((int) $user->id, mktime(0, 0, 0), 'checkin');
+
+        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', [
+            'level' => 1,
+            'streak' => 0,
+            'gamedate' => mktime(0, 0, 0),
+        ]);
+
+        $this->assertSame(0, $this->earned_count((int) $user->id));
+    }
+
     public function test_check_grants_level_reached(): void {
         global $DB;
         $this->resetAfterTest();

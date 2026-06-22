@@ -176,10 +176,13 @@ class achievement_manager {
         $value = (int) $achievement->conditionvalue;
 
         if ($type === 'games_played') {
-            $count = (int) $DB->count_records('local_playergames_daily_scores', [
-                'userid'    => $userid,
-                'completed' => 1,
-            ]);
+            // The daily check-in writes a completed daily_scores row too, but it
+            // is not a game; exclude it so it never counts toward this condition.
+            $count = (int) $DB->count_records_select(
+                'local_playergames_daily_scores',
+                'userid = :uid AND completed = 1 AND gametype <> :checkin',
+                ['uid' => $userid, 'checkin' => 'checkin']
+            );
             return $count >= $value;
         }
 
