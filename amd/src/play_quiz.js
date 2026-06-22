@@ -30,6 +30,7 @@ define([], function() {
     let submitted = false;
     let container = null;
     let questions = [];
+    const seen = new Set();
 
     /**
      * Reveals the question at the given pool index and updates the attempt counter.
@@ -41,7 +42,12 @@ define([], function() {
             q.classList.add('d-none');
         });
         if (questions.length > 0) {
-            questions[index].classList.remove('d-none');
+            const current = questions[index];
+            current.classList.remove('d-none');
+            const {source, sourceId} = current.dataset;
+            if (source && sourceId) {
+                seen.add(`${source}:${sourceId}`);
+            }
         }
         const progressText = document.getElementById('pg-quiz-progress-text');
         if (progressText) {
@@ -105,6 +111,7 @@ define([], function() {
                 body: new URLSearchParams({
                     sesskey: container.dataset.sesskey,
                     action: 'submit_correct',
+                    seen: JSON.stringify(Array.from(seen)),
                 }),
             });
             const data = await response.json();

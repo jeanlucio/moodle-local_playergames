@@ -165,6 +165,24 @@
         <INDEX NAME="idx_gamedate_gametype" UNIQUE="false" FIELDS="gamedate, gametype"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="local_playergames_served_questions" COMMENT="Questions already shown to a user on a day, to avoid repeats across plays">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true"/>
+        <FIELD NAME="sourceid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_user_date_type" UNIQUE="false" FIELDS="userid, gamedate, gametype"/>
+      </INDEXES>
+    </TABLE>
     <TABLE NAME="local_playergames_battle_scores" COMMENT="PlayerBattle daily best scores per user">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>

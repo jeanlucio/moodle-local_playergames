@@ -179,4 +179,63 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->assertSame(5, $questions[0]->difficulty);
         $this->assertSame(77, $questions[0]->categoryid);
     }
+
+    public function test_random_draw_samples_the_whole_pool(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        // Pool of 30, session of 5: a deterministic first-N draw would only ever
+        // touch the lowest-id rows (limit * 2 = 10). Random draw reaches all of them.
+        for ($i = 0; $i < 30; $i++) {
+            $this->add_question($cartridgeid);
+        }
+
+        $loader = new quiz_loader();
+        $seen = [];
+        for ($call = 0; $call < 30; $call++) {
+            foreach ($loader->load_session(5, quiz_loader::SOURCE_CARTRIDGES) as $q) {
+                $seen[$q->sourceid] = true;
+            }
+        }
+
+        // Impossible (> limit * 2) under the old first-N behaviour.
+        $this->assertGreaterThan(10, count($seen));
+    }
+
+    public function test_excludes_already_seen_questions(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        $keep = $this->add_question($cartridgeid);
+        $skipone = $this->add_question($cartridgeid);
+        $skiptwo = $this->add_question($cartridgeid);
+
+        $questions = (new quiz_loader())->load_session(
+            10,
+            quiz_loader::SOURCE_CARTRIDGES,
+            0,
+            null,
+            ['cartridge' => [$skipone, $skiptwo]]
+        );
+
+        $this->assertCount(1, $questions);
+        $this->assertSame($keep, $questions[0]->sourceid);
+    }
+
+    public function test_repeats_pool_when_everything_seen(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        $one = $this->add_question($cartridgeid);
+        $two = $this->add_question($cartridgeid);
+
+        // Both questions already seen today: the loader repeats rather than
+        // returning an empty session and blocking the play.
+        $questions = (new quiz_loader())->load_session(
+            10,
+            quiz_loader::SOURCE_CARTRIDGES,
+            0,
+            null,
+            ['cartridge' => [$one, $two]]
+        );
+
+        $this->assertCount(2, $questions);
+    }
 }

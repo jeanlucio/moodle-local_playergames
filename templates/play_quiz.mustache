@@ -19,6 +19,8 @@
         "questions": [
             {
                 "index": 1,
+                "source": "cartridge",
+                "sourceid": 42,
                 "questiontext": "What is photosynthesis?",
                 "answers": [
                     {"letter": "A", "text": "A process converting light into sugar.", "correct": true},
@@ -61,7 +63,8 @@
         </div>
 
         {{#questions}}
-        <div class="pg-quiz-question d-none" data-index="{{index}}">
+        <div class="pg-quiz-question d-none" data-index="{{index}}"
+             data-source="{{source}}" data-source-id="{{sourceid}}">
             <p class="fs-5 fw-semibold mb-4">{{{questiontext}}}</p>
             <div class="d-grid gap-2">
                 {{#answers}}

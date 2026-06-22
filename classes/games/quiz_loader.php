@@ -48,13 +48,15 @@ class quiz_loader {
      * @param string $sources One of the SOURCE_* constants.
      * @param int $qbankcategoryid Moodle question category id; 0 = system context.
      * @param string|null $cartridgeids JSON-encoded array of cartridge IDs; null = all active quiz cartridges.
+     * @param array $exclude Map of source => int[] of sourceids to skip (already seen today).
      * @return quiz_question[]
      */
     public function load_session(
         int $sessionsize,
         string $sources,
         int $qbankcategoryid = 0,
-        ?string $cartridgeids = null
+        ?string $cartridgeids = null,
+        array $exclude = []
     ): array {
         // The per-season config (season_game_config) stores the cartridge-only
         // source as 'cartridge', while this loader uses 'cartridges'. Normalise
@@ -66,15 +68,69 @@ class quiz_loader {
         $pool = [];
 
         if ($sources === self::SOURCE_CARTRIDGES || $sources === self::SOURCE_BOTH) {
-            $pool = array_merge($pool, $this->load_from_cartridges($sessionsize, $cartridgeids));
+            $pool = array_merge(
+                $pool,
+                $this->load_from_cartridges($sessionsize, $cartridgeids, $exclude['cartridge'] ?? [])
+            );
         }
 
         if ($sources === self::SOURCE_QUESTIONBANK || $sources === self::SOURCE_BOTH) {
-            $pool = array_merge($pool, $this->load_from_questionbank($sessionsize, $qbankcategoryid));
+            $pool = array_merge(
+                $pool,
+                $this->load_from_questionbank($sessionsize, $qbankcategoryid, $exclude['questionbank'] ?? [])
+            );
         }
 
         shuffle($pool);
         return array_slice($pool, 0, $sessionsize);
+    }
+
+    /**
+     * Selects a random sample of rows from a candidate-id query.
+     *
+     * Moodle has no portable SQL random function, so the whole candidate pool
+     * is fetched as ids only (cheap), shuffled in PHP and sliced before the
+     * full rows are loaded. This samples the entire pool rather than always
+     * returning the lowest-id rows, so repeated daily plays vary.
+     *
+     * @param string $idsql Query selecting a single id column from the pool.
+     * @param array $params Named parameters for the id query.
+     * @param string $table Table to load the full rows from, by id.
+     * @param string $fields Fields to select from the table.
+     * @param int $limit Session size; twice this many rows are sampled.
+     * @param int[] $excludeids Sourceids to drop from the pool (already seen today).
+     * @return \stdClass[] Rows keyed by id.
+     */
+    private function fetch_random_rows(
+        string $idsql,
+        array $params,
+        string $table,
+        string $fields,
+        int $limit,
+        array $excludeids = []
+    ): array {
+        global $DB;
+
+        $allids = $DB->get_fieldset_sql($idsql, $params);
+        if (empty($allids)) {
+            return [];
+        }
+
+        if (!empty($excludeids)) {
+            $fresh = array_diff(array_map('intval', $allids), array_map('intval', $excludeids));
+            // Prefer unseen questions, but if the whole pool has been seen today
+            // fall back to repeating it rather than blocking the play.
+            if (!empty($fresh)) {
+                $allids = $fresh;
+            }
+        }
+
+        $allids = array_values($allids);
+        shuffle($allids);
+        $allids = array_slice($allids, 0, $limit * 2);
+
+        [$insql, $inparams] = $DB->get_in_or_equal($allids, SQL_PARAMS_NAMED, 'pick');
+        return $DB->get_records_select($table, "id $insql", $inparams, '', $fields);
     }
 
     /**
@@ -87,9 +143,10 @@ class quiz_loader {
      *
      * @param int $limit Maximum number of questions to return.
      * @param string|null $cartridgeids JSON-encoded array of cartridge IDs.
+     * @param int[] $excludeids Question ids already seen today.
      * @return quiz_question[]
      */
-    private function load_from_cartridges(int $limit, ?string $cartridgeids = null): array {
+    private function load_from_cartridges(int $limit, ?string $cartridgeids = null, array $excludeids = []): array {
         global $DB;
 
         if ($cartridgeids !== null) {
@@ -102,13 +159,13 @@ class quiz_loader {
                 SQL_PARAMS_NAMED,
                 'cid'
             );
-            $sql = "SELECT cq.id, cq.questiontext, cq.difficulty, cq.categoryid
+            $sql = "SELECT cq.id
                       FROM {local_playergames_concept_questions} cq
                       JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
                      WHERE c.id $insql
                        AND c.type = 'quiz'";
         } else {
-            $sql = "SELECT cq.id, cq.questiontext, cq.difficulty, cq.categoryid
+            $sql = "SELECT cq.id
                       FROM {local_playergames_concept_questions} cq
                       JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
                      WHERE c.active = 1
@@ -116,7 +173,14 @@ class quiz_loader {
             $params = [];
         }
 
-        $rows = $DB->get_records_sql($sql, $params, 0, $limit * 2);
+        $rows = $this->fetch_random_rows(
+            $sql,
+            $params,
+            'local_playergames_concept_questions',
+            'id, questiontext, difficulty, categoryid',
+            $limit,
+            $excludeids
+        );
         if (empty($rows)) {
             return [];
         }
@@ -178,13 +242,14 @@ class quiz_loader {
      *
      * @param int $limit Maximum number of questions to return.
      * @param int $categoryid Moodle question category id; 0 = system context.
+     * @param int[] $excludeids Question ids already seen today.
      * @return quiz_question[]
      */
-    private function load_from_questionbank(int $limit, int $categoryid): array {
+    private function load_from_questionbank(int $limit, int $categoryid, array $excludeids = []): array {
         global $DB;
 
         if ($categoryid > 0) {
-            $sql = "SELECT q.id, q.questiontext
+            $sql = "SELECT q.id
                       FROM {question} q
                       JOIN {question_versions} qv ON qv.questionid = q.id
                       JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
@@ -194,7 +259,7 @@ class quiz_loader {
             $params = ['catid' => $categoryid];
         } else {
             $systemctxid = \context_system::instance()->id;
-            $sql = "SELECT q.id, q.questiontext
+            $sql = "SELECT q.id
                       FROM {question} q
                       JOIN {question_versions} qv ON qv.questionid = q.id
                       JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
@@ -205,7 +270,7 @@ class quiz_loader {
             $params = ['ctxid' => $systemctxid];
         }
 
-        $rows = $DB->get_records_sql($sql, $params, 0, $limit * 2);
+        $rows = $this->fetch_random_rows($sql, $params, 'question', 'id, questiontext', $limit, $excludeids);
         if (empty($rows)) {
             return [];
         }

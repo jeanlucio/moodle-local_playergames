@@ -51,6 +51,7 @@ class provider implements
         'local_playergames_streaks',
         'local_playergames_freeze_log',
         'local_playergames_daily_scores',
+        'local_playergames_served_questions',
         'local_playergames_battle_scores',
         'local_playergames_mission_progress',
         'local_playergames_user_achievements',
@@ -96,6 +97,15 @@ class provider implements
             'xpawarded' => 'privacy:metadata:local_playergames_daily_scores:xpawarded',
             'attempts'  => 'privacy:metadata:local_playergames_daily_scores:attempts',
         ], 'privacy:metadata:local_playergames_daily_scores');
+
+        $collection->add_database_table('local_playergames_served_questions', [
+            'userid'      => 'privacy:metadata:local_playergames_served_questions:userid',
+            'gamedate'    => 'privacy:metadata:local_playergames_served_questions:gamedate',
+            'gametype'    => 'privacy:metadata:local_playergames_served_questions:gametype',
+            'source'      => 'privacy:metadata:local_playergames_served_questions:source',
+            'sourceid'    => 'privacy:metadata:local_playergames_served_questions:sourceid',
+            'timecreated' => 'privacy:metadata:local_playergames_served_questions:timecreated',
+        ], 'privacy:metadata:local_playergames_served_questions');
 
         $collection->add_database_table('local_playergames_battle_scores', [
             'userid'           => 'privacy:metadata:local_playergames_battle_scores:userid',

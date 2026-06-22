@@ -31,6 +31,7 @@ use local_playergames\games\quiz_loader;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
+use local_playergames\hub\served_questions;
 
 require_login();
 $context = context_system::instance();
@@ -54,6 +55,26 @@ if (data_submitted()) {
         }
 
         $result = daily_play_manager::register_play((int) $USER->id, 'quiz', $gamedate, $season, $context);
+
+        // Record the questions the client actually showed this play so the next
+        // play today excludes them. Entries arrive as "source:sourceid" strings.
+        if (!empty($result['success'])) {
+            $items = json_decode(optional_param('seen', '', PARAM_RAW), true);
+            if (is_array($items)) {
+                $served = [];
+                foreach ($items as $entry) {
+                    if (!is_string($entry) || strpos($entry, ':') === false) {
+                        continue;
+                    }
+                    [$source, $sourceid] = explode(':', $entry, 2);
+                    if (in_array($source, ['cartridge', 'questionbank'], true) && (int) $sourceid > 0) {
+                        $served[] = ['source' => $source, 'sourceid' => (int) $sourceid];
+                    }
+                }
+                served_questions::record((int) $USER->id, 'quiz', $gamedate, $served);
+            }
+        }
+
         echo json_encode($result);
         exit;
     }
@@ -90,8 +111,9 @@ if (!$alreadyplayed) {
         $cartridgeids = null;
     }
 
-    $loader = new quiz_loader();
-    $loaded = $loader->load_session(20, $sources, $categoryid, $cartridgeids);
+    $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
+    $loader  = new quiz_loader();
+    $loaded  = $loader->load_session(20, $sources, $categoryid, $cartridgeids, $exclude);
 
     if (empty($loaded)) {
         $noquestions = true;
@@ -118,6 +140,8 @@ if (!$alreadyplayed) {
                 'index'        => $i + 1,
                 'questiontext' => $qtext,
                 'answers'      => $answers,
+                'source'       => $q->source,
+                'sourceid'     => (int) $q->sourceid,
             ];
         }
     }

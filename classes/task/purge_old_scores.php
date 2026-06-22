@@ -54,6 +54,21 @@ class purge_old_scores extends \core\task\scheduled_task {
         global $DB;
         $keep = max(1, (int) get_config('local_playergames', 'seasons_keep') ?: 2);
 
+        // The "already shown today" set is only relevant for the current day;
+        // drop every earlier row so the table never accumulates.
+        $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $stalecount   = $DB->count_records_select(
+            'local_playergames_served_questions',
+            'gamedate < :today',
+            ['today' => $today]
+        );
+        $DB->delete_records_select(
+            'local_playergames_served_questions',
+            'gamedate < :today',
+            ['today' => $today]
+        );
+        mtrace("Purged {$stalecount} stale served_questions rows.");
+
         $closedseasons = $DB->get_records_select(
             'local_playergames_seasons',
             "status = 'closed'",
