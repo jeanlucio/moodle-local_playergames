@@ -36,6 +36,7 @@ use local_playergames\hub\season_manager;
 use local_playergames\hub\streak_manager;
 use local_playergames\hub\title_manager;
 use local_playergames\hub\xp_manager;
+use stdClass;
 
 /**
  * Prepares all data needed by the hub Mustache template.
@@ -116,6 +117,7 @@ class hub implements renderable, templatable {
         $leveldata  = $this->build_level_data($profile->xp, $level);
         $missions   = $this->get_missions($this->userid, $season->id);
         $games      = $this->get_games_today($this->userid);
+        $freezelog  = $this->build_freeze_log($this->userid);
 
         $snapshot     = season_manager::get_config_snapshot($season);
         $checkindaily = (int) ($snapshot['xp_checkin_daily'] ?? 5);
@@ -181,6 +183,9 @@ class hub implements renderable, templatable {
             'missions'           => $missions,
             'hasmissions'        => !empty($missions),
             'games'              => $games,
+            'freezelog'          => $freezelog,
+            'hasfreezelog'       => !empty($freezelog),
+            'str_freeze_log'     => get_string('freeze_log_heading', 'local_playergames'),
             'str_profile'        => get_string('hub_profile_section', 'local_playergames'),
             'str_ranking'        => get_string('hub_ranking_section', 'local_playergames'),
             'str_missions'       => get_string('hub_missions_section', 'local_playergames'),
@@ -403,6 +408,32 @@ class hub implements renderable, templatable {
                 'completed'  => $completed,
                 'xpreward'   => (int) $mission->xpreward,
                 'progress_pct' => $pct,
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Builds the freeze event log for display in the hub profile card.
+     *
+     * Returns the last 5 entries, translated for the current user locale.
+     *
+     * @param int $userid
+     * @return array
+     */
+    private function build_freeze_log(int $userid): array {
+        $entries = streak_manager::get_freeze_log($userid, 5);
+        $result  = [];
+        foreach ($entries as $entry) {
+            if ($entry->action === 'earned') {
+                $label = get_string('freeze_log_earned', 'local_playergames', (int) $entry->amount);
+            } else {
+                $label = get_string('freeze_log_used', 'local_playergames');
+            }
+            $result[] = [
+                'timeformatted' => userdate((int) $entry->timecreated, get_string('strftimedatetime', 'langconfig')),
+                'label'         => $label,
+                'isearned'      => $entry->action === 'earned',
             ];
         }
         return $result;

@@ -109,6 +109,7 @@ class streak_manager {
             if ($streak->freezesavailable > 0) {
                 $streak->freezesavailable--;
                 $DB->update_record('local_playergames_streaks', $streak);
+                self::log_freeze((int) $streak->userid, 'used', 1, 'streak_break');
 
                 $event = streak_updated::create([
                     'objectid' => $streak->id,
@@ -163,7 +164,11 @@ class streak_manager {
         $before = (int) $streak->freezesavailable;
         $streak->freezesavailable = min($before + $count, $max);
         $DB->update_record('local_playergames_streaks', $streak);
-        return (int) $streak->freezesavailable - $before;
+        $granted = (int) $streak->freezesavailable - $before;
+        if ($granted > 0) {
+            self::log_freeze($userid, 'earned', $granted, 'mission');
+        }
+        return $granted;
     }
 
     /**
@@ -174,6 +179,45 @@ class streak_manager {
     public static function max_freezes(): int {
         $max = get_config('local_playergames', 'freeze_max');
         return ($max === false || $max === null) ? self::DEFAULT_MAX_FREEZES : (int) $max;
+    }
+
+    /**
+     * Returns the last $limit freeze log entries for a user, most recent first.
+     *
+     * @param int $userid
+     * @param int $limit Maximum number of entries to return.
+     * @return stdClass[]
+     */
+    public static function get_freeze_log(int $userid, int $limit = 5): array {
+        global $DB;
+        return array_values($DB->get_records(
+            'local_playergames_freeze_log',
+            ['userid' => $userid],
+            'timecreated DESC',
+            '*',
+            0,
+            $limit
+        ));
+    }
+
+    /**
+     * Writes a freeze event to the log table.
+     *
+     * @param int    $userid
+     * @param string $action  'earned' or 'used'.
+     * @param int    $amount  Number of freezes involved.
+     * @param string $reason  Short reason key ('mission', 'streak_break').
+     * @return void
+     */
+    private static function log_freeze(int $userid, string $action, int $amount, string $reason): void {
+        global $DB;
+        $record              = new stdClass();
+        $record->userid      = $userid;
+        $record->action      = $action;
+        $record->amount      = $amount;
+        $record->reason      = $reason;
+        $record->timecreated = time();
+        $DB->insert_record('local_playergames_freeze_log', $record, false);
     }
 
     /**

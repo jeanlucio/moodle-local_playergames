@@ -100,7 +100,13 @@
         "str_show_all": "Show full ranking",
         "str_show_less": "Show top 10",
         "str_invite": "You have not joined the ranking yet.",
-        "str_join": "Join the ranking"
+        "str_join": "Join the ranking",
+        "hasfreezelog": true,
+        "str_freeze_log": "Freeze history",
+        "freezelog": [
+            {"timeformatted": "22 Jun 2026, 14:30", "label": "Earned 1 freeze — mission complete", "isearned": true},
+            {"timeformatted": "20 Jun 2026, 00:05", "label": "Used 1 freeze — streak protected", "isearned": false}
+        ]
     }
 }}
 <div class="path-local-playergames pg-hub">
@@ -175,6 +181,21 @@
                         <small class="text-muted">{{str_checkins}}</small>
                     </div>
                     {{/hascheckin}}
+
+                    {{#hasfreezelog}}
+                    <details class="pg-hub-freeze-log mt-2">
+                        <summary class="text-muted small" style="cursor:pointer;list-style:none;">
+                            <i class="fa fa-history me-1" aria-hidden="true"></i>{{str_freeze_log}}
+                        </summary>
+                        <ul class="list-unstyled small mb-0 mt-1 ps-1">
+                            {{#freezelog}}
+                            <li class="{{#isearned}}text-success{{/isearned}}{{^isearned}}text-warning{{/isearned}}">
+                                {{timeformatted}} — {{label}}
+                            </li>
+                            {{/freezelog}}
+                        </ul>
+                    </details>
+                    {{/hasfreezelog}}
 
                     <form method="post" action="{{formaction}}" class="mt-3">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">

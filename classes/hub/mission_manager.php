@@ -326,6 +326,17 @@ class mission_manager {
         $DB->update_record('local_playergames_mission_progress', $progress);
         xp_manager::award_uncapped($userid, (int) $mission->xpreward, $seasonid);
 
+        if (!CLI_SCRIPT) {
+            \core\notification::success(get_string(
+                'mission_completed',
+                'local_playergames',
+                (object) [
+                    'name' => get_string($mission->namestring, 'local_playergames'),
+                    'xp'   => (int) $mission->xpreward,
+                ]
+            ));
+        }
+
         $freezereward = (int) ($mission->freezereward ?? 0);
         if ($freezereward > 0) {
             $granted = streak_manager::add_freezes($userid, $freezereward);

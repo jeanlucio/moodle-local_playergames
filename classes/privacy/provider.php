@@ -49,6 +49,7 @@ class provider implements
     private const USER_TABLES = [
         'local_playergames_player_profile',
         'local_playergames_streaks',
+        'local_playergames_freeze_log',
         'local_playergames_daily_scores',
         'local_playergames_battle_scores',
         'local_playergames_mission_progress',
@@ -78,6 +79,14 @@ class provider implements
             'freezesavailable' => 'privacy:metadata:local_playergames_streaks:freezesavailable',
             'lastactivedate'   => 'privacy:metadata:local_playergames_streaks:lastactivedate',
         ], 'privacy:metadata:local_playergames_streaks');
+
+        $collection->add_database_table('local_playergames_freeze_log', [
+            'userid'      => 'privacy:metadata:local_playergames_freeze_log:userid',
+            'action'      => 'privacy:metadata:local_playergames_freeze_log:action',
+            'amount'      => 'privacy:metadata:local_playergames_freeze_log:amount',
+            'reason'      => 'privacy:metadata:local_playergames_freeze_log:reason',
+            'timecreated' => 'privacy:metadata:local_playergames_freeze_log:timecreated',
+        ], 'privacy:metadata:local_playergames_freeze_log');
 
         $collection->add_database_table('local_playergames_daily_scores', [
             'userid'    => 'privacy:metadata:local_playergames_daily_scores:userid',
