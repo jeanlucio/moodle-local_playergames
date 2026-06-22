@@ -42,7 +42,7 @@ if (!\local_playergames\local\preferences::is_gamification_enabled($USER->id)) {
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/achievements.php'));
 $PAGE->set_title(get_string('achievements_pagetitle', 'local_playergames'));
-$PAGE->set_heading(get_string('achievements_pagetitle', 'local_playergames'));
+$PAGE->set_heading(get_string('pluginname', 'local_playergames'));
 $PAGE->set_pagelayout('base');
 
 $achdata = new \local_playergames\output\achievements($USER->id);

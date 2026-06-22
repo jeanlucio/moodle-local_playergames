@@ -35,7 +35,7 @@ if (!\local_playergames\local\access::is_staff()) {
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/mykeys.php'));
 $PAGE->set_title(get_string('mykeys_pagetitle', 'local_playergames'));
-$PAGE->set_heading(get_string('mykeys_pagetitle', 'local_playergames'));
+$PAGE->set_heading(get_string('pluginname', 'local_playergames'));
 $PAGE->set_pagelayout('base');
 $PAGE->requires->js_call_amd('local_playergames/mykeys', 'init');
 

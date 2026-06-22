@@ -62,6 +62,10 @@ body.path-local-playergames .pg-nav .pg-nav-link {
     color: var(--body-color, #1d2125);
 }
 
+body.path-local-playergames .pg-nav .pg-nav-link.active {
+    color: var(--white, #fff);
+}
+
 body.path-local-playergames .pg-nav .pg-nav-link:hover:not(.active) {
     background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.05));
 }

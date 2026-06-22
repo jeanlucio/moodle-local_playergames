@@ -49,7 +49,7 @@ $PAGE->set_url(new moodle_url(
     ['days' => $days, 'scope' => $scope]
 ));
 $PAGE->set_title(get_string('engmeter_pagetitle', 'local_playergames'));
-$PAGE->set_heading(get_string('engmeter_pagetitle', 'local_playergames'));
+$PAGE->set_heading(get_string('pluginname', 'local_playergames'));
 $PAGE->set_pagelayout('base');
 
 // Staff-only: site managers/admins, or teachers of at least one course.

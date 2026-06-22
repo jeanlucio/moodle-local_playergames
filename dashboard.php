@@ -45,7 +45,7 @@ $PAGE->set_pagelayout('base');
 
 $title = get_string('dashboard_pagetitle', 'local_playergames');
 $PAGE->set_title($title);
-$PAGE->set_heading($title);
+$PAGE->set_heading(get_string('pluginname', 'local_playergames'));
 
 $PAGE->requires->js_call_amd('local_playergames/dashboard', 'init');
 

@@ -87,17 +87,14 @@
 }}
 <div class="local-playergames-dashboard">
 
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 pg-gap-2">
-        <h2 class="h5 mb-0">{{str_heading_ecosystem}}</h2>
-        <ul class="pg-eco-legend list-unstyled d-flex flex-wrap mb-0 pg-gap-3" aria-label="{{str_legend}}">
-            {{#legend}}
-            <li class="pg-eco-legend-item">
-                <span class="pg-eco-legend-swatch {{cssclass}}" aria-hidden="true"></span>
-                <span class="small">{{label}}</span>
-            </li>
-            {{/legend}}
-        </ul>
-    </div>
+    <ul class="pg-eco-legend list-unstyled d-flex flex-wrap mb-3 pg-gap-3" aria-label="{{str_legend}}">
+        {{#legend}}
+        <li class="pg-eco-legend-item">
+            <span class="pg-eco-legend-swatch {{cssclass}}" aria-hidden="true"></span>
+            <span class="small">{{label}}</span>
+        </li>
+        {{/legend}}
+    </ul>
 
     <div class="pg-eco">
         <svg class="pg-eco-overlay" aria-hidden="true" focusable="false"></svg>
