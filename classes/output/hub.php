@@ -446,6 +446,7 @@ class hub implements renderable, templatable {
      * Returns game completion status for today.
      *
      * @param int $userid
+     * @param array $snapshot Season config snapshot, for the per-game daily quota.
      * @return array
      */
     private function get_games_today(int $userid, array $snapshot): array {
