@@ -30,6 +30,7 @@ use moodle_url;
 use renderable;
 use renderer_base;
 use templatable;
+use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\level_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\season_manager;
@@ -116,10 +117,10 @@ class hub implements renderable, templatable {
         $title      = title_manager::get_title($level);
         $leveldata  = $this->build_level_data($profile->xp, $level);
         $missions   = $this->get_missions($this->userid, $season->id);
-        $games      = $this->get_games_today($this->userid);
+        $snapshot     = season_manager::get_config_snapshot($season);
+        $games      = $this->get_games_today($this->userid, $snapshot);
         $freezelog  = $this->build_freeze_log($this->userid);
 
-        $snapshot     = season_manager::get_config_snapshot($season);
         $checkindaily = (int) ($snapshot['xp_checkin_daily'] ?? 5);
         $checkincap   = (int) ($snapshot['xp_cap_checkin_season'] ?? 150);
         $checkinmax   = $checkindaily > 0 ? intdiv($checkincap, $checkindaily) : 0;
@@ -447,7 +448,7 @@ class hub implements renderable, templatable {
      * @param int $userid
      * @return array
      */
-    private function get_games_today(int $userid): array {
+    private function get_games_today(int $userid, array $snapshot): array {
         global $DB;
 
         $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
@@ -458,11 +459,11 @@ class hub implements renderable, templatable {
             'userid = :uid AND gamedate = :gd AND completed = 1',
             ['uid' => $userid, 'gd' => $today],
             '',
-            'gametype'
+            'gametype, attempts'
         );
-        $played = [];
+        $attempts = [];
         foreach ($playedrows as $r) {
-            $played[$r->gametype] = true;
+            $attempts[$r->gametype] = (int) $r->attempts;
         }
 
         $gametypes = ['quiz', 'guess', 'fill', 'battle'];
@@ -480,7 +481,8 @@ class hub implements renderable, templatable {
         ];
         $result = [];
         foreach ($gametypes as $gametype) {
-            $done    = isset($played[$gametype]);
+            $games   = daily_play_manager::games_per_day($snapshot, $gametype);
+            $done    = ($attempts[$gametype] ?? 0) >= $games;
             $locked  = !$hascartridge && !$done;
             $pending = !$done && !$locked;
             $result[] = [

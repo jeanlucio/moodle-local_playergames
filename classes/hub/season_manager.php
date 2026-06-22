@@ -111,15 +111,20 @@ class season_manager {
      * @return array
      */
     public static function build_snapshot(): array {
-        return [
-            'xp_cap_quiz'            => (int) get_config('local_playergames', 'xp_cap_quiz') ?: 25,
-            'xp_cap_guess'           => (int) get_config('local_playergames', 'xp_cap_guess') ?: 25,
-            'xp_cap_fill'            => (int) get_config('local_playergames', 'xp_cap_fill') ?: 25,
-            'xp_cap_battle'          => (int) get_config('local_playergames', 'xp_cap_battle') ?: 25,
-            'xp_checkin_daily'       => (int) get_config('local_playergames', 'xp_checkin_daily') ?: 5,
-            'xp_cap_checkin_season'  => (int) get_config('local_playergames', 'xp_cap_checkin_season') ?: 150,
-            'allowed_participants'   => get_config('local_playergames', 'allowed_participants') ?: 'students',
-        ];
+        $snapshot = [];
+        foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
+            $pergame = (int) get_config('local_playergames', 'xp_per_game_' . $type) ?: 25;
+            $games   = (int) get_config('local_playergames', 'xp_games_' . $type) ?: 1;
+            $snapshot['xp_per_game_' . $type] = $pergame;
+            $snapshot['xp_games_' . $type]    = $games;
+            // Derived daily cap consumed by xp_manager::award(): the last play is
+            // trimmed to this value so the day total lands exactly on it.
+            $snapshot['xp_cap_' . $type] = $pergame * $games;
+        }
+        $snapshot['xp_checkin_daily']      = (int) get_config('local_playergames', 'xp_checkin_daily') ?: 5;
+        $snapshot['xp_cap_checkin_season'] = (int) get_config('local_playergames', 'xp_cap_checkin_season') ?: 150;
+        $snapshot['allowed_participants']  = get_config('local_playergames', 'allowed_participants') ?: 'students';
+        return $snapshot;
     }
 
     /**

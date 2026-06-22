@@ -734,5 +734,23 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062203, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062205) {
+        // Daily XP caps became "XP per game" plus "games per day". The old cap
+        // value matched a single game worth the full cap, so carry it over as
+        // the per-game value with one game per day, then drop the stale cap.
+        foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
+            $oldcap = get_config('local_playergames', 'xp_cap_' . $type);
+            if ($oldcap !== false && $oldcap !== '') {
+                set_config('xp_per_game_' . $type, (int) $oldcap, 'local_playergames');
+                unset_config('xp_cap_' . $type, 'local_playergames');
+            }
+            if (get_config('local_playergames', 'xp_games_' . $type) === false) {
+                set_config('xp_games_' . $type, 1, 'local_playergames');
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026062205, 'local', 'playergames');
+    }
+
     return true;
 }

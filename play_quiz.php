@@ -27,11 +27,10 @@
 
 require(__DIR__ . '/../../config.php');
 
-use local_playergames\event\game_completed;
 use local_playergames\games\quiz_loader;
 use local_playergames\games\season_game_config;
+use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
-use local_playergames\hub\xp_manager;
 
 require_login();
 $context = context_system::instance();
@@ -48,52 +47,14 @@ if (data_submitted()) {
     if ($submitaction === 'submit_correct') {
         header('Content-Type: application/json');
 
-        // Guard against double submission.
-        $alreadysubmitted = $DB->record_exists('local_playergames_daily_scores', [
-            'userid'   => $USER->id,
-            'gamedate' => $gamedate,
-            'gametype' => 'quiz',
-        ]);
-        if ($alreadysubmitted) {
+        $season = season_manager::get_active();
+        if ($season === null) {
             echo json_encode(['success' => false, 'xpawarded' => 0]);
             exit;
         }
 
-        $xpcap     = (int) get_config('local_playergames', 'xp_cap_quiz');
-        $xpcap     = $xpcap > 0 ? $xpcap : 25;
-        $rawxp     = $xpcap;
-        $xpawarded = 0;
-
-        $season = season_manager::get_active();
-        if ($season !== null) {
-            $xpawarded = xp_manager::award($USER->id, $rawxp, 'quiz', $gamedate, (int) $season->id);
-        }
-
-        $record             = new stdClass();
-        $record->userid     = (int) $USER->id;
-        $record->gamedate   = $gamedate;
-        $record->gametype   = 'quiz';
-        $record->completed  = 1;
-        $record->xpawarded  = $xpawarded;
-        $record->attempts   = 1;
-        $record->timeplayed = time();
-        $scoreid = $DB->insert_record('local_playergames_daily_scores', $record);
-
-        // Drive the streak, missions and achievements off the completion event.
-        $event = game_completed::create([
-            'objectid' => $scoreid,
-            'context'  => $context,
-            'userid'   => (int) $USER->id,
-            'other'    => [
-                'seasonid'  => $season !== null ? (int) $season->id : 0,
-                'gametype'  => 'quiz',
-                'gamedate'  => $gamedate,
-                'xpawarded' => $xpawarded,
-            ],
-        ]);
-        $event->trigger();
-
-        echo json_encode(['success' => true, 'xpawarded' => $xpawarded]);
+        $result = daily_play_manager::register_play((int) $USER->id, 'quiz', $gamedate, $season, $context);
+        echo json_encode($result);
         exit;
     }
 }
@@ -105,11 +66,13 @@ $PAGE->set_pagelayout('base');
 $PAGE->set_title(get_string('quiz_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('quiz_pagetitle', 'local_playergames'));
 
-$alreadyplayed = $DB->record_exists('local_playergames_daily_scores', [
-    'userid'   => $USER->id,
-    'gamedate' => $gamedate,
-    'gametype' => 'quiz',
-]);
+$activeseason = season_manager::get_active();
+$remaining    = 0;
+if ($activeseason !== null) {
+    $snapshot  = season_manager::get_config_snapshot($activeseason);
+    $remaining = daily_play_manager::remaining_plays((int) $USER->id, 'quiz', $gamedate, $snapshot);
+}
+$alreadyplayed = $remaining <= 0;
 
 $questions   = [];
 $noquestions = false;

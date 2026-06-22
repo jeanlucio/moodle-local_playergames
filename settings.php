@@ -171,10 +171,17 @@ if ($hassiteconfig) {
 
     foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
         $pagexp->add(new admin_setting_configtext(
-            'local_playergames/xp_cap_' . $gametype,
-            get_string('settings_xp_cap_' . $gametype, 'local_playergames'),
-            get_string('settings_xp_cap_' . $gametype . '_desc', 'local_playergames'),
+            'local_playergames/xp_per_game_' . $gametype,
+            get_string('settings_xp_per_game_' . $gametype, 'local_playergames'),
+            get_string('settings_xp_per_game_' . $gametype . '_desc', 'local_playergames'),
             '25',
+            PARAM_INT
+        ));
+        $pagexp->add(new admin_setting_configtext(
+            'local_playergames/xp_games_' . $gametype,
+            get_string('settings_xp_games_' . $gametype, 'local_playergames'),
+            get_string('settings_xp_games_' . $gametype . '_desc', 'local_playergames'),
+            '1',
             PARAM_INT
         ));
     }
