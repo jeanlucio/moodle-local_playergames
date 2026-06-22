@@ -48,7 +48,7 @@ final class title_manager_test extends \advanced_testcase {
         $this->resetAfterTest();
         // Beyond the top level the title is clamped to the highest level.
         $this->assertSame(
-            get_string('level_title_20', 'local_playergames'),
+            get_string('level_title_5', 'local_playergames'),
             title_manager::get_title(99)
         );
     }

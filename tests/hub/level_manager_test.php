@@ -41,8 +41,8 @@ final class level_manager_test extends \advanced_testcase {
 
         $levels = level_manager::get_levels();
 
-        $this->assertCount(20, $levels);
-        $this->assertSame(20, $DB->count_records('local_playergames_levels'));
+        $this->assertCount(5, $levels);
+        $this->assertSame(5, $DB->count_records('local_playergames_levels'));
         $this->assertSame(0, (int) $levels[0]->minxp);
         $this->assertSame(1, (int) $levels[0]->level);
     }
@@ -51,16 +51,16 @@ final class level_manager_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         $this->assertSame(1, level_manager::level_for_xp(0));
-        $this->assertSame(1, level_manager::level_for_xp(99));
-        $this->assertSame(2, level_manager::level_for_xp(100));
-        $this->assertSame(3, level_manager::level_for_xp(300));
-        $this->assertSame(20, level_manager::level_for_xp(999999));
+        $this->assertSame(1, level_manager::level_for_xp(1999));
+        $this->assertSame(2, level_manager::level_for_xp(2000));
+        $this->assertSame(3, level_manager::level_for_xp(6000));
+        $this->assertSame(5, level_manager::level_for_xp(999999));
     }
 
     public function test_max_level_reflects_the_ladder(): void {
         $this->resetAfterTest();
 
-        $this->assertSame(20, level_manager::max_level());
+        $this->assertSame(5, level_manager::max_level());
     }
 
     public function test_save_ladder_renumbers_and_forces_a_zero_floor(): void {
@@ -104,6 +104,33 @@ final class level_manager_test extends \advanced_testcase {
 
         level_manager::restore_defaults();
 
-        $this->assertSame(20, level_manager::max_level());
+        $this->assertSame(5, level_manager::max_level());
+    }
+
+    public function test_generate_linear_builds_a_fixed_step_ladder(): void {
+        $this->resetAfterTest();
+
+        level_manager::generate_linear(100, 10);
+
+        $levels = level_manager::get_levels();
+        $this->assertCount(10, $levels);
+        // Level 1 is always 0; each step adds the fixed XP per level.
+        $this->assertSame(0, (int) $levels[0]->minxp);
+        $this->assertSame(100, (int) $levels[1]->minxp);
+        $this->assertSame(900, (int) $levels[9]->minxp);
+        // Titles are spread across the five tiers: 10 levels => 2 levels per tier.
+        $this->assertSame(get_string('level_title_1', 'local_playergames'), $levels[0]->title);
+        $this->assertSame(get_string('level_title_5', 'local_playergames'), $levels[9]->title);
+    }
+
+    public function test_generate_linear_clamps_bounds(): void {
+        $this->resetAfterTest();
+
+        // A maximum above the cap is clamped; XP per level below 1 is forced up.
+        level_manager::generate_linear(0, 999);
+
+        $levels = level_manager::get_levels();
+        $this->assertCount(level_manager::MAX_GENERATED_LEVELS, $levels);
+        $this->assertSame(1, (int) $levels[1]->minxp);
     }
 }

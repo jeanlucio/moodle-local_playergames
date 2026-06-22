@@ -57,8 +57,8 @@ class quiz_loader {
         ?string $cartridgeids = null
     ): array {
         // The per-season config (season_game_config) stores the cartridge-only
-        // source as 'cartridge', while this loader and the global quiz_sources
-        // setting use 'cartridges'. Normalise so both vocabularies match.
+        // source as 'cartridge', while this loader uses 'cartridges'. Normalise
+        // so both vocabularies match.
         if ($sources === season_game_config::SOURCE_CARTRIDGE) {
             $sources = self::SOURCE_CARTRIDGES;
         }

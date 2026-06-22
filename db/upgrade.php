@@ -722,5 +722,17 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062201, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062203) {
+        // The global quiz source settings were removed in favour of per-season
+        // game configuration. Seed defaults for any existing season that lacks
+        // configuration rows so it no longer relies on the removed fallback.
+        $seasonids = $DB->get_fieldset_select('local_playergames_seasons', 'id', '', []);
+        foreach ($seasonids as $seasonid) {
+            \local_playergames\games\season_game_config::seed_defaults((int) $seasonid);
+        }
+
+        upgrade_plugin_savepoint(true, 2026062203, 'local', 'playergames');
+    }
+
     return true;
 }

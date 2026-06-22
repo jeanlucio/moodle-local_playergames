@@ -121,8 +121,9 @@ if (!$alreadyplayed) {
         $categoryid   = (int) $gameconfig->auxid;
         $cartridgeids = $gameconfig->cartridgeids;
     } else {
-        $sources      = (string) (get_config('local_playergames', 'quiz_sources') ?: 'both');
-        $categoryid   = (int) (get_config('local_playergames', 'quiz_qbank_categoryid') ?: 0);
+        // Defensive fallback for a season created before per-season config existed.
+        $sources      = season_game_config::SOURCE_CARTRIDGE;
+        $categoryid   = 0;
         $cartridgeids = null;
     }
 

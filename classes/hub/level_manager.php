@@ -30,9 +30,10 @@ use stdClass;
  * Source of truth for the level ladder (minimum XP and title per level).
  *
  * The ladder lives in local_playergames_levels and is editable by admins.
- * On a fresh table it is seeded with the default 20-level progression, whose
+ * On a fresh table it is seeded with the default 5-tier progression, whose
  * titles are taken from the level_title_{n} lang strings at seed time. From
- * then on the stored rows win, so admin edits are preserved.
+ * then on the stored rows win, so admin edits are preserved. Admins can also
+ * generate a longer linear ladder (fixed XP per level) via generate_linear().
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -42,30 +43,24 @@ class level_manager {
     /**
      * Default ladder: level number => [minimum cumulative XP, title lang key].
      *
+     * Five proportional tiers spread across a full season so the progression
+     * stays meaningful with the daily XP caps.
+     *
      * @var array<int, array{0: int, 1: string}>
      */
     const DEFAULT_LADDER = [
-        1  => [0, 'level_title_1'],
-        2  => [100, 'level_title_2'],
-        3  => [300, 'level_title_3'],
-        4  => [600, 'level_title_4'],
-        5  => [1000, 'level_title_5'],
-        6  => [1500, 'level_title_6'],
-        7  => [2100, 'level_title_7'],
-        8  => [2800, 'level_title_8'],
-        9  => [3600, 'level_title_9'],
-        10 => [4500, 'level_title_10'],
-        11 => [5500, 'level_title_11'],
-        12 => [6600, 'level_title_12'],
-        13 => [7800, 'level_title_13'],
-        14 => [9100, 'level_title_14'],
-        15 => [10500, 'level_title_15'],
-        16 => [12000, 'level_title_16'],
-        17 => [13600, 'level_title_17'],
-        18 => [15300, 'level_title_18'],
-        19 => [17100, 'level_title_19'],
-        20 => [19000, 'level_title_20'],
+        1 => [0, 'level_title_1'],
+        2 => [2000, 'level_title_2'],
+        3 => [6000, 'level_title_3'],
+        4 => [12000, 'level_title_4'],
+        5 => [20000, 'level_title_5'],
     ];
+
+    /** @var int Upper bound for generate_linear() to keep the editable table sane. */
+    const MAX_GENERATED_LEVELS = 100;
+
+    /** @var int Number of proportional title tiers used by generate_linear(). */
+    const TITLE_TIERS = 5;
 
     /**
      * Returns the ladder rows ordered by ascending minimum XP (i.e. by level).
@@ -85,7 +80,7 @@ class level_manager {
     }
 
     /**
-     * Inserts the default 20-level ladder, translating titles at seed time.
+     * Inserts the default 5-tier ladder, translating titles at seed time.
      *
      * @return void
      */
@@ -127,6 +122,48 @@ class level_manager {
             $record->title = $row['title'];
             $records[] = $record;
             $level++;
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        $DB->delete_records('local_playergames_levels');
+        $DB->insert_records('local_playergames_levels', $records);
+        $transaction->allow_commit();
+    }
+
+    /**
+     * Generates a linear ladder: a fixed XP step per level up to a maximum.
+     *
+     * Level L requires (L - 1) * $xpperlevel cumulative XP, so level 1 is always
+     * 0. Titles are assigned from the five level_title_{1..5} strings spread
+     * proportionally across the ladder. The whole ladder is replaced; admins can
+     * still fine-tune individual rows afterwards. This spares admins from typing
+     * a long ladder (e.g. 100 levels) by hand.
+     *
+     * @param int $xpperlevel XP step added at each level (clamped to >= 1).
+     * @param int $maxlevel Number of levels to generate (clamped to 2..MAX_GENERATED_LEVELS).
+     * @return void
+     */
+    public static function generate_linear(int $xpperlevel, int $maxlevel): void {
+        global $DB;
+
+        $xpperlevel = max(1, $xpperlevel);
+        $maxlevel   = max(2, min($maxlevel, self::MAX_GENERATED_LEVELS));
+
+        $tiers = [];
+        for ($t = 1; $t <= self::TITLE_TIERS; $t++) {
+            $tiers[] = get_string('level_title_' . $t, 'local_playergames');
+        }
+
+        $records = [];
+        for ($level = 1; $level <= $maxlevel; $level++) {
+            $tierindex = (int) floor(($level - 1) * self::TITLE_TIERS / $maxlevel);
+            $tierindex = max(0, min(self::TITLE_TIERS - 1, $tierindex));
+
+            $record        = new stdClass();
+            $record->level = $level;
+            $record->minxp = ($level - 1) * $xpperlevel;
+            $record->title = $tiers[$tierindex];
+            $records[] = $record;
         }
 
         $transaction = $DB->start_delegated_transaction();

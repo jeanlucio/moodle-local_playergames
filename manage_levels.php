@@ -47,6 +47,18 @@ if (data_submitted() && optional_param('action', '', PARAM_ALPHA) === 'restore')
     redirect($pageurl, get_string('levels_restored', 'local_playergames'), null, notification::NOTIFY_SUCCESS);
 }
 
+// POST: generate a linear ladder (fixed XP per level up to a maximum).
+if (data_submitted() && optional_param('action', '', PARAM_ALPHA) === 'generate') {
+    require_sesskey();
+    $xpperlevel = optional_param('xpperlevel', 0, PARAM_INT);
+    $maxlevel   = optional_param('maxlevel', 0, PARAM_INT);
+    if ($xpperlevel < 1 || $maxlevel < 2) {
+        redirect($pageurl, get_string('levels_generate_error', 'local_playergames'), null, notification::NOTIFY_ERROR);
+    }
+    level_manager::generate_linear($xpperlevel, $maxlevel);
+    redirect($pageurl, get_string('levels_generated', 'local_playergames'), null, notification::NOTIFY_SUCCESS);
+}
+
 // POST: save the edited ladder.
 if (data_submitted()) {
     require_sesskey();
@@ -103,6 +115,11 @@ for ($b = 0; $b < 3; $b++) {
     $index++;
 }
 
+$maxleveloptions = [];
+foreach ([5, 10, 15, 20, 50, 100] as $option) {
+    $maxleveloptions[] = ['value' => $option, 'selected' => $option === 20];
+}
+
 $templatedata = [
     'formaction'     => $pageurl->out(false),
     'sesskey'        => sesskey(),
@@ -115,6 +132,13 @@ $templatedata = [
     'str_add_hint'   => get_string('levels_add_hint', 'local_playergames'),
     'str_save'       => get_string('savechanges'),
     'str_restore'    => get_string('levels_restore', 'local_playergames'),
+    'str_gen_heading' => get_string('levels_generate_heading', 'local_playergames'),
+    'str_gen_hint'   => get_string('levels_generate_hint', 'local_playergames'),
+    'str_xpperlevel' => get_string('levels_xpperlevel', 'local_playergames'),
+    'str_maxlevel'   => get_string('levels_maxlevel', 'local_playergames'),
+    'str_generate'   => get_string('levels_generate', 'local_playergames'),
+    'gen_default_xp' => 100,
+    'maxlevel_options' => $maxleveloptions,
 ];
 
 echo $OUTPUT->header();

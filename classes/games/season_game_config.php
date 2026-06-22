@@ -42,6 +42,49 @@ class season_game_config {
     /** @var string Source: both cartridge and secondary source. */
     const SOURCE_BOTH = 'both';
 
+    /** @var string[] Game type keys configurable per season. */
+    const GAMETYPES = ['quiz', 'battle', 'guess', 'fill'];
+
+    /**
+     * Seeds default game configuration rows for a season.
+     *
+     * Each game starts enabled, drawing from cartridges only. Game types that
+     * already have a row for this season are left untouched, so the method is
+     * safe to call on existing seasons (e.g. from an upgrade step).
+     *
+     * @param int $seasonid Season id.
+     * @return void
+     */
+    public static function seed_defaults(int $seasonid): void {
+        global $DB;
+
+        $existing = $DB->get_fieldset_select(
+            'local_playergames_season_games',
+            'gametype',
+            'seasonid = ?',
+            [$seasonid]
+        );
+
+        $records = [];
+        foreach (self::GAMETYPES as $gametype) {
+            if (in_array($gametype, $existing, true)) {
+                continue;
+            }
+            $records[] = (object) [
+                'seasonid'     => $seasonid,
+                'gametype'     => $gametype,
+                'enabled'      => 1,
+                'source'       => self::SOURCE_CARTRIDGE,
+                'cartridgeids' => null,
+                'auxid'        => 0,
+            ];
+        }
+
+        if (!empty($records)) {
+            $DB->insert_records('local_playergames_season_games', $records);
+        }
+    }
+
     /**
      * Returns the enabled season_games record for the active season and given game type.
      *

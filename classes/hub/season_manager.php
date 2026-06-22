@@ -26,6 +26,7 @@ namespace local_playergames\hub;
 
 use local_playergames\event\season_closed;
 use local_playergames\event\season_created;
+use local_playergames\games\season_game_config;
 use stdClass;
 
 /**
@@ -145,6 +146,8 @@ class season_manager {
         $record->timemodified    = $now;
         $record->id = $DB->insert_record('local_playergames_seasons', $record);
 
+        season_game_config::seed_defaults((int) $record->id);
+
         $event = season_created::create([
             'objectid' => $record->id,
             'context'  => \context_system::instance(),
@@ -246,6 +249,8 @@ class season_manager {
         $record->timecreated     = $now;
         $record->timemodified    = $now;
         $record->id = $DB->insert_record('local_playergames_seasons', $record);
+
+        season_game_config::seed_defaults((int) $record->id);
 
         $event = season_created::create([
             'objectid' => $record->id,

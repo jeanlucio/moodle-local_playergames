@@ -31,9 +31,19 @@
         "str_add_hint": "Fill in a title to add a new level.",
         "str_save": "Save changes",
         "str_restore": "Restore defaults",
+        "str_gen_heading": "Generate ladder automatically",
+        "str_gen_hint": "Build a ladder with a fixed XP step per level.",
+        "str_xpperlevel": "XP per level",
+        "str_maxlevel": "Maximum level",
+        "str_generate": "Generate ladder",
+        "gen_default_xp": 100,
+        "maxlevel_options": [
+            {"value": 5, "selected": false},
+            {"value": 20, "selected": true}
+        ],
         "rows": [
             {"index": 0, "level": 1, "minxp": 0, "title": "Novice", "islevelone": true, "isblank": false},
-            {"index": 1, "level": 2, "minxp": 100, "title": "Apprentice", "islevelone": false, "isblank": false},
+            {"index": 1, "level": 2, "minxp": 2000, "title": "Apprentice", "islevelone": false, "isblank": false},
             {"index": 2, "isblank": true}
         ]
     }
@@ -41,6 +51,36 @@
 <div class="local-playergames-levels">
 
     <p class="text-muted">{{str_intro}}</p>
+
+    <div class="card pg-levels-generate mb-3">
+        <div class="card-body">
+            <h3 class="h6">{{str_gen_heading}}</h3>
+            <p class="text-muted small">{{str_gen_hint}}</p>
+            <form method="post" action="{{formaction}}" class="row g-2 align-items-end">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="generate">
+                <div class="col-auto">
+                    <label class="form-label" for="pg-levels-xpperlevel">{{str_xpperlevel}}</label>
+                    <input type="number" min="1" class="form-control" id="pg-levels-xpperlevel"
+                           name="xpperlevel" value="{{gen_default_xp}}">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label" for="pg-levels-maxlevel">{{str_maxlevel}}</label>
+                    <select class="form-select" id="pg-levels-maxlevel" name="maxlevel">
+                        {{#maxlevel_options}}
+                        <option value="{{value}}" {{#selected}}selected{{/selected}}>{{value}}</option>
+                        {{/maxlevel_options}}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fa fa-wand-magic-sparkles me-1" aria-hidden="true"></i>
+                        {{str_generate}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <form method="post" action="{{formaction}}">
         <input type="hidden" name="sesskey" value="{{sesskey}}">

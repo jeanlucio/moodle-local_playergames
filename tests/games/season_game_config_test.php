@@ -113,4 +113,33 @@ final class season_game_config_test extends \advanced_testcase {
         $this->assertArrayHasKey('quiz', $all);
         $this->assertArrayHasKey('guess', $all);
     }
+
+    public function test_seed_defaults_creates_enabled_cartridge_rows(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_active_season();
+
+        season_game_config::seed_defaults($seasonid);
+
+        $all = season_game_config::get_all_for_season($seasonid);
+        $this->assertCount(count(season_game_config::GAMETYPES), $all);
+        foreach (season_game_config::GAMETYPES as $gametype) {
+            $this->assertArrayHasKey($gametype, $all);
+            $this->assertSame(1, (int) $all[$gametype]->enabled);
+            $this->assertSame(season_game_config::SOURCE_CARTRIDGE, $all[$gametype]->source);
+        }
+    }
+
+    public function test_seed_defaults_preserves_existing_rows(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_active_season();
+        // Pre-configure one game as disabled; seeding must not overwrite it.
+        $this->add_game($seasonid, 'quiz', 0);
+
+        season_game_config::seed_defaults($seasonid);
+
+        $all = season_game_config::get_all_for_season($seasonid);
+        $this->assertCount(count(season_game_config::GAMETYPES), $all);
+        $this->assertSame(0, (int) $all['quiz']->enabled);
+        $this->assertSame(1, (int) $all['guess']->enabled);
+    }
 }

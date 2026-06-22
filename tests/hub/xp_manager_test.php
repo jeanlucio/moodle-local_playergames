@@ -80,23 +80,23 @@ final class xp_manager_test extends \advanced_testcase {
     public function test_get_level_boundaries(): void {
         $this->resetAfterTest();
         $this->assertSame(1, xp_manager::get_level(0));
-        $this->assertSame(1, xp_manager::get_level(99));
-        $this->assertSame(2, xp_manager::get_level(100));
-        $this->assertSame(2, xp_manager::get_level(299));
-        $this->assertSame(3, xp_manager::get_level(300));
-        $this->assertSame(20, xp_manager::get_level(19000));
+        $this->assertSame(1, xp_manager::get_level(1999));
+        $this->assertSame(2, xp_manager::get_level(2000));
+        $this->assertSame(2, xp_manager::get_level(5999));
+        $this->assertSame(3, xp_manager::get_level(6000));
+        $this->assertSame(5, xp_manager::get_level(20000));
         // Beyond the top threshold the level is capped at MAX_LEVEL.
-        $this->assertSame(20, xp_manager::get_level(999999));
+        $this->assertSame(5, xp_manager::get_level(999999));
     }
 
     public function test_get_xp_for_level_clamps(): void {
         $this->resetAfterTest();
         $this->assertSame(0, xp_manager::get_xp_for_level(1));
-        $this->assertSame(100, xp_manager::get_xp_for_level(2));
-        $this->assertSame(19000, xp_manager::get_xp_for_level(20));
+        $this->assertSame(2000, xp_manager::get_xp_for_level(2));
+        $this->assertSame(20000, xp_manager::get_xp_for_level(5));
         // Out-of-range levels are clamped to the 1..MAX_LEVEL band.
         $this->assertSame(0, xp_manager::get_xp_for_level(0));
-        $this->assertSame(19000, xp_manager::get_xp_for_level(99));
+        $this->assertSame(20000, xp_manager::get_xp_for_level(99));
     }
 
     public function test_award_below_cap_returns_full_amount(): void {
@@ -169,8 +169,8 @@ final class xp_manager_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $seasonid = $this->make_season(['xp_cap_quiz' => 25]);
 
-        // 150 uncapped XP crosses the level-2 threshold (100).
-        xp_manager::award_uncapped((int) $user->id, 150, $seasonid);
+        // 2500 uncapped XP crosses the level-2 threshold (2000).
+        xp_manager::award_uncapped((int) $user->id, 2500, $seasonid);
 
         $profile = $DB->get_record('local_playergames_player_profile', [
             'userid' => $user->id,

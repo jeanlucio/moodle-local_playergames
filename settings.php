@@ -100,7 +100,7 @@ if ($hassiteconfig) {
 
     $ADMIN->add('playergames_settings', $page);
 
-    // Seasons.
+    // Seasons (lifecycle only).
     $page2 = new admin_settingpage(
         'local_playergames_seasons',
         get_string('season_setup_heading', 'local_playergames')
@@ -147,38 +147,6 @@ if ($hassiteconfig) {
         1
     ));
 
-    $page2->add(new admin_setting_heading(
-        'local_playergames/xp_heading',
-        get_string('settings_xp_heading', 'local_playergames'),
-        get_string('settings_xp_heading_desc', 'local_playergames')
-    ));
-
-    foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
-        $page2->add(new admin_setting_configtext(
-            'local_playergames/xp_cap_' . $gametype,
-            get_string('settings_xp_cap_' . $gametype, 'local_playergames'),
-            get_string('settings_xp_cap_' . $gametype . '_desc', 'local_playergames'),
-            '25',
-            PARAM_INT
-        ));
-    }
-
-    $page2->add(new admin_setting_configtext(
-        'local_playergames/xp_checkin_daily',
-        get_string('settings_xp_checkin_daily', 'local_playergames'),
-        get_string('settings_xp_checkin_daily_desc', 'local_playergames'),
-        '5',
-        PARAM_INT
-    ));
-
-    $page2->add(new admin_setting_configtext(
-        'local_playergames/xp_cap_checkin_season',
-        get_string('settings_xp_cap_checkin_season', 'local_playergames'),
-        get_string('settings_xp_cap_checkin_season_desc', 'local_playergames'),
-        '150',
-        PARAM_INT
-    ));
-
     $page2->add(new admin_setting_configtext(
         'local_playergames/seasons_keep',
         get_string('settings_seasons_keep', 'local_playergames'),
@@ -187,7 +155,55 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $page2->add(new admin_setting_heading(
+    $ADMIN->add('playergames_settings', $page2);
+
+    // XP and rewards.
+    $pagexp = new admin_settingpage(
+        'local_playergames_xp',
+        get_string('settings_xp_heading', 'local_playergames')
+    );
+
+    $pagexp->add(new admin_setting_heading(
+        'local_playergames/xp_heading',
+        get_string('settings_xp_heading', 'local_playergames'),
+        get_string('settings_xp_heading_desc', 'local_playergames')
+    ));
+
+    foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
+        $pagexp->add(new admin_setting_configtext(
+            'local_playergames/xp_cap_' . $gametype,
+            get_string('settings_xp_cap_' . $gametype, 'local_playergames'),
+            get_string('settings_xp_cap_' . $gametype . '_desc', 'local_playergames'),
+            '25',
+            PARAM_INT
+        ));
+    }
+
+    $pagexp->add(new admin_setting_configtext(
+        'local_playergames/xp_checkin_daily',
+        get_string('settings_xp_checkin_daily', 'local_playergames'),
+        get_string('settings_xp_checkin_daily_desc', 'local_playergames'),
+        '5',
+        PARAM_INT
+    ));
+
+    $pagexp->add(new admin_setting_configtext(
+        'local_playergames/xp_cap_checkin_season',
+        get_string('settings_xp_cap_checkin_season', 'local_playergames'),
+        get_string('settings_xp_cap_checkin_season_desc', 'local_playergames'),
+        '150',
+        PARAM_INT
+    ));
+
+    $ADMIN->add('playergames_settings', $pagexp);
+
+    // Streak and freeze.
+    $pagestreak = new admin_settingpage(
+        'local_playergames_streak',
+        get_string('settings_streak_heading', 'local_playergames')
+    );
+
+    $pagestreak->add(new admin_setting_heading(
         'local_playergames/streak_heading',
         get_string('settings_streak_heading', 'local_playergames'),
         get_string('settings_streak_heading_desc', 'local_playergames')
@@ -197,7 +213,7 @@ if ($hassiteconfig) {
         'games'         => get_string('settings_streak_source_games', 'local_playergames'),
         'games_checkin' => get_string('settings_streak_source_games_checkin', 'local_playergames'),
     ];
-    $page2->add(new admin_setting_configselect(
+    $pagestreak->add(new admin_setting_configselect(
         'local_playergames/streak_activity_source',
         get_string('settings_streak_source', 'local_playergames'),
         get_string('settings_streak_source_desc', 'local_playergames'),
@@ -205,7 +221,7 @@ if ($hassiteconfig) {
         $streaksources
     ));
 
-    $page2->add(new admin_setting_configtext(
+    $pagestreak->add(new admin_setting_configtext(
         'local_playergames/freeze_max',
         get_string('settings_freeze_max', 'local_playergames'),
         get_string('settings_freeze_max_desc', 'local_playergames'),
@@ -213,9 +229,9 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames_settings', $page2);
+    $ADMIN->add('playergames_settings', $pagestreak);
 
-    // Games.
+    // Game rules (global gameplay rules; per-season content is set in season management).
     $page3 = new admin_settingpage(
         'local_playergames_games',
         get_string('settings_games_heading', 'local_playergames')
@@ -255,28 +271,6 @@ if ($hassiteconfig) {
         $conceptdayoptions
     ));
 
-    // Quiz sources.
-    $quizsources = [
-        'both'         => get_string('settings_quiz_sources_both', 'local_playergames'),
-        'cartridges'   => get_string('settings_quiz_sources_cartridges', 'local_playergames'),
-        'questionbank' => get_string('settings_quiz_sources_questionbank', 'local_playergames'),
-    ];
-    $page3->add(new admin_setting_configselect(
-        'local_playergames/quiz_sources',
-        get_string('settings_quiz_sources', 'local_playergames'),
-        get_string('settings_quiz_sources_desc', 'local_playergames'),
-        'both',
-        $quizsources
-    ));
-
-    $page3->add(new admin_setting_configtext(
-        'local_playergames/quiz_qbank_categoryid',
-        get_string('settings_quiz_qbank_categoryid', 'local_playergames'),
-        get_string('settings_quiz_qbank_categoryid_desc', 'local_playergames'),
-        '0',
-        PARAM_INT
-    ));
-
     $ADMIN->add('playergames_settings', $page3);
 
     // Season management.
@@ -312,7 +306,13 @@ if ($hassiteconfig) {
         )
     );
 
-    // Engagement meter (site-wide view: every course).
+    // Engagement meter, site-wide scope (every course).
+    // This admin entry is intentionally distinct from the dashboard's "Engagement"
+    // button: the page scope is driven by the entry point, not by role. This admin
+    // link passes scope=all (all courses on the site, guarded by moodle/site:config),
+    // while the dashboard/nav button uses the default scope=own (only the courses
+    // the user teaches). Both views are deliberate, so — unlike the dashboard — this
+    // entry must NOT be removed from the admin tree. See engagement_meter.php.
     $ADMIN->add(
         'playergames_management',
         new admin_externalpage(
@@ -323,14 +323,7 @@ if ($hassiteconfig) {
         )
     );
 
-    // Ecosystem dashboard.
-    $ADMIN->add(
-        'playergames_management',
-        new admin_externalpage(
-            'local_playergames_dashboard',
-            get_string('dashboard_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/dashboard.php'),
-            'local/playergames:viewdashboard'
-        )
-    );
+    // The ecosystem dashboard is reached from the plugin's own navigation
+    // (the "Ecosystem" header button), so it is intentionally not added to
+    // the admin tree to avoid a redundant entry.
 }
