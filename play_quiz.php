@@ -42,7 +42,7 @@ $formaction = (new moodle_url('/local/playergames/play_quiz.php'))->out(false);
 // POST: AJAX score submission.
 if (data_submitted()) {
     require_sesskey();
-    $submitaction = optional_param('action', '', PARAM_ALPHA);
+    $submitaction = optional_param('action', '', PARAM_ALPHAEXT);
 
     if ($submitaction === 'submit_correct') {
         header('Content-Type: application/json');
