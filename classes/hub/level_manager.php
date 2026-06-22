@@ -111,7 +111,7 @@ class level_manager {
      * Each row is ['minxp' => int, 'title' => string]. Rows are sorted by XP,
      * the lowest is forced to 0, and levels are renumbered 1..N.
      *
-     * @param array<int, array{minxp: int, title: string}> $rows
+     * @param array $rows Each entry: ['minxp' => int, 'title' => string].
      * @return void
      */
     public static function save_ladder(array $rows): void {
