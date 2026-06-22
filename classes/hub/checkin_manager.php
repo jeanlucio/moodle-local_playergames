@@ -95,6 +95,12 @@ class checkin_manager {
 
         mission_manager::update($userid, (int) $season->id, 'checkin');
 
+        // When configured to, the check-in also counts as a day of activity and
+        // keeps the streak alive; otherwise only completing a game advances it.
+        if (get_config('local_playergames', 'streak_activity_source') === 'games_checkin') {
+            streak_manager::record_activity($userid);
+        }
+
         // The check-in XP may have raised the level, so refresh streak missions
         // and re-check achievements (mirrors the previous login-based flow).
         $streak = streak_manager::get_or_create($userid);

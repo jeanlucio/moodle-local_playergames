@@ -126,6 +126,28 @@ final class checkin_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $todayrow->xpawarded);
     }
 
+    public function test_checkin_does_not_advance_streak_by_default(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->make_season(['xp_checkin_daily' => 5, 'xp_cap_checkin_season' => 150]);
+
+        checkin_manager::record((int) $user->id);
+
+        // Default streak source is games only; a check-in must not advance it.
+        $this->assertSame(0, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
+    }
+
+    public function test_checkin_advances_streak_when_configured(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->make_season(['xp_checkin_daily' => 5, 'xp_cap_checkin_season' => 150]);
+        set_config('streak_activity_source', 'games_checkin', 'local_playergames');
+
+        checkin_manager::record((int) $user->id);
+
+        $this->assertSame(1, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
+    }
+
     public function test_is_participant_true_by_default(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();

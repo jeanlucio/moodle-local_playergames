@@ -187,6 +187,24 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $page2->add(new admin_setting_heading(
+        'local_playergames/streak_heading',
+        get_string('settings_streak_heading', 'local_playergames'),
+        get_string('settings_streak_heading_desc', 'local_playergames')
+    ));
+
+    $streaksources = [
+        'games'         => get_string('settings_streak_source_games', 'local_playergames'),
+        'games_checkin' => get_string('settings_streak_source_games_checkin', 'local_playergames'),
+    ];
+    $page2->add(new admin_setting_configselect(
+        'local_playergames/streak_activity_source',
+        get_string('settings_streak_source', 'local_playergames'),
+        get_string('settings_streak_source_desc', 'local_playergames'),
+        'games',
+        $streaksources
+    ));
+
     $ADMIN->add('playergames_settings', $page2);
 
     // Games.
