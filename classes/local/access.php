@@ -66,14 +66,7 @@ class access {
             $userid = (int) $USER->id;
         }
 
-        static $cache = [];
-        if (array_key_exists($userid, $cache)) {
-            return $cache[$userid];
-        }
-
-        $cache[$userid] = has_capability('moodle/site:config', context_system::instance(), $userid)
+        return has_capability('moodle/site:config', context_system::instance(), $userid)
             || !empty(self::teacher_courseids($userid));
-
-        return $cache[$userid];
     }
 }

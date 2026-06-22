@@ -29,4 +29,8 @@ $callbacks = [
         'hook' => \core\hook\navigation\primary_extend::class,
         'callback' => \local_playergames\hook_callbacks::class . '::extend_primary_navigation',
     ],
+    [
+        'hook' => \core\hook\output\before_standard_top_of_body_html_generation::class,
+        'callback' => \local_playergames\hook_callbacks::class . '::daily_checkin',
+    ],
 ];

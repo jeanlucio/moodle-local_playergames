@@ -76,6 +76,10 @@ $PAGE->set_heading(get_string('hub_pagetitle', 'local_playergames'));
 $PAGE->set_pagelayout('base');
 $PAGE->requires->js_call_amd('local_playergames/hub', 'init');
 
+// Visiting the hub is the daily check-in. Access (opt-out and participant
+// restriction) has already been enforced above, so this only records the day.
+\local_playergames\hub\checkin_manager::record($USER->id);
+
 $hubdata = new \local_playergames\output\hub($USER->id, $isstaff, $isadmin, $allowed);
 $output  = $PAGE->get_renderer('core');
 

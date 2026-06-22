@@ -116,6 +116,12 @@ class hub implements renderable, templatable {
         $missions   = $this->get_missions($this->userid, $season->id);
         $games      = $this->get_games_today($this->userid);
 
+        $snapshot     = season_manager::get_config_snapshot($season);
+        $checkindaily = (int) ($snapshot['xp_checkin_daily'] ?? 5);
+        $checkincap   = (int) ($snapshot['xp_cap_checkin_season'] ?? 150);
+        $checkinmax   = $checkindaily > 0 ? intdiv($checkincap, $checkindaily) : 0;
+        $checkindone  = $this->get_season_checkins($season, $checkinmax);
+
         $showbothtabs     = $this->isadmin || ($this->allowed === 'both' && $this->isstaff);
         $studentranking   = [];
         $staffranking     = [];
@@ -156,6 +162,10 @@ class hub implements renderable, templatable {
             'maxlevel'           => $level >= xp_manager::MAX_LEVEL,
             'streak'             => (int) $streak->currentstreak,
             'freezes'            => (int) $streak->freezesavailable,
+            'checkin_done'       => $checkindone,
+            'checkin_max'        => $checkinmax,
+            'hascheckin'         => $checkinmax > 0,
+            'str_checkins'       => get_string('hub_checkins', 'local_playergames'),
             'showinranking'      => (bool) $profile->showinranking,
             'sesskey'            => sesskey(),
             'formaction'         => (new moodle_url('/local/playergames/hub.php'))->out(false),
@@ -238,6 +248,29 @@ class hub implements renderable, templatable {
         }
 
         return $ids;
+    }
+
+    /**
+     * Counts the user's daily check-ins in the current season, clamped to the cap.
+     *
+     * @param \stdClass $season The active season.
+     * @param int $max The maximum rewarded check-ins (season cap / daily XP).
+     * @return int
+     */
+    private function get_season_checkins(\stdClass $season, int $max): int {
+        global $DB;
+
+        if ($max <= 0) {
+            return 0;
+        }
+
+        $count = (int) $DB->count_records_select(
+            'local_playergames_daily_scores',
+            "userid = :uid AND gametype = 'checkin' AND gamedate BETWEEN :start AND :end",
+            ['uid' => $this->userid, 'start' => $season->startdate, 'end' => $season->enddate]
+        );
+
+        return min($count, $max);
     }
 
     /**

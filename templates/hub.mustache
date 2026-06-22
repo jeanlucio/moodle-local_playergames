@@ -36,6 +36,10 @@
         "maxlevel": false,
         "streak": 5,
         "freezes": 1,
+        "hascheckin": true,
+        "checkin_done": 12,
+        "checkin_max": 30,
+        "str_checkins": "Season check-ins",
         "showinranking": true,
         "sesskey": "abc123",
         "formaction": "/local/playergames/hub.php",
@@ -164,6 +168,14 @@
                         </div>
                     </div>
 
+                    {{#hascheckin}}
+                    <div class="pg-hub-stat-box rounded p-2 text-center mt-2">
+                        <i class="fa fa-calendar-check text-success" aria-hidden="true"></i>
+                        <div class="fw-bold">{{checkin_done}}/{{checkin_max}}</div>
+                        <small class="text-muted">{{str_checkins}}</small>
+                    </div>
+                    {{/hascheckin}}
+
                     <form method="post" action="{{formaction}}" class="mt-3">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
                         <div class="form-check form-switch">
@@ -263,12 +275,6 @@
                         <div class="tab-pane fade show active" id="pg-rank-students"
                             role="tabpanel" aria-labelledby="pg-tab-stu">
                             <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstudents}}">
-                                {{^selfinstudents}}
-                                <div class="alert alert-secondary mx-3 mt-3">
-                                    <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
-                                    {{str_invite}}
-                                </div>
-                                {{/selfinstudents}}
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="table-light">
@@ -309,6 +315,12 @@
                         <div class="tab-pane fade" id="pg-rank-staff"
                             role="tabpanel" aria-labelledby="pg-tab-sta">
                             <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstaff}}">
+                                {{^selfinstaff}}
+                                <div class="alert alert-secondary mx-3 mt-3">
+                                    <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                                    {{str_invite}}
+                                </div>
+                                {{/selfinstaff}}
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="table-light">

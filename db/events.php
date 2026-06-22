@@ -29,8 +29,4 @@ $observers = [
         'eventname' => '\local_playergames\event\game_completed',
         'callback'  => '\local_playergames\observer::game_completed',
     ],
-    [
-        'eventname' => '\core\event\user_loggedin',
-        'callback'  => '\local_playergames\observer::user_loggedin',
-    ],
 ];

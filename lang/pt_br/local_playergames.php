@@ -208,6 +208,7 @@ $string['gamification_pref_pagetitle'] = 'Preferências de gamificação';
 $string['gamification_pref_saved'] = 'Sua preferência de gamificação foi salva.';
 $string['gamification_prefnav'] = 'Gamificação';
 $string['hub_access_restricted'] = 'Você não tem permissão para acessar o Player Hub.';
+$string['hub_checkins'] = 'Check-ins na temporada';
 $string['hub_freezes'] = 'Congelamentos';
 $string['hub_game_battle'] = 'PlayerBattle';
 $string['hub_game_done'] = 'Concluído';

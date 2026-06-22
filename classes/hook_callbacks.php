@@ -25,6 +25,8 @@
 namespace local_playergames;
 
 use core\hook\navigation\primary_extend;
+use core\hook\output\before_standard_top_of_body_html_generation;
+use local_playergames\hub\checkin_manager;
 use local_playergames\local\access;
 use local_playergames\local\preferences;
 
@@ -78,5 +80,33 @@ class hook_callbacks {
             null,
             'local_playergames_hub'
         );
+    }
+
+    /**
+     * Records the daily check-in on the first page the user opens each day.
+     *
+     * Runs on every standard web page (not AJAX/CLI/web services). A per-day
+     * session flag short-circuits all later page loads so the real work happens
+     * at most once per session per day; the daily_scores row is the cross-session
+     * guard.
+     *
+     * @param before_standard_top_of_body_html_generation $hook The output hook.
+     */
+    public static function daily_checkin(before_standard_top_of_body_html_generation $hook): void {
+        global $USER, $SESSION;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+
+        $flag = 'playergames_checkin_' . date('Ymd');
+        if (!empty($SESSION->$flag)) {
+            return;
+        }
+        $SESSION->$flag = true;
+
+        if (checkin_manager::is_participant((int) $USER->id)) {
+            checkin_manager::record((int) $USER->id);
+        }
     }
 }
