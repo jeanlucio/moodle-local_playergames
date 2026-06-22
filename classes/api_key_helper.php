@@ -145,7 +145,7 @@ class api_key_helper {
     public static function get_openai_baseurl(): string {
         $url = (string) get_config('local_playergames', 'openai_baseurl');
         if ($url === '') {
-            return 'https://api.openai.com/v1/chat/completions';
+            return 'https://api.openai.com/v1';
         }
         return $url;
     }

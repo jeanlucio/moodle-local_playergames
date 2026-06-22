@@ -290,7 +290,7 @@ class ai_generator {
         }
 
         $openaikey = $key(api_key_helper::PROVIDER_OPENAI);
-        $openaiurl = api_key_helper::get_openai_baseurl();
+        $openaiurl = $this->resolve_openai_url(api_key_helper::get_openai_baseurl());
         if ($openaikey !== '' && $this->is_safe_url($openaiurl)) {
             $model = api_key_helper::get_openai_model();
             $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
@@ -469,6 +469,23 @@ class ai_generator {
         }
         $messages[] = ['role' => 'user', 'content' => $user];
         return $messages;
+    }
+
+    /**
+     * Ensures the URL ends with /chat/completions.
+     *
+     * Users who supply only a base URL (e.g. https://api.openai.com/v1 or
+     * https://openrouter.ai/api/v1) get the path appended automatically.
+     * URLs that already include the full path are returned unchanged.
+     *
+     * @param string $url The configured endpoint URL.
+     * @return string URL guaranteed to end with /chat/completions.
+     */
+    private function resolve_openai_url(string $url): string {
+        if (!str_ends_with($url, '/chat/completions')) {
+            $url = rtrim($url, '/') . '/chat/completions';
+        }
+        return $url;
     }
 
     /**

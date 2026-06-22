@@ -86,7 +86,7 @@ if ($hassiteconfig) {
         'local_playergames/openai_baseurl',
         get_string('settings_openai_baseurl', 'local_playergames'),
         get_string('settings_openai_baseurl_desc', 'local_playergames'),
-        'https://api.openai.com/v1/chat/completions',
+        'https://api.openai.com/v1',
         PARAM_URL
     ));
 
