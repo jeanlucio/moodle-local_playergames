@@ -180,8 +180,9 @@ class hub implements renderable, templatable {
             'hasstaffranking'    => !empty($staffranking),
             'selfinstudents'     => $selfinstudents,
             'selfinstaff'        => $selfinstaff,
-            'missions'           => $missions,
-            'hasmissions'        => !empty($missions),
+            'missions'               => $missions,
+            'hasmissions'            => !empty($missions),
+            'str_freeze_reward_title' => get_string('mission_freeze_reward_title', 'local_playergames'),
             'games'              => $games,
             'freezelog'          => $freezelog,
             'hasfreezelog'       => !empty($freezelog),
@@ -400,13 +401,14 @@ class hub implements renderable, templatable {
             $target    = (int) $mission->targetvalue;
             $pct       = $target > 0 ? min(100, (int) round(($current / $target) * 100)) : 0;
             $result[]  = [
-                'icon'       => $mission->icon,
-                'name'       => get_string($mission->namestring, 'local_playergames'),
-                'desc'       => get_string($mission->descstring, 'local_playergames'),
-                'current'    => $current,
-                'target'     => $target,
-                'completed'  => $completed,
-                'xpreward'   => (int) $mission->xpreward,
+                'icon'         => $mission->icon,
+                'name'         => get_string($mission->namestring, 'local_playergames'),
+                'desc'         => get_string($mission->descstring, 'local_playergames'),
+                'current'      => $current,
+                'target'       => $target,
+                'completed'    => $completed,
+                'xpreward'     => (int) $mission->xpreward,
+                'freezereward' => (int) ($mission->freezereward ?? 0),
                 'progress_pct' => $pct,
             ];
         }

@@ -294,6 +294,7 @@ $string['mission_cumulative_name'] = 'XP Collector';
 $string['mission_daily_desc'] = 'Complete 1 daily game today.';
 $string['mission_daily_name'] = 'Daily Player';
 $string['mission_freeze_earned'] = 'You earned {$a} streak freeze!';
+$string['mission_freeze_reward_title'] = 'Also awards a streak freeze';
 $string['mission_streak_desc'] = 'Reach a 7-day activity streak.';
 $string['mission_streak_name'] = 'On a Roll';
 $string['mykeys_ailog_concepts'] = 'Concepts';

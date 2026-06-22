@@ -294,6 +294,7 @@ $string['mission_cumulative_name'] = 'Colecionador de XP';
 $string['mission_daily_desc'] = 'Conclua 1 jogo diário hoje.';
 $string['mission_daily_name'] = 'Jogador Diário';
 $string['mission_freeze_earned'] = 'Você ganhou {$a} congelamento de sequência!';
+$string['mission_freeze_reward_title'] = 'Também concede um congelamento de sequência';
 $string['mission_streak_desc'] = 'Alcance uma sequência de 7 dias de atividade.';
 $string['mission_streak_name'] = 'Em Série';
 $string['mykeys_ailog_concepts'] = 'Conceitos';

@@ -55,6 +55,7 @@
         ],
         "staffranking": [],
         "hasmissions": true,
+        "str_freeze_reward_title": "Also awards a streak freeze",
         "missions": [
             {
                 "icon": "fa-play",
@@ -64,7 +65,19 @@
                 "target": 1,
                 "completed": false,
                 "xpreward": 5,
+                "freezereward": 0,
                 "progress_pct": 0
+            },
+            {
+                "icon": "fa-fire",
+                "name": "On a Roll",
+                "desc": "Reach a 7-day activity streak.",
+                "current": 3,
+                "target": 7,
+                "completed": false,
+                "xpreward": 50,
+                "freezereward": 1,
+                "progress_pct": 43
             }
         ],
         "games": [
@@ -233,7 +246,14 @@
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between">
                                     <span class="fw-semibold">{{name}}</span>
-                                    <small class="text-muted">+{{xpreward}} XP</small>
+                                    <small class="text-muted">
+                                        +{{xpreward}} XP
+                                        {{#freezereward}}
+                                        <i class="fa fa-snowflake text-info ms-1"
+                                            role="img"
+                                            aria-label="{{str_freeze_reward_title}}"></i>
+                                        {{/freezereward}}
+                                    </small>
                                 </div>
                                 <small class="text-muted">{{desc}}</small>
                                 {{^completed}}
