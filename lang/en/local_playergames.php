@@ -37,6 +37,7 @@ $string['achievement_level5_name'] = 'Rising Player';
 $string['achievement_streak30_desc'] = 'Maintain a 30-day activity streak.';
 $string['achievement_streak30_name'] = 'Unstoppable';
 $string['achievements_pagetitle'] = 'Achievements';
+$string['achievements_unlocked'] = 'unlocked';
 $string['admin_category_management'] = 'Management';
 $string['admin_category_settings'] = 'Settings';
 $string['apikey_clear'] = 'Clear saved key';

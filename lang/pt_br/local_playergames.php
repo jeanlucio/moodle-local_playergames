@@ -37,6 +37,7 @@ $string['achievement_level5_name'] = 'Em Ascensão';
 $string['achievement_streak30_desc'] = 'Mantenha uma sequência de 30 dias de atividade.';
 $string['achievement_streak30_name'] = 'Imparável';
 $string['achievements_pagetitle'] = 'Conquistas';
+$string['achievements_unlocked'] = 'desbloqueadas';
 $string['admin_category_management'] = 'Gerenciamento';
 $string['admin_category_settings'] = 'Configurações';
 $string['apikey_clear'] = 'Limpar chave salva';
