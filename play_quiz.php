@@ -27,6 +27,7 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_playergames\event\game_completed;
 use local_playergames\games\quiz_loader;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\season_manager;
@@ -76,7 +77,21 @@ if (data_submitted()) {
         $record->xpawarded  = $xpawarded;
         $record->attempts   = 1;
         $record->timeplayed = time();
-        $DB->insert_record('local_playergames_daily_scores', $record, false);
+        $scoreid = $DB->insert_record('local_playergames_daily_scores', $record);
+
+        // Drive the streak, missions and achievements off the completion event.
+        $event = game_completed::create([
+            'objectid' => $scoreid,
+            'context'  => $context,
+            'userid'   => (int) $USER->id,
+            'other'    => [
+                'seasonid'  => $season !== null ? (int) $season->id : 0,
+                'gametype'  => 'quiz',
+                'gamedate'  => $gamedate,
+                'xpawarded' => $xpawarded,
+            ],
+        ]);
+        $event->trigger();
 
         echo json_encode(['success' => true, 'xpawarded' => $xpawarded]);
         exit;
