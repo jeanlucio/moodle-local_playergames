@@ -237,7 +237,7 @@ final class quiz_generator_test extends \advanced_testcase {
         ]);
 
         $this->assertSame(2, $saved);
-        // save_standalone inserts in array order, so row 0 has feedback, row 1 none.
+        // Insertion order is preserved, so row 0 has feedback and row 1 none.
         $rows = array_values($DB->get_records(
             'local_playergames_concept_questions',
             ['cartridgeid' => $cartridgeid],
