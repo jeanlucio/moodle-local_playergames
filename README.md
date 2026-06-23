@@ -124,6 +124,57 @@ Content cartridges are JSON files that power all mini-games. The same pack feeds
 
 ---
 
+### 🧠 How PlayerQuiz Works
+
+PlayerQuiz is the first daily mini-game. It draws multiple-choice questions from the active cartridges (and, optionally, the Moodle Question Bank) and shows them **one at a time**.
+
+**The play loop**
+
+- One question is shown at a time, with a per-question countdown.
+- **Wrong answer** (or the timer running out) → the correct option is revealed, then the next question loads.
+- **Correct answer** → the play ends and XP is awarded.
+- With an attempt limit set, running out of attempts ends the play in **failure** (no XP) and may start a cooldown.
+
+Because a play ends on the **first correct answer**, a player rarely answers the whole pool — most questions in a session are just a buffer that provides variety and room to be wrong before repeating.
+
+**Two independent limits (this trips people up)**
+
+| Setting | Axis | Meaning |
+|---|---|---|
+| **Games per day** (`xp_games_quiz`) | the *day* | How many **plays** earn XP per day. Also sets the daily XP cap: `XP per game × games per day`. |
+| **Questions per session** (`quiz_session_size`) | inside *one play* | How many questions are drawn into a **single play** (the "deck" of that round). |
+
+*Example* — with *XP per game = 25*, *games per day = 3*, *questions per session = 20*: a player can complete **3 plays** today (cap 75 XP), and **each** play is built from a fresh draw of **20** questions. The two numbers answer different questions: *how many rounds today* vs *how big each round's deck is*.
+
+**Fresh questions and repeats**
+
+- Each page load builds a **brand-new shuffled session** — there is no saved "session of the day".
+- Questions are remembered as "seen today" **only when a play is completed with a correct answer**. Those are then excluded from the **other plays of the same day**, so completed plays never repeat questions.
+- **Leaving mid-play or failing records nothing** — reopening the page gives a fresh random draw that may include the same questions.
+- The "seen today" memory is **per day**: the next day starts clean and may re-draw questions from previous days. There is no cross-day exclusion.
+- Reloading never grants extra XP — it only changes *which* questions appear; XP is still capped by *games per day* and only counts on a correct answer.
+
+**Admin settings** (Site administration → Plugins → Local plugins → PlayerGames → Game rules)
+
+| Setting | Default | What it does |
+|---|---|---|
+| **Time per question (seconds)** | 120 (2 min) | Countdown per question. Reaching zero counts as a wrong answer and advances. `0` disables the timer. |
+| **Maximum attempts** | 0 (unlimited) | Wrong answers (including timeouts) that end a play without XP. `0` keeps the original behaviour — the game continues until the player answers correctly. |
+| **Cooldown after failing (minutes)** | 0 | When a play ends in failure, the quiz is locked for this many minutes. Persisted server-side (a page reload does **not** bypass it). Only meaningful together with an attempt limit. |
+| **Questions per session** | 20 | Size of each play's draw, chosen from a capped list (5–50). |
+
+**How the timer, attempts and cooldown interlock**
+
+- A timer expiry is treated exactly like a wrong answer.
+- A play can only **fail** when a maximum-attempts limit is set; with unlimited attempts (`0`) the game loops until a correct answer, so the cooldown never triggers.
+- A failed play awards **no XP and does not consume a daily play** — the cooldown is the only throttle, so with cooldown `0` the player may retry immediately.
+
+**Why the session size is capped**
+
+Every question of a session is rendered into the page HTML at once (the browser just reveals them one by one). A very large session would format and ship hundreds of questions the player will never see — wasted server work and a heavy page. The capped list (max 50) keeps plenty of variety without that cost. Truly large sessions would require a different architecture (loading questions on demand), which is not how the game works today.
+
+---
+
 ### 🎓 Educational Purpose
 
 PlayerGames is designed to:
@@ -393,6 +444,57 @@ Os cartuchos de conteúdo são arquivos JSON que alimentam todos os minijogos. O
 - Termos para jogos estilo Wordle: filtrados por comprimento configurável (padrão 4–8 letras), apenas caracteres alfabéticos
 - Admin pode ter múltiplos cartuchos ativos simultaneamente
 - Multi-idioma: cada cartucho declara seu `language`
+
+---
+
+### 🧠 Como o PlayerQuiz Funciona
+
+O PlayerQuiz é o primeiro mini-jogo diário. Ele sorteia questões de múltipla escolha dos cartuchos ativos (e, opcionalmente, do Banco de Questões do Moodle) e as exibe **uma de cada vez**.
+
+**O fluxo da jogada**
+
+- Uma questão é exibida por vez, com uma contagem regressiva por pergunta.
+- **Erro** (ou o tempo esgotar) → a alternativa correta é revelada e a próxima questão carrega.
+- **Acerto** → a jogada termina e o XP é concedido.
+- Com um limite de tentativas definido, esgotar as tentativas encerra a jogada em **falha** (sem XP) e pode iniciar um cooldown.
+
+Como a jogada termina no **primeiro acerto**, o jogador raramente responde o pool inteiro — a maioria das questões da sessão é só um colchão que dá variedade e margem para errar antes de repetir.
+
+**Dois limites independentes (é aqui que muita gente se confunde)**
+
+| Configuração | Eixo | Significado |
+|---|---|---|
+| **Jogos por dia** (`xp_games_quiz`) | o *dia* | Quantas **jogadas** valem XP por dia. Também define o teto diário de XP: `XP por jogo × jogos por dia`. |
+| **Questões por sessão** (`quiz_session_size`) | dentro de *uma jogada* | Quantas questões são sorteadas para uma **única jogada** (o "baralho" daquela partida). |
+
+*Exemplo* — com *XP por jogo = 25*, *jogos por dia = 3*, *questões por sessão = 20*: o jogador pode concluir **3 jogadas** hoje (teto de 75 XP), e **cada** jogada é montada a partir de um sorteio novo de **20** questões. Os dois números respondem perguntas diferentes: *quantas partidas hoje* vs *qual o tamanho do baralho de cada partida*.
+
+**Questões novas e repetições**
+
+- Cada carregamento da página monta uma **sessão nova e embaralhada** — não existe uma "sessão do dia" guardada.
+- As questões só são lembradas como "vistas hoje" **quando uma jogada é concluída com acerto**. Elas então são excluídas das **outras jogadas do mesmo dia**, então jogadas concluídas nunca repetem questões.
+- **Sair no meio ou falhar não grava nada** — reabrir a página gera um sorteio novo que pode incluir as mesmas questões.
+- A memória de "vistas hoje" é **por dia**: o dia seguinte começa limpo e pode re-sortear questões de dias anteriores. Não há exclusão entre dias.
+- Recarregar nunca dá XP extra — só muda *quais* questões aparecem; o XP continua limitado por *jogos por dia* e só conta no acerto.
+
+**Configurações do administrador** (Administração do site → Plugins → Plugins locais → PlayerGames → Regras dos jogos)
+
+| Configuração | Padrão | O que faz |
+|---|---|---|
+| **Tempo por questão (segundos)** | 120 (2 min) | Contagem regressiva por questão. Chegar a zero conta como erro e avança. `0` desativa o cronômetro. |
+| **Máximo de tentativas** | 0 (ilimitado) | Erros (incluindo tempo esgotado) que encerram a jogada sem XP. `0` mantém o comportamento original — o jogo continua até o jogador acertar. |
+| **Cooldown ao falhar (minutos)** | 0 | Quando uma jogada termina em falha, o quiz fica bloqueado por estes minutos. Persistido no servidor (recarregar a página **não** contorna). Só faz sentido junto com um limite de tentativas. |
+| **Questões por sessão** | 20 | Tamanho do sorteio de cada jogada, escolhido em uma lista com teto (5–50). |
+
+**Como cronômetro, tentativas e cooldown se encaixam**
+
+- O tempo esgotar é tratado exatamente como um erro.
+- Uma jogada só pode **falhar** quando há um limite de tentativas; com tentativas ilimitadas (`0`) o jogo entra em loop até o acerto, então o cooldown nunca dispara.
+- Uma jogada falha **não dá XP e não consome jogada do dia** — o cooldown é o único freio, então com cooldown `0` o jogador pode tentar de novo na hora.
+
+**Por que o tamanho da sessão tem teto**
+
+Toda questão da sessão é renderizada no HTML da página de uma vez (o navegador apenas vai revelando uma a uma). Uma sessão muito grande formataria e enviaria centenas de questões que o jogador nunca verá — trabalho de servidor desperdiçado e página pesada. A lista com teto (máx. 50) mantém variedade de sobra sem esse custo. Sessões realmente grandes exigiriam outra arquitetura (carregar questões sob demanda), o que não é como o jogo funciona hoje.
 
 ---
 

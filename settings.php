@@ -257,6 +257,46 @@ if ($hassiteconfig) {
         1
     ));
 
+    $sessionsizes = [
+        5  => '5',
+        10 => '10',
+        15 => '15',
+        20 => '20',
+        30 => '30',
+        50 => '50',
+    ];
+    $page3->add(new admin_setting_configselect(
+        'local_playergames/quiz_session_size',
+        get_string('settings_quiz_session_size', 'local_playergames'),
+        get_string('settings_quiz_session_size_desc', 'local_playergames'),
+        20,
+        $sessionsizes
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/quiz_question_seconds',
+        get_string('settings_quiz_question_seconds', 'local_playergames'),
+        get_string('settings_quiz_question_seconds_desc', 'local_playergames'),
+        '120',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/quiz_max_attempts',
+        get_string('settings_quiz_max_attempts', 'local_playergames'),
+        get_string('settings_quiz_max_attempts_desc', 'local_playergames'),
+        '0',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/quiz_cooldown_minutes',
+        get_string('settings_quiz_cooldown_minutes', 'local_playergames'),
+        get_string('settings_quiz_cooldown_minutes_desc', 'local_playergames'),
+        '0',
+        PARAM_INT
+    ));
+
     $page3->add(new admin_setting_configtext(
         'local_playergames/wordle_minlen',
         get_string('settings_wordle_minlen', 'local_playergames'),

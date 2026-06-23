@@ -45,6 +45,24 @@ if (data_submitted()) {
     require_sesskey();
     $submitaction = optional_param('action', '', PARAM_ALPHAEXT);
 
+    if ($submitaction === 'submit_failed') {
+        // The player ran out of attempts. Start the configured cooldown so the
+        // quiz stays locked until it elapses. No XP and no daily play is spent.
+        header('Content-Type: application/json');
+
+        $cooldownminutes = (int) get_config('local_playergames', 'quiz_cooldown_minutes');
+        if ($cooldownminutes > 0) {
+            set_user_preference(
+                'local_playergames_quizcooldown',
+                time() + $cooldownminutes * 60,
+                $USER->id
+            );
+        }
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     if ($submitaction === 'submit_correct') {
         header('Content-Type: application/json');
 
@@ -95,10 +113,23 @@ if ($activeseason !== null) {
 }
 $alreadyplayed = $remaining <= 0;
 
+// Gameplay rules configured by the admin (read live so changes apply at once).
+$secondscfg      = get_config('local_playergames', 'quiz_question_seconds');
+$questionseconds = ($secondscfg === false || $secondscfg === '') ? 120 : max(0, (int) $secondscfg);
+$maxattempts     = max(0, (int) get_config('local_playergames', 'quiz_max_attempts'));
+$cooldownminutes = max(0, (int) get_config('local_playergames', 'quiz_cooldown_minutes'));
+$sizecfg         = get_config('local_playergames', 'quiz_session_size');
+$sessionsize     = ((int) $sizecfg) > 0 ? (int) $sizecfg : 20;
+
+// Cooldown lock: set when the player previously ran out of attempts.
+$cooldownuntil     = (int) get_user_preferences('local_playergames_quizcooldown', 0, $USER->id);
+$cooldownremaining = $cooldownuntil - time();
+$cooldownactive    = !$alreadyplayed && $cooldownremaining > 0;
+
 $questions   = [];
 $noquestions = false;
 
-if (!$alreadyplayed) {
+if (!$alreadyplayed && !$cooldownactive) {
     $gameconfig = season_game_config::get_for_active_season('quiz');
     if ($gameconfig !== null) {
         $sources      = $gameconfig->source;
@@ -113,7 +144,7 @@ if (!$alreadyplayed) {
 
     $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
     $loader  = new quiz_loader();
-    $loaded  = $loader->load_session(20, $sources, $categoryid, $cartridgeids, $exclude);
+    $loaded  = $loader->load_session($sessionsize, $sources, $categoryid, $cartridgeids, $exclude);
 
     if (empty($loaded)) {
         $noquestions = true;
@@ -147,22 +178,38 @@ if (!$alreadyplayed) {
     }
 }
 
+$failedmsg = $cooldownminutes > 0
+    ? get_string('quiz_failed_cooldown', 'local_playergames', $cooldownminutes)
+    : get_string('quiz_failed_retry', 'local_playergames');
+
 $templatedata = [
     'sesskey'            => sesskey(),
     'formaction'         => $formaction,
     'questions'          => $questions,
     'already_played'     => $alreadyplayed,
+    'cooldown_active'    => $cooldownactive,
     'no_questions'       => $noquestions,
+    'question_seconds'   => $questionseconds,
+    'max_attempts'       => $maxattempts,
     'huburl'             => (new moodle_url('/local/playergames/hub.php'))->out(false),
     'str_already_played' => get_string('quiz_already_played', 'local_playergames'),
+    'str_locked'         => get_string('quiz_locked', 'local_playergames'),
+    'str_locked_msg'     => get_string(
+        'quiz_locked_msg',
+        'local_playergames',
+        format_time(max(0, $cooldownremaining))
+    ),
     'str_no_questions'   => get_string('quiz_no_questions', 'local_playergames'),
     'str_completed'      => get_string('quiz_completed', 'local_playergames'),
     'str_attempt'        => get_string('quiz_attempt', 'local_playergames'),
+    'str_time_left'      => get_string('quiz_time_left', 'local_playergames'),
+    'str_failed'         => get_string('quiz_failed', 'local_playergames'),
+    'str_failed_msg'     => $failedmsg,
     'str_result_xp'      => get_string('quiz_result_xp', 'local_playergames'),
     'str_back_to_hub'    => get_string('quiz_back_to_hub', 'local_playergames'),
 ];
 
-if (!$alreadyplayed && !$noquestions) {
+if (!$alreadyplayed && !$cooldownactive && !$noquestions) {
     $PAGE->requires->js_call_amd('local_playergames/play_quiz', 'init');
 }
 

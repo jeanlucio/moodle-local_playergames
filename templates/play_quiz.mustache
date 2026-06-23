@@ -8,12 +8,20 @@
         "sesskey": "abc123",
         "formaction": "/local/playergames/play_quiz.php",
         "already_played": false,
+        "cooldown_active": false,
         "no_questions": false,
+        "question_seconds": 120,
+        "max_attempts": 0,
         "huburl": "/local/playergames/hub.php",
         "str_already_played": "You have already played PlayerQuiz today.",
+        "str_locked": "PlayerQuiz is on cooldown",
+        "str_locked_msg": "PlayerQuiz will be available again in 2 mins.",
         "str_no_questions": "No questions available.",
         "str_completed": "Correct!",
         "str_attempt": "Attempt",
+        "str_time_left": "Time left",
+        "str_failed": "Out of attempts",
+        "str_failed_msg": "You ran out of attempts. Head back to the Hub and try again.",
         "str_result_xp": "XP earned:",
         "str_back_to_hub": "Back to Hub",
         "questions": [
@@ -45,6 +53,17 @@
     </div>
     {{/already_played}}
 
+    {{#cooldown_active}}
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-hourglass-half me-2" aria-hidden="true"></i>
+        <strong>{{str_locked}}</strong>
+        <div class="mt-1">{{str_locked_msg}}</div>
+        <div class="mt-3">
+            <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
+        </div>
+    </div>
+    {{/cooldown_active}}
+
     {{#no_questions}}
     <div class="alert alert-warning" role="alert">
         <i class="fa fa-exclamation-triangle me-2" aria-hidden="true"></i>
@@ -52,14 +71,18 @@
     </div>
     {{/no_questions}}
 
-    {{^already_played}}{{^no_questions}}
+    {{^already_played}}{{^cooldown_active}}{{^no_questions}}
     <div id="pg-quiz-container"
          data-action="{{formaction}}"
          data-sesskey="{{sesskey}}"
+         data-question-seconds="{{question_seconds}}"
+         data-max-attempts="{{max_attempts}}"
          data-str-attempt="{{str_attempt}}">
 
-        <div class="mb-4">
+        <div class="mb-4 d-flex align-items-center justify-content-between">
             <div id="pg-quiz-progress-text" class="text-muted small mb-1">&nbsp;</div>
+            <div id="pg-quiz-timer" class="badge pg-quiz-timer d-none"
+                 role="timer" aria-label="{{str_time_left}}">&nbsp;</div>
         </div>
 
         {{#questions}}
@@ -92,7 +115,18 @@
             </div>
         </div>
 
+        <div id="pg-quiz-failed" class="d-none">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h3 class="mb-3">
+                    <i class="fa fa-circle-xmark text-danger me-2" aria-hidden="true"></i>
+                    {{str_failed}}
+                </h3>
+                <p class="text-muted">{{str_failed_msg}}</p>
+                <a href="{{huburl}}" class="btn btn-primary mt-3">{{str_back_to_hub}}</a>
+            </div>
+        </div>
+
     </div>
-    {{/no_questions}}{{/already_played}}
+    {{/no_questions}}{{/cooldown_active}}{{/already_played}}
 
 </div>

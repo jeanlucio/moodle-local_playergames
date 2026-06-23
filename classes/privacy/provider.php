@@ -169,6 +169,10 @@ class provider implements
             'local_playergames_openai_model',
             'privacy:pref_openai_model'
         );
+        $collection->add_user_preference(
+            'local_playergames_quizcooldown',
+            'privacy:pref_quizcooldown'
+        );
 
         $aifields = ['content' => 'privacy:external_ai_content'];
         $collection->add_external_location_link('google_gemini', $aifields, 'privacy:external_gemini');
@@ -387,6 +391,7 @@ class provider implements
             'local_playergames_openai_url'   => 'privacy:pref_openai_url',
             'local_playergames_openai_model' => 'privacy:pref_openai_model',
             'local_playergames_gamification' => 'privacy:pref_gamification',
+            'local_playergames_quizcooldown' => 'privacy:pref_quizcooldown',
         ];
         foreach ($plainprefs as $prefname => $stringkey) {
             $value = get_user_preferences($prefname, null, $userid);

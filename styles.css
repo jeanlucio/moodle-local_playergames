@@ -40,6 +40,15 @@ body.path-local-playergames .pg-gap-3 {
     gap: 1rem;
 }
 
+/* ── PlayerQuiz per-question timer ────────────────────────────────── */
+
+body.path-local-playergames .pg-quiz-timer {
+    font-variant-numeric: tabular-nums;
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    color: var(--bs-body-color, #1d2125);
+    font-size: 0.9rem;
+}
+
 /* ── Ecosystem dashboard ─────────────────────────────────────────── */
 
 body.path-local-playergames .local-playergames-dashboard {
