@@ -167,12 +167,19 @@ if (!$alreadyplayed && !$cooldownactive) {
                 ];
             }
 
+            $feedbackraw = (string) ($q->generalfeedback ?? '');
+            $feedback    = $feedbackraw === ''
+                ? ''
+                : format_text($feedbackraw, $q->generalfeedbackformat, ['context' => $context]);
+
             $questions[] = [
                 'index'        => $i + 1,
                 'questiontext' => $qtext,
                 'answers'      => $answers,
                 'source'       => $q->source,
                 'sourceid'     => (int) $q->sourceid,
+                'feedback'     => $feedback,
+                'has_feedback' => $feedback !== '',
             ];
         }
     }

@@ -46,6 +46,12 @@ class quiz_question {
     /** @var int|null Cartridge category id, or null when uncategorised. */
     public ?int $categoryid = null;
 
+    /** @var string|null Optional general feedback shown after the question is answered. */
+    public ?string $generalfeedback = null;
+
+    /** @var string Text format of the general feedback (FORMAT_PLAIN for cartridge content). */
+    public string $generalfeedbackformat = FORMAT_PLAIN;
+
     /** @var quiz_answer[] Five answer options, pre-shuffled. */
     public array $answers = [];
 }

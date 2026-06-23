@@ -177,7 +177,7 @@ class quiz_loader {
             $sql,
             $params,
             'local_playergames_concept_questions',
-            'id, questiontext, difficulty, categoryid',
+            'id, questiontext, difficulty, categoryid, generalfeedback',
             $limit,
             $excludeids
         );
@@ -220,6 +220,7 @@ class quiz_loader {
             $dto->questiontext = $q->questiontext;
             $dto->difficulty = (int) $q->difficulty;
             $dto->categoryid = isset($q->categoryid) ? (int) $q->categoryid : null;
+            $dto->generalfeedback = $q->generalfeedback !== null ? (string) $q->generalfeedback : null;
             $dto->answers = array_map(function ($a): quiz_answer {
                 $ans = new quiz_answer();
                 $ans->text = $a->answertext;
@@ -270,7 +271,14 @@ class quiz_loader {
             $params = ['ctxid' => $systemctxid];
         }
 
-        $rows = $this->fetch_random_rows($sql, $params, 'question', 'id, questiontext', $limit, $excludeids);
+        $rows = $this->fetch_random_rows(
+            $sql,
+            $params,
+            'question',
+            'id, questiontext, generalfeedback, generalfeedbackformat',
+            $limit,
+            $excludeids
+        );
         if (empty($rows)) {
             return [];
         }
@@ -312,6 +320,10 @@ class quiz_loader {
             $dto->source = 'questionbank';
             $dto->sourceid = $qid;
             $dto->questiontext = $q->questiontext;
+            $dto->generalfeedback = $q->generalfeedback !== null ? (string) $q->generalfeedback : null;
+            $dto->generalfeedbackformat = isset($q->generalfeedbackformat)
+                ? (string) $q->generalfeedbackformat
+                : FORMAT_HTML;
             $dto->answers = array_map(function ($a): quiz_answer {
                 $ans = new quiz_answer();
                 $ans->text = $a->answer;

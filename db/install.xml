@@ -314,6 +314,7 @@
         <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="ai"/>
         <FIELD NAME="difficulty" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="3"/>
         <FIELD NAME="categoryid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="generalfeedback" TYPE="text" NOTNULL="false" COMMENT="Optional plain-text feedback shown after the question is answered"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
       </FIELDS>
       <KEYS>

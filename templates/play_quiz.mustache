@@ -32,6 +32,8 @@
                 "source": "cartridge",
                 "sourceid": 42,
                 "questiontext": "What is photosynthesis?",
+                "has_feedback": true,
+                "feedback": "Photosynthesis converts light energy into chemical energy stored as sugar.",
                 "answers": [
                     {"letter": "A", "text": "A process converting light into sugar.", "correct": true},
                     {"letter": "B", "text": "A method of cell division.", "correct": false},
@@ -101,6 +103,11 @@
                 </button>
                 {{/answers}}
             </div>
+            {{#has_feedback}}
+            <div class="pg-quiz-feedback alert alert-info d-none mt-3" role="note">
+                <i class="fa fa-circle-info me-2" aria-hidden="true"></i>{{{feedback}}}
+            </div>
+            {{/has_feedback}}
         </div>
         {{/questions}}
 

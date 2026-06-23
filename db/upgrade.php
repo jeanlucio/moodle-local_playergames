@@ -773,5 +773,16 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062206, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062210) {
+        // Optional general feedback shown after a cartridge question is answered.
+        $table = new xmldb_table('local_playergames_concept_questions');
+        $field = new xmldb_field('generalfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'categoryid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026062210, 'local', 'playergames');
+    }
+
     return true;
 }
