@@ -198,6 +198,8 @@ class importer {
                 $categoryid = $catmap[$catname] ?: null;
             }
 
+            $feedback = trim(clean_param($raw['generalfeedback'] ?? '', PARAM_TEXT));
+
             $qrecord = new \stdClass();
             $qrecord->conceptid = null;
             $qrecord->cartridgeid = $cartridgeid;
@@ -205,6 +207,7 @@ class importer {
             $qrecord->source = 'import';
             $qrecord->difficulty = max(1, min(5, (int) ($raw['difficulty'] ?? 3)));
             $qrecord->categoryid = $categoryid;
+            $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
             $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
 

@@ -119,6 +119,7 @@ Content cartridges are JSON files that power all mini-games. The same pack feeds
 
 - Validated by the importer before saving
 - Terms for wordle-style games: filtered by configurable length (default 4–8 letters), alphabetic characters only
+- Quiz-type cartridges: each question accepts an optional `generalfeedback` string, shown to the player after they answer
 - Admin can have multiple active cartridges simultaneously
 - Multi-language: each cartridge declares its `language`
 
@@ -442,6 +443,7 @@ Os cartuchos de conteúdo são arquivos JSON que alimentam todos os minijogos. O
 
 - Validado pelo importador antes de salvar
 - Termos para jogos estilo Wordle: filtrados por comprimento configurável (padrão 4–8 letras), apenas caracteres alfabéticos
+- Cartuchos do tipo quiz: cada questão aceita um `generalfeedback` opcional, exibido ao jogador após responder
 - Admin pode ter múltiplos cartuchos ativos simultaneamente
 - Multi-idioma: cada cartucho declara seu `language`
 

@@ -1221,6 +1221,7 @@ class controller {
         $formdistractors = ['', '', '', ''];
         $formcategoryid = 0;
         $formdifficulty = 3;
+        $formfeedback = '';
         $editingquestion = false;
 
         if ($editquestion !== null) {
@@ -1229,6 +1230,7 @@ class controller {
             $formquestiontext = $editquestion->questiontext;
             $formcategoryid = isset($editquestion->categoryid) ? (int) $editquestion->categoryid : 0;
             $formdifficulty = (int) $editquestion->difficulty;
+            $formfeedback = (string) ($editquestion->generalfeedback ?? '');
             $editingquestion = true;
             $qanswers = $answersbyquestion[(int) $editquestion->id] ?? [];
             $di = 0;
@@ -1320,6 +1322,7 @@ class controller {
             'form_distractor_3' => s($formdistractors[3]),
             'form_categoryid' => $formcategoryid,
             'form_difficulty' => $formdifficulty,
+            'form_generalfeedback' => s($formfeedback),
             'category_options' => $categoryoptions,
             'categories' => $catrows,
             'categories_empty' => empty($catrows),
@@ -1369,6 +1372,7 @@ class controller {
             $postcartridgeid
         );
         $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
+        $feedback = trim(clean_param(optional_param('generalfeedback', '', PARAM_TEXT), PARAM_TEXT));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
             $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
@@ -1392,6 +1396,7 @@ class controller {
         $qrecord->source = 'manual';
         $qrecord->difficulty = $difficulty;
         $qrecord->categoryid = $categoryid;
+        $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
         $qrecord->timecreated = $now;
         $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
 
@@ -1447,6 +1452,7 @@ class controller {
             $postcartridgeid
         );
         $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
+        $feedback = trim(clean_param(optional_param('generalfeedback', '', PARAM_TEXT), PARAM_TEXT));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
             $d = trim(clean_param(optional_param("distractor_{$i}", '', PARAM_TEXT), PARAM_TEXT));
@@ -1471,6 +1477,7 @@ class controller {
         $updated->questiontext = $qtext;
         $updated->difficulty = $difficulty;
         $updated->categoryid = $categoryid;
+        $updated->generalfeedback = $feedback !== '' ? $feedback : null;
         $DB->update_record('local_playergames_concept_questions', $updated);
         $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);
 

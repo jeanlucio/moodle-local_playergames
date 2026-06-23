@@ -21,6 +21,7 @@
         "form_distractor_1": "",
         "form_distractor_2": "",
         "form_distractor_3": "",
+        "form_generalfeedback": "",
         "form_categoryid": 0,
         "form_difficulty": 3,
         "category_options": [],
@@ -251,6 +252,16 @@
                         <input type="number" id="pg-q-diff" name="difficulty"
                                value="{{form_difficulty}}" min="1" max="5"
                                class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <label for="pg-q-feedback" class="form-label">
+                            {{#str}}quiz_editor_feedback, local_playergames{{/str}}
+                        </label>
+                        <textarea id="pg-q-feedback" name="generalfeedback" rows="2"
+                                  class="form-control">{{form_generalfeedback}}</textarea>
+                        <div class="form-text">
+                            {{#str}}quiz_editor_feedback_help, local_playergames{{/str}}
+                        </div>
                     </div>
                 </div>
                 <div class="mt-3">

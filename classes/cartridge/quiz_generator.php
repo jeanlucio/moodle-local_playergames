@@ -116,6 +116,8 @@ class quiz_generator extends ai_generator {
                 $categoryid = $catmap[$catname] ?: null;
             }
 
+            $feedback = trim((string) ($qdata['generalfeedback'] ?? ''));
+
             $qrecord = new \stdClass();
             $qrecord->conceptid = null;
             $qrecord->cartridgeid = $cartridgeid;
@@ -123,6 +125,7 @@ class quiz_generator extends ai_generator {
             $qrecord->source = 'ai';
             $qrecord->difficulty = max(1, min(5, (int) ($qdata['difficulty'] ?? 3)));
             $qrecord->categoryid = $categoryid;
+            $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
             $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
 
@@ -173,11 +176,13 @@ class quiz_generator extends ai_generator {
             . '{"questiontext":"Who invented the telephone?",'
             . '"correct":"Alexander Graham Bell",'
             . '"distractors":["Thomas Edison","Nikola Tesla","Guglielmo Marconi","James Watt"],'
-            . '"category":"History","difficulty":2},'
+            . '"category":"History","difficulty":2,'
+            . '"generalfeedback":"Bell patented the first practical telephone in 1876."},'
             . '{"questiontext":"In what year did World War II end?",'
             . '"correct":"1945",'
             . '"distractors":["1939","1941","1943","1918"],'
-            . '"category":"History","difficulty":3}]}';
+            . '"category":"History","difficulty":3,'
+            . '"generalfeedback":"The war ended in 1945 with the surrender of Germany and Japan."}]}';
 
         if (!empty($categorynames)) {
             $catlist = '"' . implode('", "', $categorynames) . '"';
@@ -209,6 +214,9 @@ class quiz_generator extends ai_generator {
             '- distractors: exactly FOUR plausible but wrong answers.',
             $categoryrule,
             '- difficulty: integer 1–5 reflecting how hard the question is.',
+            '- generalfeedback: one short sentence (max 25 words) explaining why the correct'
+                . ' answer is right, shown to the learner after they answer. Write it in '
+                . $langname . '.',
             '',
             'CRITICAL RULE — format consistency:',
             '- The correct answer and ALL four distractors MUST have the same format and'
@@ -258,11 +266,12 @@ class quiz_generator extends ai_generator {
                 continue;
             }
             $result[] = [
-                'questiontext' => trim((string) $q['questiontext']),
-                'correct'      => trim((string) $q['correct']),
-                'distractors'  => array_map('trim', array_slice($q['distractors'], 0, 4)),
-                'category'     => trim((string) ($q['category'] ?? '')),
-                'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
+                'questiontext'    => trim((string) $q['questiontext']),
+                'correct'         => trim((string) $q['correct']),
+                'distractors'     => array_map('trim', array_slice($q['distractors'], 0, 4)),
+                'category'        => trim((string) ($q['category'] ?? '')),
+                'difficulty'      => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
+                'generalfeedback' => trim((string) ($q['generalfeedback'] ?? '')),
             ];
         }
 

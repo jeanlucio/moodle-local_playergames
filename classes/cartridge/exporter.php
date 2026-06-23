@@ -146,13 +146,17 @@ class exporter {
                     $distractors[] = $ans->answertext;
                 }
             }
-            $questionsdata[] = [
+            $questiondata = [
                 'questiontext' => $q->questiontext,
                 'correct' => $correct,
                 'distractors' => $distractors,
                 'category' => $catmap[(int) $q->categoryid] ?? '',
                 'difficulty' => (int) $q->difficulty,
             ];
+            if (!empty($q->generalfeedback)) {
+                $questiondata['generalfeedback'] = $q->generalfeedback;
+            }
+            $questionsdata[] = $questiondata;
         }
 
         return [
