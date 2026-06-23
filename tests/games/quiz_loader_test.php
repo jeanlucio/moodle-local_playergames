@@ -57,19 +57,21 @@ final class quiz_loader_test extends \advanced_testcase {
      * @param int $distractors Number of distractors to add.
      * @param int $difficulty Question difficulty.
      * @param int|null $categoryid Optional category id.
+     * @param string|null $feedback Optional general feedback.
      * @return int Question id.
      */
     private function add_question(
         int $cartridgeid,
         int $distractors = 4,
         int $difficulty = 3,
-        ?int $categoryid = null
+        ?int $categoryid = null,
+        ?string $feedback = null
     ): int {
         global $DB;
         $qid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
             'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => 'Q?',
             'source' => 'manual', 'difficulty' => $difficulty, 'categoryid' => $categoryid,
-            'timecreated' => time(),
+            'generalfeedback' => $feedback, 'timecreated' => time(),
         ]);
         $DB->insert_record('local_playergames_concept_answers', (object) [
             'questionid' => $qid, 'answertext' => 'Correct', 'iscorrect' => 1, 'sortorder' => 0,
@@ -178,6 +180,29 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->assertCount(1, $questions);
         $this->assertSame(5, $questions[0]->difficulty);
         $this->assertSame(77, $questions[0]->categoryid);
+    }
+
+    public function test_carries_general_feedback_from_cartridge(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        $this->add_question($cartridgeid, 4, 3, null, 'Light becomes sugar.');
+
+        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+
+        $this->assertCount(1, $questions);
+        $this->assertSame('Light becomes sugar.', $questions[0]->generalfeedback);
+        $this->assertSame(FORMAT_PLAIN, $questions[0]->generalfeedbackformat);
+    }
+
+    public function test_general_feedback_absent_stays_null(): void {
+        $this->resetAfterTest();
+        $cartridgeid = $this->make_cartridge();
+        $this->add_question($cartridgeid);
+
+        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+
+        $this->assertCount(1, $questions);
+        $this->assertNull($questions[0]->generalfeedback);
     }
 
     public function test_random_draw_samples_the_whole_pool(): void {

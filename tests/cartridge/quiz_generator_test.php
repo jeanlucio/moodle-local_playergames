@@ -72,6 +72,35 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame(4, $result[0]['difficulty']);
     }
 
+    public function test_parse_standalone_keeps_general_feedback(): void {
+        $json = json_encode(['questions' => [
+            [
+                'questiontext' => 'Q1',
+                'correct' => 'C1',
+                'distractors' => ['a', 'b', 'c', 'd'],
+                'generalfeedback' => 'Why C1 is right.',
+            ],
+        ]]);
+
+        $result = $this->invoke('parse_standalone_response', [$json]);
+
+        $this->assertSame('Why C1 is right.', $result[0]['generalfeedback']);
+    }
+
+    public function test_parse_standalone_defaults_general_feedback_empty(): void {
+        $json = json_encode(['questions' => [
+            [
+                'questiontext' => 'Q1',
+                'correct' => 'C1',
+                'distractors' => ['a', 'b', 'c', 'd'],
+            ],
+        ]]);
+
+        $result = $this->invoke('parse_standalone_response', [$json]);
+
+        $this->assertSame('', $result[0]['generalfeedback']);
+    }
+
     public function test_parse_standalone_defaults_category_and_difficulty(): void {
         $json = json_encode(['questions' => [
             ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => ['a', 'b', 'c', 'd']],
@@ -179,5 +208,42 @@ final class quiz_generator_test extends \advanced_testcase {
         // No category given falls back to null with the default difficulty 3.
         $this->assertNull($rows[2]->categoryid);
         $this->assertSame(3, (int) $rows[2]->difficulty);
+    }
+
+    public function test_save_standalone_persists_general_feedback(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $now = time();
+        $cartridgeid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Quiz',
+            'version' => '1.0',
+            'language' => 'en',
+            'type' => 'quiz',
+            'timecreated' => $now,
+            'timemodified' => $now,
+            'uploadedby' => 0,
+            'active' => 1,
+        ]);
+
+        $saved = (new quiz_generator())->save_standalone($cartridgeid, [
+            [
+                'questiontext' => 'With fb', 'correct' => 'C',
+                'distractors' => ['a', 'b', 'c', 'd'], 'generalfeedback' => 'Saved explanation.',
+            ],
+            [
+                'questiontext' => 'No fb', 'correct' => 'C',
+                'distractors' => ['a', 'b', 'c', 'd'], 'generalfeedback' => '',
+            ],
+        ]);
+
+        $this->assertSame(2, $saved);
+        // save_standalone inserts in array order, so row 0 has feedback, row 1 none.
+        $rows = array_values($DB->get_records(
+            'local_playergames_concept_questions',
+            ['cartridgeid' => $cartridgeid],
+            'id ASC'
+        ));
+        $this->assertSame('Saved explanation.', $rows[0]->generalfeedback);
+        $this->assertNull($rows[1]->generalfeedback);
     }
 }

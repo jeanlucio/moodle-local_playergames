@@ -169,6 +169,40 @@ final class importer_test extends \advanced_testcase {
         $this->assertSame(5, (int) $second->difficulty);
     }
 
+    public function test_import_quiz_saves_general_feedback(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $json = $this->quiz_json(['questions' => [
+            [
+                'questiontext' => 'With feedback?',
+                'correct' => 'Yes',
+                'distractors' => ['A', 'B', 'C', 'D'],
+                'category' => 'General',
+                'difficulty' => 2,
+                'generalfeedback' => 'Because it explains the answer.',
+            ],
+            [
+                'questiontext' => 'Without feedback?',
+                'correct' => 'Yes',
+                'distractors' => ['A', 'B', 'C', 'D'],
+                'category' => 'General',
+                'difficulty' => 2,
+            ],
+        ]]);
+
+        $result = (new importer())->import($json, (int) $user->id);
+
+        $questions = array_values($DB->get_records(
+            'local_playergames_concept_questions',
+            ['cartridgeid' => $result->cartridgeid],
+            'id ASC'
+        ));
+        $this->assertSame('Because it explains the answer.', $questions[0]->generalfeedback);
+        $this->assertNull($questions[1]->generalfeedback);
+    }
+
     public function test_import_quiz_inferred_without_type(): void {
         global $DB;
         $this->resetAfterTest();

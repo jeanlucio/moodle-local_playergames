@@ -125,6 +125,53 @@ final class exporter_test extends \advanced_testcase {
         $this->assertSame(4, $q['difficulty']);
     }
 
+    public function test_quiz_export_includes_general_feedback(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $json = json_encode([
+            'name' => 'Feedback pack',
+            'version' => '1.0',
+            'language' => 'en',
+            'author' => 'A',
+            'type' => 'quiz',
+            'questions' => [
+                [
+                    'questiontext' => 'With feedback?',
+                    'correct' => 'Yes',
+                    'distractors' => ['A', 'B', 'C', 'D'],
+                    'category' => 'General',
+                    'difficulty' => 2,
+                    'generalfeedback' => 'Explains the answer.',
+                ],
+                [
+                    'questiontext' => 'Without feedback?',
+                    'correct' => 'Yes',
+                    'distractors' => ['A', 'B', 'C', 'D'],
+                    'category' => 'General',
+                    'difficulty' => 2,
+                ],
+            ],
+        ]);
+        $result = (new importer())->import($json, (int) $user->id);
+        $cartridge = $DB->get_record(
+            'local_playergames_cartridges',
+            ['id' => $result->cartridgeid],
+            '*',
+            MUST_EXIST
+        );
+
+        $data = (new exporter())->build($cartridge);
+
+        $byquestion = [];
+        foreach ($data['questions'] as $q) {
+            $byquestion[$q['questiontext']] = $q;
+        }
+        $this->assertSame('Explains the answer.', $byquestion['With feedback?']['generalfeedback']);
+        $this->assertArrayNotHasKey('generalfeedback', $byquestion['Without feedback?']);
+    }
+
     public function test_concept_round_trip(): void {
         global $DB;
         $this->resetAfterTest();
