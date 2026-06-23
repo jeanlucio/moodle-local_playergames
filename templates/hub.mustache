@@ -40,6 +40,7 @@
         "checkin_done": 12,
         "checkin_max": 30,
         "str_checkins": "Season check-ins",
+        "rankingenabled": true,
         "showinranking": true,
         "sesskey": "abc123",
         "formaction": "/local/playergames/hub.php",
@@ -210,6 +211,7 @@
                     </details>
                     {{/hasfreezelog}}
 
+                    {{#rankingenabled}}
                     <form method="post" action="{{formaction}}" class="mt-3">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
                         <div class="form-check form-switch">
@@ -224,6 +226,7 @@
                             </label>
                         </div>
                     </form>
+                    {{/rankingenabled}}
                 </div>
             </div>
 
@@ -283,6 +286,7 @@
         {{! Right column: ranking + games }}
         <div class="col-lg-8">
 
+            {{#rankingenabled}}
             <div class="card pg-hub-ranking-card mb-4">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">
@@ -504,6 +508,7 @@
                     {{/showbothtabs}}
                 </div>
             </div>
+            {{/rankingenabled}}
 
             {{! Today's games }}
             <div class="card pg-hub-games-card">

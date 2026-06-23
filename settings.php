@@ -250,6 +250,13 @@ if ($hassiteconfig) {
         get_string('settings_games_heading_desc', 'local_playergames')
     ));
 
+    $page3->add(new admin_setting_configcheckbox(
+        'local_playergames/enable_ranking',
+        get_string('settings_enable_ranking', 'local_playergames'),
+        get_string('settings_enable_ranking_desc', 'local_playergames'),
+        1
+    ));
+
     $page3->add(new admin_setting_configtext(
         'local_playergames/wordle_minlen',
         get_string('settings_wordle_minlen', 'local_playergames'),

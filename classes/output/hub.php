@@ -126,17 +126,25 @@ class hub implements renderable, templatable {
         $checkinmax   = $checkindaily > 0 ? intdiv($checkincap, $checkindaily) : 0;
         $checkindone  = $this->get_season_checkins($season, $checkinmax);
 
-        $showbothtabs     = $this->isadmin || ($this->allowed === 'both' && $this->isstaff);
+        // Ranking is on by default; an admin can disable it so players only see
+        // their own score. Treat an unset value (never saved) as enabled.
+        $rankingsetting = get_config('local_playergames', 'enable_ranking');
+        $rankingenabled = ($rankingsetting === false) ? true : (bool) $rankingsetting;
+
+        $showbothtabs     = $rankingenabled
+            && ($this->isadmin || ($this->allowed === 'both' && $this->isstaff));
         $studentranking   = [];
         $staffranking     = [];
 
-        if ($showbothtabs) {
-            $studentranking = $this->get_ranking($season->id, $staffids, false);
-            $staffranking   = $this->get_ranking($season->id, $staffids, true);
-        } else if ($this->isstaff) {
-            $staffranking = $this->get_ranking($season->id, $staffids, true);
-        } else {
-            $studentranking = $this->get_ranking($season->id, $staffids, false);
+        if ($rankingenabled) {
+            if ($showbothtabs) {
+                $studentranking = $this->get_ranking($season->id, $staffids, false);
+                $staffranking   = $this->get_ranking($season->id, $staffids, true);
+            } else if ($this->isstaff) {
+                $staffranking = $this->get_ranking($season->id, $staffids, true);
+            } else {
+                $studentranking = $this->get_ranking($season->id, $staffids, false);
+            }
         }
 
         $selfinstudents = $this->find_self_rank($studentranking);
@@ -170,6 +178,7 @@ class hub implements renderable, templatable {
             'checkin_max'        => $checkinmax,
             'hascheckin'         => $checkinmax > 0,
             'str_checkins'       => get_string('hub_checkins', 'local_playergames'),
+            'rankingenabled'     => $rankingenabled,
             'showinranking'      => (bool) $profile->showinranking,
             'sesskey'            => sesskey(),
             'formaction'         => (new moodle_url('/local/playergames/hub.php'))->out(false),
