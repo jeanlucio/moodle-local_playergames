@@ -28,6 +28,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\quiz_loader;
+use local_playergames\games\quiz_settings;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
@@ -50,14 +51,7 @@ if (data_submitted()) {
         // quiz stays locked until it elapses. No XP and no daily play is spent.
         header('Content-Type: application/json');
 
-        $cooldownminutes = (int) get_config('local_playergames', 'quiz_cooldown_minutes');
-        if ($cooldownminutes > 0) {
-            set_user_preference(
-                'local_playergames_quizcooldown',
-                time() + $cooldownminutes * 60,
-                $USER->id
-            );
-        }
+        (new quiz_settings())->start_cooldown((int) $USER->id);
 
         echo json_encode(['success' => true]);
         exit;
@@ -114,16 +108,14 @@ if ($activeseason !== null) {
 $alreadyplayed = $remaining <= 0;
 
 // Gameplay rules configured by the admin (read live so changes apply at once).
-$secondscfg      = get_config('local_playergames', 'quiz_question_seconds');
-$questionseconds = ($secondscfg === false || $secondscfg === '') ? 120 : max(0, (int) $secondscfg);
-$maxattempts     = max(0, (int) get_config('local_playergames', 'quiz_max_attempts'));
-$cooldownminutes = max(0, (int) get_config('local_playergames', 'quiz_cooldown_minutes'));
-$sizecfg         = get_config('local_playergames', 'quiz_session_size');
-$sessionsize     = ((int) $sizecfg) > 0 ? (int) $sizecfg : 20;
+$settings        = new quiz_settings();
+$questionseconds = $settings->question_seconds();
+$maxattempts     = $settings->max_attempts();
+$cooldownminutes = $settings->cooldown_minutes();
+$sessionsize     = $settings->session_size();
 
 // Cooldown lock: set when the player previously ran out of attempts.
-$cooldownuntil     = (int) get_user_preferences('local_playergames_quizcooldown', 0, $USER->id);
-$cooldownremaining = $cooldownuntil - time();
+$cooldownremaining = $settings->cooldown_remaining((int) $USER->id);
 $cooldownactive    = !$alreadyplayed && $cooldownremaining > 0;
 
 $questions   = [];
