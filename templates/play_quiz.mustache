@@ -20,6 +20,8 @@
         "str_completed": "Correct!",
         "str_attempt": "Attempt",
         "str_time_left": "Time left",
+        "str_continue": "Continue",
+        "str_view_result": "View result",
         "str_failed": "Out of attempts",
         "str_failed_msg": "You ran out of attempts. Head back to the Hub and try again.",
         "str_result_xp": "XP earned:",
@@ -102,27 +104,36 @@
         </div>
         {{/questions}}
 
-        <div id="pg-quiz-result" class="d-none">
-            <div class="card border-0 shadow-sm text-center p-4">
-                <h3 class="mb-3">
-                    <i class="fa fa-star text-warning me-2" aria-hidden="true"></i>
-                    {{str_completed}}
-                </h3>
+        <div id="pg-quiz-continue-wrap" class="d-none text-center mt-3">
+            <button type="button" id="pg-quiz-continue" class="btn btn-primary">
+                {{str_continue}}
+            </button>
+        </div>
+
+        <div id="pg-quiz-endactions" class="d-none text-center mt-4">
+            <button type="button" id="pg-quiz-view-result"
+                    class="btn btn-outline-primary me-2">
+                {{str_view_result}}
+            </button>
+            <a href="{{huburl}}" class="btn btn-primary">{{str_back_to_hub}}</a>
+        </div>
+
+        {{! Modal source blocks (hidden); the JS hoists their content into core/modal. }}
+        <div id="pg-quiz-result" class="d-none" data-title="{{str_completed}}">
+            <div class="text-center p-2">
+                <i class="fa fa-star text-warning fa-2x mb-2" aria-hidden="true"></i>
                 <p class="text-success fw-bold fs-4">
                     {{str_result_xp}} <span id="pg-quiz-xp-count">…</span>
                 </p>
-                <a href="{{huburl}}" class="btn btn-primary mt-3">{{str_back_to_hub}}</a>
+                <a href="{{huburl}}" class="btn btn-primary mt-2">{{str_back_to_hub}}</a>
             </div>
         </div>
 
-        <div id="pg-quiz-failed" class="d-none">
-            <div class="card border-0 shadow-sm text-center p-4">
-                <h3 class="mb-3">
-                    <i class="fa fa-circle-xmark text-danger me-2" aria-hidden="true"></i>
-                    {{str_failed}}
-                </h3>
+        <div id="pg-quiz-failed" class="d-none" data-title="{{str_failed}}">
+            <div class="text-center p-2">
+                <i class="fa fa-circle-xmark text-danger fa-2x mb-2" aria-hidden="true"></i>
                 <p class="text-muted">{{str_failed_msg}}</p>
-                <a href="{{huburl}}" class="btn btn-primary mt-3">{{str_back_to_hub}}</a>
+                <a href="{{huburl}}" class="btn btn-primary mt-2">{{str_back_to_hub}}</a>
             </div>
         </div>
 
