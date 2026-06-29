@@ -54,7 +54,8 @@ class ai_generator {
         string $context = ''
     ): array {
         $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames, $context);
-        $result = $this->call_api('', $prompt, true, $topic);
+        $description = get_string('cartridge_ai_usage_concepts', 'local_playergames', $topic);
+        $result = $this->call_api('', $prompt, true, $description);
         if (!$result['success']) {
             if (empty($result['message'])) {
                 throw new \moodle_exception('error_no_ai_key', 'local_playergames');

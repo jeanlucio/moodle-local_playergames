@@ -62,7 +62,8 @@ class quiz_generator extends ai_generator {
             $categorynames,
             $context
         );
-        $result = $this->call_api('', $prompt, true, $topic);
+        $description = get_string('cartridge_ai_usage_quiz', 'local_playergames', $topic);
+        $result = $this->call_api('', $prompt, true, $description);
         if (!$result['success']) {
             return [];
         }
@@ -320,6 +321,7 @@ class quiz_generator extends ai_generator {
 
         $batches = array_chunk(array_values($concepts), 10);
         $total = 0;
+        $description = get_string('cartridge_ai_usage_quiz', 'local_playergames', $cartridge->name);
 
         foreach ($batches as $batch) {
             $batchbyid = [];
@@ -328,7 +330,7 @@ class quiz_generator extends ai_generator {
             }
 
             $prompt = $this->build_quiz_prompt($batch, $language);
-            $result = $this->call_api('', $prompt, true, $cartridge->name);
+            $result = $this->call_api('', $prompt, true, $description);
 
             if (!$result['success']) {
                 continue;
