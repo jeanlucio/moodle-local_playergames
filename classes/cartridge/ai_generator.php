@@ -54,7 +54,7 @@ class ai_generator {
         string $context = ''
     ): array {
         $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames, $context);
-        $result = $this->call_api('', $prompt, true);
+        $result = $this->call_api('', $prompt, true, $topic);
         if (!$result['success']) {
             if (empty($result['message'])) {
                 throw new \moodle_exception('error_no_ai_key', 'local_playergames');
@@ -186,13 +186,14 @@ class ai_generator {
      * @param string $system System instruction (may be empty).
      * @param string $user User prompt text.
      * @param bool $jsonmode Whether to request structured JSON output.
+     * @param string $description Short label of what is being generated, for the hub usage log.
      * @return array Result with keys: success (bool), data (string), message (string), provider (string).
      */
-    protected function call_api(string $system, string $user, bool $jsonmode): array {
+    protected function call_api(string $system, string $user, bool $jsonmode, string $description = ''): array {
         $lasterror = ['success' => false, 'message' => '', 'data' => '', 'provider' => ''];
 
         if (class_exists(\local_aihub\ai::class)) {
-            $result = \local_aihub\ai::generate_text($system, $user, $jsonmode, 'local_playergames');
+            $result = \local_aihub\ai::generate_text($system, $user, $jsonmode, 'local_playergames', $description);
             if (!empty($result['success'])) {
                 return $result;
             }

@@ -62,7 +62,7 @@ class quiz_generator extends ai_generator {
             $categorynames,
             $context
         );
-        $result = $this->call_api('', $prompt, true);
+        $result = $this->call_api('', $prompt, true, $topic);
         if (!$result['success']) {
             return [];
         }
@@ -328,7 +328,7 @@ class quiz_generator extends ai_generator {
             }
 
             $prompt = $this->build_quiz_prompt($batch, $language);
-            $result = $this->call_api('', $prompt, true);
+            $result = $this->call_api('', $prompt, true, $cartridge->name);
 
             if (!$result['success']) {
                 continue;
