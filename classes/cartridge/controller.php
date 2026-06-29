@@ -392,6 +392,7 @@ class controller {
             'action_url'          => (new \moodle_url($baseurl))->out(false),
             'sesskey'             => sesskey(),
             'has_ai_key'          => $gen->has_key(),
+            'aihub_installed'     => class_exists(\local_aihub\ai::class),
             'subtab_concepts'     => $this->aisubtab === 'concepts',
             'subtab_quiz'         => $this->aisubtab === 'quiz',
             // Concepts sub-tab.

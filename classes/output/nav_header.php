@@ -46,7 +46,7 @@ class nav_header implements renderable, templatable {
     /**
      * Constructor.
      *
-     * @param string $active Key of the current page (hub, achievements, engmeter, ecosystem, mykeys).
+     * @param string $active Key of the current page (hub, achievements, engmeter, ecosystem).
      */
     public function __construct(string $active) {
         $this->active = $active;
@@ -87,7 +87,6 @@ class nav_header implements renderable, templatable {
         }
         if ($staff) {
             $items[] = $this->item('ecosystem', 'fa-diagram-project', 'nav_ecosystem', '/local/playergames/dashboard.php');
-            $items[] = $this->item('mykeys', 'fa-key', 'dashboard_card_mykeys', '/local/playergames/mykeys.php');
         }
 
         return [

@@ -66,9 +66,7 @@ class quiz_generator extends ai_generator {
         if (!$result['success']) {
             return [];
         }
-        $questions = $this->parse_standalone_response($result['data']);
-        $this->log_usage($result['provider'] ?? '', $result['model'] ?? '', $topic, count($questions));
-        return $questions;
+        return $this->parse_standalone_response($result['data']);
     }
 
     /**

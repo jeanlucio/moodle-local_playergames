@@ -784,5 +784,27 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062210, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026062900) {
+        // AI moved to the local_aihub plugin: drop the local AI log, settings and key preferences.
+        $table = new xmldb_table('local_playergames_ai_log');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+
+        foreach (['gemini_key', 'groq_key', 'openai_key', 'openai_baseurl', 'openai_model'] as $name) {
+            unset_config($name, 'local_playergames');
+        }
+
+        $DB->delete_records_select(
+            'user_preferences',
+            $DB->sql_like('name', ':keypattern'),
+            ['keypattern' => 'local_playergames_%_key']
+        );
+        $DB->delete_records('user_preferences', ['name' => 'local_playergames_openai_url']);
+        $DB->delete_records('user_preferences', ['name' => 'local_playergames_openai_model']);
+
+        upgrade_plugin_savepoint(true, 2026062900, 'local', 'playergames');
+    }
+
     return true;
 }

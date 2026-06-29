@@ -8,6 +8,7 @@
         "action_url": "/local/playergames/cartridge.php",
         "sesskey": "abc123",
         "has_ai_key": true,
+        "aihub_installed": true,
         "subtab_concepts": true,
         "subtab_quiz": false,
         "has_ai_error": false,
@@ -59,7 +60,10 @@
     {{^has_ai_key}}
     <div class="alert alert-warning d-flex align-items-center" role="alert">
         <i class="fa fa-exclamation-triangle fa-lg me-3" aria-hidden="true"></i>
-        <div>{{#str}}cartridge_ai_nokey, local_playergames{{/str}}</div>
+        <div>
+            {{#aihub_installed}}{{#str}}cartridge_ai_nokey, local_playergames{{/str}}{{/aihub_installed}}
+            {{^aihub_installed}}{{#str}}cartridge_ai_nohub, local_playergames{{/str}}{{/aihub_installed}}
+        </div>
     </div>
     {{/has_ai_key}}
 

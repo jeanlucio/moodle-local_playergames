@@ -55,7 +55,6 @@ class provider implements
         'local_playergames_battle_scores',
         'local_playergames_mission_progress',
         'local_playergames_user_achievements',
-        'local_playergames_ai_log',
     ];
 
     /**
@@ -132,15 +131,6 @@ class provider implements
             'timecreated'   => 'privacy:metadata:local_playergames_user_achievements:timecreated',
         ], 'privacy:metadata:local_playergames_user_achievements');
 
-        $collection->add_database_table('local_playergames_ai_log', [
-            'userid'       => 'privacy:metadata:local_playergames_ai_log:userid',
-            'provider'     => 'privacy:metadata:local_playergames_ai_log:provider',
-            'model'        => 'privacy:metadata:local_playergames_ai_log:model',
-            'topic'        => 'privacy:metadata:local_playergames_ai_log:topic',
-            'conceptcount' => 'privacy:metadata:local_playergames_ai_log:conceptcount',
-            'timecreated'  => 'privacy:metadata:local_playergames_ai_log:timecreated',
-        ], 'privacy:metadata:local_playergames_ai_log');
-
         $collection->add_database_table('local_playergames_cartridges', [
             'uploadedby' => 'privacy:metadata:local_playergames_cartridges:uploadedby',
         ], 'privacy:metadata:local_playergames_cartridges');
@@ -150,34 +140,9 @@ class provider implements
             'privacy:pref_gamification'
         );
         $collection->add_user_preference(
-            'local_playergames_gemini_key',
-            'privacy:pref_gemini_key'
-        );
-        $collection->add_user_preference(
-            'local_playergames_groq_key',
-            'privacy:pref_groq_key'
-        );
-        $collection->add_user_preference(
-            'local_playergames_openai_key',
-            'privacy:pref_openai_key'
-        );
-        $collection->add_user_preference(
-            'local_playergames_openai_url',
-            'privacy:pref_openai_url'
-        );
-        $collection->add_user_preference(
-            'local_playergames_openai_model',
-            'privacy:pref_openai_model'
-        );
-        $collection->add_user_preference(
             'local_playergames_quizcooldown',
             'privacy:pref_quizcooldown'
         );
-
-        $aifields = ['content' => 'privacy:external_ai_content'];
-        $collection->add_external_location_link('google_gemini', $aifields, 'privacy:external_gemini');
-        $collection->add_external_location_link('groq', $aifields, 'privacy:external_groq');
-        $collection->add_external_location_link('openai', $aifields, 'privacy:external_openai');
 
         return $collection;
     }
@@ -366,34 +331,10 @@ class provider implements
      */
     public static function export_user_preferences(int $userid): void {
         $prefs = [
-            'local_playergames_gemini_key' => 'privacy:pref_gemini_key',
-            'local_playergames_groq_key'   => 'privacy:pref_groq_key',
-            'local_playergames_openai_key' => 'privacy:pref_openai_key',
-        ];
-
-        foreach ($prefs as $prefname => $stringkey) {
-            $value = get_user_preferences($prefname, null, $userid);
-            if ($value !== null) {
-                writer::with_context(
-                    context_system::instance()
-                )->export_user_preference(
-                    'local_playergames',
-                    $prefname,
-                    // Export only the presence of a key, never its value.
-                    get_string('privacy:pref_key_set', 'local_playergames'),
-                    get_string($stringkey, 'local_playergames')
-                );
-            }
-        }
-
-        // The endpoint URL and model are not sensitive, so export their values.
-        $plainprefs = [
-            'local_playergames_openai_url'   => 'privacy:pref_openai_url',
-            'local_playergames_openai_model' => 'privacy:pref_openai_model',
             'local_playergames_gamification' => 'privacy:pref_gamification',
             'local_playergames_quizcooldown' => 'privacy:pref_quizcooldown',
         ];
-        foreach ($plainprefs as $prefname => $stringkey) {
+        foreach ($prefs as $prefname => $stringkey) {
             $value = get_user_preferences($prefname, null, $userid);
             if ($value !== null) {
                 writer::with_context(

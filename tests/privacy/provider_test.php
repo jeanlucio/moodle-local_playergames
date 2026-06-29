@@ -202,20 +202,17 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $this->assertTrue($DB->record_exists('local_playergames_player_profile', ['userid' => $b->id]));
     }
 
-    public function test_export_user_preferences_exports_key_presence_only(): void {
+    public function test_export_user_preferences(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
-        set_user_preference('local_playergames_gemini_key', 'super-secret-value', $user);
+        set_user_preference('local_playergames_gamification', '0', $user);
 
         provider::export_user_preferences((int) $user->id);
 
         $writer = writer::with_context(\context_system::instance());
         $this->assertTrue($writer->has_any_data());
         $prefs = $writer->get_user_preferences('local_playergames');
-        $this->assertObjectHasProperty('local_playergames_gemini_key', $prefs);
-        $this->assertStringNotContainsString(
-            'super-secret-value',
-            $prefs->local_playergames_gemini_key->value
-        );
+        $this->assertObjectHasProperty('local_playergames_gamification', $prefs);
+        $this->assertSame('0', $prefs->local_playergames_gamification->value);
     }
 }
