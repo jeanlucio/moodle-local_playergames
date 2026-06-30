@@ -41,12 +41,8 @@ use stdClass;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class learning_xp_manager {
-    /**
-     * @var string Cache key prefix for the learning ranking lists (season-agnostic).
-     * Suffixed with '_students' or '_staff' by the hub renderable, mirroring the
-     * season ranking's per-group cache keys.
-     */
-    public const RANKING_CACHE_KEY = 'learning';
+    /** @var string Cache key for the learning ranking list (single, season-agnostic list). */
+    public const RANKING_CACHE_KEY = 'learning_students';
 
     /**
      * Returns the configured window length in months (0 = unlimited).
@@ -184,32 +180,28 @@ class learning_xp_manager {
     }
 
     /**
-     * Returns a user's 1-based learning-ranking position within a participant
-     * group, counting only opted-in users (showinranking = 1, windowedxp > 0
-     * on student_xp_cache) ahead of them.
+     * Returns a user's 1-based learning-ranking position, counting only
+     * opted-in users (showinranking = 1 on student_xp_cache) ahead of them.
      *
      * Mirrors the ORDER BY of the learning ranking (windowedxp DESC,
-     * timemodified ASC, userid ASC) and the role split of
-     * xp_manager::get_season_position(). The user never counts themselves.
-     * Used to show the position of someone who opted in but falls outside the
-     * loaded top-50 list. A single indexed COUNT — no full-table sort.
+     * timemodified ASC, userid ASC). The user never counts themselves. Used to
+     * show the position of someone who opted in but falls outside the loaded
+     * top-50 list. A single indexed COUNT — no full-table sort.
      *
-     * @param int   $userid User whose position is wanted.
-     * @param int   $mywindowedxp The user's windowed learning XP.
-     * @param int   $mytimemodified The user's cache row timemodified (tie-break).
-     * @param int[] $staffids Staff user IDs used to split the ranking by group.
-     * @param bool  $wantstaff True to rank within staff; false within students.
-     * @return int 1-based position, or 0 when the requested group has no ranking.
+     * @param int $userid User whose position is wanted.
+     * @param int $mywindowedxp The user's windowed learning XP.
+     * @param int $mytimemodified The user's cache row timemodified (tie-break).
+     * @return int 1-based position.
      */
-    public static function get_position(
-        int $userid,
-        int $mywindowedxp,
-        int $mytimemodified,
-        array $staffids,
-        bool $wantstaff
-    ): int {
+    public static function get_position(int $userid, int $mywindowedxp, int $mytimemodified): int {
         global $DB;
 
+        $sql = "SELECT COUNT(1)
+                  FROM {local_playergames_student_xp_cache} c
+                 WHERE c.showinranking = 1
+                   AND (c.windowedxp > :xpgt
+                        OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
+                        OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";
         $params = [
             'xpgt'     => $mywindowedxp,
             'xpeq1'    => $mywindowedxp,
@@ -218,30 +210,12 @@ class learning_xp_manager {
             'tmeq'     => $mytimemodified,
             'myuserid' => $userid,
         ];
-        $filter = '';
-
-        if (!empty($staffids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal($staffids, SQL_PARAMS_NAMED, 'uid', $wantstaff);
-            $params = array_merge($params, $inparams);
-            $filter = "AND c.userid {$insql}";
-        } else if ($wantstaff) {
-            return 0;
-        }
-
-        $sql = "SELECT COUNT(1)
-                  FROM {local_playergames_student_xp_cache} c
-                 WHERE c.showinranking = 1
-                   AND c.windowedxp > 0
-                   {$filter}
-                   AND (c.windowedxp > :xpgt
-                        OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
-                        OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";
 
         return (int) $DB->count_records_sql($sql, $params) + 1;
     }
 
     /**
-     * Deletes both cached learning ranking lists (students and staff).
+     * Deletes the cached learning ranking list.
      *
      * Called after every learning XP change or visibility toggle, so the
      * ranking reflects the latest state within the 60-second TTL window.
@@ -249,9 +223,7 @@ class learning_xp_manager {
      * @return void
      */
     private static function invalidate_ranking_cache(): void {
-        $cache = cache::make('local_playergames', 'ranking');
-        $cache->delete(self::RANKING_CACHE_KEY . '_students');
-        $cache->delete(self::RANKING_CACHE_KEY . '_staff');
+        cache::make('local_playergames', 'ranking')->delete(self::RANKING_CACHE_KEY);
     }
 
     /**
