@@ -256,6 +256,24 @@ class xp_manager {
     }
 
     /**
+     * Sets the current user's ranking visibility for a season and refreshes
+     * the affected ranking cache.
+     *
+     * @param int  $userid User id.
+     * @param int  $seasonid Season id.
+     * @param bool $show Whether the user should appear in the ranking.
+     * @return void
+     */
+    public static function set_ranking_visibility(int $userid, int $seasonid, bool $show): void {
+        global $DB;
+        $profile = self::get_or_create_profile($userid, $seasonid);
+        $profile->showinranking = $show ? 1 : 0;
+        $profile->timemodified  = time();
+        $DB->update_record('local_playergames_player_profile', $profile);
+        self::invalidate_ranking_cache($seasonid);
+    }
+
+    /**
      * Deletes the cached ranking entry for a season.
      *
      * Called after every XP award so the ranking reflects the latest state

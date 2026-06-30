@@ -30,6 +30,7 @@ use moodle_url;
 use renderable;
 use renderer_base;
 use templatable;
+use local_playergames\hub\avatar_manager;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\level_manager;
 use local_playergames\hub\mission_manager;
@@ -171,6 +172,13 @@ class hub implements renderable, templatable {
             ? get_string('hub_your_position', 'local_playergames', $selfposition)
             : '';
 
+        // Avatar collection: equip value is empty for the equipped one (click = unequip).
+        $equippedavatar = avatar_manager::get_equipped($this->userid);
+        $avatars = array_map(static function (array $a): array {
+            $a['equipvalue'] = $a['equipped'] ? '' : $a['emoji'];
+            return $a;
+        }, avatar_manager::get_collection($this->userid));
+
         $seasonlabel = get_string('hub_season_label', 'local_playergames');
         $seasonname  = format_string($season->name);
         // Auto-generated names are "Season N", which next to the "Season:" label
@@ -212,6 +220,12 @@ class hub implements renderable, templatable {
             'selfinstudents'     => $selfinstudents,
             'selfinstaff'        => $selfinstaff,
             'str_your_position'  => $strselfposition,
+            'avatars'            => $avatars,
+            'equippedavatar'     => $equippedavatar,
+            'hasequippedavatar'  => $equippedavatar !== '',
+            'str_avatars'        => get_string('hub_avatars_section', 'local_playergames'),
+            'str_avatars_hint'   => get_string('hub_avatars_hint', 'local_playergames'),
+            'str_avatar_locked'  => get_string('hub_avatar_locked', 'local_playergames'),
             'missions'               => $missions,
             'hasmissions'            => !empty($missions),
             'str_freeze_reward_title' => get_string('mission_freeze_reward_title', 'local_playergames'),

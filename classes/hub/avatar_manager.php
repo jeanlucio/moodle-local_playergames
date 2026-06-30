@@ -205,4 +205,47 @@ class avatar_manager {
         $state->timemodified    = time();
         $DB->update_record('local_playergames_player_avatars', $state);
     }
+
+    /**
+     * Returns the equipped avatar emoji for a user (empty when none). Read-only.
+     *
+     * @param int $userid User id.
+     * @return string Equipped emoji, or '' when none.
+     */
+    public static function get_equipped(int $userid): string {
+        global $DB;
+        $state = $DB->get_record('local_playergames_player_avatars', ['userid' => $userid]);
+        return ($state && $state->equipped_avatar) ? (string) $state->equipped_avatar : '';
+    }
+
+    /**
+     * Returns the catalog annotated for a user. Read-only (no row creation).
+     *
+     * Each entry: emoji, name, tier, requiredlevel, and the unlocked/equipped
+     * booleans based on the user's lifetime best level.
+     *
+     * @param int $userid User id.
+     * @return array<int, array{emoji: string, name: string, tier: int,
+     *     requiredlevel: int, unlocked: bool, equipped: bool}>
+     */
+    public static function get_collection(int $userid): array {
+        global $DB;
+        $state     = $DB->get_record('local_playergames_player_avatars', ['userid' => $userid]);
+        $bestlevel = $state ? (int) $state->bestlevel : 1;
+        $equipped  = ($state && $state->equipped_avatar) ? (string) $state->equipped_avatar : '';
+
+        $collection = [];
+        foreach (self::get_avatars() as $avatar) {
+            $required     = self::tier_threshold((int) $avatar->tier);
+            $collection[] = [
+                'emoji'         => $avatar->emoji,
+                'name'          => $avatar->name,
+                'tier'          => (int) $avatar->tier,
+                'requiredlevel' => $required,
+                'unlocked'      => $bestlevel >= $required,
+                'equipped'      => $equipped !== '' && $equipped === $avatar->emoji,
+            ];
+        }
+        return $collection;
+    }
 }

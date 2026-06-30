@@ -642,3 +642,28 @@ body.path-local-playergames .local-playergames-cartridge #pg-cartridge-tabs .nav
 body.path-local-playergames .badge.pg-season-badge {
     color: var(--bs-dark, #000);
 }
+
+body.path-local-playergames .pg-hub-avatar-grid {
+    gap: 0.5rem;
+}
+
+body.path-local-playergames .pg-hub-avatar-btn {
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0.35rem 0.5rem;
+}
+
+body.path-local-playergames .pg-hub-avatar-locked {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+body.path-local-playergames .pg-hub-avatar-reqlevel {
+    font-size: 0.7rem;
+    vertical-align: super;
+}
+
+body.path-local-playergames .pg-hub-avatar-current {
+    font-size: 1.75rem;
+    line-height: 1;
+}

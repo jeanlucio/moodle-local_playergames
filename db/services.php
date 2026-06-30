@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * External web service function definitions.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,9 +24,21 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_playergames';
-$plugin->version   = 2026063002;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.6';
+$functions = [
+    'local_playergames_set_avatar' => [
+        'classname'   => 'local_playergames\external\set_avatar',
+        'methodname'  => 'execute',
+        'description' => 'Equip or unequip an avatar for the current user.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'capabilities' => 'local/playergames:viewhub',
+    ],
+    'local_playergames_set_ranking_visibility' => [
+        'classname'   => 'local_playergames\external\set_ranking_visibility',
+        'methodname'  => 'execute',
+        'description' => 'Set whether the current user appears in the ranking.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'capabilities' => 'local/playergames:viewhub',
+    ],
+];

@@ -51,23 +51,7 @@ if ($allowed === 'staff' && !$isstaff) {
     throw new moodle_exception('hub_access_restricted', 'local_playergames');
 }
 
-// POST handler: toggle "appear in ranking".
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_sesskey();
-    $season = \local_playergames\hub\season_manager::get_active();
-    if ($season) {
-        $show    = optional_param('showinranking', 0, PARAM_INT);
-        $profile = \local_playergames\hub\xp_manager::get_or_create_profile($USER->id, $season->id);
-        $profile->showinranking  = $show ? 1 : 0;
-        $profile->timemodified   = time();
-        $DB->update_record('local_playergames_player_profile', $profile);
-
-        $cache    = cache::make('local_playergames', 'ranking');
-        $suffix   = $isstaff ? 'staff' : 'students';
-        $cache->delete('season_' . $season->id . '_' . $suffix);
-    }
-    redirect(new moodle_url('/local/playergames/hub.php'));
-}
+// Ranking visibility and avatar equip are handled via AJAX (see amd/src/hub.js).
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/hub.php'));

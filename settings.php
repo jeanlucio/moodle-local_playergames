@@ -153,6 +153,30 @@ if ($hassiteconfig) {
 
     $ADMIN->add('playergames_settings', $pagexp);
 
+    // Avatars: minimum level to unlock each tier.
+    $pageavatars = new admin_settingpage(
+        'local_playergames_avatars',
+        get_string('settings_avatars_heading', 'local_playergames')
+    );
+
+    $pageavatars->add(new admin_setting_heading(
+        'local_playergames/avatars_heading',
+        get_string('settings_avatars_heading', 'local_playergames'),
+        get_string('settings_avatars_heading_desc', 'local_playergames')
+    ));
+
+    foreach ([1 => 1, 2 => 5, 3 => 10, 4 => 20] as $tier => $defaultlevel) {
+        $pageavatars->add(new admin_setting_configtext(
+            'local_playergames/avatar_tier' . $tier . '_level',
+            get_string('settings_avatar_tier_level', 'local_playergames', $tier),
+            get_string('settings_avatar_tier_level_desc', 'local_playergames', $tier),
+            (string) $defaultlevel,
+            PARAM_INT
+        ));
+    }
+
+    $ADMIN->add('playergames_settings', $pageavatars);
+
     // Streak and freeze.
     $pagestreak = new admin_settingpage(
         'local_playergames_streak',

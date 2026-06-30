@@ -116,6 +116,15 @@
         "str_invite": "You have not joined the ranking yet.",
         "str_join": "Join the ranking",
         "str_your_position": "Your position: 87",
+        "str_avatars": "Avatars",
+        "str_avatars_hint": "Reach higher levels to unlock more avatars.",
+        "str_avatar_locked": "Locked",
+        "equippedavatar": "🤖",
+        "hasequippedavatar": true,
+        "avatars": [
+            {"emoji": "🤖", "name": "Robot", "requiredlevel": 1, "unlocked": true, "equipped": true, "equipvalue": ""},
+            {"emoji": "🐉", "name": "Dragon", "requiredlevel": 20, "unlocked": false, "equipped": false, "equipvalue": "🐉"}
+        ],
         "hasfreezelog": true,
         "str_freeze_log": "Freeze history",
         "freezelog": [
@@ -213,20 +222,15 @@
                     {{/hasfreezelog}}
 
                     {{#rankingenabled}}
-                    <form method="post" action="{{formaction}}" class="mt-3">
-                        <input type="hidden" name="sesskey" value="{{sesskey}}">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox"
-                                id="pg-showinranking"
-                                name="showinranking"
-                                value="1"
-                                {{#showinranking}}checked{{/showinranking}}
-                                onchange="this.form.submit()">
-                            <label class="form-check-label" for="pg-showinranking">
-                                {{str_showinranking}}
-                            </label>
-                        </div>
-                    </form>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox"
+                            id="pg-showinranking"
+                            data-ranking-visibility
+                            {{#showinranking}}checked{{/showinranking}}>
+                        <label class="form-check-label" for="pg-showinranking">
+                            {{str_showinranking}}
+                        </label>
+                    </div>
                     {{/rankingenabled}}
                 </div>
             </div>
@@ -281,6 +285,42 @@
                 </div>
             </div>
             {{/hasmissions}}
+
+            {{! Avatars }}
+            <div class="card pg-hub-avatars-card mt-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0">
+                        <i class="fa fa-user-astronaut me-2" aria-hidden="true"></i>{{str_avatars}}
+                    </h5>
+                    <span class="pg-hub-avatar-current" aria-hidden="true">{{equippedavatar}}</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap pg-hub-avatar-grid">
+                        {{#avatars}}
+                        {{#unlocked}}
+                        <button type="button"
+                            class="btn pg-hub-avatar-btn {{#equipped}}btn-primary{{/equipped}}{{^equipped}}btn-outline-secondary{{/equipped}}"
+                            data-avatar-emoji="{{emoji}}"
+                            data-avatar-equip="{{equipvalue}}"
+                            aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
+                            title="{{name}}"
+                            aria-label="{{name}}">
+                            <span aria-hidden="true">{{emoji}}</span>
+                        </button>
+                        {{/unlocked}}
+                        {{^unlocked}}
+                        <span class="btn pg-hub-avatar-btn pg-hub-avatar-locked disabled"
+                            title="{{str_avatar_locked}} — {{str_level}} {{requiredlevel}}"
+                            aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
+                            <span aria-hidden="true">🔒</span>
+                            <small class="pg-hub-avatar-reqlevel">{{requiredlevel}}</small>
+                        </span>
+                        {{/unlocked}}
+                        {{/avatars}}
+                    </div>
+                    <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
+                </div>
+            </div>
 
         </div>{{! end left column }}
 

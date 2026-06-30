@@ -117,4 +117,26 @@ final class avatar_manager_test extends \advanced_testcase {
 
         $this->assertSame('🧝', avatar_manager::get_state((int) $user->id)->equipped_avatar);
     }
+
+    public function test_get_collection_flags_unlocked_and_equipped(): void {
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        avatar_manager::record_level($user, 10);
+        avatar_manager::equip($user, '🤖');
+
+        $byemoji = [];
+        foreach (avatar_manager::get_collection($user) as $row) {
+            $byemoji[$row['emoji']] = $row;
+        }
+
+        $this->assertCount(17, $byemoji);
+        // Tier 1 robot: unlocked and equipped.
+        $this->assertTrue($byemoji['🤖']['unlocked']);
+        $this->assertTrue($byemoji['🤖']['equipped']);
+        // Tier 3 elf: unlocked at level 10, not equipped.
+        $this->assertTrue($byemoji['🧝']['unlocked']);
+        $this->assertFalse($byemoji['🧝']['equipped']);
+        // Tier 4 dragon: still locked at level 10 (needs 20).
+        $this->assertFalse($byemoji['🐉']['unlocked']);
+    }
 }
