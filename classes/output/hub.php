@@ -188,18 +188,25 @@ class hub implements renderable, templatable {
         $learningranking         = [];
         $selfinlearning          = 0;
         $strlearningposition     = '';
+        $haslearningposition     = false;
+        $learningzeroxp          = false;
 
         if ($showlearningxp) {
             $learningcache          = learning_xp_manager::get_or_create_cache($this->userid);
             $learningxp             = (int) $learningcache->windowedxp;
             $learningshowinranking  = (bool) $learningcache->showinranking;
             $learningxprankingenabled = (bool) get_config('local_playergames', 'learningxpranking');
+            $learningzeroxp         = $learningxp <= 0;
 
             if ($learningxprankingenabled) {
                 $learningranking = $this->get_learning_ranking();
                 $selfinlearning  = $this->find_self_rank($learningranking);
 
-                if ($learningshowinranking && $selfinlearning === 0) {
+                // The ranking filters out windowedxp = 0 (inactive users never rank), so a
+                // user at 0 would never be found in $learningranking — but that is not the
+                // same as "ranked just outside the top 50". Only compute/show a position
+                // when they actually have XP; otherwise the count is meaningless.
+                if ($learningshowinranking && $learningxp > 0 && $selfinlearning === 0) {
                     $learningposition = learning_xp_manager::get_position(
                         $this->userid,
                         $learningxp,
@@ -207,6 +214,7 @@ class hub implements renderable, templatable {
                     );
                     if ($learningposition > 0) {
                         $strlearningposition = get_string('hub_your_position', 'local_playergames', $learningposition);
+                        $haslearningposition = true;
                     }
                 }
             }
@@ -274,12 +282,15 @@ class hub implements renderable, templatable {
             'learningranking'        => $learningranking,
             'haslearningranking'     => !empty($learningranking),
             'selfinlearning'         => $selfinlearning,
+            'haslearningposition'    => $haslearningposition,
+            'learningzeroxp'         => $learningzeroxp,
             'str_learning_position'  => $strlearningposition,
             'str_learningxp'         => get_string('hub_learningxp', 'local_playergames'),
             'str_learningxp_hint'    => get_string('hub_learningxp_hint', 'local_playergames'),
             'str_learningxp_ranking' => get_string('hub_learningxp_ranking_section', 'local_playergames'),
             'str_show_learningxpranking' => get_string('hub_show_learningxpranking', 'local_playergames'),
             'str_learningxp_invite'  => get_string('hub_learningxp_invite', 'local_playergames'),
+            'str_learningxp_zero'    => get_string('hub_learningxp_zero', 'local_playergames'),
             'sesskey'            => sesskey(),
             'formaction'         => (new moodle_url('/local/playergames/hub.php'))->out(false),
             'achievementsurl'    => (new moodle_url('/local/playergames/achievements.php'))->out(false),
@@ -412,103 +423,117 @@ class hub implements renderable, templatable {
 
         $cachekey = 'season_' . $seasonid . '_' . ($wantstaff ? 'staff' : 'students');
         $cache    = cache::make('local_playergames', 'ranking');
-        $cached   = $cache->get($cachekey);
-        if ($cached !== false) {
-            return $cached;
+        $ranking  = $cache->get($cachekey);
+
+        if ($ranking === false) {
+            $params = ['seasonid' => $seasonid];
+            $filter = '';
+
+            if (!empty($staffids)) {
+                [$insql, $inparams] = $DB->get_in_or_equal(
+                    $staffids,
+                    SQL_PARAMS_NAMED,
+                    'uid',
+                    $wantstaff
+                );
+                $params = array_merge($params, $inparams);
+                $filter = "AND p.userid {$insql}";
+            } else if ($wantstaff) {
+                // No staff users — staff ranking is empty.
+                $cache->set($cachekey, []);
+                return [];
+            }
+
+            $sql = "SELECT p.userid, p.xp, p.level,
+                           u.firstname, u.lastname,
+                           u.firstnamephonetic, u.lastnamephonetic,
+                           u.middlename, u.alternatename
+                      FROM {local_playergames_player_profile} p
+                      JOIN {user} u ON u.id = p.userid
+                     WHERE p.seasonid = :seasonid
+                       AND p.showinranking = 1
+                       {$filter}
+                  ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
+
+            $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
+            $ranking = [];
+            $pos     = 1;
+            foreach ($records as $r) {
+                $ranking[] = [
+                    'pos'    => $pos,
+                    'userid' => (int) $r->userid,
+                    'name'   => fullname($r),
+                    'xp'     => (int) $r->xp,
+                    'level'  => (int) $r->level,
+                    'extra'  => $pos > 10,
+                ];
+                $pos++;
+            }
+
+            $cache->set($cachekey, $ranking);
         }
 
-        $params = ['seasonid' => $seasonid];
-        $filter = '';
-
-        if (!empty($staffids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal(
-                $staffids,
-                SQL_PARAMS_NAMED,
-                'uid',
-                $wantstaff
-            );
-            $params = array_merge($params, $inparams);
-            $filter = "AND p.userid {$insql}";
-        } else if ($wantstaff) {
-            // No staff users — staff ranking is empty.
-            $cache->set($cachekey, []);
-            return [];
+        // Isself is viewer-dependent and must never be cached (the cache is shared by every
+        // visitor) — recompute it for the current viewer on every call, cache hit or not.
+        foreach ($ranking as &$row) {
+            $row['isself'] = ($row['userid'] === $this->userid);
         }
+        unset($row);
 
-        $sql = "SELECT p.userid, p.xp, p.level,
-                       u.firstname, u.lastname,
-                       u.firstnamephonetic, u.lastnamephonetic,
-                       u.middlename, u.alternatename
-                  FROM {local_playergames_player_profile} p
-                  JOIN {user} u ON u.id = p.userid
-                 WHERE p.seasonid = :seasonid
-                   AND p.showinranking = 1
-                   {$filter}
-              ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
-
-        $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
-        $ranking = [];
-        $pos     = 1;
-        foreach ($records as $r) {
-            $ranking[] = [
-                'pos'    => $pos,
-                'name'   => fullname($r),
-                'xp'     => (int) $r->xp,
-                'level'  => (int) $r->level,
-                'isself' => (int) $r->userid === $this->userid,
-                'extra'  => $pos > 10,
-            ];
-            $pos++;
-        }
-
-        $cache->set($cachekey, $ranking);
         return $ranking;
     }
 
     /**
      * Returns the learning XP ranking, using cache when available.
      *
-     * Single season-agnostic list (only students earn learning XP, so there is
-     * no staff variant). Filters out inactive users (windowedxp = 0) so they
-     * never occupy a top-50 slot, and reads the denormalized windowedxp column
-     * rather than aggregating live.
+     * Single list — no staff/student variant, since the ranking already filters
+     * by who actually earned learning XP rather than by role. Filters out
+     * inactive users (windowedxp = 0) so they never occupy a top-50 slot, and
+     * reads the denormalized windowedxp column rather than aggregating live.
      *
      * @return array
      */
     private function get_learning_ranking(): array {
         global $DB;
 
-        $cache  = cache::make('local_playergames', 'ranking');
-        $cached = $cache->get(learning_xp_manager::RANKING_CACHE_KEY);
-        if ($cached !== false) {
-            return $cached;
+        $cache   = cache::make('local_playergames', 'ranking');
+        $ranking = $cache->get(learning_xp_manager::RANKING_CACHE_KEY);
+
+        if ($ranking === false) {
+            $sql = "SELECT c.userid, c.windowedxp,
+                           u.firstname, u.lastname,
+                           u.firstnamephonetic, u.lastnamephonetic,
+                           u.middlename, u.alternatename
+                      FROM {local_playergames_student_xp_cache} c
+                      JOIN {user} u ON u.id = c.userid
+                     WHERE c.showinranking = 1
+                       AND c.windowedxp > 0
+                  ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
+
+            $records = $DB->get_records_sql($sql, [], 0, self::RANKING_LIMIT);
+            $ranking = [];
+            $pos     = 1;
+            foreach ($records as $r) {
+                $ranking[] = [
+                    'pos'    => $pos,
+                    'userid' => (int) $r->userid,
+                    'name'   => fullname($r),
+                    'xp'     => (int) $r->windowedxp,
+                    'extra'  => $pos > 10,
+                ];
+                $pos++;
+            }
+
+            $cache->set(learning_xp_manager::RANKING_CACHE_KEY, $ranking);
         }
 
-        $sql = "SELECT c.userid, c.windowedxp,
-                       u.firstname, u.lastname,
-                       u.firstnamephonetic, u.lastnamephonetic,
-                       u.middlename, u.alternatename
-                  FROM {local_playergames_student_xp_cache} c
-                  JOIN {user} u ON u.id = c.userid
-                 WHERE c.showinranking = 1
-                   AND c.windowedxp > 0
-              ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
-
-        $records = $DB->get_records_sql($sql, [], 0, self::RANKING_LIMIT);
-        $ranking = [];
-        $pos     = 1;
-        foreach ($records as $r) {
-            $ranking[] = [
-                'pos'    => $pos,
-                'name'   => fullname($r),
-                'xp'     => (int) $r->windowedxp,
-                'isself' => (int) $r->userid === $this->userid,
-                'extra'  => $pos > 10,
-            ];
-            $pos++;
+        // Isself is viewer-dependent and must never be cached (the cache is shared by every
+        // visitor) — recompute it for the current viewer on every call, cache hit or not.
+        foreach ($ranking as &$row) {
+            $row['isself'] = ($row['userid'] === $this->userid);
         }
+        unset($row);
 
-        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, $ranking);
         return $ranking;
     }
 

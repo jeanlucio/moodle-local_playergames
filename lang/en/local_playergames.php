@@ -248,6 +248,7 @@ $string['hub_learningxp'] = 'Learning XP';
 $string['hub_learningxp_hint'] = 'Earned from your course activity — separate from your season XP above.';
 $string['hub_learningxp_invite'] = 'You have not joined the learning ranking yet. Enable "Appear in learning ranking" in your profile to join.';
 $string['hub_learningxp_ranking_section'] = 'Learning Ranking';
+$string['hub_learningxp_zero'] = 'You have not earned any learning XP yet, so you are not ranked.';
 $string['hub_level'] = 'Level';
 $string['hub_missions_section'] = 'Active missions';
 $string['hub_no_cartridge'] = 'No active cartridge. Ask an administrator to upload one.';

@@ -248,6 +248,7 @@ $string['hub_learningxp'] = 'XP de aprendizado';
 $string['hub_learningxp_hint'] = 'Conquistado pela sua atividade nos cursos — separado do seu XP de temporada acima.';
 $string['hub_learningxp_invite'] = 'Você ainda não entrou no ranking de aprendizado. Ative "Aparecer no ranking de aprendizado" no seu perfil para participar.';
 $string['hub_learningxp_ranking_section'] = 'Ranking de Aprendizado';
+$string['hub_learningxp_zero'] = 'Você ainda não conquistou XP de aprendizado, então não está ranqueado.';
 $string['hub_level'] = 'Nível';
 $string['hub_missions_section'] = 'Missões ativas';
 $string['hub_no_cartridge'] = 'Nenhum cartucho ativo. Peça a um administrador para carregar um.';
