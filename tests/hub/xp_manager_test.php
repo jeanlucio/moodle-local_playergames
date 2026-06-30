@@ -184,4 +184,110 @@ final class xp_manager_test extends \advanced_testcase {
         );
         $this->assertNotEmpty($events);
     }
+
+    /**
+     * Inserts a player_profile row with explicit XP, opt-in and timemodified.
+     *
+     * @param int  $userid User id.
+     * @param int  $seasonid Season id.
+     * @param int  $xp Season XP.
+     * @param bool $showinranking Whether the user opted into the ranking.
+     * @param int  $timemodified Profile timemodified (used for tie-breaking).
+     * @return void
+     */
+    private function make_profile(
+        int $userid,
+        int $seasonid,
+        int $xp,
+        bool $showinranking,
+        int $timemodified
+    ): void {
+        global $DB;
+        $DB->insert_record('local_playergames_player_profile', (object) [
+            'userid' => $userid,
+            'seasonid' => $seasonid,
+            'xp' => $xp,
+            'level' => xp_manager::get_level($xp),
+            'showinranking' => $showinranking ? 1 : 0,
+            'timecreated' => $timemodified,
+            'timemodified' => $timemodified,
+        ]);
+    }
+
+    public function test_get_season_position_orders_by_xp(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $u1 = (int) $this->getDataGenerator()->create_user()->id;
+        $u2 = (int) $this->getDataGenerator()->create_user()->id;
+        $u3 = (int) $this->getDataGenerator()->create_user()->id;
+        $this->make_profile($u1, $seasonid, 300, true, $t);
+        $this->make_profile($u2, $seasonid, 200, true, $t);
+        $this->make_profile($u3, $seasonid, 100, true, $t);
+
+        $this->assertSame(1, xp_manager::get_season_position($u1, $seasonid, 300, $t, [], false));
+        $this->assertSame(2, xp_manager::get_season_position($u2, $seasonid, 200, $t, [], false));
+        $this->assertSame(3, xp_manager::get_season_position($u3, $seasonid, 100, $t, [], false));
+    }
+
+    public function test_get_season_position_excludes_optout(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $top = (int) $this->getDataGenerator()->create_user()->id;
+        $me  = (int) $this->getDataGenerator()->create_user()->id;
+        // A higher-XP user who opted out must not count ahead of me.
+        $this->make_profile($top, $seasonid, 999, false, $t);
+        $this->make_profile($me, $seasonid, 100, true, $t);
+
+        $this->assertSame(1, xp_manager::get_season_position($me, $seasonid, 100, $t, [], false));
+    }
+
+    public function test_get_season_position_tie_breaks_by_timemodified(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $early = (int) $this->getDataGenerator()->create_user()->id;
+        $late  = (int) $this->getDataGenerator()->create_user()->id;
+        // Same XP: whoever reached it earlier (smaller timemodified) ranks ahead.
+        $this->make_profile($early, $seasonid, 150, true, 1000);
+        $this->make_profile($late, $seasonid, 150, true, 2000);
+
+        $this->assertSame(1, xp_manager::get_season_position($early, $seasonid, 150, 1000, [], false));
+        $this->assertSame(2, xp_manager::get_season_position($late, $seasonid, 150, 2000, [], false));
+    }
+
+    public function test_get_season_position_tie_breaks_by_userid_when_same_time(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $first  = (int) $this->getDataGenerator()->create_user()->id;
+        $second = (int) $this->getDataGenerator()->create_user()->id;
+        // Same XP and same timemodified: lower userid is the final fallback.
+        $this->make_profile($first, $seasonid, 150, true, $t);
+        $this->make_profile($second, $seasonid, 150, true, $t);
+
+        $this->assertSame(1, xp_manager::get_season_position($first, $seasonid, 150, $t, [], false));
+        $this->assertSame(2, xp_manager::get_season_position($second, $seasonid, 150, $t, [], false));
+    }
+
+    public function test_get_season_position_splits_staff_and_students(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $staff   = (int) $this->getDataGenerator()->create_user()->id;
+        $student = (int) $this->getDataGenerator()->create_user()->id;
+        // Staff has more XP, but must not affect the student ranking.
+        $this->make_profile($staff, $seasonid, 900, true, $t);
+        $this->make_profile($student, $seasonid, 100, true, $t);
+        $staffids = [$staff];
+
+        $this->assertSame(1, xp_manager::get_season_position($student, $seasonid, 100, $t, $staffids, false));
+        $this->assertSame(1, xp_manager::get_season_position($staff, $seasonid, 900, $t, $staffids, true));
+    }
+
+    public function test_get_season_position_no_staff_returns_zero(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $this->assertSame(0, xp_manager::get_season_position(1, $seasonid, 0, 1000, [], true));
+    }
 }

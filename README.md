@@ -34,7 +34,7 @@
 * 🎮 **Player Hub — XP & Levels:** Site-wide XP across configurable seasons. Each mini-game awards a fixed amount of XP, and admins set how many scoring plays per day each game allows — XP is earned exclusively through gameplay, so teachers with different course loads and students enrolled in different numbers of courses all compete on equal footing.
 * 🪜 **Player Hub — Configurable Level Ladder:** Admins edit the per-level XP thresholds and titles from the Level Ladder page — restore the default 5-tier ladder or generate a longer linear progression with one click.
 * 📅 **Player Hub — Daily Check-in:** Earn XP just for visiting the hub once a day, capped per season. Optionally counts toward the daily streak.
-* 🏆 **Player Hub — Ranking:** Season ranking with privacy controls (opt-in), separated by participant group (students vs. non-students — teachers, managers, admins). Admins and managers see both groups via tabs.
+* 🏆 **Player Hub — Ranking:** Season ranking with privacy controls (opt-in), separated by participant group (students vs. non-students — teachers, managers, admins). Admins and managers see both groups via tabs. Players who rank outside the top 50 still see their own position, and ties are broken by who reached the XP first.
 * 🔥 **Player Hub — Streak & Freeze:** Daily streak tracking. Freeze consumables prevent streak loss and are earned via missions; the daily check-in can keep the streak alive when configured.
 * 🎯 **Player Hub — Missions:** Daily, streak-based, cumulative XP, and victory-based missions with configurable XP rewards.
 * 🏅 **Player Hub — Achievements:** Permanent achievements that persist across seasons.

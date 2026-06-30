@@ -150,6 +150,27 @@ class hub implements renderable, templatable {
         $selfinstudents = $this->find_self_rank($studentranking);
         $selfinstaff    = $this->find_self_rank($staffranking);
 
+        // When the user opted in but falls outside the loaded top-50, compute the
+        // exact position with a single indexed COUNT so they still see their rank.
+        $selfposition = 0;
+        if ($rankingenabled && (bool) $profile->showinranking) {
+            $wantstaff = $this->isstaff;
+            $selfintop = $wantstaff ? $selfinstaff : $selfinstudents;
+            if ($selfintop === 0) {
+                $selfposition = xp_manager::get_season_position(
+                    $this->userid,
+                    $season->id,
+                    (int) $profile->xp,
+                    (int) $profile->timemodified,
+                    $staffids,
+                    $wantstaff
+                );
+            }
+        }
+        $strselfposition = $selfposition > 0
+            ? get_string('hub_your_position', 'local_playergames', $selfposition)
+            : '';
+
         $seasonlabel = get_string('hub_season_label', 'local_playergames');
         $seasonname  = format_string($season->name);
         // Auto-generated names are "Season N", which next to the "Season:" label
@@ -190,6 +211,7 @@ class hub implements renderable, templatable {
             'hasstaffranking'    => !empty($staffranking),
             'selfinstudents'     => $selfinstudents,
             'selfinstaff'        => $selfinstaff,
+            'str_your_position'  => $strselfposition,
             'missions'               => $missions,
             'hasmissions'            => !empty($missions),
             'str_freeze_reward_title' => get_string('mission_freeze_reward_title', 'local_playergames'),
@@ -335,7 +357,7 @@ class hub implements renderable, templatable {
                  WHERE p.seasonid = :seasonid
                    AND p.showinranking = 1
                    {$filter}
-              ORDER BY p.xp DESC, p.userid ASC";
+              ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
 
         $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
         $ranking = [];

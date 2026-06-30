@@ -244,6 +244,7 @@ $string['hub_streak'] = 'Sequência';
 $string['hub_top10'] = 'Top 10';
 $string['hub_xp'] = 'XP';
 $string['hub_xp_next_level'] = 'XP para o próximo nível';
+$string['hub_your_position'] = 'Sua posição: {$a}';
 $string['level_title_1'] = 'Novato';
 $string['level_title_2'] = 'Aprendiz';
 $string['level_title_3'] = 'Estudante';

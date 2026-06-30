@@ -115,6 +115,7 @@
         "str_show_less": "Show top 10",
         "str_invite": "You have not joined the ranking yet.",
         "str_join": "Join the ranking",
+        "str_your_position": "Your position: 87",
         "hasfreezelog": true,
         "str_freeze_log": "Freeze history",
         "freezelog": [
@@ -360,12 +361,17 @@
                         <div class="tab-pane fade" id="pg-rank-staff"
                             role="tabpanel" aria-labelledby="pg-tab-sta">
                             <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstaff}}">
-                                {{^selfinstaff}}
+                                {{^showinranking}}
                                 <div class="alert alert-secondary mx-3 mt-3">
                                     <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
                                     {{str_invite}}
                                 </div>
-                                {{/selfinstaff}}
+                                {{/showinranking}}
+                                {{#showinranking}}{{^selfinstaff}}
+                                <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                                    {{str_your_position}}
+                                </div>
+                                {{/selfinstaff}}{{/showinranking}}
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="table-light">
@@ -409,7 +415,7 @@
                     {{^showbothtabs}}
                     {{#hasstudentranking}}
                     <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstudents}}">
-                        {{^selfinstudents}}
+                        {{^showinranking}}
                         <div class="alert alert-secondary mx-3 mt-3">
                             <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
                             {{str_invite}}
@@ -421,7 +427,12 @@
                                 </button>
                             </form>
                         </div>
-                        {{/selfinstudents}}
+                        {{/showinranking}}
+                        {{#showinranking}}{{^selfinstudents}}
+                        <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                            {{str_your_position}}
+                        </div>
+                        {{/selfinstudents}}{{/showinranking}}
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -462,12 +473,17 @@
 
                     {{#hasstaffranking}}
                     <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinstaff}}">
-                        {{^selfinstaff}}
+                        {{^showinranking}}
                         <div class="alert alert-secondary mx-3 mt-3">
                             <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
                             {{str_invite}}
                         </div>
-                        {{/selfinstaff}}
+                        {{/showinranking}}
+                        {{#showinranking}}{{^selfinstaff}}
+                        <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                            {{str_your_position}}
+                        </div>
+                        {{/selfinstaff}}{{/showinranking}}
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">

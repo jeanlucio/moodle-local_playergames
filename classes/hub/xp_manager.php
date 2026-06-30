@@ -195,6 +195,64 @@ class xp_manager {
     }
 
     /**
+     * Returns a user's 1-based ranking position within a season, counting only
+     * opted-in players (showinranking = 1) ahead of them.
+     *
+     * Mirrors the ORDER BY of the hub ranking (xp DESC, timemodified ASC,
+     * userid ASC) so ties resolve identically: whoever reached the XP earlier
+     * ranks ahead, with userid as the final deterministic fallback. The user
+     * never counts themselves. A single indexed COUNT — no full-table sort.
+     *
+     * @param int   $userid User whose position is wanted.
+     * @param int   $seasonid Active season ID.
+     * @param int   $myxp The user's season XP.
+     * @param int   $mytimemodified The user's profile timemodified (tie-break).
+     * @param int[] $staffids Staff user IDs used to split the ranking by group.
+     * @param bool  $wantstaff True to rank within staff; false within students.
+     * @return int 1-based position, or 0 when the requested group has no ranking.
+     */
+    public static function get_season_position(
+        int $userid,
+        int $seasonid,
+        int $myxp,
+        int $mytimemodified,
+        array $staffids,
+        bool $wantstaff
+    ): int {
+        global $DB;
+
+        $params = [
+            'seasonid' => $seasonid,
+            'xpgt'     => $myxp,
+            'xpeq1'    => $myxp,
+            'xpeq2'    => $myxp,
+            'tmlt'     => $mytimemodified,
+            'tmeq'     => $mytimemodified,
+            'myuserid' => $userid,
+        ];
+        $filter = '';
+
+        if (!empty($staffids)) {
+            [$insql, $inparams] = $DB->get_in_or_equal($staffids, SQL_PARAMS_NAMED, 'uid', $wantstaff);
+            $params = array_merge($params, $inparams);
+            $filter = "AND p.userid {$insql}";
+        } else if ($wantstaff) {
+            return 0;
+        }
+
+        $sql = "SELECT COUNT(1)
+                  FROM {local_playergames_player_profile} p
+                 WHERE p.seasonid = :seasonid
+                   AND p.showinranking = 1
+                   {$filter}
+                   AND (p.xp > :xpgt
+                        OR (p.xp = :xpeq1 AND p.timemodified < :tmlt)
+                        OR (p.xp = :xpeq2 AND p.timemodified = :tmeq AND p.userid < :myuserid))";
+
+        return (int) $DB->count_records_sql($sql, $params) + 1;
+    }
+
+    /**
      * Deletes the cached ranking entry for a season.
      *
      * Called after every XP award so the ranking reflects the latest state
