@@ -66,6 +66,36 @@
         <KEY NAME="uq_userid_seasonid" TYPE="unique" FIELDS="userid, seasonid"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="local_playergames_avatars" COMMENT="Emoji avatar collection unlocked by level tier">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="emoji" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="tier" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_tier_sortorder" UNIQUE="false" FIELDS="tier, sortorder"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_player_avatars" COMMENT="Per-user lifetime avatar state: best level reached and equipped avatar">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="bestlevel" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="equipped_avatar" TYPE="char" LENGTH="255" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid" TYPE="unique" FIELDS="userid"/>
+      </KEYS>
+    </TABLE>
     <TABLE NAME="local_playergames_streaks" COMMENT="Daily activity streaks per user">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>

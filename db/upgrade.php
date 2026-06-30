@@ -806,5 +806,37 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062900, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026063001) {
+        // Avatar collection (catalog) unlocked by level tier.
+        $table = new xmldb_table('local_playergames_avatars');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('emoji', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+            $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+            $table->add_field('tier', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '1');
+            $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('idx_tier_sortorder', XMLDB_INDEX_NOTUNIQUE, ['tier', 'sortorder']);
+            $dbman->create_table($table);
+        }
+
+        // Per-user lifetime avatar state: best level reached and equipped avatar.
+        $table = new xmldb_table('local_playergames_player_avatars');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('bestlevel', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1');
+            $table->add_field('equipped_avatar', XMLDB_TYPE_CHAR, '255');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key('uq_userid', XMLDB_KEY_UNIQUE, ['userid']);
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026063001, 'local', 'playergames');
+    }
+
     return true;
 }

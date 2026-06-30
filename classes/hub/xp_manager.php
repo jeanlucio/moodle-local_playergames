@@ -115,6 +115,9 @@ class xp_manager {
         $profile->timemodified  = time();
         $DB->update_record('local_playergames_player_profile', $profile);
 
+        // Keep the user's lifetime best level so avatar unlocks are permanent.
+        avatar_manager::record_level($userid, $newlevel);
+
         if ($newlevel > $oldlevel) {
             $event = level_reached::create([
                 'objectid' => $profile->id,

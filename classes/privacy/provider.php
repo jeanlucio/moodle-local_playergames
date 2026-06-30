@@ -47,6 +47,7 @@ class provider implements
     \core_privacy\local\request\user_preference_provider {
     /** @var string[] Tables holding personal data keyed by a userid column. */
     private const USER_TABLES = [
+        'local_playergames_player_avatars',
         'local_playergames_player_profile',
         'local_playergames_streaks',
         'local_playergames_freeze_log',
@@ -64,6 +65,12 @@ class provider implements
      * @return collection The updated collection.
      */
     public static function get_metadata(collection $collection): collection {
+        $collection->add_database_table('local_playergames_player_avatars', [
+            'userid'          => 'privacy:metadata:local_playergames_player_avatars:userid',
+            'bestlevel'       => 'privacy:metadata:local_playergames_player_avatars:bestlevel',
+            'equipped_avatar' => 'privacy:metadata:local_playergames_player_avatars:equipped_avatar',
+        ], 'privacy:metadata:local_playergames_player_avatars');
+
         $collection->add_database_table('local_playergames_player_profile', [
             'userid'        => 'privacy:metadata:local_playergames_player_profile:userid',
             'seasonid'      => 'privacy:metadata:local_playergames_player_profile:seasonid',
