@@ -25,7 +25,6 @@
 namespace local_playergames\output;
 
 use cache;
-use context_system;
 use moodle_url;
 use renderable;
 use renderer_base;
@@ -39,6 +38,7 @@ use local_playergames\hub\season_manager;
 use local_playergames\hub\streak_manager;
 use local_playergames\hub\title_manager;
 use local_playergames\hub\xp_manager;
+use local_playergames\local\access;
 use stdClass;
 
 /**
@@ -69,7 +69,7 @@ class hub implements renderable, templatable {
     /** @var int Current user ID. */
     private int $userid;
 
-    /** @var bool True when user has moodle/course:manageactivities. */
+    /** @var bool True when access::is_staff() returns true for this user. */
     private bool $isstaff;
 
     /** @var bool True when user has moodle/site:config (sees both tabs). */
@@ -82,7 +82,7 @@ class hub implements renderable, templatable {
      * Constructs the hub renderable.
      *
      * @param int    $userid   Current user ID.
-     * @param bool   $isstaff  True when user has moodle/course:manageactivities.
+     * @param bool   $isstaff  True when access::is_staff() returns true for this user.
      * @param bool   $isadmin  True when user has moodle/site:config (sees both tabs).
      * @param string $allowed  Value of the allowed_participants setting.
      */
@@ -110,8 +110,7 @@ class hub implements renderable, templatable {
             ];
         }
 
-        $context  = context_system::instance();
-        $staffids = $this->get_staff_ids($context);
+        $staffids = access::get_staff_ids();
 
         $profile    = xp_manager::get_or_create_profile($this->userid, $season->id);
         $streak     = streak_manager::get_or_create($this->userid);
@@ -363,28 +362,6 @@ class hub implements renderable, templatable {
             'level_range' => $range,
             'progress_pct' => $pct,
         ];
-    }
-
-    /**
-     * Returns user IDs of all users with moodle/course:manageactivities in the system context.
-     *
-     * @param context_system $context
-     * @return int[]
-     */
-    private function get_staff_ids(context_system $context): array {
-        global $CFG;
-
-        $users = get_users_by_capability($context, 'moodle/course:manageactivities', 'u.id');
-        $ids   = empty($users) ? [] : array_map('intval', array_column((array) $users, 'id'));
-
-        // Site admins have all capabilities implicitly but are not returned by
-        // get_users_by_capability. Merge them into the staff set.
-        if (!empty($CFG->siteadmins)) {
-            $adminids = array_map('intval', explode(',', $CFG->siteadmins));
-            $ids      = array_values(array_unique(array_merge($ids, $adminids)));
-        }
-
-        return $ids;
     }
 
     /**

@@ -69,4 +69,43 @@ class access {
         return has_capability('moodle/site:config', context_system::instance(), $userid)
             || !empty(self::teacher_courseids($userid));
     }
+
+    /**
+     * Returns the IDs of every user is_staff() would return true for.
+     *
+     * A bulk equivalent of is_staff(), for ranking/group-split queries that need
+     * the whole staff set at once. Uses a single query against role_assignments
+     * joined to course contexts and role_capabilities — get_users_by_capability()
+     * cannot be used here because, called against the system context, it only
+     * finds capabilities granted at system level, not via course-level role
+     * assignments (the common case for teachers) — the same pitfall is_staff()
+     * avoids by checking teacher_courseids() instead.
+     *
+     * @return int[]
+     */
+    public static function get_staff_ids(): array {
+        global $CFG, $DB;
+
+        $sql = "SELECT DISTINCT ra.userid
+                  FROM {role_assignments} ra
+                  JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = :coursecontextlevel
+                  JOIN {role_capabilities} rc ON rc.roleid = ra.roleid
+                       AND rc.capability = :capability
+                       AND rc.permission = :allow";
+        $ids = $DB->get_fieldset_sql($sql, [
+            'coursecontextlevel' => CONTEXT_COURSE,
+            'capability'         => 'moodle/course:update',
+            'allow'              => CAP_ALLOW,
+        ]);
+        $ids = array_map('intval', $ids);
+
+        // Site admins have all capabilities implicitly but are not returned by
+        // the query above. Merge them into the staff set.
+        if (!empty($CFG->siteadmins)) {
+            $adminids = array_map('intval', explode(',', $CFG->siteadmins));
+            $ids      = array_values(array_unique(array_merge($ids, $adminids)));
+        }
+
+        return $ids;
+    }
 }
