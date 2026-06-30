@@ -41,4 +41,12 @@ $functions = [
         'ajax'        => true,
         'capabilities' => 'local/playergames:viewhub',
     ],
+    'local_playergames_set_learning_ranking_visibility' => [
+        'classname'   => 'local_playergames\external\set_learning_ranking_visibility',
+        'methodname'  => 'execute',
+        'description' => 'Set whether the current user appears in the learning XP ranking.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'capabilities' => 'local/playergames:viewhub',
+    ],
 ];

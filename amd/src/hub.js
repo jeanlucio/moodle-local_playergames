@@ -166,17 +166,20 @@ const initAvatars = () => {
 };
 
 /**
- * Wires the "appear in ranking" switch to save via AJAX, reverting on error.
+ * Wires an "appear in ranking" switch to save via AJAX, reverting on error.
+ *
+ * @param {string} selector Attribute selector for the checkbox.
+ * @param {string} methodname Web service method name to call.
  */
-const initRankingVisibility = () => {
-    const toggle = document.querySelector('[data-ranking-visibility]');
+const wireRankingVisibilityToggle = (selector, methodname) => {
+    const toggle = document.querySelector(selector);
     if (!toggle) {
         return;
     }
     toggle.addEventListener('change', async() => {
         try {
             await Ajax.call([{
-                methodname: 'local_playergames_set_ranking_visibility',
+                methodname,
                 args: {show: toggle.checked ? 1 : 0},
             }])[0];
             // Reload so the ranking list reflects the user appearing/leaving.
@@ -194,7 +197,11 @@ const initRankingVisibility = () => {
 const init = () => {
     initRankingToggle();
     initAvatars();
-    initRankingVisibility();
+    wireRankingVisibilityToggle('[data-ranking-visibility]', 'local_playergames_set_ranking_visibility');
+    wireRankingVisibilityToggle(
+        '[data-learning-ranking-visibility]',
+        'local_playergames_set_learning_ranking_visibility'
+    );
 };
 
 export {init};

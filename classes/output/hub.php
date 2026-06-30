@@ -32,6 +32,7 @@ use renderer_base;
 use templatable;
 use local_playergames\hub\avatar_manager;
 use local_playergames\hub\daily_play_manager;
+use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\level_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\season_manager;
@@ -172,6 +173,43 @@ class hub implements renderable, templatable {
             ? get_string('hub_your_position', 'local_playergames', $selfposition)
             : '';
 
+        // Learning XP: a separate, season-agnostic pool mirrored from block_playerhud course
+        // XP (Fase C). Only meaningful for students — even in "both" mode, staff/admins never
+        // earn course XP through PlayerHUD — and only when the admin enabled it site-wide.
+        $showlearningxp = (bool) get_config('local_playergames', 'showlearningxp')
+            && in_array($this->allowed, ['students', 'both'], true)
+            && !$this->isstaff;
+
+        $learningxp              = 0;
+        $learningshowinranking   = false;
+        $learningxprankingenabled = false;
+        $learningranking         = [];
+        $selfinlearning          = 0;
+        $strlearningposition     = '';
+
+        if ($showlearningxp) {
+            $learningcache          = learning_xp_manager::get_or_create_cache($this->userid);
+            $learningxp             = (int) $learningcache->windowedxp;
+            $learningshowinranking  = (bool) $learningcache->showinranking;
+            $learningxprankingenabled = (bool) get_config('local_playergames', 'learningxpranking');
+
+            if ($learningxprankingenabled) {
+                $learningranking = $this->get_learning_ranking();
+                $selfinlearning  = $this->find_self_rank($learningranking);
+
+                if ($learningshowinranking && $selfinlearning === 0) {
+                    $learningposition = learning_xp_manager::get_position(
+                        $this->userid,
+                        $learningxp,
+                        (int) $learningcache->timemodified
+                    );
+                    if ($learningposition > 0) {
+                        $strlearningposition = get_string('hub_your_position', 'local_playergames', $learningposition);
+                    }
+                }
+            }
+        }
+
         // Avatar collection: equip value is empty for the equipped one (click = unequip).
         // Grouped by tier (one row per tier in the modal) — get_collection() already
         // returns avatars ordered by tier, so a single pass keeps that grouping.
@@ -227,6 +265,19 @@ class hub implements renderable, templatable {
             'str_checkins'       => get_string('hub_checkins', 'local_playergames'),
             'rankingenabled'     => $rankingenabled,
             'showinranking'      => (bool) $profile->showinranking,
+            'showlearningxp'         => $showlearningxp,
+            'learningxp'             => $learningxp,
+            'learningxprankingenabled' => $learningxprankingenabled,
+            'learningshowinranking'  => $learningshowinranking,
+            'learningranking'        => $learningranking,
+            'haslearningranking'     => !empty($learningranking),
+            'selfinlearning'         => $selfinlearning,
+            'str_learning_position'  => $strlearningposition,
+            'str_learningxp'         => get_string('hub_learningxp', 'local_playergames'),
+            'str_learningxp_hint'    => get_string('hub_learningxp_hint', 'local_playergames'),
+            'str_learningxp_ranking' => get_string('hub_learningxp_ranking_section', 'local_playergames'),
+            'str_show_learningxpranking' => get_string('hub_show_learningxpranking', 'local_playergames'),
+            'str_learningxp_invite'  => get_string('hub_learningxp_invite', 'local_playergames'),
             'sesskey'            => sesskey(),
             'formaction'         => (new moodle_url('/local/playergames/hub.php'))->out(false),
             'achievementsurl'    => (new moodle_url('/local/playergames/achievements.php'))->out(false),
@@ -409,6 +460,53 @@ class hub implements renderable, templatable {
         }
 
         $cache->set($cachekey, $ranking);
+        return $ranking;
+    }
+
+    /**
+     * Returns the learning XP ranking, using cache when available.
+     *
+     * Single season-agnostic list (only students earn learning XP, so there is
+     * no staff variant). Filters out inactive users (windowedxp = 0) so they
+     * never occupy a top-50 slot, and reads the denormalized windowedxp column
+     * rather than aggregating live.
+     *
+     * @return array
+     */
+    private function get_learning_ranking(): array {
+        global $DB;
+
+        $cache  = cache::make('local_playergames', 'ranking');
+        $cached = $cache->get(learning_xp_manager::RANKING_CACHE_KEY);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $sql = "SELECT c.userid, c.windowedxp,
+                       u.firstname, u.lastname,
+                       u.firstnamephonetic, u.lastnamephonetic,
+                       u.middlename, u.alternatename
+                  FROM {local_playergames_student_xp_cache} c
+                  JOIN {user} u ON u.id = c.userid
+                 WHERE c.showinranking = 1
+                   AND c.windowedxp > 0
+              ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
+
+        $records = $DB->get_records_sql($sql, [], 0, self::RANKING_LIMIT);
+        $ranking = [];
+        $pos     = 1;
+        foreach ($records as $r) {
+            $ranking[] = [
+                'pos'    => $pos,
+                'name'   => fullname($r),
+                'xp'     => (int) $r->windowedxp,
+                'isself' => (int) $r->userid === $this->userid,
+                'extra'  => $pos > 10,
+            ];
+            $pos++;
+        }
+
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, $ranking);
         return $ranking;
     }
 

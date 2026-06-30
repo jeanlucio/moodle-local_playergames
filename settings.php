@@ -189,6 +189,20 @@ if ($hassiteconfig) {
         get_string('settings_learningxp_heading_desc', 'local_playergames')
     ));
 
+    $pagelearning->add(new admin_setting_configcheckbox(
+        'local_playergames/showlearningxp',
+        get_string('settings_showlearningxp', 'local_playergames'),
+        get_string('settings_showlearningxp_desc', 'local_playergames'),
+        '0'
+    ));
+
+    $pagelearning->add(new admin_setting_configcheckbox(
+        'local_playergames/learningxpranking',
+        get_string('settings_learningxpranking', 'local_playergames'),
+        get_string('settings_learningxpranking_desc', 'local_playergames'),
+        '0'
+    ));
+
     $pagelearning->add(new admin_setting_configtext(
         'local_playergames/learningxp_window_months',
         get_string('settings_learningxp_window_months', 'local_playergames'),

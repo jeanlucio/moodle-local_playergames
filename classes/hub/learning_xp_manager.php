@@ -24,6 +24,7 @@
 
 namespace local_playergames\hub;
 
+use cache;
 use stdClass;
 
 /**
@@ -40,6 +41,9 @@ use stdClass;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class learning_xp_manager {
+    /** @var string Cache key for the learning ranking list (single, season-agnostic list). */
+    public const RANKING_CACHE_KEY = 'learning_students';
+
     /**
      * Returns the configured window length in months (0 = unlimited).
      *
@@ -113,10 +117,12 @@ class learning_xp_manager {
             ]);
         }
 
-        $cache = self::get_or_create_cache($userid);
-        $cache->windowedxp   = max(0, (int) $cache->windowedxp + $delta);
-        $cache->timemodified = $now;
-        $DB->update_record('local_playergames_student_xp_cache', $cache);
+        $cacherow = self::get_or_create_cache($userid);
+        $cacherow->windowedxp   = max(0, (int) $cacherow->windowedxp + $delta);
+        $cacherow->timemodified = $now;
+        $DB->update_record('local_playergames_student_xp_cache', $cacherow);
+
+        self::invalidate_ranking_cache();
     }
 
     /**
@@ -165,10 +171,59 @@ class learning_xp_manager {
      */
     public static function set_ranking_visibility(int $userid, bool $show): void {
         global $DB;
-        $cache = self::get_or_create_cache($userid);
-        $cache->showinranking = $show ? 1 : 0;
-        $cache->timemodified  = time();
-        $DB->update_record('local_playergames_student_xp_cache', $cache);
+        $cacherow = self::get_or_create_cache($userid);
+        $cacherow->showinranking = $show ? 1 : 0;
+        $cacherow->timemodified  = time();
+        $DB->update_record('local_playergames_student_xp_cache', $cacherow);
+
+        self::invalidate_ranking_cache();
+    }
+
+    /**
+     * Returns a user's 1-based learning-ranking position, counting only
+     * opted-in users (showinranking = 1 on student_xp_cache) ahead of them.
+     *
+     * Mirrors the ORDER BY of the learning ranking (windowedxp DESC,
+     * timemodified ASC, userid ASC). The user never counts themselves. Used to
+     * show the position of someone who opted in but falls outside the loaded
+     * top-50 list. A single indexed COUNT — no full-table sort.
+     *
+     * @param int $userid User whose position is wanted.
+     * @param int $mywindowedxp The user's windowed learning XP.
+     * @param int $mytimemodified The user's cache row timemodified (tie-break).
+     * @return int 1-based position.
+     */
+    public static function get_position(int $userid, int $mywindowedxp, int $mytimemodified): int {
+        global $DB;
+
+        $sql = "SELECT COUNT(1)
+                  FROM {local_playergames_student_xp_cache} c
+                 WHERE c.showinranking = 1
+                   AND (c.windowedxp > :xpgt
+                        OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
+                        OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";
+        $params = [
+            'xpgt'     => $mywindowedxp,
+            'xpeq1'    => $mywindowedxp,
+            'tmlt'     => $mytimemodified,
+            'xpeq2'    => $mywindowedxp,
+            'tmeq'     => $mytimemodified,
+            'myuserid' => $userid,
+        ];
+
+        return (int) $DB->count_records_sql($sql, $params) + 1;
+    }
+
+    /**
+     * Deletes the cached learning ranking list.
+     *
+     * Called after every learning XP change or visibility toggle, so the
+     * ranking reflects the latest state within the 60-second TTL window.
+     *
+     * @return void
+     */
+    private static function invalidate_ranking_cache(): void {
+        cache::make('local_playergames', 'ranking')->delete(self::RANKING_CACHE_KEY);
     }
 
     /**

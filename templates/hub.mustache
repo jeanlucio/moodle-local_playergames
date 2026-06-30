@@ -42,6 +42,21 @@
         "str_checkins": "Season check-ins",
         "rankingenabled": true,
         "showinranking": true,
+        "showlearningxp": true,
+        "learningxp": 240,
+        "str_learningxp": "Learning XP",
+        "str_learningxp_hint": "Earned from your course activity — separate from your season XP above.",
+        "learningxprankingenabled": true,
+        "learningshowinranking": true,
+        "selfinlearning": 1,
+        "str_learning_position": "",
+        "str_learningxp_ranking": "Learning Ranking",
+        "str_show_learningxpranking": "Appear in learning ranking",
+        "str_learningxp_invite": "You have not joined the learning ranking yet. Enable \"Appear in learning ranking\" in your profile to join.",
+        "haslearningranking": true,
+        "learningranking": [
+            {"pos": 1, "name": "Bob Jones", "xp": 240, "isself": true, "extra": false}
+        ],
         "sesskey": "abc123",
         "formaction": "/local/playergames/hub.php",
         "achievementsurl": "/local/playergames/achievements.php",
@@ -222,6 +237,15 @@
                     </div>
                     {{/hascheckin}}
 
+                    {{#showlearningxp}}
+                    <div class="pg-hub-stat-box rounded p-2 text-center mt-2">
+                        <i class="fa fa-graduation-cap text-primary" aria-hidden="true"></i>
+                        <div class="fw-bold">{{learningxp}}</div>
+                        <small class="text-muted">{{str_learningxp}}</small>
+                    </div>
+                    <small class="text-muted d-block mt-1">{{str_learningxp_hint}}</small>
+                    {{/showlearningxp}}
+
                     {{#hasfreezelog}}
                     <details class="pg-hub-freeze-log mt-2">
                         <summary class="text-muted small" style="cursor:pointer;list-style:none;">
@@ -248,6 +272,18 @@
                         </label>
                     </div>
                     {{/rankingenabled}}
+
+                    {{#learningxprankingenabled}}
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox"
+                            id="pg-show-learningxpranking"
+                            data-learning-ranking-visibility
+                            {{#learningshowinranking}}checked{{/learningshowinranking}}>
+                        <label class="form-check-label" for="pg-show-learningxpranking">
+                            {{str_show_learningxpranking}}
+                        </label>
+                    </div>
+                    {{/learningxprankingenabled}}
                 </div>
             </div>
 
@@ -545,6 +581,71 @@
                 </div>
             </div>
             {{/rankingenabled}}
+
+            {{! Learning ranking — separate, season-agnostic pool; students only }}
+            {{#learningxprankingenabled}}
+            <div class="card pg-hub-learning-ranking-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-graduation-cap me-2" aria-hidden="true"></i>{{str_learningxp_ranking}}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {{#haslearningranking}}
+                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearning}}">
+                        {{^learningshowinranking}}
+                        <div class="alert alert-secondary mx-3 mt-3">
+                            <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                            {{str_learningxp_invite}}
+                        </div>
+                        {{/learningshowinranking}}
+                        {{#learningshowinranking}}{{^selfinlearning}}
+                        <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                            {{str_learning_position}}
+                        </div>
+                        {{/selfinlearning}}{{/learningshowinranking}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-center pg-hub-rank-pos-col">
+                                            {{str_rank_pos}}
+                                        </th>
+                                        <th scope="col">{{str_rank_player}}</th>
+                                        <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#learningranking}}
+                                    <tr class="{{#isself}}table-primary{{/isself}}
+                                        {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                        <td class="text-center fw-bold">{{pos}}</td>
+                                        <td>{{name}}</td>
+                                        <td class="text-end">{{xp}}</td>
+                                    </tr>
+                                    {{/learningranking}}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center p-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                data-show-label="{{str_show_all}}"
+                                data-hide-label="{{str_show_less}}">
+                                {{str_show_all}}
+                            </button>
+                        </div>
+                    </div>
+                    {{/haslearningranking}}
+                    {{^haslearningranking}}
+                    <div class="alert alert-secondary m-3">
+                        <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                        {{str_learningxp_invite}}
+                    </div>
+                    {{/haslearningranking}}
+                </div>
+            </div>
+            {{/learningxprankingenabled}}
 
             {{! Today's games }}
             <div class="card pg-hub-games-card">

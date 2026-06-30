@@ -183,4 +183,81 @@ final class learning_xp_manager_test extends \advanced_testcase {
 
         $this->assertSame(0, learning_xp_manager::get_windowedxp($user));
     }
+
+    /**
+     * Sets a cache row's XP, opt-in and timemodified directly (bypassing
+     * record_change(), which has its own floor/accumulate behaviour).
+     *
+     * @param int  $userid User id.
+     * @param int  $windowedxp Windowed XP value.
+     * @param bool $showinranking Whether opted in.
+     * @param int  $timemodified Cache row timemodified (tie-break).
+     * @return void
+     */
+    private function set_cache(int $userid, int $windowedxp, bool $showinranking, int $timemodified): void {
+        $cache = learning_xp_manager::get_or_create_cache($userid);
+        global $DB;
+        $cache->windowedxp    = $windowedxp;
+        $cache->showinranking = $showinranking ? 1 : 0;
+        $cache->timemodified  = $timemodified;
+        $DB->update_record('local_playergames_student_xp_cache', $cache);
+    }
+
+    public function test_get_position_orders_by_windowedxp(): void {
+        $this->resetAfterTest();
+        $t = 1000;
+        $u1 = (int) $this->getDataGenerator()->create_user()->id;
+        $u2 = (int) $this->getDataGenerator()->create_user()->id;
+        $this->set_cache($u1, 300, true, $t);
+        $this->set_cache($u2, 100, true, $t);
+
+        $this->assertSame(1, learning_xp_manager::get_position($u1, 300, $t));
+        $this->assertSame(2, learning_xp_manager::get_position($u2, 100, $t));
+    }
+
+    public function test_get_position_excludes_optout(): void {
+        $this->resetAfterTest();
+        $t = 1000;
+        $top = (int) $this->getDataGenerator()->create_user()->id;
+        $me  = (int) $this->getDataGenerator()->create_user()->id;
+        // A higher-XP user who opted out must not count ahead of me.
+        $this->set_cache($top, 999, false, $t);
+        $this->set_cache($me, 100, true, $t);
+
+        $this->assertSame(1, learning_xp_manager::get_position($me, 100, $t));
+    }
+
+    public function test_get_position_tie_breaks_by_timemodified_then_userid(): void {
+        $this->resetAfterTest();
+        $early = (int) $this->getDataGenerator()->create_user()->id;
+        $late  = (int) $this->getDataGenerator()->create_user()->id;
+        // Same XP: whoever reached it earlier (smaller timemodified) ranks ahead.
+        $this->set_cache($early, 150, true, 1000);
+        $this->set_cache($late, 150, true, 2000);
+
+        $this->assertSame(1, learning_xp_manager::get_position($early, 150, 1000));
+        $this->assertSame(2, learning_xp_manager::get_position($late, 150, 2000));
+    }
+
+    public function test_record_change_invalidates_the_ranking_cache(): void {
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        $cache = \cache::make('local_playergames', 'ranking');
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['stale' => true]);
+
+        learning_xp_manager::record_change($user, 10);
+
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+    }
+
+    public function test_set_ranking_visibility_invalidates_the_ranking_cache(): void {
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        $cache = \cache::make('local_playergames', 'ranking');
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['stale' => true]);
+
+        learning_xp_manager::set_ranking_visibility($user, true);
+
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+    }
 }
