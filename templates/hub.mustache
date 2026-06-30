@@ -119,6 +119,8 @@
         "str_avatars": "Avatars",
         "str_avatars_hint": "Reach higher levels to unlock more avatars.",
         "str_avatar_locked": "Locked",
+        "str_avatar_change": "Change avatar",
+        "userpictureurl": "https://example.com/pluginfile.php/1/user/icon/f1",
         "equippedavatar": "🤖",
         "hasequippedavatar": true,
         "avatars": [
@@ -161,6 +163,16 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="text-center mb-3">
+                        <button type="button" class="btn p-0 border-0 pg-hub-profile-avatar"
+                            data-avatar-trigger data-modal-title="{{str_avatars}}"
+                            aria-label="{{str_avatar_change}}" title="{{str_avatar_change}}">
+                            <span class="pg-hub-profile-avatar-emoji" aria-hidden="true"
+                                {{^hasequippedavatar}}hidden{{/hasequippedavatar}}>{{equippedavatar}}</span>
+                            <img class="pg-hub-profile-avatar-img rounded-circle" src="{{userpictureurl}}"
+                                alt="" {{#hasequippedavatar}}hidden{{/hasequippedavatar}}>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <span class="badge bg-primary fs-5">{{str_level}} {{level}}</span>
                         <div>
@@ -285,42 +297,6 @@
                 </div>
             </div>
             {{/hasmissions}}
-
-            {{! Avatars }}
-            <div class="card pg-hub-avatars-card mt-4">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">
-                        <i class="fa fa-user-astronaut me-2" aria-hidden="true"></i>{{str_avatars}}
-                    </h5>
-                    <span class="pg-hub-avatar-current" aria-hidden="true">{{equippedavatar}}</span>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex flex-wrap pg-hub-avatar-grid">
-                        {{#avatars}}
-                        {{#unlocked}}
-                        <button type="button"
-                            class="btn pg-hub-avatar-btn {{#equipped}}btn-primary{{/equipped}}{{^equipped}}btn-outline-secondary{{/equipped}}"
-                            data-avatar-emoji="{{emoji}}"
-                            data-avatar-equip="{{equipvalue}}"
-                            aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
-                            title="{{name}}"
-                            aria-label="{{name}}">
-                            <span aria-hidden="true">{{emoji}}</span>
-                        </button>
-                        {{/unlocked}}
-                        {{^unlocked}}
-                        <span class="btn pg-hub-avatar-btn pg-hub-avatar-locked disabled"
-                            title="{{str_avatar_locked}} — {{str_level}} {{requiredlevel}}"
-                            aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
-                            <span aria-hidden="true">🔒</span>
-                            <small class="pg-hub-avatar-reqlevel">{{requiredlevel}}</small>
-                        </span>
-                        {{/unlocked}}
-                        {{/avatars}}
-                    </div>
-                    <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
-                </div>
-            </div>
 
         </div>{{! end left column }}
 
@@ -614,6 +590,34 @@
 
         </div>{{! end right column }}
     </div>{{! end row }}
+
+    {{! Avatar collection — hidden source moved into the modal on first open. }}
+    <div id="pg-avatar-collection" hidden>
+        <div class="d-flex flex-wrap pg-hub-avatar-grid">
+            {{#avatars}}
+            {{#unlocked}}
+            <button type="button"
+                class="btn pg-hub-avatar-btn {{#equipped}}btn-primary{{/equipped}}{{^equipped}}btn-outline-secondary{{/equipped}}"
+                data-avatar-emoji="{{emoji}}"
+                data-avatar-equip="{{equipvalue}}"
+                aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
+                title="{{name}}"
+                aria-label="{{name}}">
+                <span aria-hidden="true">{{emoji}}</span>
+            </button>
+            {{/unlocked}}
+            {{^unlocked}}
+            <span class="btn pg-hub-avatar-btn pg-hub-avatar-locked disabled"
+                title="{{str_avatar_locked}} — {{str_level}} {{requiredlevel}}"
+                aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
+                <span aria-hidden="true">🔒</span>
+                <small class="pg-hub-avatar-reqlevel">{{requiredlevel}}</small>
+            </span>
+            {{/unlocked}}
+            {{/avatars}}
+        </div>
+        <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
+    </div>
     {{/noseason}}
 
 </div>{{! end pg-hub }}

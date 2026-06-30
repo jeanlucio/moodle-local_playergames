@@ -179,6 +179,13 @@ class hub implements renderable, templatable {
             return $a;
         }, avatar_manager::get_collection($this->userid));
 
+        // Default profile avatar is the Moodle user picture; the emoji overrides it when equipped.
+        global $PAGE;
+        $avataruser     = \core_user::get_user($this->userid);
+        $userpicture    = new \user_picture($avataruser);
+        $userpicture->size = 100;
+        $userpictureurl = $userpicture->get_url($PAGE)->out(false);
+
         $seasonlabel = get_string('hub_season_label', 'local_playergames');
         $seasonname  = format_string($season->name);
         // Auto-generated names are "Season N", which next to the "Season:" label
@@ -223,9 +230,11 @@ class hub implements renderable, templatable {
             'avatars'            => $avatars,
             'equippedavatar'     => $equippedavatar,
             'hasequippedavatar'  => $equippedavatar !== '',
+            'userpictureurl'     => $userpictureurl,
             'str_avatars'        => get_string('hub_avatars_section', 'local_playergames'),
             'str_avatars_hint'   => get_string('hub_avatars_hint', 'local_playergames'),
             'str_avatar_locked'  => get_string('hub_avatar_locked', 'local_playergames'),
+            'str_avatar_change'  => get_string('hub_avatar_change', 'local_playergames'),
             'missions'               => $missions,
             'hasmissions'            => !empty($missions),
             'str_freeze_reward_title' => get_string('mission_freeze_reward_title', 'local_playergames'),

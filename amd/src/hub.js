@@ -23,6 +23,7 @@
  */
 
 import Ajax from 'core/ajax';
+import Modal from 'core/modal';
 import Notification from 'core/notification';
 
 /**
@@ -68,7 +69,38 @@ const initRankingToggle = () => {
 };
 
 /**
- * Reflects the newly equipped avatar across the grid and the header preview.
+ * Swaps the large profile avatar between the equipped emoji and the Moodle
+ * profile picture.
+ *
+ * @param {string} equipped The equipped emoji, or '' for none.
+ */
+const updateProfileAvatar = equipped => {
+    const trigger = document.querySelector('[data-avatar-trigger]');
+    if (!trigger) {
+        return;
+    }
+    const emoji = trigger.querySelector('.pg-hub-profile-avatar-emoji');
+    const img = trigger.querySelector('.pg-hub-profile-avatar-img');
+    if (equipped) {
+        if (emoji) {
+            emoji.textContent = equipped;
+            emoji.hidden = false;
+        }
+        if (img) {
+            img.hidden = true;
+        }
+    } else {
+        if (emoji) {
+            emoji.hidden = true;
+        }
+        if (img) {
+            img.hidden = false;
+        }
+    }
+};
+
+/**
+ * Reflects the newly equipped avatar across the grid and the profile picture.
  *
  * @param {HTMLElement} grid The avatar grid container.
  * @param {string} equipped The now-equipped emoji, or '' when none.
@@ -81,35 +113,56 @@ const applyEquipped = (grid, equipped) => {
         btn.dataset.avatarEquip = isnow ? '' : btn.dataset.avatarEmoji;
         btn.setAttribute('aria-pressed', isnow ? 'true' : 'false');
     });
-    const current = document.querySelector('.pg-hub-avatar-current');
-    if (current) {
-        current.textContent = equipped;
-    }
+    updateProfileAvatar(equipped);
 };
 
 /**
- * Wires the avatar grid: clicking an unlocked avatar equips it (or unequips
- * when it is the current one) via AJAX, without reloading.
+ * Attaches the equip handler (delegated) to an avatar grid.
+ *
+ * @param {HTMLElement} grid The avatar grid container.
  */
-const initAvatars = () => {
-    const grid = document.querySelector('.pg-hub-avatar-grid');
-    if (!grid) {
-        return;
-    }
+const wireGrid = grid => {
     grid.addEventListener('click', async event => {
         const btn = event.target.closest('[data-avatar-emoji]');
         if (!btn || btn.classList.contains('pg-hub-avatar-locked')) {
             return;
         }
         try {
-            const [result] = await Ajax.call([{
+            // Ajax.call() returns an array of promises, one per request.
+            const result = await Ajax.call([{
                 methodname: 'local_playergames_set_avatar',
                 args: {emoji: btn.dataset.avatarEquip ?? ''},
-            }]);
+            }])[0];
             applyEquipped(grid, result.equipped);
         } catch (error) {
             Notification.exception(error);
         }
+    });
+};
+
+/**
+ * Opens the avatar collection in a modal when the profile avatar is clicked.
+ * The collection node is moved into the modal once so equip state persists.
+ */
+const initAvatars = () => {
+    const trigger = document.querySelector('[data-avatar-trigger]');
+    const source = document.getElementById('pg-avatar-collection');
+    if (!trigger || !source) {
+        return;
+    }
+    let modal = null;
+    trigger.addEventListener('click', async() => {
+        if (!modal) {
+            modal = await Modal.create({
+                title: trigger.dataset.modalTitle ?? '',
+                large: true,
+            });
+            const body = modal.getBody()[0];
+            source.hidden = false;
+            body.appendChild(source);
+            wireGrid(source.querySelector('.pg-hub-avatar-grid'));
+        }
+        modal.show();
     });
 };
 
@@ -126,7 +179,9 @@ const initRankingVisibility = () => {
             await Ajax.call([{
                 methodname: 'local_playergames_set_ranking_visibility',
                 args: {show: toggle.checked ? 1 : 0},
-            }]);
+            }])[0];
+            // Reload so the ranking list reflects the user appearing/leaving.
+            window.location.reload();
         } catch (error) {
             toggle.checked = !toggle.checked;
             Notification.exception(error);

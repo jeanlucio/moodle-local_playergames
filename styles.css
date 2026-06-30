@@ -663,7 +663,25 @@ body.path-local-playergames .pg-hub-avatar-reqlevel {
     vertical-align: super;
 }
 
-body.path-local-playergames .pg-hub-avatar-current {
-    font-size: 1.75rem;
+body.path-local-playergames .pg-hub-profile-avatar {
+    background: none;
+    cursor: pointer;
+}
+
+body.path-local-playergames .pg-hub-profile-avatar-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 5rem;
+    height: 5rem;
+    font-size: 3rem;
     line-height: 1;
+    border-radius: 50%;
+    background: var(--bs-secondary-bg, #e9ecef);
+}
+
+body.path-local-playergames .pg-hub-profile-avatar-img {
+    width: 5rem;
+    height: 5rem;
+    object-fit: cover;
 }

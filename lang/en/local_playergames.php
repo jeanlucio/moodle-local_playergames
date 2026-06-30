@@ -228,6 +228,7 @@ $string['gamification_pref_pagetitle'] = 'Gamification preferences';
 $string['gamification_pref_saved'] = 'Your gamification preference has been saved.';
 $string['gamification_prefnav'] = 'Gamification';
 $string['hub_access_restricted'] = 'You do not have permission to access the Player Hub.';
+$string['hub_avatar_change'] = 'Change avatar';
 $string['hub_avatar_locked'] = 'Locked';
 $string['hub_avatars_hint'] = 'Reach higher levels to unlock more avatars. Click one to wear it.';
 $string['hub_avatars_section'] = 'Avatars';
