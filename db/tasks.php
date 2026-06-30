@@ -61,4 +61,13 @@ $tasks = [
         'month'      => '*',
         'dayofweek'  => '0',
     ],
+    [
+        'classname'  => '\local_playergames\task\recompute_learning_xp',
+        'blocking'   => 0,
+        'minute'     => 'R',
+        'hour'       => 'R',
+        'day'        => '*',
+        'month'      => '*',
+        'dayofweek'  => '*',
+    ],
 ];

@@ -26,6 +26,7 @@ namespace local_playergames;
 
 use local_playergames\event\game_completed;
 use local_playergames\hub\achievement_manager;
+use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\streak_manager;
 use local_playergames\hub\xp_manager;
@@ -37,6 +38,9 @@ use local_playergames\hub\xp_manager;
  *   - Records streak activity for the day.
  *   - Updates mission progress (game_played trigger).
  *   - Checks for new achievements.
+ *
+ * playerhud_xp_changed (optional integration, dormant without block_playerhud):
+ *   - Mirrors the course XP delta into the learning XP pool.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -85,5 +89,24 @@ class observer {
             'level'    => (int) $profile->level,
             'streak'   => (int) $streak->currentstreak,
         ]);
+    }
+
+    /**
+     * Mirrors a block_playerhud course XP change into the learning XP pool.
+     *
+     * Optional integration: this method only ever runs when block_playerhud is
+     * installed and fires the event, so no hard dependency is declared. The
+     * generic base type avoids referencing the sibling plugin's event class.
+     *
+     * @param \core\event\base $event Instance of \block_playerhud\event\xp_changed.
+     * @return void
+     */
+    public static function playerhud_xp_changed(\core\event\base $event): void {
+        $userid = (int) $event->relateduserid;
+        $delta  = isset($event->other['delta']) ? (int) $event->other['delta'] : 0;
+        if ($userid <= 0 || $delta === 0) {
+            return;
+        }
+        learning_xp_manager::record_change($userid, $delta);
     }
 }

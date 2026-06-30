@@ -25,6 +25,7 @@
 namespace local_playergames;
 
 use local_playergames\event\game_completed;
+use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\streak_manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -140,5 +141,54 @@ final class observer_test extends \advanced_testcase {
         // Streak still recorded, but no mission progress without a season.
         $this->assertSame(1, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
         $this->assertSame(0, $DB->count_records('local_playergames_mission_progress'));
+    }
+
+    /**
+     * Builds a fake event mimicking \block_playerhud\event\xp_changed's shape.
+     *
+     * @param int $userid Related user id.
+     * @param int $delta Signed XP delta.
+     * @return \local_playergames\event\fake_xp_changed
+     */
+    private function make_fake_xp_changed(int $userid, int $delta): \local_playergames\event\fake_xp_changed {
+        require_once(__DIR__ . '/fixtures/fake_xp_changed_event.php');
+        return \local_playergames\event\fake_xp_changed::create([
+            'context'       => \context_system::instance(),
+            'relateduserid' => $userid,
+            'other'         => ['delta' => $delta, 'courseid' => 0, 'newxp' => 0],
+        ]);
+    }
+
+    public function test_playerhud_xp_changed_mirrors_gain_into_learning_xp(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+
+        observer::playerhud_xp_changed($this->make_fake_xp_changed((int) $user->id, 80));
+
+        $this->assertSame(80, learning_xp_manager::get_windowedxp((int) $user->id));
+    }
+
+    public function test_playerhud_xp_changed_mirrors_loss_into_learning_xp(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+
+        observer::playerhud_xp_changed($this->make_fake_xp_changed((int) $user->id, 80));
+        observer::playerhud_xp_changed($this->make_fake_xp_changed((int) $user->id, -30));
+
+        $this->assertSame(50, learning_xp_manager::get_windowedxp((int) $user->id));
+    }
+
+    public function test_playerhud_xp_changed_ignores_zero_delta(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+
+        observer::playerhud_xp_changed($this->make_fake_xp_changed((int) $user->id, 0));
+
+        $this->assertSame(0, $DB->count_records('local_playergames_student_xp_monthly'));
+        $this->assertSame(0, $DB->count_records('local_playergames_student_xp_cache'));
     }
 }

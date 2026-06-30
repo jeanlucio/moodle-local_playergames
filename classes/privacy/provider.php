@@ -56,6 +56,8 @@ class provider implements
         'local_playergames_battle_scores',
         'local_playergames_mission_progress',
         'local_playergames_user_achievements',
+        'local_playergames_student_xp_monthly',
+        'local_playergames_student_xp_cache',
     ];
 
     /**
@@ -70,6 +72,18 @@ class provider implements
             'bestlevel'       => 'privacy:metadata:local_playergames_player_avatars:bestlevel',
             'equipped_avatar' => 'privacy:metadata:local_playergames_player_avatars:equipped_avatar',
         ], 'privacy:metadata:local_playergames_player_avatars');
+
+        $collection->add_database_table('local_playergames_student_xp_monthly', [
+            'userid' => 'privacy:metadata:local_playergames_student_xp_monthly:userid',
+            'period' => 'privacy:metadata:local_playergames_student_xp_monthly:period',
+            'xp'     => 'privacy:metadata:local_playergames_student_xp_monthly:xp',
+        ], 'privacy:metadata:local_playergames_student_xp_monthly');
+
+        $collection->add_database_table('local_playergames_student_xp_cache', [
+            'userid'        => 'privacy:metadata:local_playergames_student_xp_cache:userid',
+            'windowedxp'    => 'privacy:metadata:local_playergames_student_xp_cache:windowedxp',
+            'showinranking' => 'privacy:metadata:local_playergames_student_xp_cache:showinranking',
+        ], 'privacy:metadata:local_playergames_student_xp_cache');
 
         $collection->add_database_table('local_playergames_player_profile', [
             'userid'        => 'privacy:metadata:local_playergames_player_profile:userid',

@@ -177,6 +177,28 @@ if ($hassiteconfig) {
 
     $ADMIN->add('playergames_settings', $pageavatars);
 
+    // Learning XP: course XP mirrored from block_playerhud (separate, windowed pool).
+    $pagelearning = new admin_settingpage(
+        'local_playergames_learning',
+        get_string('settings_learningxp_heading', 'local_playergames')
+    );
+
+    $pagelearning->add(new admin_setting_heading(
+        'local_playergames/learningxp_heading',
+        get_string('settings_learningxp_heading', 'local_playergames'),
+        get_string('settings_learningxp_heading_desc', 'local_playergames')
+    ));
+
+    $pagelearning->add(new admin_setting_configtext(
+        'local_playergames/learningxp_window_months',
+        get_string('settings_learningxp_window_months', 'local_playergames'),
+        get_string('settings_learningxp_window_months_desc', 'local_playergames'),
+        '12',
+        PARAM_INT
+    ));
+
+    $ADMIN->add('playergames_settings', $pagelearning);
+
     // Streak and freeze.
     $pagestreak = new admin_settingpage(
         'local_playergames_streak',

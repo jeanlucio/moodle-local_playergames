@@ -838,5 +838,41 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026063001, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026070100) {
+        // Monthly XP buckets mirroring block_playerhud course XP changes.
+        $table = new xmldb_table('local_playergames_student_xp_monthly');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('period', XMLDB_TYPE_CHAR, '6', null, XMLDB_NOTNULL);
+            $table->add_field('xp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key('uq_userid_period', XMLDB_KEY_UNIQUE, ['userid', 'period']);
+            $table->add_index('idx_period', XMLDB_INDEX_NOTUNIQUE, ['period']);
+            $dbman->create_table($table);
+        }
+
+        // Denormalized windowed learning XP per user (O(1) ranking/display reads).
+        $table = new xmldb_table('local_playergames_student_xp_cache');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('windowedxp', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('showinranking', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_key('uq_userid', XMLDB_KEY_UNIQUE, ['userid']);
+            $table->add_index('idx_showinranking_windowedxp', XMLDB_INDEX_NOTUNIQUE, ['showinranking', 'windowedxp']);
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026070100, 'local', 'playergames');
+    }
+
     return true;
 }

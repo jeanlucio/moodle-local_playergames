@@ -96,6 +96,42 @@
         <KEY NAME="uq_userid" TYPE="unique" FIELDS="userid"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="local_playergames_student_xp_monthly" COMMENT="Monthly XP buckets mirroring block_playerhud course XP changes (source of truth for the windowed learning XP)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="period" TYPE="char" LENGTH="6" NOTNULL="true" COMMENT="YYYYMM"/>
+        <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Signed sum of deltas for the month"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_period" TYPE="unique" FIELDS="userid, period"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_period" UNIQUE="false" FIELDS="period"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_student_xp_cache" COMMENT="Denormalized windowed learning XP per user, for O(1) ranking and display reads">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="windowedxp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Sum of monthly buckets within the configured window, floored at 0"/>
+        <FIELD NAME="showinranking" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Season-agnostic opt-in, separate from player_profile.showinranking"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid" TYPE="unique" FIELDS="userid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_showinranking_windowedxp" UNIQUE="false" FIELDS="showinranking, windowedxp"/>
+      </INDEXES>
+    </TABLE>
     <TABLE NAME="local_playergames_streaks" COMMENT="Daily activity streaks per user">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>

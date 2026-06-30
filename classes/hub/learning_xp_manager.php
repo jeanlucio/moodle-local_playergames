@@ -1,0 +1,226 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Learning XP pool: mirrors block_playerhud course XP into a windowed total.
+ *
+ * @package    local_playergames
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+namespace local_playergames\hub;
+
+use stdClass;
+
+/**
+ * Stores and aggregates the "learning XP" pool (course XP via block_playerhud).
+ *
+ * Separate from xp_manager's season XP pool — never summed together. Data is
+ * stored in monthly buckets (local_playergames_student_xp_monthly), the source
+ * of truth, and a denormalized windowed total
+ * (local_playergames_student_xp_cache) kept for O(1) ranking/display reads.
+ * The window length is configurable (learningxp_window_months, 0 = unlimited).
+ *
+ * @package    local_playergames
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class learning_xp_manager {
+    /**
+     * Returns the configured window length in months (0 = unlimited).
+     *
+     * @return int
+     */
+    public static function window_months(): int {
+        $configured = get_config('local_playergames', 'learningxp_window_months');
+        return ($configured !== false && $configured !== '') ? max(0, (int) $configured) : 12;
+    }
+
+    /**
+     * Returns the 'YYYYMM' period string for a timestamp.
+     *
+     * @param int $timestamp Unix timestamp.
+     * @return string
+     */
+    public static function period_for(int $timestamp): string {
+        return date('Ym', $timestamp);
+    }
+
+    /**
+     * Returns the oldest period still inside the window, or '' when unlimited.
+     *
+     * @param int $timestamp Reference timestamp (defaults to now via caller).
+     * @return string 'YYYYMM', or '' when the window is unlimited (0).
+     */
+    public static function oldest_period_in_window(int $timestamp): string {
+        $months = self::window_months();
+        if ($months <= 0) {
+            return '';
+        }
+        return date('Ym', strtotime("-{$months} months", $timestamp));
+    }
+
+    /**
+     * Records a signed XP delta for the current month and applies it to the
+     * windowed cache immediately (cheap incremental update).
+     *
+     * Called by the observer on every block_playerhud xp_changed event. The
+     * nightly recompute_learning_xp task is what corrects the window's aging
+     * (a bucket that ages out is only dropped there, not here).
+     *
+     * @param int $userid User id.
+     * @param int $delta Signed XP delta (positive gain, negative loss).
+     * @return void
+     */
+    public static function record_change(int $userid, int $delta): void {
+        global $DB;
+        if ($delta === 0) {
+            return;
+        }
+
+        $now    = time();
+        $period = self::period_for($now);
+
+        $bucket = $DB->get_record(
+            'local_playergames_student_xp_monthly',
+            ['userid' => $userid, 'period' => $period]
+        );
+        if ($bucket) {
+            $bucket->xp           = (int) $bucket->xp + $delta;
+            $bucket->timemodified = $now;
+            $DB->update_record('local_playergames_student_xp_monthly', $bucket);
+        } else {
+            $DB->insert_record('local_playergames_student_xp_monthly', (object) [
+                'userid'       => $userid,
+                'period'       => $period,
+                'xp'           => $delta,
+                'timecreated'  => $now,
+                'timemodified' => $now,
+            ]);
+        }
+
+        $cache = self::get_or_create_cache($userid);
+        $cache->windowedxp   = max(0, (int) $cache->windowedxp + $delta);
+        $cache->timemodified = $now;
+        $DB->update_record('local_playergames_student_xp_cache', $cache);
+    }
+
+    /**
+     * Returns (creating if absent) the cache row for a user.
+     *
+     * @param int $userid User id.
+     * @return stdClass
+     */
+    public static function get_or_create_cache(int $userid): stdClass {
+        global $DB;
+        $cache = $DB->get_record('local_playergames_student_xp_cache', ['userid' => $userid]);
+        if ($cache) {
+            return $cache;
+        }
+        $now   = time();
+        $cache = (object) [
+            'userid'        => $userid,
+            'windowedxp'    => 0,
+            'showinranking' => 0,
+            'timecreated'   => $now,
+            'timemodified'  => $now,
+        ];
+        $cache->id = $DB->insert_record('local_playergames_student_xp_cache', $cache);
+        return $cache;
+    }
+
+    /**
+     * Returns the windowed learning XP for a user (read-only, no row creation).
+     *
+     * @param int $userid User id.
+     * @return int
+     */
+    public static function get_windowedxp(int $userid): int {
+        global $DB;
+        $value = $DB->get_field('local_playergames_student_xp_cache', 'windowedxp', ['userid' => $userid]);
+        return $value !== false ? (int) $value : 0;
+    }
+
+    /**
+     * Sets a user's learning-XP ranking opt-in (season-agnostic, separate from
+     * player_profile.showinranking).
+     *
+     * @param int $userid User id.
+     * @param bool $show Whether the user should appear in the learning ranking.
+     * @return void
+     */
+    public static function set_ranking_visibility(int $userid, bool $show): void {
+        global $DB;
+        $cache = self::get_or_create_cache($userid);
+        $cache->showinranking = $show ? 1 : 0;
+        $cache->timemodified  = time();
+        $DB->update_record('local_playergames_student_xp_cache', $cache);
+    }
+
+    /**
+     * Recomputes the windowed cache for every user from the monthly buckets,
+     * pruning buckets that have aged out of the window.
+     *
+     * Heavy GROUP BY/SUM work — intended to run only from the nightly
+     * recompute_learning_xp scheduled task, never on a web request.
+     *
+     * @return void
+     */
+    public static function recompute_all(): void {
+        global $DB;
+
+        $cutoff = self::oldest_period_in_window(time());
+        if ($cutoff !== '') {
+            $DB->delete_records_select(
+                'local_playergames_student_xp_monthly',
+                'period < :cutoff',
+                ['cutoff' => $cutoff]
+            );
+        }
+
+        $sums = $DB->get_records_sql(
+            'SELECT userid, SUM(xp) AS total
+               FROM {local_playergames_student_xp_monthly}
+           GROUP BY userid'
+        );
+
+        $existing = $DB->get_records('local_playergames_student_xp_cache', null, '', 'userid, id, windowedxp, timemodified');
+
+        $now = time();
+        foreach ($existing as $userid => $cache) {
+            $newvalue = isset($sums[$userid]) ? max(0, (int) $sums[$userid]->total) : 0;
+            if ($newvalue !== (int) $cache->windowedxp) {
+                $cache->windowedxp   = $newvalue;
+                $cache->timemodified = $now;
+                $DB->update_record('local_playergames_student_xp_cache', $cache);
+            }
+        }
+
+        foreach ($sums as $userid => $sum) {
+            if (isset($existing[$userid])) {
+                continue;
+            }
+            $DB->insert_record('local_playergames_student_xp_cache', (object) [
+                'userid'        => $userid,
+                'windowedxp'    => max(0, (int) $sum->total),
+                'showinranking' => 0,
+                'timecreated'   => $now,
+                'timemodified'  => $now,
+            ]);
+        }
+    }
+}
