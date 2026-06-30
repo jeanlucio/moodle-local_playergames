@@ -174,11 +174,13 @@ class hub implements renderable, templatable {
             : '';
 
         // Learning XP: a separate, season-agnostic pool mirrored from block_playerhud course
-        // XP (Fase C). Only meaningful for students — even in "both" mode, staff/admins never
-        // earn course XP through PlayerHUD — and only when the admin enabled it site-wide.
+        // XP (Fase C). Its source is student course activity, but the viewer's own isstaff
+        // flag (global: teacher in ANY course) is NOT used to hide it — a person can be staff
+        // in one course and a genuine PlayerHUD-earning student in another, and should still
+        // see their own learning XP. Gated only by the admin toggle and by allowed_participants,
+        // a site-level mode the admin chose for the whole hub (unrelated to any one person's role).
         $showlearningxp = (bool) get_config('local_playergames', 'showlearningxp')
-            && in_array($this->allowed, ['students', 'both'], true)
-            && !$this->isstaff;
+            && in_array($this->allowed, ['students', 'both'], true);
 
         $learningxp              = 0;
         $learningshowinranking   = false;
