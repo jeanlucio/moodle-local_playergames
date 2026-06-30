@@ -182,14 +182,17 @@ class hub implements renderable, templatable {
         $showlearningxp = (bool) get_config('local_playergames', 'showlearningxp')
             && in_array($this->allowed, ['students', 'both'], true);
 
-        $learningxp              = 0;
-        $learningshowinranking   = false;
-        $learningxprankingenabled = false;
-        $learningranking         = [];
-        $selfinlearning          = 0;
-        $strlearningposition     = '';
-        $haslearningposition     = false;
-        $learningzeroxp          = false;
+        $learningxp                = 0;
+        $learningshowinranking     = false;
+        $learningxprankingenabled  = false;
+        $learningshowbothtabs      = false;
+        $learningstudentranking    = [];
+        $learningstaffranking      = [];
+        $selfinlearningstudents    = 0;
+        $selfinlearningstaff       = 0;
+        $strlearningposition       = '';
+        $haslearningposition       = false;
+        $learningzeroxp            = false;
 
         if ($showlearningxp) {
             $learningcache          = learning_xp_manager::get_or_create_cache($this->userid);
@@ -199,22 +202,46 @@ class hub implements renderable, templatable {
             $learningzeroxp         = $learningxp <= 0;
 
             if ($learningxprankingenabled) {
-                $learningranking = $this->get_learning_ranking();
-                $selfinlearning  = $this->find_self_rank($learningranking);
+                // Mirrors the season ranking's group split: a student only sees their
+                // classmates, while staff/admin can see the students group too (and their
+                // own staff group, if any of them have also earned learning XP).
+                $learningshowbothtabs = $this->isadmin || ($this->allowed === 'both' && $this->isstaff);
+
+                if ($learningshowbothtabs) {
+                    $learningstudentranking = $this->get_learning_ranking($staffids, false);
+                    $learningstaffranking   = $this->get_learning_ranking($staffids, true);
+                } else if ($this->isstaff) {
+                    $learningstaffranking = $this->get_learning_ranking($staffids, true);
+                } else {
+                    $learningstudentranking = $this->get_learning_ranking($staffids, false);
+                }
+
+                $selfinlearningstudents = $this->find_self_rank($learningstudentranking);
+                $selfinlearningstaff    = $this->find_self_rank($learningstaffranking);
 
                 // The ranking filters out windowedxp = 0 (inactive users never rank), so a
-                // user at 0 would never be found in $learningranking — but that is not the
+                // user at 0 would never be found in their group's list — but that is not the
                 // same as "ranked just outside the top 50". Only compute/show a position
                 // when they actually have XP; otherwise the count is meaningless.
-                if ($learningshowinranking && $learningxp > 0 && $selfinlearning === 0) {
-                    $learningposition = learning_xp_manager::get_position(
-                        $this->userid,
-                        $learningxp,
-                        (int) $learningcache->timemodified
-                    );
-                    if ($learningposition > 0) {
-                        $strlearningposition = get_string('hub_your_position', 'local_playergames', $learningposition);
-                        $haslearningposition = true;
+                if ($learningshowinranking && $learningxp > 0) {
+                    $wantstaff = $this->isstaff;
+                    $selfintop = $wantstaff ? $selfinlearningstaff : $selfinlearningstudents;
+                    if ($selfintop === 0) {
+                        $learningposition = learning_xp_manager::get_position(
+                            $this->userid,
+                            $learningxp,
+                            (int) $learningcache->timemodified,
+                            $staffids,
+                            $wantstaff
+                        );
+                        if ($learningposition > 0) {
+                            $strlearningposition = get_string(
+                                'hub_your_position',
+                                'local_playergames',
+                                $learningposition
+                            );
+                            $haslearningposition = true;
+                        }
                     }
                 }
             }
@@ -279,9 +306,13 @@ class hub implements renderable, templatable {
             'learningxp'             => $learningxp,
             'learningxprankingenabled' => $learningxprankingenabled,
             'learningshowinranking'  => $learningshowinranking,
-            'learningranking'        => $learningranking,
-            'haslearningranking'     => !empty($learningranking),
-            'selfinlearning'         => $selfinlearning,
+            'learningshowbothtabs'   => $learningshowbothtabs,
+            'learningstudentranking' => $learningstudentranking,
+            'learningstaffranking'   => $learningstaffranking,
+            'haslearningstudentranking' => !empty($learningstudentranking),
+            'haslearningstaffranking'   => !empty($learningstaffranking),
+            'selfinlearningstudents' => $selfinlearningstudents,
+            'selfinlearningstaff'    => $selfinlearningstaff,
             'haslearningposition'    => $haslearningposition,
             'learningzeroxp'         => $learningzeroxp,
             'str_learning_position'  => $strlearningposition,
@@ -484,22 +515,38 @@ class hub implements renderable, templatable {
     }
 
     /**
-     * Returns the learning XP ranking, using cache when available.
+     * Returns the learning XP ranking for a participant group, using cache
+     * when available. Mirrors get_ranking()'s staff/student split.
      *
-     * Single list — no staff/student variant, since the ranking already filters
-     * by who actually earned learning XP rather than by role. Filters out
-     * inactive users (windowedxp = 0) so they never occupy a top-50 slot, and
-     * reads the denormalized windowedxp column rather than aggregating live.
+     * Filters out inactive users (windowedxp = 0) so they never occupy a
+     * top-50 slot, and reads the denormalized windowedxp column rather than
+     * aggregating live.
      *
+     * @param int[] $staffids  All user IDs that have the staff capability.
+     * @param bool  $wantstaff True to return the staff ranking; false for students.
      * @return array
      */
-    private function get_learning_ranking(): array {
+    private function get_learning_ranking(array $staffids, bool $wantstaff): array {
         global $DB;
 
-        $cache   = cache::make('local_playergames', 'ranking');
-        $ranking = $cache->get(learning_xp_manager::RANKING_CACHE_KEY);
+        $cachekey = learning_xp_manager::RANKING_CACHE_KEY . '_' . ($wantstaff ? 'staff' : 'students');
+        $cache    = cache::make('local_playergames', 'ranking');
+        $ranking  = $cache->get($cachekey);
 
         if ($ranking === false) {
+            $params = [];
+            $filter = '';
+
+            if (!empty($staffids)) {
+                [$insql, $inparams] = $DB->get_in_or_equal($staffids, SQL_PARAMS_NAMED, 'uid', $wantstaff);
+                $params = $inparams;
+                $filter = "AND c.userid {$insql}";
+            } else if ($wantstaff) {
+                // No staff users — staff ranking is empty.
+                $cache->set($cachekey, []);
+                return [];
+            }
+
             $sql = "SELECT c.userid, c.windowedxp,
                            u.firstname, u.lastname,
                            u.firstnamephonetic, u.lastnamephonetic,
@@ -508,9 +555,10 @@ class hub implements renderable, templatable {
                       JOIN {user} u ON u.id = c.userid
                      WHERE c.showinranking = 1
                        AND c.windowedxp > 0
+                       {$filter}
                   ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
 
-            $records = $DB->get_records_sql($sql, [], 0, self::RANKING_LIMIT);
+            $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
@@ -524,7 +572,7 @@ class hub implements renderable, templatable {
                 $pos++;
             }
 
-            $cache->set(learning_xp_manager::RANKING_CACHE_KEY, $ranking);
+            $cache->set($cachekey, $ranking);
         }
 
         // Isself is viewer-dependent and must never be cached (the cache is shared by every

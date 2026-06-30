@@ -48,7 +48,9 @@
         "str_learningxp_hint": "Earned from your course activity — separate from your season XP above.",
         "learningxprankingenabled": true,
         "learningshowinranking": true,
-        "selfinlearning": 1,
+        "learningshowbothtabs": false,
+        "selfinlearningstudents": 1,
+        "selfinlearningstaff": 0,
         "haslearningposition": false,
         "learningzeroxp": false,
         "str_learning_position": "",
@@ -56,10 +58,12 @@
         "str_show_learningxpranking": "Appear in learning ranking",
         "str_learningxp_invite": "You have not joined the learning ranking yet. Enable \"Appear in learning ranking\" in your profile to join.",
         "str_learningxp_zero": "You have not earned any learning XP yet, so you are not ranked.",
-        "haslearningranking": true,
-        "learningranking": [
+        "haslearningstudentranking": true,
+        "haslearningstaffranking": false,
+        "learningstudentranking": [
             {"pos": 1, "name": "Bob Jones", "xp": 240, "isself": true, "extra": false}
         ],
+        "learningstaffranking": [],
         "sesskey": "abc123",
         "formaction": "/local/playergames/hub.php",
         "achievementsurl": "/local/playergames/achievements.php",
@@ -585,17 +589,135 @@
             </div>
             {{/rankingenabled}}
 
-            {{! Learning ranking — separate, season-agnostic pool; students only }}
+            {{! Learning ranking — separate, season-agnostic pool, split by participant
+                group like the season ranking above (a student sees classmates; staff/admin
+                can also view the students group). }}
             {{#learningxprankingenabled}}
             <div class="card pg-hub-learning-ranking-card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">
                         <i class="fa fa-graduation-cap me-2" aria-hidden="true"></i>{{str_learningxp_ranking}}
                     </h5>
+                    {{#learningshowbothtabs}}
+                    <ul class="nav nav-pills" id="pg-learning-rank-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="pg-learning-tab-stu"
+                                data-bs-toggle="pill" data-bs-target="#pg-learning-rank-students"
+                                type="button" role="tab"
+                                aria-controls="pg-learning-rank-students" aria-selected="true">
+                                {{str_ranking_stu}}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pg-learning-tab-sta"
+                                data-bs-toggle="pill" data-bs-target="#pg-learning-rank-staff"
+                                type="button" role="tab"
+                                aria-controls="pg-learning-rank-staff" aria-selected="false">
+                                {{str_ranking_sta}}
+                            </button>
+                        </li>
+                    </ul>
+                    {{/learningshowbothtabs}}
                 </div>
+
                 <div class="card-body p-0">
-                    {{#haslearningranking}}
-                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearning}}">
+                    {{#learningshowbothtabs}}
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="pg-learning-rank-students"
+                            role="tabpanel" aria-labelledby="pg-learning-tab-stu">
+                            <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearningstudents}}">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="text-center pg-hub-rank-pos-col">
+                                                    {{str_rank_pos}}
+                                                </th>
+                                                <th scope="col">{{str_rank_player}}</th>
+                                                <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{#learningstudentranking}}
+                                            <tr class="{{#isself}}table-primary{{/isself}}
+                                                {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                                <td class="text-center fw-bold">{{pos}}</td>
+                                                <td>{{name}}</td>
+                                                <td class="text-end">{{xp}}</td>
+                                            </tr>
+                                            {{/learningstudentranking}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center p-2">
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                        data-show-label="{{str_show_all}}"
+                                        data-hide-label="{{str_show_less}}">
+                                        {{str_show_all}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="pg-learning-rank-staff"
+                            role="tabpanel" aria-labelledby="pg-learning-tab-sta">
+                            <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearningstaff}}">
+                                {{^learningshowinranking}}
+                                <div class="alert alert-secondary mx-3 mt-3">
+                                    <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                                    {{str_learningxp_invite}}
+                                </div>
+                                {{/learningshowinranking}}
+                                {{#haslearningposition}}
+                                <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                                    {{str_learning_position}}
+                                </div>
+                                {{/haslearningposition}}
+                                {{#learningshowinranking}}{{#learningzeroxp}}
+                                <div class="alert alert-secondary mx-3 mt-3 mb-0">
+                                    <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                                    {{str_learningxp_zero}}
+                                </div>
+                                {{/learningzeroxp}}{{/learningshowinranking}}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="text-center pg-hub-rank-pos-col">
+                                                    {{str_rank_pos}}
+                                                </th>
+                                                <th scope="col">{{str_rank_player}}</th>
+                                                <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{#learningstaffranking}}
+                                            <tr class="{{#isself}}table-primary{{/isself}}
+                                                {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                                <td class="text-center fw-bold">{{pos}}</td>
+                                                <td>{{name}}</td>
+                                                <td class="text-end">{{xp}}</td>
+                                            </tr>
+                                            {{/learningstaffranking}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center p-2">
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                        data-show-label="{{str_show_all}}"
+                                        data-hide-label="{{str_show_less}}">
+                                        {{str_show_all}}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/learningshowbothtabs}}
+
+                    {{^learningshowbothtabs}}
+                    {{#haslearningstudentranking}}
+                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearningstudents}}">
                         {{^learningshowinranking}}
                         <div class="alert alert-secondary mx-3 mt-3">
                             <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
@@ -625,14 +747,14 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {{#learningranking}}
+                                    {{#learningstudentranking}}
                                     <tr class="{{#isself}}table-primary{{/isself}}
                                         {{#extra}}pg-hub-extra-row d-none{{/extra}}">
                                         <td class="text-center fw-bold">{{pos}}</td>
                                         <td>{{name}}</td>
                                         <td class="text-end">{{xp}}</td>
                                     </tr>
-                                    {{/learningranking}}
+                                    {{/learningstudentranking}}
                                 </tbody>
                             </table>
                         </div>
@@ -645,13 +767,61 @@
                             </button>
                         </div>
                     </div>
-                    {{/haslearningranking}}
-                    {{^haslearningranking}}
-                    <div class="alert alert-secondary m-3">
-                        <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
-                        {{str_learningxp_invite}}
+                    {{/haslearningstudentranking}}
+
+                    {{#haslearningstaffranking}}
+                    <div class="pg-hub-rank-wrapper" data-selfpos="{{selfinlearningstaff}}">
+                        {{^learningshowinranking}}
+                        <div class="alert alert-secondary mx-3 mt-3">
+                            <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                            {{str_learningxp_invite}}
+                        </div>
+                        {{/learningshowinranking}}
+                        {{#haslearningposition}}
+                        <div class="alert alert-info mx-3 mt-3 mb-0 text-center fw-bold pg-hub-selfpos">
+                            {{str_learning_position}}
+                        </div>
+                        {{/haslearningposition}}
+                        {{#learningshowinranking}}{{#learningzeroxp}}
+                        <div class="alert alert-secondary mx-3 mt-3 mb-0">
+                            <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
+                            {{str_learningxp_zero}}
+                        </div>
+                        {{/learningzeroxp}}{{/learningshowinranking}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-center pg-hub-rank-pos-col">
+                                            {{str_rank_pos}}
+                                        </th>
+                                        <th scope="col">{{str_rank_player}}</th>
+                                        <th scope="col" class="text-end">{{str_rank_xp}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#learningstaffranking}}
+                                    <tr class="{{#isself}}table-primary{{/isself}}
+                                        {{#extra}}pg-hub-extra-row d-none{{/extra}}">
+                                        <td class="text-center fw-bold">{{pos}}</td>
+                                        <td>{{name}}</td>
+                                        <td class="text-end">{{xp}}</td>
+                                    </tr>
+                                    {{/learningstaffranking}}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center p-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary pg-hub-toggle-ranking"
+                                data-show-label="{{str_show_all}}"
+                                data-hide-label="{{str_show_less}}">
+                                {{str_show_all}}
+                            </button>
+                        </div>
                     </div>
-                    {{/haslearningranking}}
+                    {{/haslearningstaffranking}}
+                    {{/learningshowbothtabs}}
                 </div>
             </div>
             {{/learningxprankingenabled}}

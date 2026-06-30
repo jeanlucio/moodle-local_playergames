@@ -211,8 +211,8 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->set_cache($u1, 300, true, $t);
         $this->set_cache($u2, 100, true, $t);
 
-        $this->assertSame(1, learning_xp_manager::get_position($u1, 300, $t));
-        $this->assertSame(2, learning_xp_manager::get_position($u2, 100, $t));
+        $this->assertSame(1, learning_xp_manager::get_position($u1, 300, $t, [], false));
+        $this->assertSame(2, learning_xp_manager::get_position($u2, 100, $t, [], false));
     }
 
     public function test_get_position_excludes_optout(): void {
@@ -224,7 +224,19 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->set_cache($top, 999, false, $t);
         $this->set_cache($me, 100, true, $t);
 
-        $this->assertSame(1, learning_xp_manager::get_position($me, 100, $t));
+        $this->assertSame(1, learning_xp_manager::get_position($me, 100, $t, [], false));
+    }
+
+    public function test_get_position_excludes_zero_xp(): void {
+        $this->resetAfterTest();
+        $t = 1000;
+        $zero = (int) $this->getDataGenerator()->create_user()->id;
+        $me   = (int) $this->getDataGenerator()->create_user()->id;
+        // An opted-in user with 0 XP must not count ahead of (or tie with) me.
+        $this->set_cache($zero, 0, true, $t - 500);
+        $this->set_cache($me, 100, true, $t);
+
+        $this->assertSame(1, learning_xp_manager::get_position($me, 100, $t, [], false));
     }
 
     public function test_get_position_tie_breaks_by_timemodified_then_userid(): void {
@@ -235,29 +247,52 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->set_cache($early, 150, true, 1000);
         $this->set_cache($late, 150, true, 2000);
 
-        $this->assertSame(1, learning_xp_manager::get_position($early, 150, 1000));
-        $this->assertSame(2, learning_xp_manager::get_position($late, 150, 2000));
+        $this->assertSame(1, learning_xp_manager::get_position($early, 150, 1000, [], false));
+        $this->assertSame(2, learning_xp_manager::get_position($late, 150, 2000, [], false));
+    }
+
+    public function test_get_position_splits_staff_and_students(): void {
+        $this->resetAfterTest();
+        $t = 1000;
+        $staff   = (int) $this->getDataGenerator()->create_user()->id;
+        $student = (int) $this->getDataGenerator()->create_user()->id;
+        // Staff has more XP, but must not affect the student group's position.
+        $this->set_cache($staff, 900, true, $t);
+        $this->set_cache($student, 100, true, $t);
+        $staffids = [$staff];
+
+        $this->assertSame(1, learning_xp_manager::get_position($student, 100, $t, $staffids, false));
+        $this->assertSame(1, learning_xp_manager::get_position($staff, 900, $t, $staffids, true));
+    }
+
+    public function test_get_position_no_staff_returns_zero(): void {
+        $this->resetAfterTest();
+        $this->assertSame(0, learning_xp_manager::get_position(1, 0, 1000, [], true));
     }
 
     public function test_record_change_invalidates_the_ranking_cache(): void {
         $this->resetAfterTest();
         $user = (int) $this->getDataGenerator()->create_user()->id;
         $cache = \cache::make('local_playergames', 'ranking');
-        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['stale' => true]);
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY . '_students', ['stale' => true]);
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY . '_staff', ['stale' => true]);
 
         learning_xp_manager::record_change($user, 10);
 
-        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY . '_students'));
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY . '_staff'));
     }
 
     public function test_set_ranking_visibility_invalidates_the_ranking_cache(): void {
         $this->resetAfterTest();
         $user = (int) $this->getDataGenerator()->create_user()->id;
         $cache = \cache::make('local_playergames', 'ranking');
-        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['stale' => true]);
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY . '_students', ['stale' => true]);
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY . '_staff', ['stale' => true]);
 
         learning_xp_manager::set_ranking_visibility($user, true);
 
-        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY . '_students'));
+        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY . '_staff'));
     }
 }
