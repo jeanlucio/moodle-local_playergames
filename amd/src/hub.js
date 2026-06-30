@@ -108,8 +108,7 @@ const updateProfileAvatar = equipped => {
 const applyEquipped = (grid, equipped) => {
     grid.querySelectorAll('[data-avatar-emoji]').forEach(btn => {
         const isnow = btn.dataset.avatarEmoji === equipped && equipped !== '';
-        btn.classList.toggle('btn-primary', isnow);
-        btn.classList.toggle('btn-outline-secondary', !isnow);
+        btn.classList.toggle('pg-hub-avatar-equipped', isnow);
         btn.dataset.avatarEquip = isnow ? '' : btn.dataset.avatarEmoji;
         btn.setAttribute('aria-pressed', isnow ? 'true' : 'false');
     });

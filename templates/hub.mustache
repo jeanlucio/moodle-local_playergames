@@ -123,9 +123,13 @@
         "userpictureurl": "https://example.com/pluginfile.php/1/user/icon/f1",
         "equippedavatar": "🤖",
         "hasequippedavatar": true,
-        "avatars": [
-            {"emoji": "🤖", "name": "Robot", "requiredlevel": 1, "unlocked": true, "equipped": true, "equipvalue": ""},
-            {"emoji": "🐉", "name": "Dragon", "requiredlevel": 20, "unlocked": false, "equipped": false, "equipvalue": "🐉"}
+        "avatarsbytier": [
+            {"requiredlevel": 1, "avatars": [
+                {"emoji": "🤖", "name": "Robot", "unlocked": true, "equipped": true, "equipvalue": ""}
+            ]},
+            {"requiredlevel": 20, "avatars": [
+                {"emoji": "🐉", "name": "Dragon", "requiredlevel": 20, "unlocked": false, "equipped": false, "equipvalue": "🐉"}
+            ]}
         ],
         "hasfreezelog": true,
         "str_freeze_log": "Freeze history",
@@ -593,29 +597,35 @@
 
     {{! Avatar collection — hidden source moved into the modal on first open. }}
     <div id="pg-avatar-collection" hidden>
-        <div class="d-flex flex-wrap pg-hub-avatar-grid">
-            {{#avatars}}
-            {{#unlocked}}
-            <button type="button"
-                class="btn pg-hub-avatar-btn {{#equipped}}btn-primary{{/equipped}}{{^equipped}}btn-outline-secondary{{/equipped}}"
-                data-avatar-emoji="{{emoji}}"
-                data-avatar-equip="{{equipvalue}}"
-                aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
-                title="{{name}}"
-                aria-label="{{name}}">
-                <span aria-hidden="true">{{emoji}}</span>
-            </button>
-            {{/unlocked}}
-            {{^unlocked}}
-            <span class="btn pg-hub-avatar-btn pg-hub-avatar-locked disabled"
-                title="{{str_avatar_locked}} — {{str_level}} {{requiredlevel}}"
-                aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
-                <span aria-hidden="true">🔒</span>
-                <small class="pg-hub-avatar-reqlevel">{{requiredlevel}}</small>
-            </span>
-            {{/unlocked}}
-            {{/avatars}}
+        {{#avatarsbytier}}
+        <div class="pg-hub-avatar-tier-row mb-3">
+            <div class="pg-hub-avatar-tier-label text-muted small mb-1">
+                {{str_level}} {{requiredlevel}}+
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {{#avatars}}
+                {{#unlocked}}
+                <button type="button"
+                    class="pg-hub-avatar-circle {{#equipped}}pg-hub-avatar-equipped{{/equipped}}"
+                    data-avatar-emoji="{{emoji}}"
+                    data-avatar-equip="{{equipvalue}}"
+                    aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
+                    title="{{name}}"
+                    aria-label="{{name}}">
+                    <span aria-hidden="true">{{emoji}}</span>
+                </button>
+                {{/unlocked}}
+                {{^unlocked}}
+                <span class="pg-hub-avatar-circle pg-hub-avatar-locked"
+                    title="{{name}} — {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})"
+                    aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
+                    <span aria-hidden="true">{{emoji}}</span>
+                </span>
+                {{/unlocked}}
+                {{/avatars}}
+            </div>
         </div>
+        {{/avatarsbytier}}
         <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
     </div>
     {{/noseason}}

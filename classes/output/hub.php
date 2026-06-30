@@ -173,11 +173,22 @@ class hub implements renderable, templatable {
             : '';
 
         // Avatar collection: equip value is empty for the equipped one (click = unequip).
+        // Grouped by tier (one row per tier in the modal) — get_collection() already
+        // returns avatars ordered by tier, so a single pass keeps that grouping.
         $equippedavatar = avatar_manager::get_equipped($this->userid);
-        $avatars = array_map(static function (array $a): array {
-            $a['equipvalue'] = $a['equipped'] ? '' : $a['emoji'];
-            return $a;
-        }, avatar_manager::get_collection($this->userid));
+        $avatarsbytier  = [];
+        foreach (avatar_manager::get_collection($this->userid) as $avatar) {
+            $avatar['equipvalue'] = $avatar['equipped'] ? '' : $avatar['emoji'];
+            $tier = $avatar['tier'];
+            if (!isset($avatarsbytier[$tier])) {
+                $avatarsbytier[$tier] = [
+                    'requiredlevel' => $avatar['requiredlevel'],
+                    'avatars'       => [],
+                ];
+            }
+            $avatarsbytier[$tier]['avatars'][] = $avatar;
+        }
+        $avatarsbytier = array_values($avatarsbytier);
 
         // Default profile avatar is the Moodle user picture; the emoji overrides it when equipped.
         global $PAGE;
@@ -227,7 +238,7 @@ class hub implements renderable, templatable {
             'selfinstudents'     => $selfinstudents,
             'selfinstaff'        => $selfinstaff,
             'str_your_position'  => $strselfposition,
-            'avatars'            => $avatars,
+            'avatarsbytier'      => $avatarsbytier,
             'equippedavatar'     => $equippedavatar,
             'hasequippedavatar'  => $equippedavatar !== '',
             'userpictureurl'     => $userpictureurl,

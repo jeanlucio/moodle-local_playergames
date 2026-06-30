@@ -643,24 +643,34 @@ body.path-local-playergames .badge.pg-season-badge {
     color: var(--bs-dark, #000);
 }
 
-body.path-local-playergames .pg-hub-avatar-grid {
-    gap: 0.5rem;
+body.path-local-playergames .pg-hub-avatar-tier-label {
+    font-weight: 600;
 }
 
-body.path-local-playergames .pg-hub-avatar-btn {
-    font-size: 1.5rem;
+body.path-local-playergames .pg-hub-avatar-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    font-size: 1.75rem;
     line-height: 1;
-    padding: 0.35rem 0.5rem;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--bs-secondary-bg, #e9ecef);
+    cursor: pointer;
 }
 
-body.path-local-playergames .pg-hub-avatar-locked {
+body.path-local-playergames .pg-hub-avatar-circle.pg-hub-avatar-equipped {
+    border-color: var(--bs-primary, #0d6efd);
+    background: var(--bs-primary-bg-subtle, #cfe2ff);
+}
+
+body.path-local-playergames .pg-hub-avatar-circle.pg-hub-avatar-locked {
     cursor: not-allowed;
-    opacity: 0.65;
-}
-
-body.path-local-playergames .pg-hub-avatar-reqlevel {
-    font-size: 0.7rem;
-    vertical-align: super;
+    filter: grayscale(1);
+    opacity: 0.5;
 }
 
 body.path-local-playergames .pg-hub-profile-avatar {
