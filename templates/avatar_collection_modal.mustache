@@ -1,0 +1,77 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/avatar_collection_modal
+
+    Hidden source for the avatar collection grid, moved into a core/modal on
+    first open by amd/src/avatar_modal.js. Shared by hub.mustache and
+    block_playergames's widget.mustache — must be paired with
+    avatar_trigger_button.mustache on the same page (never both templates on
+    the same page at once, so the fixed #pg-avatar-collection id is safe).
+
+    @package local_playergames
+    @copyright 2026 Jean Lúcio
+    @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    Example context (json):
+    {
+        "str_level": "Level",
+        "str_avatar_locked": "Locked",
+        "str_avatars_hint": "Reach higher levels to unlock more avatars.",
+        "avatarsbytier": [
+            {"requiredlevel": 1, "avatars": [
+                {"emoji": "🐣", "name": "Chick", "equipvalue": "🐣", "equipped": false, "unlocked": true},
+                {"emoji": "🤖", "name": "Robot", "equipvalue": "", "equipped": true, "unlocked": true}
+            ]},
+            {"requiredlevel": 20, "avatars": [
+                {"emoji": "🐲", "name": "Dragon", "unlocked": false}
+            ]}
+        ]
+    }
+}}
+<div id="pg-avatar-collection" hidden>
+    {{#avatarsbytier}}
+    <div class="pg-hub-avatar-tier-row mb-3">
+        <div class="pg-hub-avatar-tier-label text-muted small mb-1">
+            {{str_level}} {{requiredlevel}}+
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {{#avatars}}
+            {{#unlocked}}
+            <button type="button"
+                class="pg-hub-avatar-circle {{#equipped}}pg-hub-avatar-equipped{{/equipped}}"
+                data-avatar-emoji="{{emoji}}"
+                data-avatar-equip="{{equipvalue}}"
+                aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
+                title="{{name}}"
+                aria-label="{{name}}">
+                <span aria-hidden="true">{{emoji}}</span>
+            </button>
+            {{/unlocked}}
+            {{^unlocked}}
+            <span class="pg-hub-avatar-circle pg-hub-avatar-locked"
+                title="{{name}} — {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})"
+                aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
+                <span aria-hidden="true">{{emoji}}</span>
+            </span>
+            {{/unlocked}}
+            {{/avatars}}
+        </div>
+    </div>
+    {{/avatarsbytier}}
+    <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
+</div>

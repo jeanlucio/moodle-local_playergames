@@ -874,5 +874,25 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026070100, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026070102) {
+        // Unified activity log: every season XP, learning XP, freeze and streak event.
+        $table = new xmldb_table('local_playergames_activity_log');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('eventtype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+            $table->add_field('xpdelta', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('source', XMLDB_TYPE_CHAR, '30', null, XMLDB_NOTNULL);
+            $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+            $table->add_index('idx_userid_timecreated', XMLDB_INDEX_NOTUNIQUE, ['userid', 'timecreated']);
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026070102, 'local', 'playergames');
+    }
+
     return true;
 }

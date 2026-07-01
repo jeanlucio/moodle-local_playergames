@@ -387,5 +387,23 @@
         <KEY NAME="fk_question" TYPE="foreign" FIELDS="questionid" REFTABLE="local_playergames_concept_questions" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="local_playergames_activity_log" COMMENT="Unified activity log: every season XP, learning XP, freeze and streak event">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="eventtype" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="season_xp, learning_xp, freeze_earned, freeze_used, streak_broken"/>
+        <FIELD NAME="xpdelta" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Signed; 0 for non-XP events"/>
+        <FIELD NAME="source" TYPE="char" LENGTH="30" NOTNULL="true" COMMENT="gametype for season_xp; block_playerhud for learning_xp; mission/streak_break/cron otherwise"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Only meaningful for learning_xp rows"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_userid_timecreated" UNIQUE="false" FIELDS="userid, timecreated"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

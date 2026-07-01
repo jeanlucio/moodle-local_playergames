@@ -128,6 +128,8 @@ class xp_manager {
             $event->trigger();
         }
 
+        activity_log::record($userid, activity_log::TYPE_SEASON_XP, $actual, $gametype);
+
         self::invalidate_ranking_cache($seasonid);
         return $actual;
     }

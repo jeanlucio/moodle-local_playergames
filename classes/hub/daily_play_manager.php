@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\event\game_completed;
+use moodle_url;
 use stdClass;
 
 /**
@@ -39,6 +40,14 @@ use stdClass;
  * @package    local_playergames
  */
 class daily_play_manager {
+    /** @var array<string, string> Font-Awesome icon per game type. */
+    public const GAME_ICONS = [
+        'quiz'   => 'fa-question-circle',
+        'guess'  => 'fa-spell-check',
+        'fill'   => 'fa-crosshairs',
+        'battle' => 'fa-dragon',
+    ];
+
     /**
      * Number of plays allowed per day for a game type.
      *
@@ -162,5 +171,68 @@ class daily_play_manager {
         $event->trigger();
 
         return ['success' => true, 'xpawarded' => $xpawarded, 'remaining' => $games - ($attempts + 1)];
+    }
+
+    /**
+     * Returns today's game completion status for a user, ready for display.
+     *
+     * Shared by the Hub page and block_playergames, so the icon/URL/quota
+     * logic per game type only lives in one place.
+     *
+     * @param int $userid User id.
+     * @param array $snapshot Season config snapshot, for the per-game daily quota.
+     * @return array
+     */
+    public static function get_games_today(int $userid, array $snapshot): array {
+        global $DB;
+
+        $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $hascartridge = $DB->record_exists('local_playergames_cartridges', ['active' => 1]);
+
+        $playedrows = $DB->get_records_select(
+            'local_playergames_daily_scores',
+            'userid = :uid AND gamedate = :gd AND completed = 1',
+            ['uid' => $userid, 'gd' => $today],
+            '',
+            'gametype, attempts'
+        );
+        $attempts = [];
+        foreach ($playedrows as $r) {
+            $attempts[$r->gametype] = (int) $r->attempts;
+        }
+
+        $gametypes = ['quiz', 'guess', 'fill', 'battle'];
+        $namekeys  = [
+            'quiz'   => 'hub_game_quiz',
+            'guess'  => 'hub_game_guess',
+            'fill'   => 'hub_game_fill',
+            'battle' => 'hub_game_battle',
+        ];
+        $gameurls = [
+            'quiz'   => (new moodle_url('/local/playergames/play_quiz.php'))->out(false),
+            'guess'  => '',
+            'fill'   => '',
+            'battle' => '',
+        ];
+        $result = [];
+        foreach ($gametypes as $gametype) {
+            $games   = self::games_per_day($snapshot, $gametype);
+            $done    = ($attempts[$gametype] ?? 0) >= $games;
+            $locked  = !$hascartridge && !$done;
+            $pending = !$done && !$locked;
+            $result[] = [
+                'gametype' => $gametype,
+                'name'     => get_string($namekeys[$gametype], 'local_playergames'),
+                'icon'     => self::GAME_ICONS[$gametype],
+                'done'     => $done,
+                'locked'   => $locked,
+                'pending'  => $pending,
+                'url'      => $pending ? ($gameurls[$gametype] ?? '') : '',
+                'str_done'    => get_string('hub_game_done', 'local_playergames'),
+                'str_pending' => get_string('hub_game_pending', 'local_playergames'),
+                'str_locked'  => get_string('hub_game_locked', 'local_playergames'),
+            ];
+        }
+        return $result;
     }
 }

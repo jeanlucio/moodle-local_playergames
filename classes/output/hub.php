@@ -55,14 +55,6 @@ use stdClass;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class hub implements renderable, templatable {
-    /** @var array<string, string> Font-Awesome icon per game type. */
-    private const GAME_ICONS = [
-        'quiz'   => 'fa-question-circle',
-        'guess'  => 'fa-spell-check',
-        'fill'   => 'fa-crosshairs',
-        'battle' => 'fa-dragon',
-    ];
-
     /** @var int Maximum ranking rows fetched from DB. */
     private const RANKING_LIMIT = 50;
 
@@ -119,7 +111,7 @@ class hub implements renderable, templatable {
         $leveldata  = $this->build_level_data($profile->xp, $level);
         $missions   = $this->get_missions($this->userid, $season->id);
         $snapshot     = season_manager::get_config_snapshot($season);
-        $games      = $this->get_games_today($this->userid, $snapshot);
+        $games      = daily_play_manager::get_games_today($this->userid, $snapshot);
         $freezelog  = $this->build_freeze_log($this->userid);
 
         $checkindaily = (int) ($snapshot['xp_checkin_daily'] ?? 5);
@@ -173,13 +165,9 @@ class hub implements renderable, templatable {
             : '';
 
         // Learning XP: a separate, season-agnostic pool mirrored from block_playerhud course
-        // XP (Fase C). Its source is student course activity, but the viewer's own isstaff
-        // flag (global: teacher in ANY course) is NOT used to hide it — a person can be staff
-        // in one course and a genuine PlayerHUD-earning student in another, and should still
-        // see their own learning XP. Gated only by the admin toggle and by allowed_participants,
-        // a site-level mode the admin chose for the whole hub (unrelated to any one person's role).
-        $showlearningxp = (bool) get_config('local_playergames', 'showlearningxp')
-            && in_array($this->allowed, ['students', 'both'], true);
+        // XP (Fase C). See learning_xp_manager::is_visible_to() for why this is not gated
+        // on the viewer's own isstaff flag.
+        $showlearningxp = learning_xp_manager::is_visible_to($this->allowed);
 
         $learningxp              = 0;
         $learningshowinranking   = false;
@@ -604,66 +592,6 @@ class hub implements renderable, templatable {
                 'timeformatted' => userdate((int) $entry->timecreated, get_string('strftimedatetime', 'langconfig')),
                 'label'         => $label,
                 'isearned'      => $entry->action === 'earned',
-            ];
-        }
-        return $result;
-    }
-
-    /**
-     * Returns game completion status for today.
-     *
-     * @param int $userid
-     * @param array $snapshot Season config snapshot, for the per-game daily quota.
-     * @return array
-     */
-    private function get_games_today(int $userid, array $snapshot): array {
-        global $DB;
-
-        $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
-        $hascartridge = $DB->record_exists('local_playergames_cartridges', ['active' => 1]);
-
-        $playedrows = $DB->get_records_select(
-            'local_playergames_daily_scores',
-            'userid = :uid AND gamedate = :gd AND completed = 1',
-            ['uid' => $userid, 'gd' => $today],
-            '',
-            'gametype, attempts'
-        );
-        $attempts = [];
-        foreach ($playedrows as $r) {
-            $attempts[$r->gametype] = (int) $r->attempts;
-        }
-
-        $gametypes = ['quiz', 'guess', 'fill', 'battle'];
-        $namekeys  = [
-            'quiz'   => 'hub_game_quiz',
-            'guess'  => 'hub_game_guess',
-            'fill'   => 'hub_game_fill',
-            'battle' => 'hub_game_battle',
-        ];
-        $gameurls = [
-            'quiz'   => (new \moodle_url('/local/playergames/play_quiz.php'))->out(false),
-            'guess'  => '',
-            'fill'   => '',
-            'battle' => '',
-        ];
-        $result = [];
-        foreach ($gametypes as $gametype) {
-            $games   = daily_play_manager::games_per_day($snapshot, $gametype);
-            $done    = ($attempts[$gametype] ?? 0) >= $games;
-            $locked  = !$hascartridge && !$done;
-            $pending = !$done && !$locked;
-            $result[] = [
-                'gametype' => $gametype,
-                'name'     => get_string($namekeys[$gametype], 'local_playergames'),
-                'icon'     => self::GAME_ICONS[$gametype],
-                'done'     => $done,
-                'locked'   => $locked,
-                'pending'  => $pending,
-                'url'      => $pending ? ($gameurls[$gametype] ?? '') : '',
-                'str_done'    => get_string('hub_game_done', 'local_playergames'),
-                'str_pending' => get_string('hub_game_pending', 'local_playergames'),
-                'str_locked'  => get_string('hub_game_locked', 'local_playergames'),
             ];
         }
         return $result;

@@ -45,6 +45,25 @@ class learning_xp_manager {
     public const RANKING_CACHE_KEY = 'learning_students';
 
     /**
+     * Whether the learning XP pool should be visible under the current site
+     * configuration.
+     *
+     * Deliberately NOT gated on the viewer's own isstaff flag (a global "teacher
+     * in any course" signal) — a person can be staff in one course and still a
+     * genuine PlayerHUD-earning student in another, and should keep seeing their
+     * own learning XP. Only the admin toggle and allowed_participants (a
+     * site-level mode, unrelated to any one person's role) gate it. Shared by
+     * the Hub and block_playergames so this rule only lives in one place.
+     *
+     * @param string $allowed Value of the allowed_participants setting.
+     * @return bool
+     */
+    public static function is_visible_to(string $allowed): bool {
+        return (bool) get_config('local_playergames', 'showlearningxp')
+            && in_array($allowed, ['students', 'both'], true);
+    }
+
+    /**
      * Returns the configured window length in months (0 = unlimited).
      *
      * @return int
@@ -88,9 +107,10 @@ class learning_xp_manager {
      *
      * @param int $userid User id.
      * @param int $delta Signed XP delta (positive gain, negative loss).
+     * @param int $courseid Course the delta originated from, if known (0 if not).
      * @return void
      */
-    public static function record_change(int $userid, int $delta): void {
+    public static function record_change(int $userid, int $delta, int $courseid = 0): void {
         global $DB;
         if ($delta === 0) {
             return;
@@ -121,6 +141,8 @@ class learning_xp_manager {
         $cacherow->windowedxp   = max(0, (int) $cacherow->windowedxp + $delta);
         $cacherow->timemodified = $now;
         $DB->update_record('local_playergames_student_xp_cache', $cacherow);
+
+        activity_log::record($userid, activity_log::TYPE_LEARNING_XP, $delta, 'block_playerhud', $courseid);
 
         self::invalidate_ranking_cache();
     }

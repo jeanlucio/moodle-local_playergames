@@ -65,6 +65,31 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->assertSame(50, learning_xp_manager::get_windowedxp($user));
     }
 
+    public function test_record_change_records_an_activity_log_row(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+
+        learning_xp_manager::record_change($user, 50, 7);
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user], '*', MUST_EXIST);
+        $this->assertSame(activity_log::TYPE_LEARNING_XP, $row->eventtype);
+        $this->assertSame(50, (int) $row->xpdelta);
+        $this->assertSame('block_playerhud', $row->source);
+        $this->assertSame(7, (int) $row->courseid);
+    }
+
+    public function test_record_change_defaults_courseid_to_zero(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+
+        learning_xp_manager::record_change($user, 50);
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user], '*', MUST_EXIST);
+        $this->assertSame(0, (int) $row->courseid);
+    }
+
     public function test_record_change_accumulates_within_the_same_month(): void {
         global $DB;
         $this->resetAfterTest();
@@ -248,6 +273,25 @@ final class learning_xp_manager_test extends \advanced_testcase {
         learning_xp_manager::record_change($user, 10);
 
         $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+    }
+
+    public function test_is_visible_to_requires_the_admin_toggle(): void {
+        $this->resetAfterTest();
+        set_config('showlearningxp', 0, 'local_playergames');
+        $this->assertFalse(learning_xp_manager::is_visible_to('students'));
+    }
+
+    public function test_is_visible_to_excludes_staff_only_mode(): void {
+        $this->resetAfterTest();
+        set_config('showlearningxp', 1, 'local_playergames');
+        $this->assertFalse(learning_xp_manager::is_visible_to('staff'));
+    }
+
+    public function test_is_visible_to_allows_students_and_both_modes(): void {
+        $this->resetAfterTest();
+        set_config('showlearningxp', 1, 'local_playergames');
+        $this->assertTrue(learning_xp_manager::is_visible_to('students'));
+        $this->assertTrue(learning_xp_manager::is_visible_to('both'));
     }
 
     public function test_set_ranking_visibility_invalidates_the_ranking_cache(): void {

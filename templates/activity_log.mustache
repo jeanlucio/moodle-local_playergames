@@ -1,0 +1,84 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/activity_log
+
+    Example context (json):
+    {
+        "str_pagetitle": "Activity History",
+        "str_col_date": "Date",
+        "str_col_description": "Activity",
+        "str_col_xp": "XP",
+        "str_empty": "No activity yet.",
+        "hasentries": true,
+        "entries": [
+            {
+                "timeformatted": "1 July 2026, 10:00",
+                "description": "Earned XP: PlayerQuiz",
+                "hasxp": true,
+                "xpdelta_display": "+25",
+                "ispositive": true,
+                "isnegative": false
+            }
+        ],
+        "pagingbar": "<div class=\"paging\"></div>"
+    }
+
+    @package local_playergames
+    @copyright 2026 Jean Lúcio
+    @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+}}
+<div class="pg-activity-log">
+    <h2>{{str_pagetitle}}</h2>
+
+    {{^hasentries}}
+    <p class="text-muted">{{str_empty}}</p>
+    {{/hasentries}}
+
+    {{#hasentries}}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">{{str_col_date}}</th>
+                    <th scope="col">{{str_col_description}}</th>
+                    <th scope="col">{{str_col_xp}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#entries}}
+                <tr>
+                    <td>{{timeformatted}}</td>
+                    <td>{{description}}</td>
+                    <td>
+                        {{#hasxp}}
+                        <span class="badge {{#ispositive}}bg-success{{/ispositive}}{{#isnegative}}bg-danger{{/isnegative}}">
+                            {{xpdelta_display}}
+                        </span>
+                        {{/hasxp}}
+                        {{^hasxp}}
+                        <span class="text-muted">—</span>
+                        {{/hasxp}}
+                    </td>
+                </tr>
+                {{/entries}}
+            </tbody>
+        </table>
+    </div>
+    {{{pagingbar}}}
+    {{/hasentries}}
+</div>

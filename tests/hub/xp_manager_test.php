@@ -117,6 +117,36 @@ final class xp_manager_test extends \advanced_testcase {
         $this->assertSame(20, (int) $profile->xp);
     }
 
+    public function test_award_records_an_activity_log_row(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season(['xp_cap_quiz' => 25]);
+        $today = mktime(0, 0, 0);
+
+        xp_manager::award((int) $user->id, 20, 'quiz', $today, $seasonid);
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user->id], '*', MUST_EXIST);
+        $this->assertSame(activity_log::TYPE_SEASON_XP, $row->eventtype);
+        $this->assertSame(20, (int) $row->xpdelta);
+        $this->assertSame('quiz', $row->source);
+    }
+
+    public function test_award_zero_xp_does_not_record_an_activity_log_row(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season(['xp_cap_quiz' => 25]);
+        $today = mktime(0, 0, 0);
+        $this->add_score((int) $user->id, $today, 'quiz', 25);
+
+        xp_manager::award((int) $user->id, 10, 'quiz', $today, $seasonid);
+
+        $this->assertSame(0, $DB->count_records('local_playergames_activity_log', ['userid' => $user->id]));
+    }
+
     public function test_award_respects_remaining_cap(): void {
         $this->resetAfterTest();
         $this->redirectEvents();

@@ -138,6 +138,37 @@ final class streak_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $streak->freezesavailable);
     }
 
+    public function test_process_breaks_records_streak_broken_activity_log(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $twodaysago = mktime(0, 0, 0) - (2 * DAYSECS);
+        $this->set_streak((int) $user->id, 5, 5, $twodaysago, 0);
+
+        streak_manager::process_breaks();
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user->id], '*', MUST_EXIST);
+        $this->assertSame(activity_log::TYPE_STREAK_BROKEN, $row->eventtype);
+        $this->assertSame(0, (int) $row->xpdelta);
+        $this->assertSame('cron', $row->source);
+    }
+
+    public function test_process_breaks_consuming_a_freeze_records_activity_log(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $twodaysago = mktime(0, 0, 0) - (2 * DAYSECS);
+        $this->set_streak((int) $user->id, 5, 5, $twodaysago, 1);
+
+        streak_manager::process_breaks();
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user->id], '*', MUST_EXIST);
+        $this->assertSame(activity_log::TYPE_FREEZE_USED, $row->eventtype);
+        $this->assertSame('streak_break', $row->source);
+    }
+
     public function test_process_breaks_ignores_recent_activity(): void {
         $this->resetAfterTest();
         $this->redirectEvents();
@@ -162,6 +193,19 @@ final class streak_manager_test extends \advanced_testcase {
 
         $streak = streak_manager::get_or_create((int) $user->id);
         $this->assertSame(3, (int) $streak->freezesavailable);
+    }
+
+    public function test_add_freezes_records_activity_log(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        streak_manager::add_freezes((int) $user->id, 2);
+
+        $row = $DB->get_record('local_playergames_activity_log', ['userid' => $user->id], '*', MUST_EXIST);
+        $this->assertSame(activity_log::TYPE_FREEZE_EARNED, $row->eventtype);
+        $this->assertSame(0, (int) $row->xpdelta);
+        $this->assertSame('mission', $row->source);
     }
 
     public function test_add_freezes_respects_the_cap(): void {

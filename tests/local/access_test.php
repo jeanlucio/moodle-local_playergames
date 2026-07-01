@@ -108,4 +108,29 @@ final class access_test extends \advanced_testcase {
         $this->assertSame(access::is_staff((int) $teacher->id), in_array((int) $teacher->id, $staffids, true));
         $this->assertSame(access::is_staff((int) $student->id), in_array((int) $student->id, $staffids, true));
     }
+
+    public function test_can_view_hub_blocks_staff_when_students_only(): void {
+        $this->assertFalse(access::can_view_hub(true, false, 'students'));
+    }
+
+    public function test_can_view_hub_allows_admin_even_when_students_only(): void {
+        $this->assertTrue(access::can_view_hub(true, true, 'students'));
+    }
+
+    public function test_can_view_hub_allows_student_when_students_only(): void {
+        $this->assertTrue(access::can_view_hub(false, false, 'students'));
+    }
+
+    public function test_can_view_hub_blocks_student_when_staff_only(): void {
+        $this->assertFalse(access::can_view_hub(false, false, 'staff'));
+    }
+
+    public function test_can_view_hub_allows_staff_when_staff_only(): void {
+        $this->assertTrue(access::can_view_hub(true, false, 'staff'));
+    }
+
+    public function test_can_view_hub_allows_everyone_when_both(): void {
+        $this->assertTrue(access::can_view_hub(true, false, 'both'));
+        $this->assertTrue(access::can_view_hub(false, false, 'both'));
+    }
 }

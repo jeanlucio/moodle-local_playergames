@@ -58,6 +58,7 @@ class provider implements
         'local_playergames_user_achievements',
         'local_playergames_student_xp_monthly',
         'local_playergames_student_xp_cache',
+        'local_playergames_activity_log',
     ];
 
     /**
@@ -151,6 +152,15 @@ class provider implements
             'achievementid' => 'privacy:metadata:local_playergames_user_achievements:achievementid',
             'timecreated'   => 'privacy:metadata:local_playergames_user_achievements:timecreated',
         ], 'privacy:metadata:local_playergames_user_achievements');
+
+        $collection->add_database_table('local_playergames_activity_log', [
+            'userid'      => 'privacy:metadata:local_playergames_activity_log:userid',
+            'eventtype'   => 'privacy:metadata:local_playergames_activity_log:eventtype',
+            'xpdelta'     => 'privacy:metadata:local_playergames_activity_log:xpdelta',
+            'source'      => 'privacy:metadata:local_playergames_activity_log:source',
+            'courseid'    => 'privacy:metadata:local_playergames_activity_log:courseid',
+            'timecreated' => 'privacy:metadata:local_playergames_activity_log:timecreated',
+        ], 'privacy:metadata:local_playergames_activity_log');
 
         $collection->add_database_table('local_playergames_cartridges', [
             'uploadedby' => 'privacy:metadata:local_playergames_cartridges:uploadedby',

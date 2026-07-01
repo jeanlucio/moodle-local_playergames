@@ -102,11 +102,12 @@ class observer {
      * @return void
      */
     public static function playerhud_xp_changed(\core\event\base $event): void {
-        $userid = (int) $event->relateduserid;
-        $delta  = isset($event->other['delta']) ? (int) $event->other['delta'] : 0;
+        $userid   = (int) $event->relateduserid;
+        $delta    = isset($event->other['delta']) ? (int) $event->other['delta'] : 0;
+        $courseid = isset($event->other['courseid']) ? (int) $event->other['courseid'] : 0;
         if ($userid <= 0 || $delta === 0) {
             return;
         }
-        learning_xp_manager::record_change($userid, $delta);
+        learning_xp_manager::record_change($userid, $delta, $courseid);
     }
 }

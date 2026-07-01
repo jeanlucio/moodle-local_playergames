@@ -108,4 +108,27 @@ class access {
 
         return $ids;
     }
+
+    /**
+     * Whether a participant is allowed to view the Player Hub under the
+     * allowed_participants site setting.
+     *
+     * Site admins always pass regardless of the setting. Shared by hub.php
+     * (which throws on false) and block_playergames (which just hides its
+     * content on false) so the rule only lives in one place.
+     *
+     * @param bool $isstaff Whether the user is staff (see is_staff()).
+     * @param bool $isadmin Whether the user has moodle/site:config.
+     * @param string $allowed Value of the allowed_participants setting.
+     * @return bool
+     */
+    public static function can_view_hub(bool $isstaff, bool $isadmin, string $allowed): bool {
+        if ($allowed === 'students' && $isstaff && !$isadmin) {
+            return false;
+        }
+        if ($allowed === 'staff' && !$isstaff) {
+            return false;
+        }
+        return true;
+    }
 }

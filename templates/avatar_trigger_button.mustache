@@ -1,0 +1,45 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/avatar_trigger_button
+
+    Profile avatar button — clicking it opens the avatar collection modal
+    (see avatar_collection_modal.mustache). Shared by hub.mustache and
+    block_playergames's widget.mustache; wired by amd/src/avatar_modal.js,
+    which looks up this exact markup by selector, not by parameter.
+
+    @package local_playergames
+    @copyright 2026 Jean Lúcio
+    @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    Example context (json):
+    {
+        "str_avatars": "Avatars",
+        "str_avatar_change": "Change avatar",
+        "hasequippedavatar": true,
+        "equippedavatar": "🤖",
+        "userpictureurl": "https://example.com/pic.jpg"
+    }
+}}
+<button type="button" class="btn p-0 border-0 pg-hub-profile-avatar"
+    data-avatar-trigger data-modal-title="{{str_avatars}}"
+    aria-label="{{str_avatar_change}}" title="{{str_avatar_change}}">
+    <span class="pg-hub-profile-avatar-emoji" aria-hidden="true"
+        {{^hasequippedavatar}}hidden{{/hasequippedavatar}}>{{equippedavatar}}</span>
+    <img class="pg-hub-profile-avatar-img rounded-circle" src="{{userpictureurl}}"
+        alt="" {{#hasequippedavatar}}hidden{{/hasequippedavatar}}>
+</button>

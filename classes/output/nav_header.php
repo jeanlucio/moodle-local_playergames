@@ -46,7 +46,7 @@ class nav_header implements renderable, templatable {
     /**
      * Constructor.
      *
-     * @param string $active Key of the current page (hub, achievements, engmeter, ecosystem).
+     * @param string $active Key of the current page (hub, achievements, history, engmeter, ecosystem).
      */
     public function __construct(string $active) {
         $this->active = $active;
@@ -75,6 +75,12 @@ class nav_header implements renderable, templatable {
                 'fa-award',
                 'dashboard_card_achievements',
                 '/local/playergames/achievements.php'
+            );
+            $items[] = $this->item(
+                'history',
+                'fa-clock-rotate-left',
+                'dashboard_card_history',
+                '/local/playergames/history.php'
             );
         }
         if ($teaches) {

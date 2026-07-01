@@ -186,14 +186,7 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
-                        <button type="button" class="btn p-0 border-0 pg-hub-profile-avatar"
-                            data-avatar-trigger data-modal-title="{{str_avatars}}"
-                            aria-label="{{str_avatar_change}}" title="{{str_avatar_change}}">
-                            <span class="pg-hub-profile-avatar-emoji" aria-hidden="true"
-                                {{^hasequippedavatar}}hidden{{/hasequippedavatar}}>{{equippedavatar}}</span>
-                            <img class="pg-hub-profile-avatar-img rounded-circle" src="{{userpictureurl}}"
-                                alt="" {{#hasequippedavatar}}hidden{{/hasequippedavatar}}>
-                        </button>
+                        {{> local_playergames/avatar_trigger_button }}
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <span class="badge bg-primary fs-5">{{str_level}} {{level}}</span>
@@ -706,38 +699,7 @@
     </div>{{! end row }}
 
     {{! Avatar collection — hidden source moved into the modal on first open. }}
-    <div id="pg-avatar-collection" hidden>
-        {{#avatarsbytier}}
-        <div class="pg-hub-avatar-tier-row mb-3">
-            <div class="pg-hub-avatar-tier-label text-muted small mb-1">
-                {{str_level}} {{requiredlevel}}+
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                {{#avatars}}
-                {{#unlocked}}
-                <button type="button"
-                    class="pg-hub-avatar-circle {{#equipped}}pg-hub-avatar-equipped{{/equipped}}"
-                    data-avatar-emoji="{{emoji}}"
-                    data-avatar-equip="{{equipvalue}}"
-                    aria-pressed="{{#equipped}}true{{/equipped}}{{^equipped}}false{{/equipped}}"
-                    title="{{name}}"
-                    aria-label="{{name}}">
-                    <span aria-hidden="true">{{emoji}}</span>
-                </button>
-                {{/unlocked}}
-                {{^unlocked}}
-                <span class="pg-hub-avatar-circle pg-hub-avatar-locked"
-                    title="{{name}} — {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})"
-                    aria-label="{{name}}: {{str_avatar_locked}} ({{str_level}} {{requiredlevel}})">
-                    <span aria-hidden="true">{{emoji}}</span>
-                </span>
-                {{/unlocked}}
-                {{/avatars}}
-            </div>
-        </div>
-        {{/avatarsbytier}}
-        <small class="text-muted d-block mt-2">{{str_avatars_hint}}</small>
-    </div>
+    {{> local_playergames/avatar_collection_modal }}
     {{/noseason}}
 
 </div>{{! end pg-hub }}

@@ -130,6 +130,7 @@ class streak_manager {
                     'other'    => ['previousstreak' => $previousstreak],
                 ]);
                 $event->trigger();
+                activity_log::record((int) $streak->userid, activity_log::TYPE_STREAK_BROKEN, 0, 'cron');
                 $broken++;
             }
         }
@@ -218,6 +219,9 @@ class streak_manager {
         $record->reason      = $reason;
         $record->timecreated = time();
         $DB->insert_record('local_playergames_freeze_log', $record, false);
+
+        $eventtype = $action === 'earned' ? activity_log::TYPE_FREEZE_EARNED : activity_log::TYPE_FREEZE_USED;
+        activity_log::record($userid, $eventtype, 0, $reason);
     }
 
     /**
