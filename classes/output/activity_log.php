@@ -118,7 +118,7 @@ class activity_log implements renderable, templatable {
      * Bulk-fetches display names for every course referenced by the given rows.
      *
      * @param stdClass[] $rows Rows from local_playergames_activity_log.
-     * @return array<int, string> Course id => formatted fullname.
+     * @return array Course id (int) mapped to formatted fullname (string).
      */
     private function bulk_course_names(array $rows): array {
         global $DB;
@@ -145,7 +145,7 @@ class activity_log implements renderable, templatable {
      * Builds one template-ready row.
      *
      * @param stdClass $row Row from local_playergames_activity_log.
-     * @param array<int, string> $coursenames Bulk-fetched course names.
+     * @param array $coursenames Bulk-fetched course names, course id (int) mapped to fullname (string).
      * @return array
      */
     private function build_entry(stdClass $row, array $coursenames): array {
@@ -167,7 +167,7 @@ class activity_log implements renderable, templatable {
      * value ('mission') means different things for season_xp vs. freeze_earned.
      *
      * @param stdClass $row Row from local_playergames_activity_log.
-     * @param array<int, string> $coursenames Bulk-fetched course names.
+     * @param array $coursenames Bulk-fetched course names, course id (int) mapped to fullname (string).
      * @return string
      */
     private function describe(stdClass $row, array $coursenames): string {
