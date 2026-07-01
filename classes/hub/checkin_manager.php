@@ -135,13 +135,33 @@ class checkin_manager {
         $isstaff = access::is_staff($userid);
         $isadmin = has_capability('moodle/site:config', context_system::instance(), $userid);
 
-        if ($allowed === 'students' && $isstaff && !$isadmin) {
-            return false;
-        }
-        if ($allowed === 'staff' && !$isstaff) {
-            return false;
+        return access::can_view_hub($isstaff, $isadmin, $allowed);
+    }
+
+    /**
+     * Counts the user's daily check-ins in the given season, clamped to the cap.
+     *
+     * Shared by the Hub and block_playergames, so the count-and-clamp logic
+     * only lives in one place.
+     *
+     * @param int $userid The user to count check-ins for.
+     * @param stdClass $season The season to count within.
+     * @param int $max The maximum rewarded check-ins (season cap / daily XP).
+     * @return int
+     */
+    public static function count_this_season(int $userid, stdClass $season, int $max): int {
+        global $DB;
+
+        if ($max <= 0) {
+            return 0;
         }
 
-        return true;
+        $count = (int) $DB->count_records_select(
+            'local_playergames_daily_scores',
+            "userid = :uid AND gametype = 'checkin' AND gamedate BETWEEN :start AND :end",
+            ['uid' => $userid, 'start' => $season->startdate, 'end' => $season->enddate]
+        );
+
+        return min($count, $max);
     }
 }

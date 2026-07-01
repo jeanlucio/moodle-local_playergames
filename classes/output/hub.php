@@ -30,6 +30,7 @@ use renderable;
 use renderer_base;
 use templatable;
 use local_playergames\hub\avatar_manager;
+use local_playergames\hub\checkin_manager;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\level_manager;
@@ -108,7 +109,7 @@ class hub implements renderable, templatable {
         $streak     = streak_manager::get_or_create($this->userid);
         $level      = xp_manager::get_level($profile->xp);
         $title      = title_manager::get_title($level);
-        $leveldata  = $this->build_level_data($profile->xp, $level);
+        $leveldata  = xp_manager::build_level_data($profile->xp, $level);
         $missions   = $this->get_missions($this->userid, $season->id);
         $snapshot     = season_manager::get_config_snapshot($season);
         $games      = daily_play_manager::get_games_today($this->userid, $snapshot);
@@ -117,7 +118,7 @@ class hub implements renderable, templatable {
         $checkindaily = (int) ($snapshot['xp_checkin_daily'] ?? 5);
         $checkincap   = (int) ($snapshot['xp_cap_checkin_season'] ?? 150);
         $checkinmax   = $checkindaily > 0 ? intdiv($checkincap, $checkindaily) : 0;
-        $checkindone  = $this->get_season_checkins($season, $checkinmax);
+        $checkindone  = checkin_manager::count_this_season($this->userid, $season, $checkinmax);
 
         // Ranking is on by default; an admin can disable it so players only see
         // their own score. Treat an unset value (never saved) as enabled.
@@ -326,53 +327,6 @@ class hub implements renderable, templatable {
             'str_invite'         => get_string('hub_invite_noprofile', 'local_playergames'),
             'str_join'           => get_string('hub_join_ranking', 'local_playergames'),
         ];
-    }
-
-    /**
-     * Computes XP progress bar data for the current level.
-     *
-     * @param int $xp   Total season XP.
-     * @param int $level Current level (1–max level).
-     * @return array{xp_next: int, xp_in_level: int, level_range: int, progress_pct: int}
-     */
-    private function build_level_data(int $xp, int $level): array {
-        if ($level >= level_manager::max_level()) {
-            return ['xp_next' => 0, 'xp_in_level' => 0, 'level_range' => 0, 'progress_pct' => 100];
-        }
-        $current    = xp_manager::get_xp_for_level($level);
-        $next       = xp_manager::get_xp_for_level($level + 1);
-        $range      = $next - $current;
-        $inlevel    = $xp - $current;
-        $pct        = $range > 0 ? min(100, (int) round(($inlevel / $range) * 100)) : 100;
-        return [
-            'xp_next'    => $next - $xp,
-            'xp_in_level' => $inlevel,
-            'level_range' => $range,
-            'progress_pct' => $pct,
-        ];
-    }
-
-    /**
-     * Counts the user's daily check-ins in the current season, clamped to the cap.
-     *
-     * @param \stdClass $season The active season.
-     * @param int $max The maximum rewarded check-ins (season cap / daily XP).
-     * @return int
-     */
-    private function get_season_checkins(\stdClass $season, int $max): int {
-        global $DB;
-
-        if ($max <= 0) {
-            return 0;
-        }
-
-        $count = (int) $DB->count_records_select(
-            'local_playergames_daily_scores',
-            "userid = :uid AND gametype = 'checkin' AND gamedate BETWEEN :start AND :end",
-            ['uid' => $this->userid, 'start' => $season->startdate, 'end' => $season->enddate]
-        );
-
-        return min($count, $max);
     }
 
     /**

@@ -148,6 +148,56 @@ final class checkin_manager_test extends \advanced_testcase {
         $this->assertSame(1, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
     }
 
+    public function test_count_this_season_counts_checkins_in_range(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season();
+        $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+
+        $DB->insert_record('local_playergames_daily_scores', (object) [
+            'userid' => $user->id,
+            'gamedate' => mktime(0, 0, 0),
+            'gametype' => 'checkin',
+            'completed' => 1,
+            'xpawarded' => 5,
+            'attempts' => 1,
+            'timeplayed' => time(),
+        ]);
+        $DB->insert_record('local_playergames_daily_scores', (object) [
+            'userid' => $user->id,
+            'gamedate' => mktime(0, 0, 0) - DAYSECS,
+            'gametype' => 'checkin',
+            'completed' => 1,
+            'xpawarded' => 5,
+            'attempts' => 1,
+            'timeplayed' => time(),
+        ]);
+
+        $this->assertSame(2, checkin_manager::count_this_season((int) $user->id, $season, 30));
+    }
+
+    public function test_count_this_season_clamps_at_max(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season();
+        $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+
+        $DB->insert_record('local_playergames_daily_scores', (object) [
+            'userid' => $user->id,
+            'gamedate' => mktime(0, 0, 0),
+            'gametype' => 'checkin',
+            'completed' => 1,
+            'xpawarded' => 5,
+            'attempts' => 1,
+            'timeplayed' => time(),
+        ]);
+
+        $this->assertSame(0, checkin_manager::count_this_season((int) $user->id, $season, 0));
+        $this->assertSame(1, checkin_manager::count_this_season((int) $user->id, $season, 1));
+    }
+
     public function test_is_participant_true_by_default(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();

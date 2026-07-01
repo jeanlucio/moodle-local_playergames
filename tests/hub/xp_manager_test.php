@@ -99,6 +99,25 @@ final class xp_manager_test extends \advanced_testcase {
         $this->assertSame(20000, xp_manager::get_xp_for_level(99));
     }
 
+    public function test_build_level_data_mid_level(): void {
+        $this->resetAfterTest();
+        // Level 2 spans 2000-5999 XP; 3000 is 1000 XP into a 4000-XP range.
+        $data = xp_manager::build_level_data(3000, 2);
+
+        $this->assertSame(3000, $data['xp_next']);
+        $this->assertSame(1000, $data['xp_in_level']);
+        $this->assertSame(4000, $data['level_range']);
+        $this->assertSame(25, $data['progress_pct']);
+    }
+
+    public function test_build_level_data_at_max_level(): void {
+        $this->resetAfterTest();
+        $data = xp_manager::build_level_data(999999, level_manager::max_level());
+
+        $this->assertSame(0, $data['xp_next']);
+        $this->assertSame(100, $data['progress_pct']);
+    }
+
     public function test_award_below_cap_returns_full_amount(): void {
         global $DB;
         $this->resetAfterTest();

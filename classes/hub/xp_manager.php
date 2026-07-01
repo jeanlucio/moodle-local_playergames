@@ -171,6 +171,33 @@ class xp_manager {
     }
 
     /**
+     * Computes XP progress bar data for the current level.
+     *
+     * Shared by the Hub and block_playergames, so the progress-bar formula only
+     * lives in one place.
+     *
+     * @param int $xp   Total season XP.
+     * @param int $level Current level (1–max level).
+     * @return array{xp_next: int, xp_in_level: int, level_range: int, progress_pct: int}
+     */
+    public static function build_level_data(int $xp, int $level): array {
+        if ($level >= level_manager::max_level()) {
+            return ['xp_next' => 0, 'xp_in_level' => 0, 'level_range' => 0, 'progress_pct' => 100];
+        }
+        $current    = self::get_xp_for_level($level);
+        $next       = self::get_xp_for_level($level + 1);
+        $range      = $next - $current;
+        $inlevel    = $xp - $current;
+        $pct        = $range > 0 ? min(100, (int) round(($inlevel / $range) * 100)) : 100;
+        return [
+            'xp_next'    => $next - $xp,
+            'xp_in_level' => $inlevel,
+            'level_range' => $range,
+            'progress_pct' => $pct,
+        ];
+    }
+
+    /**
      * Returns the player_profile record for a user/season, creating it if absent.
      *
      * @param int $userid
