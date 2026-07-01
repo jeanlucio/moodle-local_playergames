@@ -95,10 +95,26 @@ class nav_header implements renderable, templatable {
             $items[] = $this->item('ecosystem', 'fa-diagram-project', 'nav_ecosystem', '/local/playergames/dashboard.php');
         }
 
+        if ($gamification) {
+            global $PAGE;
+            $PAGE->requires->js_call_amd('local_playergames/help_modal', 'init');
+        }
+
         return [
             'str_nav'  => get_string('nav_aria', 'local_playergames'),
             'items'    => $items,
             'hasitems' => !empty($items),
+            'hashelp'  => $gamification,
+            'str_help_modal_title'          => get_string('help_modal_title', 'local_playergames'),
+            'str_help_trigger'              => get_string('help_trigger', 'local_playergames'),
+            'str_section_season_xp_title'   => get_string('help_section_season_xp_title', 'local_playergames'),
+            'str_section_season_xp_body'    => get_string('help_section_season_xp_body', 'local_playergames'),
+            'str_section_learning_xp_title' => get_string('help_section_learning_xp_title', 'local_playergames'),
+            'str_section_learning_xp_body'  => get_string('help_section_learning_xp_body', 'local_playergames'),
+            'str_section_avatars_title'     => get_string('help_section_avatars_title', 'local_playergames'),
+            'str_section_avatars_body'      => get_string('help_section_avatars_body', 'local_playergames'),
+            'str_section_rankings_title'    => get_string('help_section_rankings_title', 'local_playergames'),
+            'str_section_rankings_body'     => get_string('help_section_rankings_body', 'local_playergames'),
         ];
     }
 

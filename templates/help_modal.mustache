@@ -1,0 +1,53 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/help_modal
+
+    Hidden source for the "how PlayerGames works" explanation, moved into a
+    core/modal on first open by amd/src/help_modal.js. Static content, no
+    per-render data — shared by nav_header.mustache (every PlayerGames page)
+    and, later, block_playergames's widget.mustache.
+
+    @package local_playergames
+    @copyright 2026 Jean Lúcio
+    @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    Example context (json):
+    {
+        "str_section_season_xp_title": "Season XP",
+        "str_section_season_xp_body": "Earned by playing daily games and checking in.",
+        "str_section_learning_xp_title": "Learning XP",
+        "str_section_learning_xp_body": "Mirrors your course activity from PlayerHUD.",
+        "str_section_avatars_title": "Avatars",
+        "str_section_avatars_body": "Unlocked permanently as you reach higher levels.",
+        "str_section_rankings_title": "Rankings",
+        "str_section_rankings_body": "Appearing in a ranking is optional."
+    }
+}}
+<div id="pg-help-content" hidden>
+    <h5>{{str_section_season_xp_title}}</h5>
+    <p>{{str_section_season_xp_body}}</p>
+
+    <h5>{{str_section_learning_xp_title}}</h5>
+    <p>{{str_section_learning_xp_body}}</p>
+
+    <h5>{{str_section_avatars_title}}</h5>
+    <p>{{str_section_avatars_body}}</p>
+
+    <h5>{{str_section_rankings_title}}</h5>
+    <p class="mb-0">{{str_section_rankings_body}}</p>
+</div>

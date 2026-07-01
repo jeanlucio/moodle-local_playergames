@@ -26,12 +26,23 @@
         "items": [
             {"key": "hub", "icon": "fa-trophy", "label": "Player Hub", "url": "/local/playergames/hub.php", "active": true},
             {"key": "ecosystem", "icon": "fa-diagram-project", "label": "Ecosystem", "url": "/local/playergames/dashboard.php", "active": false}
-        ]
+        ],
+        "hashelp": true,
+        "str_help_modal_title": "How PlayerGames works",
+        "str_help_trigger": "How PlayerGames works",
+        "str_section_season_xp_title": "Season XP",
+        "str_section_season_xp_body": "Earned by playing daily games and checking in.",
+        "str_section_learning_xp_title": "Learning XP",
+        "str_section_learning_xp_body": "Mirrors your course activity from PlayerHUD.",
+        "str_section_avatars_title": "Avatars",
+        "str_section_avatars_body": "Unlocked permanently as you reach higher levels.",
+        "str_section_rankings_title": "Rankings",
+        "str_section_rankings_body": "Appearing in a ranking is optional."
     }
 }}
 {{#hasitems}}
-<nav class="pg-nav mb-4" aria-label="{{str_nav}}">
-    <ul class="nav nav-pills pg-nav-list">
+<nav class="pg-nav mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2" aria-label="{{str_nav}}">
+    <ul class="nav nav-pills pg-nav-list mb-0">
         {{#items}}
         <li class="nav-item">
             <a class="nav-link pg-nav-link{{#active}} active{{/active}}"
@@ -41,5 +52,11 @@
         </li>
         {{/items}}
     </ul>
+    {{#hashelp}}
+    {{> local_playergames/help_trigger_button }}
+    {{/hashelp}}
 </nav>
+{{#hashelp}}
+{{> local_playergames/help_modal }}
+{{/hashelp}}
 {{/hasitems}}
