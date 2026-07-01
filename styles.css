@@ -643,11 +643,16 @@ body.path-local-playergames .badge.pg-season-badge {
     color: var(--bs-dark, #000);
 }
 
-body.path-local-playergames .pg-hub-avatar-tier-label {
+/*
+ * Scoped by the modal's own id (#pg-avatar-collection), not by page body-path:
+ * core/modal hoists this content to <body> on show, escaping any page-level
+ * ancestor scope. Shared by the Hub page and block_playergames's widget.
+ */
+#pg-avatar-collection .pg-hub-avatar-tier-label {
     font-weight: 600;
 }
 
-body.path-local-playergames .pg-hub-avatar-circle {
+#pg-avatar-collection .pg-hub-avatar-circle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -662,12 +667,12 @@ body.path-local-playergames .pg-hub-avatar-circle {
     cursor: pointer;
 }
 
-body.path-local-playergames .pg-hub-avatar-circle.pg-hub-avatar-equipped {
+#pg-avatar-collection .pg-hub-avatar-circle.pg-hub-avatar-equipped {
     border-color: var(--bs-primary, #0d6efd);
     background: var(--bs-primary-bg-subtle, #cfe2ff);
 }
 
-body.path-local-playergames .pg-hub-avatar-circle.pg-hub-avatar-locked {
+#pg-avatar-collection .pg-hub-avatar-circle.pg-hub-avatar-locked {
     cursor: not-allowed;
     filter: grayscale(1);
     opacity: 0.5;
