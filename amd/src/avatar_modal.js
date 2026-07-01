@@ -122,7 +122,10 @@ const init = () => {
             const body = modal.getBody()[0];
             source.hidden = false;
             body.appendChild(source);
-            wireGrid(source.querySelector('.pg-hub-avatar-grid'));
+            const grid = source.querySelector('.pg-hub-avatar-grid');
+            if (grid) {
+                wireGrid(grid);
+            }
         }
         modal.show();
     });
