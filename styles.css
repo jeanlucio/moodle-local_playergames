@@ -693,9 +693,6 @@ body.path-local-playergames .pg-hub-profile-avatar-emoji {
     line-height: 1;
     border-radius: 50%;
     background: var(--bs-secondary-bg, #e9ecef);
-    /* Most emoji glyphs render with a slight optical left bias inside a
-       centered flex box; nudging the available space right re-centres them. */
-    padding-inline-start: 0.15em;
 }
 
 body.path-local-playergames .pg-hub-profile-avatar-img {
