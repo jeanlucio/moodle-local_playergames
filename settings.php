@@ -307,6 +307,14 @@ if ($hassiteconfig) {
     ));
 
     $page3->add(new admin_setting_configtext(
+        'local_playergames/guess_max_attempts',
+        get_string('settings_guess_max_attempts', 'local_playergames'),
+        get_string('settings_guess_max_attempts_desc', 'local_playergames'),
+        '6',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
         'local_playergames/wordle_minlen',
         get_string('settings_wordle_minlen', 'local_playergames'),
         get_string('settings_wordle_minlen_desc', 'local_playergames'),

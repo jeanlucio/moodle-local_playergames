@@ -210,7 +210,7 @@ class daily_play_manager {
         ];
         $gameurls = [
             'quiz'   => (new moodle_url('/local/playergames/play_quiz.php'))->out(false),
-            'guess'  => '',
+            'guess'  => (new moodle_url('/local/playergames/play_guess.php'))->out(false),
             'fill'   => '',
             'battle' => '',
         ];

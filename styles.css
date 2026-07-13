@@ -314,6 +314,108 @@ body.path-local-playergames .pg-play-quiz-wrap {
     max-width: 700px;
 }
 
+/* ── Guess ───────────────────────────────────────────────────────── */
+
+body.path-local-playergames .pg-play-guess-wrap {
+    max-width: 480px;
+    --pg-guess-correct: #16a34a;
+    --pg-guess-present: #d97706;
+    --pg-guess-absent: #6b7280;
+}
+
+body.path-local-playergames .pg-guess-board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+body.path-local-playergames .pg-guess-row {
+    display: flex;
+    gap: 0.4rem;
+}
+
+body.path-local-playergames .pg-guess-tile {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-color, #ced4da);
+    border-radius: 0.25rem;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    color: var(--bs-body-color, #1d2125);
+}
+
+body.path-local-playergames .pg-guess-tile-filled {
+    border-color: var(--bs-secondary-color, #6c757d);
+}
+
+body.path-local-playergames .pg-guess-tile-correct {
+    background-color: var(--pg-guess-correct);
+    border-color: var(--pg-guess-correct);
+    color: #fff;
+}
+
+body.path-local-playergames .pg-guess-tile-present {
+    background-color: var(--pg-guess-present);
+    border-color: var(--pg-guess-present);
+    color: #fff;
+}
+
+body.path-local-playergames .pg-guess-tile-absent {
+    background-color: var(--pg-guess-absent);
+    border-color: var(--pg-guess-absent);
+    color: #fff;
+}
+
+body.path-local-playergames .pg-guess-keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+}
+
+body.path-local-playergames .pg-guess-kbrow {
+    display: flex;
+    gap: 0.3rem;
+}
+
+body.path-local-playergames .pg-guess-key {
+    min-width: 2.25rem;
+    height: 3rem;
+    padding-inline: 0.4rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    color: var(--bs-body-color, #1d2125);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+body.path-local-playergames .pg-guess-key-wide {
+    min-width: 3.5rem;
+    font-size: 0.8rem;
+}
+
+body.path-local-playergames .pg-guess-key-correct {
+    background-color: var(--pg-guess-correct);
+    color: #fff;
+}
+
+body.path-local-playergames .pg-guess-key-present {
+    background-color: var(--pg-guess-present);
+    color: #fff;
+}
+
+body.path-local-playergames .pg-guess-key-absent {
+    background-color: var(--pg-guess-absent);
+    color: #fff;
+}
+
 /* ── Level configuration table ───────────────────────────────────── */
 
 body.path-local-playergames .pg-levels-num-col {

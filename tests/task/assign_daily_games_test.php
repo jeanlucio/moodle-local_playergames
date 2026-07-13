@@ -104,4 +104,33 @@ final class assign_daily_games_test extends \advanced_testcase {
 
         $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments'));
     }
+
+    public function test_guess_never_assigns_a_non_alphabetic_term(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $now = time();
+        $cid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        // The term "AI-5" sits inside the default 4-8 length window yet is not a
+        // valid letters-only guess target; "table" is the only eligible term.
+        foreach (['AI-5' => 'Institutional Act No. 5', 'table' => 'Furniture'] as $term => $def) {
+            $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
+                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+            ]);
+        }
+
+        $this->run_task();
+
+        $today = mktime(0, 0, 0);
+        $conceptid = $DB->get_field('local_playergames_daily_assignments', 'conceptid', [
+            'gamedate' => $today, 'gametype' => 'guess',
+        ]);
+        $this->assertNotFalse($conceptid);
+        $term = $DB->get_field('local_playergames_concepts', 'term', ['id' => $conceptid]);
+        $this->assertSame('table', $term);
+    }
 }

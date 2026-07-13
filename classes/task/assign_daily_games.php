@@ -24,6 +24,9 @@
 
 namespace local_playergames\task;
 
+use core_text;
+use local_playergames\games\guess_manager;
+
 /**
  * Picks a random concept from active cartridges for each concept-based game
  * and writes a row to local_playergames_daily_assignments.
@@ -35,7 +38,11 @@ namespace local_playergames\task;
  * it is left unchanged.
  *
  * Wordle-style filter for PlayerGuess: only concepts whose term length falls
- * between wordle_minlen and wordle_maxlen (admin settings) are eligible.
+ * between wordle_minlen and wordle_maxlen (admin settings) are eligible, and
+ * whose term is a single alphabetic word — the same rule guess_manager
+ * enforces on every submitted guess. A term with a space, digit or hyphen
+ * (e.g. "AI-5") would sit inside the length range yet could never be typed by
+ * a letters-only guess, making that day's play unwinnable for everyone.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -123,7 +130,23 @@ class assign_daily_games extends \core\task\scheduled_task {
             $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
         }
 
-        $ids = $DB->get_fieldset_select('local_playergames_concepts', 'id', $where, $params);
+        if ($gametype === 'guess') {
+            // The SQL length filter above counts every character, but a guess
+            // can only ever contain letters. Re-check each candidate in PHP so
+            // a term with a space, digit or hyphen (still within the length
+            // bounds) is never assigned.
+            $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
+            $ids = [];
+            foreach ($rows as $row) {
+                $normalized = guess_manager::normalize($row->term);
+                if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
+                    $ids[] = (int) $row->id;
+                }
+            }
+        } else {
+            $ids = $DB->get_fieldset_select('local_playergames_concepts', 'id', $where, $params);
+        }
+
         if (empty($ids)) {
             return null;
         }
