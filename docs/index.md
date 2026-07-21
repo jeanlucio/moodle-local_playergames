@@ -19,13 +19,15 @@ ecosystem for Moodle. It serves four main purposes:
 
 1. **Ecosystem Dashboard** — a visual overview of all Player plugins installed on the site, with
    status, dependencies, and quick-access links.
-2. **Shared AI Key Hub** — a single place where administrators and teachers configure API keys
-   (Gemini, Groq, OpenAI-compatible) shared across all Player plugins.
-3. **Player Hub** — a site-wide gamification platform for students and/or other Moodle users
-   (teachers, managers, administrators), with XP, levels, seasons, missions, achievements, and
-   daily streak. The administrator configures which groups participate.
-4. **Daily Mini-games** — four concept-reinforcement mini-games and a daily check-in powered by
-   content cartridges (JSON), working as a Duolingo-style learning loop.
+2. **Player Hub** — a site-wide gamification platform for students and/or other Moodle users
+   (teachers, managers, administrators), with XP, levels, seasons, missions, achievements, avatars
+   and daily streak. The administrator configures which groups participate.
+3. **Daily Mini-games** — concept-reinforcement mini-games and a daily check-in powered by
+   content cartridges (JSON, optionally AI-generated via the companion
+   [local_aihub](https://github.com/jeanlucio/moodle-local_aihub) plugin), working as a
+   Duolingo-style learning loop.
+4. **Companion Sidebar Block** — [block_playergames](#ecosystem) mirrors a player's profile
+   (avatar, level, XP, streak, today's games, ranking) on the site front page and Dashboard.
 
 Use the sidebar to jump to any section on this page.
 
@@ -44,6 +46,18 @@ Source code: [github.com/jeanlucio/moodle-local_playergames](https://github.com/
 
 <span id="playerquiz"></span>
 {% include_relative en/playerquiz.md %}
+
+<span id="playerguess"></span>
+{% include_relative en/playerguess.md %}
+
+<span id="avatars"></span>
+{% include_relative en/avatars.md %}
+
+<span id="learning-xp"></span>
+{% include_relative en/learning-xp.md %}
+
+<span id="ranking"></span>
+{% include_relative en/ranking.md %}
 
 <span id="educational-purpose"></span>
 {% include_relative en/educational-purpose.md %}

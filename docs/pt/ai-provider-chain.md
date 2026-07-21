@@ -1,45 +1,54 @@
 # 🤖 Cadeia de Provedores de IA
 
-O PlayerGames resolve o provedor de IA por **nível primeiro**: uma chave configurada
-explicitamente sempre vence o padrão institucional. O primeiro nível com uma chave utilizável é
-usado; se uma chamada falhar (erro de rede, timeout, erro HTTP), a próxima opção disponível é
-tentada automaticamente.
+O PlayerGames não armazena mais chaves de API de IA nem fala diretamente com provedores. Todo o
+armazenamento de chaves e o transporte com os provedores (Gemini, Groq, compatível com OpenAI)
+agora vivem num plugin companheiro dedicado, o
+**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**. O PlayerGames mantém apenas
+as partes específicas do cartucho: montar o prompt de geração (tópico, idioma, quantidade de
+conceitos, dificuldade, categorias) e interpretar a resposta JSON da IA de volta em conceitos.
+Isso mantém o PlayerGames livre de gerenciamento de chaves e ainda oferece suporte à geração de
+cartuchos assistida por IA onde quer que o Hub esteja instalado.
 
-**Ordem de resolução:**
+## Ordem de resolução
 
 | Prioridade | Origem | Observações |
 |------------|--------|-------------|
-| 1 | **Chaves pessoais** (página *Minhas Chaves de IA*) | As chaves Gemini / Groq / compatível-com-OpenAI do próprio professor, incluindo base URL e modelo OpenAI pessoais. Tentadas primeiro, então uma chave pessoal sempre vence. |
-| 2 | **Chaves globais** (configurações do PlayerGames) | Chaves que o admin cadastrou para o site inteiro. |
-| 3 | **Moodle `core_ai`** | Padrão institucional, tentado **por último**. Usa os provedores configurados pelo admin em *Administração do site → IA → Provedores de IA*; no Moodle 5.2+, o `core_ai` tem fallback interno entre provedores. Nenhuma chave precisa ser cadastrada no PlayerGames. |
+| 1 | **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** | Tentado primeiro quando instalado. Resolve chaves pessoais e depois chaves de site, entre os provedores Gemini / Groq / compatível-com-OpenAI. |
+| 2 | **Moodle `core_ai`** | Fallback institucional, usado apenas se o Hub não estiver instalado ou não retornar uma fonte utilizável. Usa os provedores que o admin configurou em *Administração do site → IA → Provedores de IA*. |
 
-Dentro dos níveis 1 e 2, os provedores diretos são tentados numa ordem fixa: **Gemini → Groq →
-compatível-com-OpenAI**. Cada chamada direta força o modo de saída JSON quando suportado.
+Uma falha real de provedor (ex.: uma chave inválida cadastrada no Hub) é preservada e exibida ao
+usuário — nunca é mascarada silenciosamente como "nenhuma fonte de IA disponível".
 
-> **A origem prevalece sobre o provedor.** Se existe uma chave Groq pessoal (nível 1) e o admin
-> também configurou o `core_ai` (nível 3), a chave Groq pessoal é usada porque o nível 1 é
-> tentado primeiro — a chave explícita sempre vence o padrão institucional.
+> **Instalar o `local_aihub` é opcional.** Sem ele, a geração de cartuchos via IA ainda funciona
+> se o site tiver o `core_ai` configurado; o PlayerGames só perde a opção de chave pessoal (BYOK
+> — cada professor trazendo sua própria chave Gemini/Groq/OpenAI) que o Hub oferece.
 
 ## API de integração para outros plugins
 
-Outros plugins do ecossistema Player podem delegar chamadas de IA ao PlayerGames sem gerenciar
-chaves diretamente:
+O `cartridge\ai_generator` expõe uma API pequena e estável que outros plugins do ecossistema
+podem chamar diretamente:
 
 ```php
 use local_playergames\cartridge\ai_generator;
-use local_playergames\api_key_helper;
 
-// Verificar disponibilidade antes de exibir qualquer interface de IA
-if (class_exists(ai_generator::class) && api_key_helper::has_any_key()) {
-    $gen = new ai_generator();
-    $result = $gen->send('Seu prompt personalizado aqui');
-    // $result['success'] (bool), $result['data'] (string), $result['provider'] (string)
+$gen = new ai_generator();
+if ($gen->has_key()) {
+    // Prompt livre, roteado pela mesma cadeia usada na geração de cartuchos.
+    $text = $gen->generate_text('Instrução de sistema opcional', 'Seu prompt aqui');
 }
 ```
 
-- `api_key_helper::has_any_key()` — retorna `true` se ao menos um provedor estiver configurado.
-- `ai_generator::send(string $prompt): array` — envia um prompt livre pela cadeia completa de
-  provedores e retorna o texto bruto. Use quando o plugin chamador tem seu próprio formato de
-  prompt e parser de resposta.
-- `ai_generator::generate(...)` — use apenas quando precisar de arrays de conceitos no formato
-  `{term, definition, category, difficulty}`.
+- `has_key(): bool` — `true` se o `local_aihub` tiver uma chave utilizável ou o `core_ai` tiver
+  um provedor configurado.
+- `generate_text(string $system, string $user, bool $jsonmode = false): string` — envia um
+  prompt livre de sistema+usuário pela cadeia e retorna o texto bruto.
+- `send(string $prompt): array` — variante de nível mais baixo que retorna o array completo do
+  resultado (`success`, `data`, `message`, `provider`).
+- `generate(string $topic, string $language, int $count, int $difficulty, array $categorynames = [], string $context = ''): array`
+  — o gerador estruturado de conceitos do cartucho; use apenas quando precisar de arrays de
+  conceitos no formato `{term, definition, category, difficulty}`.
+
+Toda geração de IA disparada pelo PlayerGames é marcada no próprio log de uso do Hub com o
+componente (`local_playergames`) e uma descrição curta do que foi gerado (ex.: o tópico do
+cartucho), então administradores do site conseguem ver o uso de IA por plugin consumidor a
+partir do relatório de admin do Hub.

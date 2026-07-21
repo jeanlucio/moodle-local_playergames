@@ -16,27 +16,30 @@
 ## English
 
 **PlayerGames** is the central hub of the PlayerGames gamification ecosystem for Moodle. It
-provides a site-wide **Player Hub** (XP, levels, seasons, missions, achievements, streak), a
-**Shared AI Key Hub** for all Player plugins, an **Ecosystem Dashboard**, and four daily
-concept-reinforcement mini-games powered by content cartridges.
+provides a site-wide **Player Hub** (XP, levels, seasons, missions, achievements, avatars,
+streak), an **Ecosystem Dashboard**, daily concept-reinforcement mini-games powered by content
+cartridges, and a companion sidebar block (`block_playergames`).
 
 📚 **[Full documentation](https://jeanlucio.github.io/moodle-local_playergames/)** — features,
-the AI provider chain, the cartridge format, how PlayerQuiz works, the educational purpose, the
-PlayerGames ecosystem, the full 142-case test suite, and third-party service disclosure.
+the AI provider chain, the cartridge format, how PlayerQuiz and PlayerGuess work, avatars,
+learning XP, ranking behavior, the educational purpose, the PlayerGames ecosystem, the full
+232-case test suite, and third-party service disclosure.
 
 ### 🔎 Third-party Service Disclosure
 
-AI-powered cartridge generation is **optional** and disabled until a provider is available.
-PlayerGames resolves a tiered chain of personal/site keys before falling back to Moodle's own
-`core_ai` subsystem, and never sends student data — only content-generation prompts when a
-feature is explicitly used. Full disclosure:
+AI-assisted cartridge generation is **optional**. PlayerGames no longer stores any AI key itself
+— generation is routed through the companion
+**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** plugin when installed
+(personal/site BYOK keys), falling back to Moodle's own `core_ai` subsystem otherwise, and never
+sends student data — only content-generation prompts when a feature is explicitly used. Full
+disclosure:
 [Third-party Service Disclosure](https://jeanlucio.github.io/moodle-local_playergames/#security).
 
 ### 📦 Requirements
 
 | Component | Version |
 |-----------|---------|
-| Moodle    | 4.5+    |
+| Moodle    | 4.5 – 5.2 |
 | PHP       | 8.1+    |
 
 ### 🛠️ Installation
@@ -49,8 +52,8 @@ feature is explicitly used. Full disclosure:
    Final path:
    `your-moodle/local/playergames/`
 4. Visit **Site administration > Notifications** to complete installation.
-5. Go to **Site administration > Plugins > Local plugins > PlayerGames** to configure API keys
-   and season settings.
+5. Go to **Site administration > Plugins > Local plugins > PlayerGames** to configure season, XP,
+   avatar and game-rule settings.
 6. Create the first season via the **Season Management** page.
 
 ### 🆘 Support
@@ -77,28 +80,31 @@ Maintained by [Jean Lúcio](https://github.com/jeanlucio).
 > ⚠️ **Este plugin está em desenvolvimento ativo.** Ainda não foi publicado no Diretório de Plugins do Moodle. Algumas funcionalidades descritas na documentação completa são planejadas e ainda não estão implementadas.
 
 O **PlayerGames** é o hub central do ecossistema de gamificação PlayerGames para o Moodle. Ele
-fornece um **Player Hub** site-wide (XP, níveis, temporadas, missões, conquistas, streak), um
-**Hub Central de Chaves de IA** para todos os plugins Player, um **Dashboard do Ecossistema** e
-quatro minijogos diários de reforço de conceitos alimentados por cartuchos de conteúdo.
+fornece um **Player Hub** site-wide (XP, níveis, temporadas, missões, conquistas, avatares,
+streak), um **Dashboard do Ecossistema**, minijogos diários de reforço de conceitos alimentados
+por cartuchos de conteúdo, e um bloco companheiro de sidebar (`block_playergames`).
 
 📚 **[Documentação completa](https://jeanlucio.github.io/moodle-local_playergames/pt.html)** —
-funcionalidades, a cadeia de provedores de IA, o formato do cartucho, como o PlayerQuiz funciona,
-a finalidade educacional, o ecossistema PlayerGames, a suíte completa de 142 testes, e a
-divulgação de serviço de terceiros.
+funcionalidades, a cadeia de provedores de IA, o formato do cartucho, como o PlayerQuiz e o
+PlayerGuess funcionam, avatares, XP de aprendizado, como o ranking funciona, a finalidade
+educacional, o ecossistema PlayerGames, a suíte completa de 232 testes, e a divulgação de
+serviço de terceiros.
 
 ### 🔎 Divulgação de Serviço de Terceiros
 
-A geração de cartuchos via IA é **opcional** e fica desativada até que um provedor esteja
-disponível. O PlayerGames percorre uma cadeia de níveis de chaves pessoais/de site antes de
-recorrer ao subsistema `core_ai` do próprio Moodle, e nunca envia dados de estudante — apenas os
-prompts de geração de conteúdo quando um recurso é usado explicitamente. Divulgação completa:
+A geração de cartuchos assistida por IA é **opcional**. O PlayerGames não armazena mais nenhuma
+chave de IA por conta própria — a geração é roteada pelo plugin companheiro
+**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** quando instalado (chaves BYOK
+pessoais/de site), recorrendo ao subsistema `core_ai` do próprio Moodle caso contrário, e nunca
+envia dados de estudante — apenas os prompts de geração de conteúdo quando um recurso é usado
+explicitamente. Divulgação completa:
 [Divulgação de Serviço de Terceiros](https://jeanlucio.github.io/moodle-local_playergames/pt.html#security).
 
 ### 📦 Requisitos
 
 | Componente | Versão |
 |------------|--------|
-| Moodle     | 4.5+   |
+| Moodle     | 4.5 – 5.2 |
 | PHP        | 8.1+   |
 
 ### 🛠️ Instalação
@@ -112,7 +118,7 @@ prompts de geração de conteúdo quando um recurso é usado explicitamente. Div
    `seu-moodle/local/playergames/`
 4. Acesse **Administração do site > Notificações** para concluir a instalação.
 5. Vá em **Administração do site > Plugins > Plugins locais > PlayerGames** para configurar
-   chaves de API e parâmetros de temporada.
+   temporada, XP, avatares e regras dos jogos.
 6. Crie a primeira temporada na página **Gerenciar Temporadas**.
 
 ### 🆘 Suporte

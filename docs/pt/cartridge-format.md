@@ -20,9 +20,11 @@ ao PlayerQuiz, PlayerGuess, PlayerFill e PlayerBattle:
 ```
 
 - Validado pelo importador antes de salvar
-- Termos para jogos estilo Wordle: filtrados por comprimento configurável (padrão 4–8 letras),
-  apenas caracteres alfabéticos
+- Termos para o PlayerGuess: filtrados por comprimento configurável (padrão 4–8 letras) e devem
+  ser uma única palavra alfabética (sem espaços, dígitos ou hífens) — ver
+  [Como o PlayerGuess Funciona](#playerguess)
 - Cartuchos do tipo quiz: cada questão aceita um `generalfeedback` opcional, exibido ao jogador
-  após responder
+  após responder; o PlayerQuiz também pode sortear do **Banco de Questões do Moodle**, além dos
+  cartuchos ou em conjunto com eles
 - Admin pode ter múltiplos cartuchos ativos simultaneamente
 - Multi-idioma: cada cartucho declara seu `language`

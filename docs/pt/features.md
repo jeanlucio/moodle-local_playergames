@@ -4,12 +4,6 @@
 
 * 🗺️ **Dashboard do Ecossistema:** Visão SVG de todos os plugins Player — instalados, ausentes,
   dependências, status e links de ação rápida para admins.
-* 🔑 **Hub Central de Chaves de IA:** Configure chaves Gemini, Groq e compatíveis com OpenAI uma
-  única vez — todos os plugins Player as consomem automaticamente via cadeia de prioridade com
-  4 níveis.
-* 📊 **Engajômetro:** Compare métricas de engajamento (eventos por aluno, taxa de conclusão, nota
-  média) entre cursos com e sem plugins Player — disponível para admins (todos os cursos) e
-  professores (apenas os seus).
 * 🎮 **Player Hub — XP e Níveis:** XP site-wide ao longo de temporadas configuráveis. Cada
   minijogo concede uma quantidade fixa de XP, e o admin define quantas jogadas pontuáveis por dia
   cada jogo permite — o XP é ganho exclusivamente jogando, então professores com diferentes
@@ -20,10 +14,11 @@
   uma progressão linear mais longa com um clique.
 * 📅 **Player Hub — Check-in Diário:** Ganhe XP apenas por acessar o hub uma vez ao dia, com
   limite por temporada. Opcionalmente conta para o streak diário.
-* 🏆 **Player Hub — Ranking:** Ranking por temporada com controle de privacidade (opt-in),
-  separado por grupo de participantes (estudantes vs. não-estudantes — professores, managers,
-  admins). Admins e managers veem ambos os grupos em abas. Jogadores fora do top 50 ainda veem
-  sua própria posição, e empates são desempatados por quem atingiu o XP primeiro.
+* 🏆 **Player Hub — Ranking de Temporada:** Ranking com controle de privacidade (opt-in),
+  desempate e separação por staff/estudante — ver [Como o Ranking Funciona](#ranking).
+* 📘 **Player Hub — XP de Aprendizado:** Um pool de XP opcional e separado, espelhado da
+  atividade do estudante por curso no `block_playerhud`, com seu próprio ranking opt-in — ver
+  [XP de Aprendizado](#learning-xp).
 * 🔥 **Player Hub — Streak e Freeze:** Acompanhamento de streak diário. Consumíveis de freeze
   evitam a perda de streak e são ganhos via missões; o check-in diário pode manter o streak vivo
   quando configurado.
@@ -32,29 +27,36 @@
 * 🏅 **Player Hub — Conquistas:** Conquistas permanentes que persistem entre temporadas.
 * 🏷️ **Player Hub — Títulos:** Títulos baseados em nível visíveis no perfil Moodle, fóruns e
   cursos.
+* 🦊 **Player Hub — Coleção de Avatares:** Avatares emoji desbloqueados permanentemente pelo maior
+  nível já alcançado pelo jogador, agrupados em 4 níveis configuráveis — ver
+  [Avatares](#avatars).
+* 🕐 **Log Unificado de Atividade:** Um único log cronológico de todo evento de XP, streak e
+  freeze (XP de temporada, XP de aprendizado, freeze ganho/usado, streak quebrado), com um modal
+  de ajuda compartilhado explicando XP de temporada, XP de aprendizado, avatares e rankings.
 * 📦 **Sistema de Cartuchos:** Fonte de conteúdo para os minijogos. Múltiplos cartuchos ativos
   simultaneamente.
-  * **Todos os jogos:** criação manual (editor inline), upload de JSON ou geração com IA
-    (Gemini/Groq/OpenAI).
-  * **PlayerQuiz e PlayerBattle:** aceitam também o **Banco de Questões do Moodle** (apenas
-    questões de múltipla escolha).
-  * **PlayerGuess e PlayerFill:** aceitam também o **Glossário do Moodle** (termos e definições
-    reaproveitados sem configuração adicional).
-* 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo.
-  Errou → novo conceito; acertou → XP. Rejogar no mesmo dia traz questões novas em vez de repetir
-  as já vistas.
+  * **Todos os jogos:** criação manual (editor inline), upload de JSON ou geração com IA (ver
+    [Cadeia de Provedores de IA](#ai-provider-chain)).
+  * **PlayerQuiz:** aceita também o **Banco de Questões do Moodle** (apenas questões de múltipla
+    escolha).
+* 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo — ver
+  [Como o PlayerQuiz Funciona](#playerquiz).
+* 🔡 **PlayerGuess:** Minijogo diário estilo Wordle — adivinhe o termo letra a letra — ver
+  [Como o PlayerGuess Funciona](#playerguess).
+* 🧩 **Bloco PlayerGames:** Bloco sidebar companheiro (`block_playergames`) mostrando o avatar
+  equipado, nível, XP, streak, jogos do dia e posição no ranking do usuário na página inicial do
+  site e no Painel, com link para o Player Hub completo — ver
+  [Ecossistema PlayerGames](#ecosystem).
 * 📅 **Gerenciamento de Temporadas:** Criar, fechar e renovar automaticamente temporadas com
   snapshots de configuração. O histórico é preservado ao fechar uma temporada.
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.
-* 🧪 **Testes Automatizados:** Suíte PHPUnit com 142 casos, verde na matriz completa do CI (ver a
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 232 casos, verde na matriz completa do CI (ver a
   seção [Testes Automatizados](#testing)).
 
 ## ⏳ Em Desenvolvimento / Planejado
 
-* 🔡 **PlayerGuess:** Minijogo estilo Wordle — adivinhe o termo letra a letra (5 a 8 letras,
-  configurável). Seis tentativas antes de revelar a resposta.
 * 📝 **PlayerFill:** Minijogo de cruzadinha — posições numeradas; o mesmo número compartilha a
   mesma letra entre múltiplas palavras; resolver uma palavra revela letras nas demais (efeito
   cascata). Grid gerado em PHP sem bibliotecas externas.
@@ -64,7 +66,5 @@
 * 📦 **Phaser Centralizado:** O `local_playergames` passará a servir o `phaser.min.js` para todos
   os plugins Player via `local_playergames_get_phaser_url()`, eliminando cópias duplicadas em
   cada plugin.
-* 🧩 **block_playergames:** Bloco sidebar companheiro exibindo XP, nível, streak e status dos
-  jogos diários do usuário em qualquer página do Moodle, com link para o Player Hub completo.
-* 🛡️ **Polimento para Publicação:** Auditoria completa de acessibilidade e testes de aceitação
-  Behat (a suíte PHPUnit e a conformidade PHPCS já estão prontas).
+* 🛡️ **Polimento para Publicação:** Auditoria completa de acessibilidade e cobertura Behat mais
+  ampla (a suíte PHPUnit e a conformidade PHPCS já estão prontas).

@@ -3,8 +3,10 @@
 ## Para Administradores
 
 1. Instale o plugin e conclua o upgrade do Moodle.
-2. Configure as chaves de API globais em *Administração do site → Plugins → Plugins locais →
-   PlayerGames → Chaves de API*.
+2. Opcionalmente instale o **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** se
+   quiser geração de cartuchos assistida por IA com chaves pessoais/de site (ver
+   [Cadeia de Provedores de IA](#ai-provider-chain)) — caso contrário, os cartuchos ainda podem
+   ser criados manualmente ou gerados pelo `core_ai` do próprio Moodle.
 3. Crie a primeira temporada na página **Gerenciar Temporadas**, definindo nome, datas e as
    recompensas de XP por jogo e jogadas por dia.
 4. Opcionalmente ajuste a página **Escada de Níveis** — altere os limiares de XP e os títulos,
@@ -14,8 +16,9 @@
 
 ## Para Professores
 
-1. Acesse **Minhas Chaves de IA** para configurar chaves pessoais (opcional — as chaves globais
-   funcionam se configuradas pelo admin).
+1. Se o `local_aihub` estiver instalado, acesse a página **Minhas Chaves de IA** dele para
+   configurar uma chave pessoal (opcional — as chaves de site funcionam se o admin as
+   configurou).
 2. Use o hub PlayerGames ou qualquer plugin Player — os recursos de IA usarão automaticamente a
    cadeia de chaves configurada.
 
