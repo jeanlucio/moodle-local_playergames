@@ -31,7 +31,19 @@ AI-assisted cartridge generation is **optional** and disabled until a provider i
 PlayerGames resolves a tiered chain of personal/site keys through the companion
 [local_aihub](https://github.com/jeanlucio/moodle-local_aihub) plugin before falling back to
 Moodle's own `core_ai` subsystem, and never sends student data — only content-generation prompts
-when a feature is explicitly used. Full disclosure:
+when a feature is explicitly used.
+
+* **Cost:** None required by PlayerGames itself. If `local_aihub` is installed, any cost is
+  whatever the underlying provider charges through that plugin's own BYOK keys; without it,
+  PlayerGames falls back to Moodle's `core_ai`, which may be free if the site admin has
+  configured a no-cost institutional provider.
+* **API keys:** Not configured in PlayerGames. Obtain and configure a personal or site key
+  inside `local_aihub` (see its own documentation), or ask the site administrator to configure
+  a `core_ai` provider instead.
+* **Demo credentials:** Not applicable — no credentials are required to install or use
+  PlayerGames; AI-assisted cartridge generation is entirely opt-in.
+
+Full disclosure:
 [Third-party Service Disclosure](https://jeanlucio.github.io/moodle-local_playergames/#security).
 
 ### 📦 Requirements
@@ -41,7 +53,7 @@ when a feature is explicitly used. Full disclosure:
 | Moodle    | 4.5 – 5.2 |
 | PHP       | 8.1+    |
 
-### 🛠️ Installation
+### 🛠️ Installation & Configuration
 
 > ⚠️ This plugin is not yet published on the Moodle Plugin Directory. Install manually from this repository.
 
@@ -95,7 +107,19 @@ A geração de cartuchos assistida por IA é **opcional** e fica desativada até
 esteja disponível. O PlayerGames percorre uma cadeia de níveis de chaves pessoais/de site pelo
 plugin companheiro [local_aihub](https://github.com/jeanlucio/moodle-local_aihub) antes de
 recorrer ao subsistema `core_ai` do próprio Moodle, e nunca envia dados de estudante — apenas os
-prompts de geração de conteúdo quando um recurso é usado explicitamente. Divulgação completa:
+prompts de geração de conteúdo quando um recurso é usado explicitamente.
+
+* **Custo:** Nenhum é exigido pelo próprio PlayerGames. Se o `local_aihub` estiver instalado,
+  qualquer custo é o que o provedor cobrar através das chaves BYOK desse plugin; sem ele, o
+  PlayerGames recorre ao `core_ai` do Moodle, que pode ser gratuito se o administrador do site
+  tiver configurado um provedor institucional sem custo.
+* **Chaves de API:** Não são configuradas no PlayerGames. Obtenha e configure uma chave pessoal
+  ou do site dentro do `local_aihub` (veja a documentação própria dele), ou peça ao
+  administrador do site para configurar um provedor `core_ai`.
+* **Credenciais de demonstração:** Não aplicável — nenhuma credencial é exigida para instalar ou
+  usar o PlayerGames; a geração de cartuchos assistida por IA é totalmente opcional.
+
+Divulgação completa:
 [Divulgação de Serviço de Terceiros](https://jeanlucio.github.io/moodle-local_playergames/pt.html#security).
 
 ### 📦 Requisitos
@@ -105,7 +129,7 @@ prompts de geração de conteúdo quando um recurso é usado explicitamente. Div
 | Moodle     | 4.5 – 5.2 |
 | PHP        | 8.1+   |
 
-### 🛠️ Instalação
+### 🛠️ Instalação e Configuração
 
 > ⚠️ Este plugin ainda não está publicado no Diretório de Plugins do Moodle. Instale manualmente a partir deste repositório.
 

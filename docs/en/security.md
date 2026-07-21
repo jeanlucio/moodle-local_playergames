@@ -32,3 +32,15 @@ resolved the request (the Hub or `core_ai`) for processing. PlayerGames:
 - Never includes student data in an AI prompt
 
 No external communication occurs unless an AI feature is explicitly used.
+
+## Cost
+
+None required by PlayerGames itself. If `local_aihub` is installed, any cost is whatever the
+underlying provider charges through that plugin's own BYOK keys; without it, PlayerGames falls
+back to Moodle's `core_ai`, which may be free if the site admin has configured a no-cost
+institutional provider.
+
+## Demo Credentials
+
+Not applicable — no credentials are required to install or use PlayerGames; AI-assisted
+cartridge generation is entirely opt-in.

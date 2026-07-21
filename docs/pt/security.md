@@ -34,3 +34,15 @@ PlayerGames:
 - Nunca inclui dados de estudante em um prompt de IA
 
 Nenhuma comunicação externa ocorre sem ativação explícita de um recurso de IA.
+
+## Custo
+
+Nenhum é exigido pelo próprio PlayerGames. Se o `local_aihub` estiver instalado, qualquer custo
+é o que o provedor cobrar através das chaves BYOK desse plugin; sem ele, o PlayerGames recorre
+ao `core_ai` do Moodle, que pode ser gratuito se o administrador do site tiver configurado um
+provedor institucional sem custo.
+
+## Credenciais de Demonstração
+
+Não aplicável — nenhuma credencial é exigida para instalar ou usar o PlayerGames; a geração de
+cartuchos assistida por IA é totalmente opcional.

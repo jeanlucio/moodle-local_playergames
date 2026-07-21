@@ -1,4 +1,4 @@
-# 🛠️ Installation
+# 🛠️ Installation & Configuration
 
 > ⚠️ This plugin is not yet published on the Moodle Plugin Directory. Install manually from this
 > repository.
