@@ -1,1 +1,3 @@
 cli/seed_engagement_meter.php export-ignore
+docs/ export-ignore
+.github/ export-ignore
