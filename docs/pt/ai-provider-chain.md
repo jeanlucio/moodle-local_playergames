@@ -1,19 +1,18 @@
 # 🤖 Cadeia de Provedores de IA
 
-O PlayerGames não armazena mais chaves de API de IA nem fala diretamente com provedores. Todo o
-armazenamento de chaves e o transporte com os provedores (Gemini, Groq, compatível com OpenAI)
-agora vivem num plugin companheiro dedicado, o
-**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**. O PlayerGames mantém apenas
-as partes específicas do cartucho: montar o prompt de geração (tópico, idioma, quantidade de
-conceitos, dificuldade, categorias) e interpretar a resposta JSON da IA de volta em conceitos.
-Isso mantém o PlayerGames livre de gerenciamento de chaves e ainda oferece suporte à geração de
-cartuchos assistida por IA onde quer que o Hub esteja instalado.
+O armazenamento de chaves e o transporte com os provedores (Gemini, Groq, DeepSeek, compatível
+com OpenAI) vivem num plugin companheiro dedicado, o
+**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**. O PlayerGames em si só monta
+o prompt de geração do cartucho (tópico, idioma, quantidade de conceitos, dificuldade,
+categorias) e interpreta a resposta JSON da IA de volta em conceitos, então fica livre de
+gerenciamento de chaves e ainda oferece suporte à geração de cartuchos assistida por IA onde quer
+que o Hub esteja instalado.
 
 ## Ordem de resolução
 
 | Prioridade | Origem | Observações |
 |------------|--------|-------------|
-| 1 | **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** | Tentado primeiro quando instalado. Resolve chaves pessoais e depois chaves de site, entre os provedores Gemini / Groq / compatível-com-OpenAI. |
+| 1 | **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** | Tentado primeiro quando instalado. Resolve chaves pessoais e depois chaves de site, entre os provedores Gemini / Groq / DeepSeek / compatível-com-OpenAI. |
 | 2 | **Moodle `core_ai`** | Fallback institucional, usado apenas se o Hub não estiver instalado ou não retornar uma fonte utilizável. Usa os provedores que o admin configurou em *Administração do site → IA → Provedores de IA*. |
 
 Uma falha real de provedor (ex.: uma chave inválida cadastrada no Hub) é preservada e exibida ao
@@ -21,7 +20,7 @@ usuário — nunca é mascarada silenciosamente como "nenhuma fonte de IA dispon
 
 > **Instalar o `local_aihub` é opcional.** Sem ele, a geração de cartuchos via IA ainda funciona
 > se o site tiver o `core_ai` configurado; o PlayerGames só perde a opção de chave pessoal (BYOK
-> — cada professor trazendo sua própria chave Gemini/Groq/OpenAI) que o Hub oferece.
+> — cada professor trazendo sua própria chave Gemini/Groq/DeepSeek/OpenAI) que o Hub oferece.
 
 ## API de integração para outros plugins
 

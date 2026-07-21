@@ -9,9 +9,9 @@ transformam o Moodle em uma experiência imersiva:
   👉 [github.com/jeanlucio/moodle-block_playergames](https://github.com/jeanlucio/moodle-block_playergames)
 
 * **AI Hub:** Broker compartilhado de BYOK (traga sua própria chave) — chaves pessoais e de site
-  Gemini/Groq/compatível-com-OpenAI, consumidas pelo PlayerGames para geração de cartuchos
-  assistida por IA. Opcional: o PlayerGames continua funcionando pelo `core_ai` do próprio
-  Moodle sem ele.
+  Gemini/Groq/DeepSeek/compatível-com-OpenAI, consumidas pelo PlayerGames para geração de
+  cartuchos assistida por IA. Opcional: o PlayerGames continua funcionando pelo `core_ai` do
+  próprio Moodle sem ele.
   👉 [github.com/jeanlucio/moodle-local_aihub](https://github.com/jeanlucio/moodle-local_aihub)
 
 * **Bloco PlayerHUD:** XP, níveis, inventário, drops, missões, classes RPG, história, karma e

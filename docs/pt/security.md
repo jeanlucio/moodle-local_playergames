@@ -5,17 +5,17 @@ opcional — todo o conteúdo pode ser criado manualmente.
 
 ## Arquitetura
 
-O PlayerGames não fala diretamente com nenhum provedor de IA e não armazena nenhuma chave de API
-de IA por conta própria. Quando a geração via IA é usada, a requisição é roteada pelo plugin
-companheiro **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** (se instalado),
-que é o dono do armazenamento de chaves e do transporte com o provedor; se o Hub não estiver
-instalado, o PlayerGames recorre ao subsistema `core_ai` do próprio Moodle, usando os provedores
-que o administrador do site configurou lá.
+A geração via IA é roteada pelo plugin companheiro
+**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** quando instalado, que é o
+dono do armazenamento de chaves e do transporte com o provedor; se o Hub não estiver instalado, o
+PlayerGames recorre ao subsistema `core_ai` do próprio Moodle, usando os provedores que o
+administrador do site configurou lá.
 
 ## Provedores suportados (via local_aihub)
 
 - **Google Gemini** — https://ai.google.dev/
 - **Groq** — https://console.groq.com/
+- **DeepSeek** — https://platform.deepseek.com/
 - **APIs compatíveis com OpenAI** — Qualquer provedor que siga o formato da API OpenAI (ex.:
   OpenRouter, modelos locais via LM Studio, proxy Ollama, etc.)
 

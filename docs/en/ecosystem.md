@@ -9,8 +9,8 @@ Moodle into an immersive experience:
   👉 [github.com/jeanlucio/moodle-block_playergames](https://github.com/jeanlucio/moodle-block_playergames)
 
 * **AI Hub:** Shared BYOK (bring your own key) broker — personal and site-wide Gemini/Groq/
-  OpenAI-compatible keys, consumed by PlayerGames for AI-assisted cartridge generation. Optional:
-  PlayerGames still works through Moodle's own `core_ai` without it.
+  DeepSeek/OpenAI-compatible keys, consumed by PlayerGames for AI-assisted cartridge generation.
+  Optional: PlayerGames still works through Moodle's own `core_ai` without it.
   👉 [github.com/jeanlucio/moodle-local_aihub](https://github.com/jeanlucio/moodle-local_aihub)
 
 * **PlayerHUD Block:** XP, levels, inventory, drops, quests, RPG classes, story, karma, and

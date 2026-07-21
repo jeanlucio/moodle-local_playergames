@@ -1,18 +1,17 @@
 # 🤖 AI Provider Chain
 
-PlayerGames no longer stores AI API keys or talks to providers directly. All key storage and
-provider transport (Gemini, Groq, OpenAI-compatible) now live in a dedicated companion plugin,
-**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**. PlayerGames keeps only the
-cartridge-specific parts: building the generation prompt (topic, language, concept count,
-difficulty, categories) and parsing the AI's JSON response back into concepts. This keeps
-PlayerGames free of key management while still supporting AI-assisted cartridge generation
-wherever the Hub is installed.
+Key storage and provider transport (Gemini, Groq, DeepSeek, OpenAI-compatible) live in a
+dedicated companion plugin, **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**.
+PlayerGames itself only builds the cartridge generation prompt (topic, language, concept count,
+difficulty, categories) and parses the AI's JSON response back into concepts, so it stays free of
+key management while still supporting AI-assisted cartridge generation wherever the Hub is
+installed.
 
 ## Resolution order
 
 | Priority | Source | Notes |
 |----------|--------|-------|
-| 1 | **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** | Tried first when installed. Resolves personal keys, then site-wide keys, across Gemini / Groq / OpenAI-compatible providers. |
+| 1 | **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** | Tried first when installed. Resolves personal keys, then site-wide keys, across Gemini / Groq / DeepSeek / OpenAI-compatible providers. |
 | 2 | **Moodle `core_ai`** | Institutional fallback, used only if the Hub is not installed or returns no usable source. Uses whichever providers the admin configured in *Site administration → AI → AI providers*. |
 
 A real provider failure (e.g. an invalid key configured in the Hub) is preserved and surfaced to
@@ -20,7 +19,7 @@ the user — it is never silently masked as "no AI source available".
 
 > **Installing `local_aihub` is optional.** Without it, cartridge AI generation still works if
 > the site has `core_ai` configured; PlayerGames only loses the BYOK personal-key option (each
-> teacher bringing their own Gemini/Groq/OpenAI key) that the Hub provides.
+> teacher bringing their own Gemini/Groq/DeepSeek/OpenAI key) that the Hub provides.
 
 ## Integration API for other plugins
 
