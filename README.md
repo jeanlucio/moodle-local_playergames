@@ -27,11 +27,11 @@ learning XP, ranking behavior, the educational purpose, the PlayerGames ecosyste
 
 ### 🔎 Third-party Service Disclosure
 
-AI-assisted cartridge generation is **optional**. Generation is routed through the companion
-**[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** plugin when installed
-(personal/site BYOK keys across Gemini, Groq, DeepSeek and OpenAI-compatible providers), falling
-back to Moodle's own `core_ai` subsystem otherwise, and never sends student data — only
-content-generation prompts when a feature is explicitly used. Full disclosure:
+AI-assisted cartridge generation is **optional** and disabled until a provider is available.
+PlayerGames resolves a tiered chain of personal/site keys through the companion
+[local_aihub](https://github.com/jeanlucio/moodle-local_aihub) plugin before falling back to
+Moodle's own `core_ai` subsystem, and never sends student data — only content-generation prompts
+when a feature is explicitly used. Full disclosure:
 [Third-party Service Disclosure](https://jeanlucio.github.io/moodle-local_playergames/#security).
 
 ### 📦 Requirements
@@ -91,12 +91,11 @@ serviço de terceiros.
 
 ### 🔎 Divulgação de Serviço de Terceiros
 
-A geração de cartuchos assistida por IA é **opcional**. A geração é roteada pelo plugin
-companheiro **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** quando instalado
-(chaves BYOK pessoais/de site entre os provedores Gemini, Groq, DeepSeek e compatível com
-OpenAI), recorrendo ao subsistema `core_ai` do próprio Moodle caso contrário, e nunca envia dados
-de estudante — apenas os prompts de geração de conteúdo quando um recurso é usado explicitamente.
-Divulgação completa:
+A geração de cartuchos assistida por IA é **opcional** e fica desativada até que um provedor
+esteja disponível. O PlayerGames percorre uma cadeia de níveis de chaves pessoais/de site pelo
+plugin companheiro [local_aihub](https://github.com/jeanlucio/moodle-local_aihub) antes de
+recorrer ao subsistema `core_ai` do próprio Moodle, e nunca envia dados de estudante — apenas os
+prompts de geração de conteúdo quando um recurso é usado explicitamente. Divulgação completa:
 [Divulgação de Serviço de Terceiros](https://jeanlucio.github.io/moodle-local_playergames/pt.html#security).
 
 ### 📦 Requisitos
