@@ -213,6 +213,32 @@ final class fill_manager_test extends \advanced_testcase {
         $this->assertSame('toca', $concepts[1]->term);
     }
 
+    public function test_build_words_payload_reveals_answer_only_when_resolved_or_revealing(): void {
+        $concepts = [$this->concept(1, 'cat'), $this->concept(2, 'at')];
+        $puzzle = fill_manager::build_puzzle($concepts);
+        $words = [];
+        foreach ($puzzle['words'] as $word) {
+            $words[] = $word + ['resolved' => false, 'attemptsused' => 0, 'exhausted' => false];
+        }
+        $words[0]['resolved'] = true;
+        $state = ['words' => $words, 'revealedslots' => $words[0]['slots']];
+
+        $payload = fill_manager::build_words_payload($state, false);
+
+        $this->assertSame(1, $payload[0]['conceptid']);
+        $this->assertTrue($payload[0]['resolved']);
+        $this->assertSame('cat', $payload[0]['revealword']);
+        // Word 2 is still pending and revealanswers is false, so its spelling must
+        // stay hidden — this is what stops a loss reveal leaking early.
+        $this->assertSame('', $payload[1]['revealword']);
+        $this->assertFalse($payload[1]['resolved']);
+
+        // Once revealing (the round just ended in a loss), even a pending word's
+        // spelling must be included so the player can see the answer.
+        $payloadrevealed = fill_manager::build_words_payload($state, true);
+        $this->assertSame('at', $payloadrevealed[1]['revealword']);
+    }
+
     public function test_get_daily_concepts_returns_empty_when_unassigned(): void {
         $this->resetAfterTest();
         $this->assertSame([], fill_manager::get_daily_concepts(time()));
