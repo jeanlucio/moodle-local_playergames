@@ -25,6 +25,7 @@
 namespace local_playergames\task;
 
 use core_text;
+use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 
 /**
@@ -32,7 +33,10 @@ use local_playergames\games\guess_manager;
  * and writes a row to local_playergames_daily_assignments.
  *
  * PlayerBattle is excluded (questions are drawn dynamically from cartridges
- * during gameplay). Check-in has no concept. Only quiz, guess, and fill are assigned.
+ * during gameplay). Check-in has no concept. Quiz and guess each get a single
+ * concept for the day. PlayerFill gets fill_manager::num_words() concepts instead
+ * — one crossword-style puzzle needs several peer terms, not one — handled
+ * separately by assign_fill() rather than through CONCEPT_GAMES below.
  *
  * Idempotent: if an assignment already exists for today and a given gametype,
  * it is left unchanged.
@@ -49,8 +53,8 @@ use local_playergames\games\guess_manager;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class assign_daily_games extends \core\task\scheduled_task {
-    /** @var string[] Game types that receive a concept assignment. */
-    private const CONCEPT_GAMES = ['quiz', 'guess', 'fill'];
+    /** @var string[] Game types that each receive a single concept assignment. */
+    private const CONCEPT_GAMES = ['quiz', 'guess'];
 
     /**
      * Returns the human-readable task name.
@@ -106,6 +110,71 @@ class assign_daily_games extends \core\task\scheduled_task {
             $DB->insert_record('local_playergames_daily_assignments', $record);
             mtrace("Assigned concept {$conceptid} to {$gametype} for today.");
         }
+
+        $this->assign_fill($activeids, $today);
+    }
+
+    /**
+     * Assigns fill_manager::num_words() concepts to PlayerFill for today.
+     *
+     * Candidates are filtered the same way as PlayerGuess (letters-only after
+     * normalization, within a configured length range — fill_minlen/fill_maxlen here
+     * instead of wordle_minlen/wordle_maxlen), since every assigned term is tiled as a
+     * guessable word. Skips assignment entirely, rather than assigning a partial set,
+     * when the eligible pool is smaller than the configured word count — the same
+     * graceful degradation the other concept games apply when no eligible concept
+     * exists at all.
+     *
+     * @param int[] $cartridgeids Active cartridge ids.
+     * @param int $today Midnight timestamp of today.
+     * @return void
+     */
+    private function assign_fill(array $cartridgeids, int $today): void {
+        global $DB;
+
+        $alreadyassigned = $DB->record_exists(
+            'local_playergames_daily_assignments',
+            ['gamedate' => $today, 'gametype' => 'fill']
+        );
+        if ($alreadyassigned) {
+            mtrace('Assignment already exists for fill today — skipping.');
+            return;
+        }
+
+        $numwords = fill_manager::num_words();
+        $minlen = (int) get_config('local_playergames', 'fill_minlen') ?: 3;
+        $maxlen = (int) get_config('local_playergames', 'fill_maxlen') ?: 12;
+
+        [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
+        $where = "cartridgeid {$insql}";
+        $params['minlen'] = $minlen;
+        $params['maxlen'] = $maxlen;
+        $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
+        $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
+
+        $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
+        $ids = [];
+        foreach ($rows as $row) {
+            $normalized = guess_manager::normalize($row->term);
+            if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
+                $ids[] = (int) $row->id;
+            }
+        }
+
+        if (count($ids) < $numwords) {
+            mtrace('Not enough eligible concepts for fill — skipping.');
+            return;
+        }
+
+        shuffle($ids);
+        $chosen = array_slice($ids, 0, $numwords);
+
+        $records = [];
+        foreach ($chosen as $conceptid) {
+            $records[] = (object) ['gamedate' => $today, 'gametype' => 'fill', 'conceptid' => $conceptid];
+        }
+        $DB->insert_records('local_playergames_daily_assignments', $records);
+        mtrace('Assigned ' . count($chosen) . ' concepts to fill for today.');
     }
 
     /**

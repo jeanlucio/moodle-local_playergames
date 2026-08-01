@@ -330,6 +330,38 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/fill_num_words',
+        get_string('settings_fill_num_words', 'local_playergames'),
+        get_string('settings_fill_num_words_desc', 'local_playergames'),
+        '5',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/fill_max_attempts',
+        get_string('settings_fill_max_attempts', 'local_playergames'),
+        get_string('settings_fill_max_attempts_desc', 'local_playergames'),
+        '4',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/fill_minlen',
+        get_string('settings_fill_minlen', 'local_playergames'),
+        get_string('settings_fill_minlen_desc', 'local_playergames'),
+        '3',
+        PARAM_INT
+    ));
+
+    $page3->add(new admin_setting_configtext(
+        'local_playergames/fill_maxlen',
+        get_string('settings_fill_maxlen', 'local_playergames'),
+        get_string('settings_fill_maxlen_desc', 'local_playergames'),
+        '12',
+        PARAM_INT
+    ));
+
     $conceptdayoptions = [
         'random' => get_string('cartridge_concept_day_random', 'local_playergames'),
         'bycategory' => get_string('cartridge_concept_day_bycategory', 'local_playergames'),

@@ -24,6 +24,7 @@
 
 namespace local_playergames\task;
 
+use local_playergames\games\fill_manager;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -36,7 +37,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(assign_daily_games::class)]
 final class assign_daily_games_test extends \advanced_testcase {
     /**
-     * Creates an active concept cartridge with a few wordle-eligible terms.
+     * Creates an active concept cartridge with wordle-eligible terms — enough of them
+     * (fill_manager::DEFAULT_NUM_WORDS) that PlayerFill's own multi-concept assignment
+     * has a large enough pool to draw from too.
      *
      * @return int Cartridge id.
      */
@@ -47,7 +50,11 @@ final class assign_daily_games_test extends \advanced_testcase {
             'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
             'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
         ]);
-        foreach (['apple' => 'A fruit', 'table' => 'Furniture', 'planet' => 'A world'] as $term => $def) {
+        $terms = [
+            'apple' => 'A fruit', 'table' => 'Furniture', 'planet' => 'A world',
+            'river' => 'A body of water', 'stone' => 'A piece of rock',
+        ];
+        foreach ($terms as $term => $def) {
             $DB->insert_record('local_playergames_concepts', (object) [
                 'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
                 'difficulty' => 3, 'categoryid' => null, 'language' => null,
@@ -67,7 +74,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         ob_get_clean();
     }
 
-    public function test_assigns_one_concept_per_concept_game(): void {
+    public function test_assigns_one_concept_per_single_concept_game(): void {
         global $DB;
         $this->resetAfterTest();
         $this->seed_concepts();
@@ -75,13 +82,66 @@ final class assign_daily_games_test extends \advanced_testcase {
         $this->run_task();
 
         $today = mktime(0, 0, 0);
-        foreach (['quiz', 'guess', 'fill'] as $gametype) {
-            $this->assertTrue($DB->record_exists('local_playergames_daily_assignments', [
+        foreach (['quiz', 'guess'] as $gametype) {
+            $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
                 'gamedate' => $today,
                 'gametype' => $gametype,
-            ]), "missing assignment for {$gametype}");
+            ]), "expected exactly one assignment for {$gametype}");
         }
-        $this->assertSame(3, $DB->count_records('local_playergames_daily_assignments'));
+    }
+
+    public function test_assigns_num_words_concepts_to_fill(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->seed_concepts();
+
+        $this->run_task();
+
+        $today = mktime(0, 0, 0);
+        $fillcount = $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today,
+            'gametype' => 'fill',
+        ]);
+        $this->assertSame(fill_manager::num_words(), $fillcount);
+
+        // Every assigned concept must be distinct — the puzzle would be degenerate
+        // (a word "sharing letters with itself") if the same concept were drawn twice.
+        $conceptids = $DB->get_fieldset_select(
+            'local_playergames_daily_assignments',
+            'conceptid',
+            'gamedate = :gd AND gametype = :gt',
+            ['gd' => $today, 'gt' => 'fill']
+        );
+        $this->assertCount(count(array_unique($conceptids)), $conceptids);
+    }
+
+    public function test_fill_is_skipped_when_pool_smaller_than_num_words(): void {
+        global $DB;
+        $this->resetAfterTest();
+        // Only 2 eligible concepts, fewer than fill_manager::DEFAULT_NUM_WORDS (5) —
+        // quiz and guess only ever need one concept each, so they must still be
+        // assigned even though fill's own, larger pool requirement is not met.
+        $now = time();
+        $cid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        foreach (['apple' => 'A fruit', 'table' => 'Furniture'] as $term => $def) {
+            $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
+                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+            ]);
+        }
+
+        $this->run_task();
+
+        $today = mktime(0, 0, 0);
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today, 'gametype' => 'fill',
+        ]));
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today, 'gametype' => 'quiz',
+        ]));
     }
 
     public function test_is_idempotent(): void {
@@ -90,10 +150,12 @@ final class assign_daily_games_test extends \advanced_testcase {
         $this->seed_concepts();
 
         $this->run_task();
+        $firstcount = $DB->count_records('local_playergames_daily_assignments');
+
         $this->run_task();
 
         // A second run must not create duplicate assignments.
-        $this->assertSame(3, $DB->count_records('local_playergames_daily_assignments'));
+        $this->assertSame($firstcount, $DB->count_records('local_playergames_daily_assignments'));
     }
 
     public function test_no_active_cartridges_assigns_nothing(): void {
