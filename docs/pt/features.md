@@ -43,6 +43,10 @@
   [Como o PlayerQuiz Funciona](#playerquiz).
 * 🔡 **PlayerGuess:** Minijogo diário estilo Wordle — adivinhe o termo letra a letra — ver
   [Como o PlayerGuess Funciona](#playerguess).
+* 📝 **PlayerFill:** Minijogo diário estilo cruzadinha — posições numeradas; o mesmo número
+  compartilha a mesma letra entre múltiplos termos; resolver um revela letras nos demais (efeito
+  cascata). Grid gerado em PHP sem bibliotecas externas — ver
+  [Como o PlayerFill Funciona](#playerfill).
 * 🧩 **Bloco PlayerGames:** Bloco sidebar companheiro (`block_playergames`) mostrando o avatar
   equipado, nível, XP, streak, jogos do dia e posição no ranking do usuário na página inicial do
   site e no Painel, com link para o Player Hub completo — ver
@@ -52,14 +56,11 @@
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.
-* 🧪 **Testes Automatizados:** Suíte PHPUnit com 232 casos, verde na matriz completa do CI (ver a
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 246 casos, verde na matriz completa do CI (ver a
   seção [Testes Automatizados](#testing)).
 
 ## ⏳ Em Desenvolvimento / Planejado
 
-* 📝 **PlayerFill:** Minijogo de cruzadinha — posições numeradas; o mesmo número compartilha a
-  mesma letra entre múltiplas palavras; resolver uma palavra revela letras nas demais (efeito
-  cascata). Grid gerado em PHP sem bibliotecas externas.
 * ⚔️ **PlayerBattle:** Minijogo match-3 RPG (grid 8×8) com combate por turnos contra um boss,
   movido pelo Phaser 3. Combinar peças de mana carrega uma pergunta do cartucho; acertar → dano
   triplo no boss; errar → o jogador leva dano.

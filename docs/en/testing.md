@@ -29,11 +29,12 @@ PostgreSQL & MariaDB).
 | `games/quiz_loader_test.php` | 12 | Cartridge source: completeness filter, session size, active-only, id filter, metadata, random draw, fresh-question exclusion and pool reuse |
 | `games/quiz_settings_test.php` | 8 | Timer, max-attempts and cooldown configuration and their interaction |
 | `games/guess_manager_test.php` | 7 | Daily concept resolution, term normalisation, Wordle-style letter feedback (including duplicate letters), guess validation |
+| `games/fill_manager_test.php` | 10 | Word count/max-attempts config clamping, shared letter→slot assignment (including disjoint terms), tile reveal state, cross-reveal cascade, per-day term ordering and filtering, POST response payload reveal rules |
 | `games/season_game_config_test.php` | 7 | Source helpers; enabled-record lookup; per-season listing; default seeding and preservation |
 | `external/set_avatar_test.php` | 3 | Equip/unequip via the AJAX endpoint, rejecting a locked avatar |
 | `external/set_ranking_visibility_test.php` | 2 | Season ranking opt-in/opt-out toggle |
 | `external/set_learning_ranking_visibility_test.php` | 2 | Learning XP ranking opt-in/opt-out toggle |
-| `task/assign_daily_games_test.php` | 4 | Per-game concept assignment, idempotency, no-cartridge case, PlayerGuess eligibility filter |
+| `task/assign_daily_games_test.php` | 8 | Per-game concept assignment, PlayerFill's multi-concept assignment and pool-too-small skip, idempotency, no-cartridge and empty-cartridge cases, PlayerGuess eligibility filter, task name |
 | `task/reset_daily_missions_test.php` | 1 | Daily mission reset + streak break orchestration |
 | `task/close_expired_seasons_test.php` | 2 | Closes expired season; auto-renew creates and activates next |
 | `task/purge_old_scores_test.php` | 2 | Retention-window purge; keep-within-window no-op |
@@ -44,11 +45,24 @@ PostgreSQL & MariaDB).
 | `ecosystem/plugin_registry_test.php` | 2 | Catalog structure and unique components |
 | `ecosystem/plugin_status_test.php` | 1 | Installed status keyed by component; hub reported installed |
 | `event/events_test.php` | 1 | All nine events trigger, are captured and render a description |
-| **Total** | **232** | |
+| **Total** | **246** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames
 ```
+
+## Coverage
+
+Line/method coverage is measured locally with Xdebug (`moodle-coverage`, a bench tool — not part
+of CI) rather than published as a single plugin-wide percentage: this codebase deliberately does
+not unit-test Moodle's own output renderers (`classes/output/*`), the cartridge management UI
+controller, or `ai_generator`'s real HTTP calls (only its response-parsing logic is tested, since
+mocking the network round-trip has low ROI) — none of that is a gap the PHPUnit suite is meant to
+close, so a raw plugin-wide number would just measure that policy rather than test quality. The
+classes it is meant to cover — game managers, hub services, scheduled tasks, events, external
+functions and the Privacy Provider — are what the case counts in the table above exercise, and
+`games/fill_manager` and `task/assign_daily_games` (the classes PlayerFill added or changed) are
+both at 100% line and method coverage.
 
 ## Behat — Acceptance Tests
 

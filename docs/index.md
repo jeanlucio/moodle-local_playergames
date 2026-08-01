@@ -50,6 +50,9 @@ Source code: [github.com/jeanlucio/moodle-local_playergames](https://github.com/
 <span id="playerguess"></span>
 {% include_relative en/playerguess.md %}
 
+<span id="playerfill"></span>
+{% include_relative en/playerfill.md %}
+
 <span id="avatars"></span>
 {% include_relative en/avatars.md %}
 

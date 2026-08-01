@@ -29,11 +29,12 @@ completa (Moodle 4.5 → 5.2, PostgreSQL e MariaDB).
 | `games/quiz_loader_test.php` | 12 | Fonte de cartucho: filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados, sorteio aleatório, exclusão de questões já vistas e reuso do pool |
 | `games/quiz_settings_test.php` | 8 | Configuração de cronômetro, máximo de tentativas e cooldown, e como interagem |
 | `games/guess_manager_test.php` | 7 | Resolução do conceito diário, normalização do termo, feedback de letras estilo Wordle (incluindo letras duplicadas), validação da tentativa |
+| `games/fill_manager_test.php` | 10 | Clamp da config de quantidade de palavras/tentativas máximas, atribuição de letra→slot compartilhado (incluindo termos sem letras em comum), estado de revelação das casas, cascata de revelação cruzada, ordenação/filtro dos termos do dia, regras de revelação no payload de resposta do POST |
 | `games/season_game_config_test.php` | 7 | Helpers de fonte; busca do registro habilitado; listagem por temporada; seed de defaults e preservação |
 | `external/set_avatar_test.php` | 3 | Equipar/desequipar via o endpoint AJAX, rejeitando um avatar bloqueado |
 | `external/set_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de temporada |
 | `external/set_learning_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de XP de Aprendizado |
-| `task/assign_daily_games_test.php` | 4 | Atribuição de conceito por jogo, idempotência, caso sem cartucho, filtro de elegibilidade do PlayerGuess |
+| `task/assign_daily_games_test.php` | 8 | Atribuição de conceito por jogo, atribuição multi-conceito do PlayerFill e o caso de pool insuficiente, idempotência, casos sem cartucho e com cartucho vazio, filtro de elegibilidade do PlayerGuess, nome da tarefa |
 | `task/reset_daily_missions_test.php` | 1 | Orquestração do reset diário de missões + quebra de streak |
 | `task/close_expired_seasons_test.php` | 2 | Fecha temporada expirada; auto-renovação cria e ativa a próxima |
 | `task/purge_old_scores_test.php` | 2 | Purga pela janela de retenção; no-op dentro da janela |
@@ -44,11 +45,25 @@ completa (Moodle 4.5 → 5.2, PostgreSQL e MariaDB).
 | `ecosystem/plugin_registry_test.php` | 2 | Estrutura do catálogo e componentes únicos |
 | `ecosystem/plugin_status_test.php` | 1 | Status de instalação por componente; hub reportado como instalado |
 | `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |
-| **Total** | **232** | |
+| **Total** | **246** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames
 ```
+
+## Cobertura
+
+A cobertura de linhas/métodos é medida localmente com Xdebug (`moodle-coverage`, ferramenta de
+bancada — não faz parte do CI), em vez de publicada como um percentual único do plugin inteiro:
+este código deliberadamente não testa unitariamente os renderers de saída do próprio Moodle
+(`classes/output/*`), o controlador de UI de gestão de cartuchos, nem as chamadas HTTP reais do
+`ai_generator` (só a lógica de parsing da resposta é testada, já que mockar o round-trip de rede
+tem ROI baixo) — nada disso é uma lacuna que a suíte PHPUnit deveria fechar, então um número bruto
+do plugin inteiro só mediria essa decisão de escopo, não a qualidade dos testes. As classes que a
+suíte deveria cobrir — gerenciadores de jogo, serviços do hub, tarefas agendadas, eventos, funções
+externas e o Privacy Provider — são o que os casos contados na tabela acima exercitam, e
+`games/fill_manager` e `task/assign_daily_games` (as classes que o PlayerFill criou ou alterou)
+estão ambas em 100% de cobertura de linhas e métodos.
 
 ## Behat — Testes de Aceitação
 

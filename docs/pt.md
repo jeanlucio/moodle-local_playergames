@@ -52,6 +52,9 @@ Código-fonte: [github.com/jeanlucio/moodle-local_playergames](https://github.co
 <span id="playerguess"></span>
 {% include_relative pt/playerguess.md %}
 
+<span id="playerfill"></span>
+{% include_relative pt/playerfill.md %}
+
 <span id="avatars"></span>
 {% include_relative pt/avatars.md %}
 

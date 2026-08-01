@@ -38,6 +38,9 @@
   see [How PlayerQuiz Works](#playerquiz).
 * 🔡 **PlayerGuess:** Daily Wordle-style mini-game — guess the term letter by letter — see
   [How PlayerGuess Works](#playerguess).
+* 📝 **PlayerFill:** Daily crossword-style mini-game — numbered positions; the same number shares
+  the same letter across multiple terms; solving one reveals letters in others (cascade effect).
+  Grid generated in PHP without external libraries — see [How PlayerFill Works](#playerfill).
 * 🧩 **PlayerGames Block:** Companion sidebar block (`block_playergames`) showing the user's
   equipped avatar, level, XP, streak, today's games, and ranking position on the site front page
   and Dashboard, linking to the full Player Hub — see [PlayerGames Ecosystem](#ecosystem).
@@ -45,14 +48,11 @@
   Historical data is preserved when a season closes.
 * 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of
   all stored personal data; shared cartridges are preserved with the uploader anonymised.
-* 🧪 **Automated Tests:** 232-case PHPUnit suite, green across the full CI matrix (see the
+* 🧪 **Automated Tests:** 246-case PHPUnit suite, green across the full CI matrix (see the
   [Automated Tests](#testing) section).
 
 ## ⏳ In Development / Planned
 
-* 📝 **PlayerFill:** Crossword-style mini-game — numbered positions; the same number shares the
-  same letter across multiple words; solving one word reveals letters in others (cascade effect).
-  Grid generated in PHP without external libraries.
 * ⚔️ **PlayerBattle:** Match-3 RPG mini-game (8×8 grid) with turn-based combat against a boss
   powered by Phaser 3. Combining mana pieces charges a question; correct answer → triple damage;
   wrong answer → player takes damage.
