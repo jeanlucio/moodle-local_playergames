@@ -74,6 +74,27 @@ final class assign_daily_games_test extends \advanced_testcase {
         ob_get_clean();
     }
 
+    public function test_get_name_returns_a_string(): void {
+        $this->assertNotEmpty((new assign_daily_games())->get_name());
+    }
+
+    public function test_active_cartridge_with_no_concepts_skips_single_concept_games(): void {
+        global $DB;
+        $this->resetAfterTest();
+        // An active cartridge that has not been populated with any concept yet is a
+        // real scenario (a teacher just created it) — quiz and guess must both be
+        // skipped gracefully instead of erroring, and fill must stay unassigned too.
+        $now = time();
+        $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Empty', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+
+        $this->run_task();
+
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments'));
+    }
+
     public function test_assigns_one_concept_per_single_concept_game(): void {
         global $DB;
         $this->resetAfterTest();
