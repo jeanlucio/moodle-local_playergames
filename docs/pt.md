@@ -10,7 +10,7 @@ lang: pt
 [![Latest Release](https://img.shields.io/github/v/release/jeanlucio/moodle-local_playergames?style=flat)](https://github.com/jeanlucio/moodle-local_playergames/releases)
 [![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat&logo=gamepad&logoColor=white)](https://jeanlucio.github.io/playergames/)
 ![Core Component](https://img.shields.io/badge/Role-Central_Hub-198754?style=flat)
-[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://marketplace.moodle.com/user/984)
+[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://github.com/jeanlucio/)
 
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-local_playergames/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-local_playergames/actions/workflows/ci.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/jeanlucio/moodle-local_playergames?style=flat)](https://github.com/jeanlucio/moodle-local_playergames/commits)
@@ -36,9 +36,7 @@ PlayerGames para o Moodle. Serve a quatro propósitos principais:
    jogador (avatar, nível, XP, streak, jogos do dia, ranking) na página inicial do site e no
    Painel.
 
-Use a barra lateral para ir a qualquer seção desta página.
-
-Código-fonte: [github.com/jeanlucio/moodle-local_playergames](https://github.com/jeanlucio/moodle-local_playergames)
+<p class="page-hint">👈 Use a barra lateral para ir a qualquer seção desta página.</p>
 
 ---
 
