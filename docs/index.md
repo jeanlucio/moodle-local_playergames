@@ -38,6 +38,9 @@ ecosystem for Moodle. It serves four main purposes:
 
 ---
 
+<span id="screenshots"></span>
+{% include_relative en/screenshots.md %}
+
 <span id="features"></span>
 {% include_relative en/features.md %}
 

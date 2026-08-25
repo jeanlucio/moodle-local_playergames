@@ -1,0 +1,15 @@
+# Each entry needs an image at docs/assets/img/screenshots/<file>, plus an
+# English and a Portuguese caption. The screenshots.md pages (en/pt) loop over
+# this list, so adding a new screenshot never touches the gallery markup.
+- file: player-hub.png
+  caption_en: "The Player Hub: a student's level, XP, streak, active missions and today's mini-games, all in one place"
+  caption_pt: "O Player Hub: nível, XP, streak, missões ativas e os minijogos do dia do estudante, tudo em um só lugar"
+- file: playerquiz.png
+  caption_en: "PlayerQuiz, one of the daily mini-games: a multiple-choice question generated from a concept cartridge, against the clock"
+  caption_pt: "O PlayerQuiz, um dos minijogos diários: uma pergunta de múltipla escolha gerada a partir de um cartucho de conceitos, contra o tempo"
+- file: ecosystem-dashboard.png
+  caption_en: "The ecosystem dashboard, shown to teachers and managers: every installed Player plugin with its status and dependency map"
+  caption_pt: "O dashboard do ecossistema, exibido para professores e managers: cada plugin Player instalado, com status e mapa de dependências"
+- file: cartridge-create.png
+  caption_en: "Creating a new concept cartridge from the management panel — the same content that feeds the daily mini-games"
+  caption_pt: "Criando um novo cartucho de conceitos pelo painel de gerenciamento — o mesmo conteúdo que alimenta os minijogos diários"
