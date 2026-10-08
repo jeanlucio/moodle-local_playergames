@@ -133,4 +133,50 @@ final class access_test extends \advanced_testcase {
         $this->assertTrue(access::can_view_hub(true, false, 'both'));
         $this->assertTrue(access::can_view_hub(false, false, 'both'));
     }
+
+    /**
+     * A teacher who got the role from a course enrolment lands on the staff dashboard. The
+     * old landing page asked for a capability at the system context, which that role never
+     * reaches, so every ordinary teacher was sent to the student hub.
+     *
+     * @return void
+     */
+    public function test_landing_url_sends_a_course_teacher_to_the_dashboard(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+
+        $this->assertFalse(
+            has_capability('local/playergames:viewdashboard', \context_system::instance(), $teacher),
+            'the premise: a course role does not reach the system context'
+        );
+        $this->assertStringEndsWith('/local/playergames/dashboard.php', access::landing_url((int) $teacher->id)->get_path());
+    }
+
+    /**
+     * A student, who stays out of the staff area, lands on the hub.
+     *
+     * @return void
+     */
+    public function test_landing_url_sends_a_student_to_the_hub(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        $this->assertStringEndsWith('/local/playergames/hub.php', access::landing_url((int) $student->id)->get_path());
+    }
+
+    /**
+     * A site administrator lands on the dashboard too.
+     *
+     * @return void
+     */
+    public function test_landing_url_sends_an_administrator_to_the_dashboard(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $this->assertStringEndsWith('/local/playergames/dashboard.php', access::landing_url()->get_path());
+    }
 }

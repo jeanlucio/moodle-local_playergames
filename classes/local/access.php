@@ -71,6 +71,28 @@ class access {
     }
 
     /**
+     * Returns where a user should land when they open the plugin without saying where.
+     *
+     * Staff go to the dashboard and everyone else who may use the hub goes there. Staff are
+     * recognised by {@see self::is_staff()} and not by a capability checked at the system
+     * context, which a teacher whose role comes from a course enrolment never holds.
+     *
+     * @param int $userid The user to inspect, or 0 for the current user.
+     * @return \moodle_url
+     */
+    public static function landing_url(int $userid = 0): \moodle_url {
+        if (self::is_staff($userid)) {
+            return new \moodle_url('/local/playergames/dashboard.php');
+        }
+
+        if (has_capability('local/playergames:viewhub', context_system::instance(), $userid ?: null)) {
+            return new \moodle_url('/local/playergames/hub.php');
+        }
+
+        return new \moodle_url('/');
+    }
+
+    /**
      * Returns the IDs of every user is_staff() would return true for.
      *
      * A bulk equivalent of is_staff(), for ranking/group-split queries that need
