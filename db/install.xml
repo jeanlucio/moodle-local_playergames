@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/playergames/db" VERSION="20260428" COMMENT="XMLDB file for Moodle local/playergames"
+<XMLDB PATH="local/playergames/db" VERSION="20261015" COMMENT="XMLDB file for Moodle local/playergames"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -180,7 +180,6 @@
         <KEY NAME="fk_cartridge" TYPE="foreign" FIELDS="cartridgeid" REFTABLE="local_playergames_cartridges" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="idx_cartridgeid" UNIQUE="false" FIELDS="cartridgeid"/>
         <INDEX NAME="idx_categoryid" UNIQUE="false" FIELDS="categoryid"/>
       </INDEXES>
     </TABLE>
@@ -332,9 +331,6 @@
         <KEY NAME="fk_achievement" TYPE="foreign" FIELDS="achievementid" REFTABLE="local_playergames_achievements" REFFIELDS="id"/>
         <KEY NAME="uq_userid_achievementid" TYPE="unique" FIELDS="userid, achievementid"/>
       </KEYS>
-      <INDEXES>
-        <INDEX NAME="idx_userid" UNIQUE="false" FIELDS="userid"/>
-      </INDEXES>
     </TABLE>
     <TABLE NAME="local_playergames_season_games" COMMENT="Game configuration per season">
       <FIELDS>
