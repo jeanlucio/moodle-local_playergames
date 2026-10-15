@@ -68,6 +68,7 @@ $string['avatar_name_robot'] = 'Robô';
 $string['avatar_name_superhero'] = 'Super-herói';
 $string['avatar_name_supervillain'] = 'Supervilão';
 $string['avatar_name_vampire'] = 'Vampiro';
+$string['cachedef_ranking'] = 'Rankings de temporada e de aprendizado';
 $string['cartridge_activate'] = 'Ativar';
 $string['cartridge_active'] = 'Ativo';
 $string['cartridge_add_concept'] = 'Adicionar conceito';
