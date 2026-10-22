@@ -40,6 +40,7 @@ use local_playergames\hub\streak_manager;
 use local_playergames\hub\title_manager;
 use local_playergames\hub\xp_manager;
 use local_playergames\local\access;
+use local_playergames\local\text;
 use stdClass;
 
 /**
@@ -234,7 +235,7 @@ class hub implements renderable, templatable {
         $userpictureurl = $userpicture->get_url($PAGE)->out(false);
 
         $seasonlabel = get_string('hub_season_label', 'local_playergames');
-        $seasonname  = format_string($season->name);
+        $seasonname  = text::plain($season->name);
         // Auto-generated names are "Season N", which next to the "Season:" label
         // reads as "Season: Season 1". Drop a redundant leading label word so the
         // badge shows "Season: 1"; custom names without the prefix are untouched.

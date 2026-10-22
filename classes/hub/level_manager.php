@@ -24,6 +24,7 @@
 
 namespace local_playergames\hub;
 
+use local_playergames\local\text;
 use stdClass;
 
 /**
@@ -227,7 +228,7 @@ class level_manager {
         if (!isset($bylevel[$level])) {
             $level = max(1, min($level, self::max_level()));
         }
-        return isset($bylevel[$level]) ? format_string($bylevel[$level]->title) : '';
+        return isset($bylevel[$level]) ? text::plain($bylevel[$level]->title) : '';
     }
 
     /**

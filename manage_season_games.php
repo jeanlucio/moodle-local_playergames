@@ -127,7 +127,7 @@ foreach ($gametypes as $game) {
     foreach ($cartridgelist as $c) {
         $cartridgerows[] = [
             'id'      => (int) $c->id,
-            'name'    => format_string($c->name),
+            'name'    => \local_playergames\local\text::plain($c->name),
             'checked' => empty($savedids) || in_array((int) $c->id, $savedids, true),
         ];
     }
@@ -191,7 +191,7 @@ foreach ($gametypes as $game) {
 }
 
 $templatedata = [
-    'seasonname'   => format_string($season->name),
+    'seasonname'   => \local_playergames\local\text::plain($season->name),
     'formaction'   => $pageurl->out(false),
     'sesskey'      => sesskey(),
     'gamerows'     => $gamerows,
@@ -204,7 +204,7 @@ $templatedata = [
     'str_nocartridges' => get_string('season_game_cartridges_none', 'local_playergames'),
     'str_auxhint'  => get_string('season_game_auxid_hint', 'local_playergames'),
     'str_save'     => get_string('savechanges'),
-    'str_heading'  => get_string('season_game_heading', 'local_playergames', format_string($season->name)),
+    'str_heading'  => get_string('season_game_heading', 'local_playergames', \local_playergames\local\text::plain($season->name)),
 ];
 
 echo $OUTPUT->header();

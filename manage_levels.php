@@ -104,7 +104,7 @@ foreach (level_manager::get_levels() as $row) {
         'index'      => $index,
         'level'      => (int) $row->level,
         'minxp'      => (int) $row->minxp,
-        'title'      => format_string($row->title),
+        'title'      => $row->title,
         'islevelone' => (int) $row->level === 1,
         'isblank'    => false,
     ];

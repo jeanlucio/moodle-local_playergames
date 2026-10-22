@@ -25,6 +25,7 @@
 namespace local_playergames\output;
 
 use local_playergames\hub\activity_log as activity_log_manager;
+use local_playergames\local\text;
 use moodle_url;
 use paging_bar;
 use renderable;
@@ -136,7 +137,7 @@ class activity_log implements renderable, templatable {
         $courses = $DB->get_records_list('course', 'id', array_keys($courseids), '', 'id, fullname');
         $names   = [];
         foreach ($courses as $id => $course) {
-            $names[$id] = format_string($course->fullname);
+            $names[$id] = text::plain($course->fullname);
         }
         return $names;
     }

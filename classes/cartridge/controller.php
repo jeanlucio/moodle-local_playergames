@@ -26,6 +26,7 @@ namespace local_playergames\cartridge;
 
 use local_playergames\event\cartridge_deleted;
 use local_playergames\event\cartridge_imported;
+use local_playergames\local\text;
 use local_playergames\output\cartridge as cartridge_shell;
 use local_playergames\cartridge\quiz_generator;
 
@@ -294,7 +295,7 @@ class controller {
                 : ($conceptcounts[(int) $cartridge->id] ?? 0);
             $cartridgerows[] = [
                 'id' => $cartridge->id,
-                'name' => format_string($cartridge->name),
+                'name' => text::plain($cartridge->name),
                 'language' => s($cartridge->language),
                 'version' => s($cartridge->version),
                 'items_count' => $itemscount,
@@ -310,8 +311,8 @@ class controller {
                     $cartridge->timemodified,
                     get_string('strftimedatetimeshort', 'core_langconfig')
                 ),
-                'author' => format_string($cartridge->author ?? ''),
-                'uploadedby_fullname' => format_string($cartridge->uploadedby_fullname),
+                'author' => text::plain($cartridge->author ?? ''),
+                'uploadedby_fullname' => text::plain($cartridge->uploadedby_fullname),
                 'edit_url' => $editurl,
                 'export_url' => $exporturl,
                 'sesskey' => sesskey(),
@@ -464,7 +465,7 @@ class controller {
 
         $catnamelookup = [];
         foreach ($categories as $cat) {
-            $catnamelookup[(int) $cat->id] = format_string($cat->name);
+            $catnamelookup[(int) $cat->id] = text::plain($cat->name);
         }
 
         $formaction = 'add_concept';
@@ -489,7 +490,7 @@ class controller {
         foreach ($categories as $cat) {
             $categoryoptions[] = [
                 'id' => (int) $cat->id,
-                'name' => format_string($cat->name),
+                'name' => text::plain($cat->name),
                 'selected' => (int) $cat->id === $formcategoryid,
             ];
         }
@@ -498,7 +499,7 @@ class controller {
         foreach ($categories as $cat) {
             $catrows[] = [
                 'id' => (int) $cat->id,
-                'name' => format_string($cat->name),
+                'name' => text::plain($cat->name),
                 'cartridgeid' => $this->cartridgeid,
                 'sesskey' => sesskey(),
             ];
@@ -514,8 +515,8 @@ class controller {
             $catid = isset($concept->categoryid) ? (int) $concept->categoryid : 0;
             $conceptrows[] = [
                 'id' => $concept->id,
-                'term' => format_string($concept->term),
-                'definition' => format_string($concept->definition),
+                'term' => text::plain($concept->term),
+                'definition' => text::plain($concept->definition),
                 'category' => $catid > 0 && isset($catnamelookup[$catid])
                     ? $catnamelookup[$catid] : '',
                 'difficulty' => (int) $concept->difficulty,
@@ -540,7 +541,7 @@ class controller {
             'sesskey' => sesskey(),
             'has_editor_cartridge' => true,
             'editor_cartridge_id' => $this->cartridgeid,
-            'editor_cartridge_name' => format_string($editcartridge->name),
+            'editor_cartridge_name' => text::plain($editcartridge->name),
             'export_url' => $exporturl,
             'url_tab_library' => (new \moodle_url($baseurl, ['tab' => 'library']))->out(false),
             'url_cancel_edit' => $cancelurl,
@@ -1204,7 +1205,7 @@ class controller {
         $categories = $catmgr->get_categories((int) $cartridge->id);
         $catnamelookup = [];
         foreach ($categories as $cat) {
-            $catnamelookup[(int) $cat->id] = format_string($cat->name);
+            $catnamelookup[(int) $cat->id] = text::plain($cat->name);
         }
 
         $editquestion = null;
@@ -1248,7 +1249,7 @@ class controller {
         foreach ($categories as $cat) {
             $categoryoptions[] = [
                 'id' => (int) $cat->id,
-                'name' => format_string($cat->name),
+                'name' => text::plain($cat->name),
                 'selected' => (int) $cat->id === $formcategoryid,
             ];
         }
@@ -1257,7 +1258,7 @@ class controller {
         foreach ($categories as $cat) {
             $catrows[] = [
                 'id' => (int) $cat->id,
-                'name' => format_string($cat->name),
+                'name' => text::plain($cat->name),
                 'cartridgeid' => (int) $cartridge->id,
                 'sesskey' => sesskey(),
             ];
@@ -1283,7 +1284,7 @@ class controller {
             $qcatid = isset($q->categoryid) ? (int) $q->categoryid : 0;
             $questionrows[] = [
                 'id' => (int) $q->id,
-                'questiontext' => format_string($q->questiontext),
+                'questiontext' => text::plain($q->questiontext),
                 'correct' => $correct,
                 'distractors' => $distractors,
                 'category' => $qcatid > 0 && isset($catnamelookup[$qcatid])
@@ -1305,7 +1306,7 @@ class controller {
             'sesskey' => sesskey(),
             'has_editor_cartridge' => true,
             'editor_cartridge_id' => (int) $cartridge->id,
-            'editor_cartridge_name' => format_string($cartridge->name),
+            'editor_cartridge_name' => text::plain($cartridge->name),
             'export_url' => (new \moodle_url($baseurl, [
                 'action' => 'export_cartridge',
                 'cartridgeid' => (int) $cartridge->id,

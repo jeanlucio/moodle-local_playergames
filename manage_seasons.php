@@ -101,7 +101,7 @@ foreach ($seasons as $season) {
     }
     $seasondata[] = [
         'id'             => (int) $season->id,
-        'name'           => format_string($season->name),
+        'name'           => \local_playergames\local\text::plain($season->name),
         'startdate'      => userdate($season->startdate, get_string('strftimedatefullshort', 'langconfig')),
         'enddate'        => userdate($season->enddate, get_string('strftimedatefullshort', 'langconfig')),
         'status'         => get_string('season_status_' . $season->status, 'local_playergames'),
