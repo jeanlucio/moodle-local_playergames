@@ -112,4 +112,56 @@ final class text_test extends \advanced_testcase {
             $this->assertStringNotContainsString('&amp;amp;', $html, "striptags={$striptags}");
         });
     }
+
+    public function test_the_edit_forms_fill_the_inputs_with_the_stored_text(): void {
+        global $DB, $PAGE;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_url('/local/playergames/cartridge.php');
+        $PAGE->set_context(\context_system::instance());
+        $now = time();
+        $conceptcartridge = $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Words', 'version' => '1.0', 'language' => 'pt & en', 'timecreated' => $now,
+            'timemodified' => $now, 'uploadedby' => 2, 'author' => 'Ann', 'active' => 1, 'type' => 'concept',
+        ]);
+        $conceptid = $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $conceptcartridge, 'term' => 'Salt & "Pepper"', 'definition' => 'Spice & herb',
+            'difficulty' => 1, 'categoryid' => 0, 'language' => 'en',
+        ]);
+        $quizcartridge = $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Quiz', 'version' => '1.0', 'language' => 'en', 'timecreated' => $now,
+            'timemodified' => $now, 'uploadedby' => 2, 'author' => 'Ann', 'active' => 1, 'type' => 'quiz',
+        ]);
+        $questionid = $DB->insert_record('local_playergames_concept_questions', (object) [
+            'cartridgeid' => $quizcartridge, 'questiontext' => 'Tom & "Jerry"?', 'source' => 'manual',
+            'difficulty' => 3, 'timecreated' => $now,
+        ]);
+        foreach ([['Cat & mouse', 1], ['Dog & bone', 0]] as $order => [$answer, $iscorrect]) {
+            $DB->insert_record('local_playergames_concept_answers', (object) [
+                'questionid' => $questionid, 'answertext' => $answer, 'iscorrect' => $iscorrect, 'sortorder' => $order,
+            ]);
+        }
+
+        $ids = [$conceptcartridge, $conceptid, $quizcartridge, $questionid];
+        $this->for_each_striptags(function (int $striptags) use ($ids, $PAGE): void {
+            [$conceptcartridge, $conceptid, $quizcartridge, $questionid] = $ids;
+            $output = $PAGE->get_renderer('core');
+            $context = \context_system::instance();
+            $library = (new controller($context, 'library', 0, 0))->get_renderable($output)['content_html'];
+            $concept = (new controller($context, 'editor', $conceptcartridge, $conceptid))
+                ->get_renderable($output)['content_html'];
+            $quiz = (new controller($context, 'editor', $quizcartridge, 0, 'concepts', $questionid))
+                ->get_renderable($output)['content_html'];
+
+            $this->assertStringContainsString('pt &amp; en', $library, "striptags={$striptags}");
+            $this->assertStringContainsString('value="Salt &amp; &quot;Pepper&quot;"', $concept, "striptags={$striptags}");
+            $this->assertStringContainsString('value="Tom &amp; &quot;Jerry&quot;?"', $quiz, "striptags={$striptags}");
+            $this->assertStringContainsString('value="Cat &amp; mouse"', $quiz, "striptags={$striptags}");
+            foreach ([$library, $concept, $quiz] as $html) {
+                $this->assertStringNotContainsString('&amp;amp;', $html, "striptags={$striptags}");
+                $this->assertStringNotContainsString('&amp;quot;', $html, "striptags={$striptags}");
+            }
+        });
+    }
 }

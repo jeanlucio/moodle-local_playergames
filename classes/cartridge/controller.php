@@ -296,8 +296,8 @@ class controller {
             $cartridgerows[] = [
                 'id' => $cartridge->id,
                 'name' => text::plain($cartridge->name),
-                'language' => s($cartridge->language),
-                'version' => s($cartridge->version),
+                'language' => $cartridge->language,
+                'version' => $cartridge->version,
                 'items_count' => $itemscount,
                 'is_quiz' => $cartridgetype === 'quiz',
                 'is_concept' => $cartridgetype !== 'quiz',
@@ -374,8 +374,8 @@ class controller {
         $aipreviewdata = null;
         if ($this->aipreview !== null) {
             $aipreviewdata = [
-                'cartridge_name' => s($this->aipreview['cartridge_name']),
-                'language'       => s($this->aipreview['language']),
+                'cartridge_name' => $this->aipreview['cartridge_name'],
+                'language'       => $this->aipreview['language'],
                 'concepts'       => $this->aipreview['concepts'],
             ];
         }
@@ -383,8 +383,8 @@ class controller {
         $quizpreviewdata = null;
         if ($this->quizpreview !== null) {
             $quizpreviewdata = [
-                'cartridge_name' => s($this->quizpreview['cartridge_name']),
-                'language'       => s($this->quizpreview['language']),
+                'cartridge_name' => $this->quizpreview['cartridge_name'],
+                'language'       => $this->quizpreview['language'],
                 'questions'      => $this->quizpreview['questions'],
             ];
         }
@@ -398,34 +398,34 @@ class controller {
             'subtab_quiz'         => $this->aisubtab === 'quiz',
             // Concepts sub-tab.
             'has_ai_error'        => $this->aierror !== '',
-            'ai_error'            => s($this->aierror),
+            'ai_error'            => $this->aierror,
             'has_ai_preview'      => $aipreviewdata !== null,
             'ai_preview'          => $aipreviewdata,
-            'ai_form_topic'       => $this->aiformdata ? s($this->aiformdata->topic) : '',
+            'ai_form_topic'       => $this->aiformdata ? $this->aiformdata->topic : '',
             'ai_form_context'     => $this->aiformdata
-                ? s($this->aiformdata->context ?? '') : '',
-            'ai_form_language'    => $this->aiformdata ? s($this->aiformdata->language) : '',
+                ? ($this->aiformdata->context ?? '') : '',
+            'ai_form_language'    => $this->aiformdata ? $this->aiformdata->language : '',
             'ai_form_quantity'    => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
             'ai_form_difficulty'  => $this->aiformdata
                 ? (int) $this->aiformdata->difficulty : 3,
             'ai_form_categories'  => $this->aiformdata
-                ? s($this->aiformdata->categories ?? '') : '',
+                ? ($this->aiformdata->categories ?? '') : '',
             // Quiz sub-tab.
             'has_quiz_error'      => $this->quizerror !== '',
-            'quiz_error'          => s($this->quizerror),
+            'quiz_error'          => $this->quizerror,
             'has_quiz_preview'    => $quizpreviewdata !== null,
             'quiz_preview'        => $quizpreviewdata,
-            'quiz_form_topic'     => $this->quizformdata ? s($this->quizformdata->topic) : '',
+            'quiz_form_topic'     => $this->quizformdata ? $this->quizformdata->topic : '',
             'quiz_form_language'  => $this->quizformdata
-                ? s($this->quizformdata->language) : '',
+                ? $this->quizformdata->language : '',
             'quiz_form_quantity'  => $this->quizformdata
                 ? (int) $this->quizformdata->quantity : 20,
             'quiz_form_difficulty' => $this->quizformdata
                 ? (int) ($this->quizformdata->difficulty ?? 3) : 3,
             'quiz_form_context'   => $this->quizformdata
-                ? s($this->quizformdata->context ?? '') : '',
+                ? ($this->quizformdata->context ?? '') : '',
             'quiz_form_categories' => $this->quizformdata
-                ? s($this->quizformdata->categories ?? '') : '',
+                ? ($this->quizformdata->categories ?? '') : '',
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_ai', $ctx);
     }
@@ -548,8 +548,8 @@ class controller {
             'editing_concept' => $editingconcept,
             'form_action' => $formaction,
             'form_concept_id' => $formconceptid,
-            'form_term' => s($formterm),
-            'form_definition' => s($formdefinition),
+            'form_term' => $formterm,
+            'form_definition' => $formdefinition,
             'form_categoryid' => $formcategoryid,
             'form_difficulty' => $formdifficulty,
             'categories' => $catrows,
@@ -669,9 +669,9 @@ class controller {
             foreach ($rawconcepts as $i => $c) {
                 $indexed[] = [
                     'index' => $i,
-                    'term' => s($c['term'] ?? ''),
-                    'definition' => s($c['definition'] ?? ''),
-                    'category' => s($c['category'] ?? ''),
+                    'term' => $c['term'] ?? '',
+                    'definition' => $c['definition'] ?? '',
+                    'category' => $c['category'] ?? '',
                     'difficulty' => max(1, min(5, (int) ($c['difficulty'] ?? 3))),
                 ];
             }
@@ -1060,10 +1060,10 @@ class controller {
             foreach ($questions as $i => $q) {
                 $indexed[] = [
                     'index'        => $i,
-                    'questiontext' => s($q['questiontext']),
-                    'correct'      => s($q['correct']),
-                    'distractors'  => array_map('s', $q['distractors']),
-                    'category'     => s($q['category'] ?? ''),
+                    'questiontext' => $q['questiontext'],
+                    'correct'      => $q['correct'],
+                    'distractors'  => $q['distractors'],
+                    'category'     => $q['category'] ?? '',
                     'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
                 ];
             }
@@ -1271,9 +1271,9 @@ class controller {
             $distractors = [];
             foreach ($qanswers as $ans) {
                 if ($ans->iscorrect) {
-                    $correct = s($ans->answertext);
+                    $correct = $ans->answertext;
                 } else {
-                    $distractors[] = s($ans->answertext);
+                    $distractors[] = $ans->answertext;
                 }
             }
             $editurl = (new \moodle_url($baseurl, [
@@ -1316,15 +1316,15 @@ class controller {
             'editing_question' => $editingquestion,
             'form_action' => $formaction,
             'form_question_id' => $formquestionid,
-            'form_questiontext' => s($formquestiontext),
-            'form_correct' => s($formcorrect),
-            'form_distractor_0' => s($formdistractors[0]),
-            'form_distractor_1' => s($formdistractors[1]),
-            'form_distractor_2' => s($formdistractors[2]),
-            'form_distractor_3' => s($formdistractors[3]),
+            'form_questiontext' => $formquestiontext,
+            'form_correct' => $formcorrect,
+            'form_distractor_0' => $formdistractors[0],
+            'form_distractor_1' => $formdistractors[1],
+            'form_distractor_2' => $formdistractors[2],
+            'form_distractor_3' => $formdistractors[3],
             'form_categoryid' => $formcategoryid,
             'form_difficulty' => $formdifficulty,
-            'form_generalfeedback' => s($formfeedback),
+            'form_generalfeedback' => $formfeedback,
             'category_options' => $categoryoptions,
             'categories' => $catrows,
             'categories_empty' => empty($catrows),
