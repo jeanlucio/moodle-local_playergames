@@ -246,4 +246,49 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame('Saved explanation.', $rows[0]->generalfeedback);
         $this->assertNull($rows[1]->generalfeedback);
     }
+
+    /**
+     * Fields of the wrong type become empty text instead of throwing in trim() or clean_param().
+     *
+     * Regression test: array_map('trim') on a distractor that was a list is a TypeError, and a cast of a
+     * list became the word Array.
+     */
+    public function test_parse_standalone_survives_fields_of_the_wrong_type(): void {
+        $json = json_encode(['questions' => [
+            'a string instead of a question',
+            [
+                'questiontext' => ['x'],
+                'correct' => ['y'],
+                'distractors' => ['a', ['b'], 'c', 'd'],
+                'category' => ['z'],
+                'difficulty' => ['w'],
+                'generalfeedback' => ['v'],
+            ],
+        ]]);
+
+        $result = $this->invoke('parse_standalone_response', [$json]);
+
+        $this->assertCount(1, $result);
+        $this->assertSame('', $result[0]['questiontext']);
+        $this->assertSame('', $result[0]['correct']);
+        $this->assertSame(['a', '', 'c', 'd'], $result[0]['distractors']);
+        $this->assertSame(3, $result[0]['difficulty']);
+        $this->assertStringNotContainsString('Array', json_encode($result));
+    }
+
+    public function test_parse_quiz_response_survives_fields_of_the_wrong_type(): void {
+        $concepts = [5 => (object) ['id' => 5, 'term' => 'T', 'definition' => 'D']];
+        $json = json_encode(['questions' => [
+            'a string instead of a question',
+            ['conceptid' => ['5'], 'questiontext' => 'List id', 'distractors' => ['a', 'b', 'c', 'd']],
+            ['conceptid' => '5', 'questiontext' => ['x'], 'distractors' => ['a', ['b'], 'c', 'd']],
+        ]]);
+
+        $result = $this->invoke('parse_quiz_response', [$json, $concepts]);
+
+        $this->assertCount(1, $result);
+        $this->assertSame(5, $result[0]['conceptid']);
+        $this->assertSame('', $result[0]['questiontext']);
+        $this->assertSame(['a', '', 'c', 'd'], $result[0]['distractors']);
+    }
 }

@@ -315,15 +315,40 @@ class ai_generator {
             throw new \moodle_exception('error_cartridge_invalid_json', 'local_playergames');
         }
 
-        if (isset($decoded['concepts']) && is_array($decoded['concepts'])) {
-            return $decoded['concepts'];
+        if (is_array($decoded) && isset($decoded['concepts']) && is_array($decoded['concepts'])) {
+            return $this->normalise_concepts($decoded['concepts']);
         }
 
         // Handle providers that return a bare array instead of a wrapped object.
         if (is_array($decoded) && isset($decoded[0]['term'])) {
-            return $decoded;
+            return $this->normalise_concepts($decoded);
         }
 
         throw new \moodle_exception('error_cartridge_no_concepts', 'local_playergames');
+    }
+
+    /**
+     * Reduces the model's concepts to text fields, dropping any entry that is not an object.
+     *
+     * The fields reach a preview form and the database, and a model may give a list where text was
+     * asked for, so every field is read through payload.
+     *
+     * @param array $concepts Concepts as the model wrote them.
+     * @return array Concepts with term, definition and category as text and difficulty as a number.
+     */
+    private function normalise_concepts(array $concepts): array {
+        $result = [];
+        foreach ($concepts as $concept) {
+            if (!is_array($concept)) {
+                continue;
+            }
+            $result[] = [
+                'term' => payload::text($concept['term'] ?? null),
+                'definition' => payload::text($concept['definition'] ?? null),
+                'category' => payload::text($concept['category'] ?? null),
+                'difficulty' => payload::number($concept['difficulty'] ?? null, 1, 5, 3),
+            ];
+        }
+        return $result;
     }
 }

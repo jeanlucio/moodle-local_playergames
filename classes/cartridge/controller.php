@@ -1115,19 +1115,22 @@ class controller {
 
         $questions = [];
         foreach ($rawquestions as $q) {
-            $qtext       = trim(clean_param($q['questiontext'] ?? '', PARAM_TEXT));
-            $correct     = trim(clean_param($q['correct'] ?? '', PARAM_TEXT));
+            if (!is_array($q)) {
+                continue;
+            }
+            $qtext       = payload::text($q['questiontext'] ?? null);
+            $correct     = payload::text($q['correct'] ?? null);
             $distractors = [];
-            foreach ((array) ($q['distractors'] ?? []) as $d) {
-                $distractors[] = trim(clean_param($d, PARAM_TEXT));
+            foreach (payload::values($q['distractors'] ?? null) as $d) {
+                $distractors[] = payload::text($d);
             }
             if ($qtext !== '' && $correct !== '' && count($distractors) >= 4) {
                 $questions[] = [
                     'questiontext' => $qtext,
                     'correct'      => $correct,
                     'distractors'  => array_slice($distractors, 0, 4),
-                    'category'     => trim(clean_param($q['category'] ?? '', PARAM_TEXT)),
-                    'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
+                    'category'     => payload::text($q['category'] ?? null),
+                    'difficulty'   => payload::number($q['difficulty'] ?? null, 1, 5, 3),
                 ];
             }
         }

@@ -272,4 +272,145 @@ final class importer_test extends \advanced_testcase {
         $this->assertSame(1, $result->count);
         $this->assertSame(1, $DB->count_records('local_playergames_concept_questions', ['cartridgeid' => $cartridgeid]));
     }
+
+    /**
+     * A payload that is not a JSON object is reported as invalid, never as a coding error.
+     *
+     * Regression test: a bare number or string decoded to a non-null value and failed the array
+     * signature of the schema check.
+     */
+    public function test_import_payloads_that_are_not_objects_are_invalid(): void {
+        $this->resetAfterTest();
+
+        foreach (['5', '"text"', 'true', 'null'] as $payload) {
+            try {
+                (new importer())->import($payload, 1);
+                $this->fail("Accepted: {$payload}");
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_cartridge_invalid_json', $e->errorcode, $payload);
+            }
+        }
+    }
+
+    /**
+     * Fields that are not text are reported as missing or skipped, never thrown on by clean_param().
+     *
+     * Regression test: a name, a term or a category written as a list passed the emptiness checks and
+     * then made clean_param() throw a coding exception, halfway through the import.
+     */
+    public function test_import_fields_of_the_wrong_type_are_handled(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $cases = [
+            [$this->concept_json(['name' => ['x']]), 'error_cartridge_missing_field'],
+            [$this->concept_json(['concepts' => [['term' => ['x'], 'definition' => 'd']]]), 'error_concept_empty_term'],
+            [$this->concept_json(['concepts' => [['term' => 't', 'definition' => ['d']]]]), 'error_concept_empty_definition'],
+            [$this->concept_json(['concepts' => ['a string']]), 'error_concept_empty_term'],
+            [$this->quiz_json(['questions' => [['questiontext' => ['q'], 'correct' => 'c']]]), 'error_question_empty_text'],
+            [$this->quiz_json(['questions' => [['questiontext' => 'q', 'correct' => ['c']]]]), 'error_question_empty_correct'],
+        ];
+        foreach ($cases as [$payload, $errorcode]) {
+            try {
+                (new importer())->import($payload, 1);
+                $this->fail("Accepted: {$payload}");
+            } catch (\moodle_exception $e) {
+                $this->assertSame($errorcode, $e->errorcode, $payload);
+            }
+        }
+        $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
+
+        // Optional fields of the wrong type are ignored, and the rest of the cartridge is imported.
+        $result = (new importer())->import($this->concept_json([
+            'author' => ['x'],
+            'version' => ['1'],
+            'concepts' => [['term' => 'XP', 'definition' => 'Experience', 'category' => ['Core'], 'difficulty' => ['x']]],
+        ]), 1);
+        $this->assertSame(1, $result->count);
+        $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $result->cartridgeid], '*', MUST_EXIST);
+        $this->assertNull($cartridge->author);
+        $this->assertSame('1.0', $cartridge->version);
+        $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $result->cartridgeid], '*', MUST_EXIST);
+        $this->assertNull($concept->categoryid);
+        $this->assertSame(3, (int) $concept->difficulty);
+    }
+
+    /**
+     * Distractors that are not text become empty entries, and questions that are not objects are skipped.
+     */
+    public function test_save_questions_survives_fields_of_the_wrong_type(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $result = (new importer())->import($this->quiz_json(['questions' => [
+            [
+                'questiontext' => 'Q',
+                'correct' => 'C',
+                'distractors' => ['a', ['b'], 'c', 'd', 'e'],
+                'category' => ['x'],
+                'generalfeedback' => ['y'],
+            ],
+            ['questiontext' => 'No distractors list', 'correct' => 'C', 'distractors' => 'single'],
+        ]]), 1);
+
+        $this->assertSame(2, $result->count);
+        $this->assertSame(
+            ['C', 'a', '', 'c', 'd'],
+            array_values($DB->get_fieldset_select(
+                'local_playergames_concept_answers',
+                'answertext',
+                'questionid = (SELECT MIN(id) FROM {local_playergames_concept_questions} WHERE cartridgeid = ?) ORDER BY sortorder',
+                [$result->cartridgeid]
+            ))
+        );
+        $result = (new importer())->save_questions($result->cartridgeid, ['a string instead of a question']);
+        $this->assertSame(0, $result->count);
+    }
+
+    /**
+     * The cartridge and its items are saved inside one transaction of their own.
+     *
+     * Regression test: the cartridge row was inserted first and the items after, so a failure on the way
+     * left an empty or half filled cartridge in the list. The PHPUnit runner already keeps a transaction
+     * open around every test, so what is compared is the nesting depth while the items are saved.
+     */
+    public function test_import_saves_the_cartridge_and_its_items_in_one_transaction(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $depth = static function (): int {
+            global $DB;
+            return count((new \ReflectionProperty(\moodle_database::class, 'transactions'))->getValue($DB));
+        };
+        $before = $depth();
+        $seen = [];
+        $importer = new class ($depth, $seen) extends importer {
+            /** @var callable Reads the transaction depth. */
+            private $depth;
+            /** @var array Depths seen while saving. */
+            private array $seen;
+
+            /**
+             * Creates the importer.
+             *
+             * @param callable $depth Reads the transaction depth.
+             * @param array $seen Receives the depths seen while saving.
+             */
+            public function __construct(callable $depth, array &$seen) {
+                $this->depth = $depth;
+                $this->seen = &$seen;
+            }
+
+            #[\Override]
+            public function save_concepts(int $cartridgeid, array $concepts): \stdClass {
+                $this->seen[] = ($this->depth)();
+                return parent::save_concepts($cartridgeid, $concepts);
+            }
+        };
+
+        $importer->import($this->concept_json(), 1);
+
+        $this->assertSame([$before + 1], $seen);
+        $this->assertSame($before, $depth(), 'The import left its transaction open.');
+        $this->assertSame(1, $DB->count_records('local_playergames_cartridges'));
+    }
 }

@@ -99,14 +99,17 @@ class quiz_generator extends ai_generator {
         $total = 0;
         $now = time();
         foreach ($questions as $qdata) {
-            $qtext = trim((string) ($qdata['questiontext'] ?? ''));
-            $correct = trim((string) ($qdata['correct'] ?? ''));
-            $distractors = array_map('trim', (array) ($qdata['distractors'] ?? []));
+            if (!is_array($qdata)) {
+                continue;
+            }
+            $qtext = payload::text($qdata['questiontext'] ?? null);
+            $correct = payload::text($qdata['correct'] ?? null);
+            $distractors = array_map([payload::class, 'text'], payload::values($qdata['distractors'] ?? null));
             if ($qtext === '' || $correct === '' || count($distractors) < 4) {
                 continue;
             }
 
-            $catname = trim((string) ($qdata['category'] ?? ''));
+            $catname = payload::text($qdata['category'] ?? null);
             $categoryid = null;
             if ($catname !== '') {
                 if (!array_key_exists($catname, $catmap)) {
@@ -115,14 +118,14 @@ class quiz_generator extends ai_generator {
                 $categoryid = $catmap[$catname] ?: null;
             }
 
-            $feedback = trim((string) ($qdata['generalfeedback'] ?? ''));
+            $feedback = payload::text($qdata['generalfeedback'] ?? null);
 
             $qrecord = new \stdClass();
             $qrecord->conceptid = null;
             $qrecord->cartridgeid = $cartridgeid;
             $qrecord->questiontext = $qtext;
             $qrecord->source = 'ai';
-            $qrecord->difficulty = max(1, min(5, (int) ($qdata['difficulty'] ?? 3)));
+            $qrecord->difficulty = payload::number($qdata['difficulty'] ?? null, 1, 5, 3);
             $qrecord->categoryid = $categoryid;
             $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
@@ -258,19 +261,19 @@ class quiz_generator extends ai_generator {
 
         $result = [];
         foreach ($data['questions'] as $q) {
-            if (!isset($q['questiontext'], $q['correct'], $q['distractors'])) {
+            if (!is_array($q) || !isset($q['questiontext'], $q['correct'], $q['distractors'])) {
                 continue;
             }
             if (!is_array($q['distractors']) || count($q['distractors']) < 4) {
                 continue;
             }
             $result[] = [
-                'questiontext'    => trim((string) $q['questiontext']),
-                'correct'         => trim((string) $q['correct']),
-                'distractors'     => array_map('trim', array_slice($q['distractors'], 0, 4)),
-                'category'        => trim((string) ($q['category'] ?? '')),
-                'difficulty'      => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
-                'generalfeedback' => trim((string) ($q['generalfeedback'] ?? '')),
+                'questiontext'    => payload::text($q['questiontext']),
+                'correct'         => payload::text($q['correct']),
+                'distractors'     => array_map([payload::class, 'text'], array_slice($q['distractors'], 0, 4)),
+                'category'        => payload::text($q['category'] ?? null),
+                'difficulty'      => payload::number($q['difficulty'] ?? null, 1, 5, 3),
+                'generalfeedback' => payload::text($q['generalfeedback'] ?? null),
             ];
         }
 
@@ -459,10 +462,10 @@ class quiz_generator extends ai_generator {
 
         $result = [];
         foreach ($data['questions'] as $q) {
-            if (!isset($q['conceptid'], $q['questiontext'], $q['distractors'])) {
+            if (!is_array($q) || !isset($q['conceptid'], $q['questiontext'], $q['distractors'])) {
                 continue;
             }
-            $conceptid = (int) $q['conceptid'];
+            $conceptid = is_numeric($q['conceptid']) ? (int) $q['conceptid'] : 0;
             if (!isset($concepts[$conceptid])) {
                 continue;
             }
@@ -471,8 +474,8 @@ class quiz_generator extends ai_generator {
             }
             $result[] = [
                 'conceptid' => $conceptid,
-                'questiontext' => trim((string) $q['questiontext']),
-                'distractors' => array_map('trim', array_slice($q['distractors'], 0, 4)),
+                'questiontext' => payload::text($q['questiontext']),
+                'distractors' => array_map([payload::class, 'text'], array_slice($q['distractors'], 0, 4)),
             ];
         }
 

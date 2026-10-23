@@ -54,7 +54,7 @@ class importer {
         global $DB;
 
         $data = json_decode($jsonstring, true);
-        if ($data === null) {
+        if (!is_array($data)) {
             throw new \moodle_exception('error_cartridge_invalid_json', 'local_playergames');
         }
 
@@ -65,15 +65,26 @@ class importer {
 
         if ($isquiz) {
             $this->validate_quiz_schema($data);
-            $cartridge = $this->build_cartridge_record($data, $uploaderid, 'quiz');
-            $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
-            return $this->save_questions($cartridgeid, $data['questions']);
+        } else {
+            $this->validate_schema($data);
         }
 
-        $this->validate_schema($data);
-        $cartridge = $this->build_cartridge_record($data, $uploaderid, 'concept');
-        $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
-        return $this->save_concepts($cartridgeid, $data['concepts']);
+        // The cartridge and its items go in together: a failure on the last item must not leave an empty
+        // or half filled cartridge behind for the uploader to find in the list.
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            $cartridge = $this->build_cartridge_record($data, $uploaderid, $isquiz ? 'quiz' : 'concept');
+            $cartridgeid = $DB->insert_record('local_playergames_cartridges', $cartridge);
+            $result = $isquiz
+                ? $this->save_questions($cartridgeid, $data['questions'])
+                : $this->save_concepts($cartridgeid, $data['concepts']);
+            $transaction->allow_commit();
+        } catch (\Exception $e) {
+            // Rolls everything back and throws $e again, so a failed import is never reported as a success.
+            $transaction->rollback($e);
+        }
+
+        return $result;
     }
 
     /**
@@ -86,29 +97,17 @@ class importer {
      */
     private function build_cartridge_record(array $data, int $uploaderid, string $type): \stdClass {
         $cartridge = new \stdClass();
-        $cartridge->name = \core_text::substr(
-            clean_param($data['name'], PARAM_TEXT),
-            0,
-            255
-        );
-        $cartridge->version = \core_text::substr(
-            clean_param($data['version'] ?? '1.0', PARAM_TEXT),
-            0,
-            20
-        );
-        $cartridge->language = \core_text::substr(
-            clean_param($data['language'] ?? '', PARAM_TEXT),
-            0,
-            20
-        );
+        $cartridge->name = \core_text::substr(payload::text($data['name'] ?? null), 0, 255);
+        $version = payload::text($data['version'] ?? null);
+        $cartridge->version = \core_text::substr($version !== '' ? $version : '1.0', 0, 20);
+        $cartridge->language = \core_text::substr(payload::text($data['language'] ?? null), 0, 20);
         $cartridge->type = $type;
         $now = time();
         $cartridge->timecreated = $now;
         $cartridge->timemodified = $now;
         $cartridge->uploadedby = $uploaderid;
-        $cartridge->author = isset($data['author'])
-            ? \core_text::substr(clean_param($data['author'], PARAM_TEXT), 0, 255)
-            : null;
+        $author = payload::text($data['author'] ?? null);
+        $cartridge->author = $author !== '' ? \core_text::substr($author, 0, 255) : null;
         $cartridge->active = 1;
         return $cartridge;
     }
@@ -130,7 +129,7 @@ class importer {
         // Pre-resolve all unique category names to IDs (avoids N+1 per-concept queries).
         $catmap = [];
         foreach ($concepts as $raw) {
-            $name = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            $name = is_array($raw) ? payload::text($raw['category'] ?? null) : '';
             if ($name !== '' && !array_key_exists($name, $catmap)) {
                 $catmap[$name] = $this->catmgr->ensure_category($cartridgeid, $name);
             }
@@ -140,7 +139,10 @@ class importer {
         $count = 0;
 
         foreach ($concepts as $raw) {
-            $name = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            if (!is_array($raw)) {
+                continue;
+            }
+            $name = payload::text($raw['category'] ?? null);
             $raw['categoryid'] = ($name !== '' && isset($catmap[$name])) ? $catmap[$name] : null;
             $concept = $this->sanitize_concept($raw, $cartridgeid);
             if ($concept->term === '') {
@@ -179,17 +181,20 @@ class importer {
         $now = time();
 
         foreach ($questions as $raw) {
-            $qtext = trim(clean_param($raw['questiontext'] ?? '', PARAM_TEXT));
-            $correct = trim(clean_param($raw['correct'] ?? '', PARAM_TEXT));
+            if (!is_array($raw)) {
+                continue;
+            }
+            $qtext = payload::text($raw['questiontext'] ?? null);
+            $correct = payload::text($raw['correct'] ?? null);
             if ($qtext === '' || $correct === '') {
                 continue;
             }
             $distractors = [];
-            foreach ((array) ($raw['distractors'] ?? []) as $d) {
-                $distractors[] = trim(clean_param($d, PARAM_TEXT));
+            foreach (payload::values($raw['distractors'] ?? null) as $d) {
+                $distractors[] = payload::text($d);
             }
 
-            $catname = trim(clean_param($raw['category'] ?? '', PARAM_TEXT));
+            $catname = payload::text($raw['category'] ?? null);
             $categoryid = null;
             if ($catname !== '') {
                 if (!array_key_exists($catname, $catmap)) {
@@ -198,14 +203,14 @@ class importer {
                 $categoryid = $catmap[$catname] ?: null;
             }
 
-            $feedback = trim(clean_param($raw['generalfeedback'] ?? '', PARAM_TEXT));
+            $feedback = payload::text($raw['generalfeedback'] ?? null);
 
             $qrecord = new \stdClass();
             $qrecord->conceptid = null;
             $qrecord->cartridgeid = $cartridgeid;
             $qrecord->questiontext = $qtext;
             $qrecord->source = 'import';
-            $qrecord->difficulty = max(1, min(5, (int) ($raw['difficulty'] ?? 3)));
+            $qrecord->difficulty = payload::number($raw['difficulty'] ?? null, 1, 5, 3);
             $qrecord->categoryid = $categoryid;
             $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
@@ -246,7 +251,7 @@ class importer {
      * @throws \moodle_exception On schema violation.
      */
     protected function validate_schema(array $data): void {
-        if (empty($data['name'])) {
+        if (payload::text($data['name'] ?? null) === '') {
             throw new \moodle_exception(
                 'error_cartridge_missing_field',
                 'local_playergames',
@@ -266,10 +271,10 @@ class importer {
             );
         }
         foreach ($data['concepts'] as $concept) {
-            if (empty($concept['term'])) {
+            if (!is_array($concept) || payload::text($concept['term'] ?? null) === '') {
                 throw new \moodle_exception('error_concept_empty_term', 'local_playergames');
             }
-            if (empty($concept['definition'])) {
+            if (payload::text($concept['definition'] ?? null) === '') {
                 throw new \moodle_exception('error_concept_empty_definition', 'local_playergames');
             }
         }
@@ -282,7 +287,7 @@ class importer {
      * @throws \moodle_exception On schema violation.
      */
     protected function validate_quiz_schema(array $data): void {
-        if (empty($data['name'])) {
+        if (payload::text($data['name'] ?? null) === '') {
             throw new \moodle_exception(
                 'error_cartridge_missing_field',
                 'local_playergames',
@@ -302,10 +307,10 @@ class importer {
             );
         }
         foreach ($data['questions'] as $question) {
-            if (empty($question['questiontext'])) {
+            if (!is_array($question) || payload::text($question['questiontext'] ?? null) === '') {
                 throw new \moodle_exception('error_question_empty_text', 'local_playergames');
             }
-            if (empty($question['correct'])) {
+            if (payload::text($question['correct'] ?? null) === '') {
                 throw new \moodle_exception('error_question_empty_correct', 'local_playergames');
             }
         }
@@ -321,20 +326,15 @@ class importer {
     public function sanitize_concept(array $raw, int $cartridgeid): \stdClass {
         $concept = new \stdClass();
         $concept->cartridgeid = $cartridgeid;
-        $concept->term = \core_text::substr(
-            clean_param($raw['term'] ?? '', PARAM_TEXT),
-            0,
-            self::MAX_TERM_LENGTH
-        );
+        $concept->term = \core_text::substr(payload::text($raw['term'] ?? null), 0, self::MAX_TERM_LENGTH);
         $concept->definition = \core_text::substr(
-            clean_param($raw['definition'] ?? '', PARAM_TEXT),
+            payload::text($raw['definition'] ?? null),
             0,
             self::MAX_DEFINITION_LENGTH
         );
         $rawcatid = isset($raw['categoryid']) ? (int) $raw['categoryid'] : 0;
         $concept->categoryid = $rawcatid > 0 ? $rawcatid : null;
-        $difficulty = isset($raw['difficulty']) ? (int) $raw['difficulty'] : 3;
-        $concept->difficulty = max(1, min(5, $difficulty));
+        $concept->difficulty = payload::number($raw['difficulty'] ?? null, 1, 5, 3);
         $concept->language = null;
         return $concept;
     }

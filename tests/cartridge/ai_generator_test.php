@@ -94,4 +94,35 @@ final class ai_generator_test extends \advanced_testcase {
         $this->expectException(\moodle_exception::class);
         $this->parse(json_encode(['something' => 'else']));
     }
+
+    /**
+     * Fields of the wrong type become empty text and entries that are not objects are dropped.
+     *
+     * Regression test: a list as a term reached the preview form and the database import as it was.
+     */
+    public function test_concepts_of_the_wrong_type_are_normalised(): void {
+        $json = json_encode(['concepts' => [
+            ['term' => ['x'], 'definition' => ['y'], 'category' => ['z'], 'difficulty' => ['w']],
+            'a string instead of a concept',
+            ['term' => '<b>XP</b>', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => '9'],
+        ]]);
+
+        $result = $this->parse($json);
+
+        $this->assertSame([
+            ['term' => '', 'definition' => '', 'category' => '', 'difficulty' => 3],
+            ['term' => 'XP', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => 5],
+        ], $result);
+    }
+
+    public function test_a_payload_that_is_not_an_object_throws_the_translated_error(): void {
+        foreach (['5', '"text"'] as $payload) {
+            try {
+                $this->parse($payload);
+                $this->fail("Accepted: {$payload}");
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_cartridge_no_concepts', $e->errorcode, $payload);
+            }
+        }
+    }
 }
