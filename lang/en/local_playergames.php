@@ -191,6 +191,7 @@ $string['cartridge_deleted'] = 'Cartridge deleted.';
 $string['cartridge_edit_concepts'] = 'Edit concepts';
 $string['cartridge_edit_questions'] = 'Edit questions';
 $string['cartridge_export'] = 'Export JSON';
+$string['cartridge_glossary_choose'] = 'Choose a glossary';
 $string['cartridge_glossary_heading'] = 'Import a global glossary';
 $string['cartridge_glossary_intro'] = 'Copies the approved entries of a glossary into a new concept cartridge for PlayerGuess and PlayerFill. Only global glossaries can be copied: the ones an administrator made site-wide in Moodle. The copy is made once, so later changes to the glossary do not reach it, and each import creates a new cartridge.';
 $string['cartridge_glossary_name'] = 'Glossary: {$a}';

@@ -36,6 +36,7 @@
                         {{#str}}cartridge_glossary_select, local_playergames{{/str}}
                     </label>
                     <select id="pg-glossary-select" name="glossaryid" class="form-select" required>
+                        <option value="">{{#str}}cartridge_glossary_choose, local_playergames{{/str}}</option>
                         {{#glossaries}}
                         <option value="{{id}}">{{label}}</option>
                         {{/glossaries}}

@@ -191,6 +191,7 @@ $string['cartridge_deleted'] = 'Cartucho excluído.';
 $string['cartridge_edit_concepts'] = 'Editar conceitos';
 $string['cartridge_edit_questions'] = 'Editar questões';
 $string['cartridge_export'] = 'Exportar JSON';
+$string['cartridge_glossary_choose'] = 'Escolha um glossário';
 $string['cartridge_glossary_heading'] = 'Importar um glossário global';
 $string['cartridge_glossary_intro'] = 'Copia as entradas aprovadas de um glossário para um novo cartucho de conceitos, para o PlayerGuess e o PlayerFill. Só glossários globais podem ser copiados: os que um administrador tornou do site inteiro no Moodle. A cópia é feita uma vez, então mudanças posteriores no glossário não chegam a ela, e cada importação cria um novo cartucho.';
 $string['cartridge_glossary_name'] = 'Glossário: {$a}';
