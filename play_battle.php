@@ -27,6 +27,7 @@ require(__DIR__ . '/../../config.php');
 use local_playergames\games\battle_manager;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
+use local_playergames\local\game_page;
 
 require_login();
 $context = context_system::instance();
@@ -66,11 +67,14 @@ $PAGE->set_title(get_string('battle_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('battle_pagetitle', 'local_playergames'));
 
 $activeseason = season_manager::get_active();
-$remaining    = 0;
-if ($activeseason !== null) {
-    $snapshot  = season_manager::get_config_snapshot($activeseason);
-    $remaining = daily_play_manager::remaining_plays((int) $USER->id, 'battle', $gamedate, $snapshot);
+if ($activeseason === null) {
+    echo $OUTPUT->header();
+    echo game_page::no_season_html();
+    echo $OUTPUT->footer();
+    exit;
 }
+$snapshot      = season_manager::get_config_snapshot($activeseason);
+$remaining     = daily_play_manager::remaining_plays((int) $USER->id, 'battle', $gamedate, $snapshot);
 $alreadyplayed = $remaining <= 0;
 
 $questions = $alreadyplayed ? [] : $manager->start_battle((int) $USER->id, $gamedate, $context);

@@ -90,6 +90,16 @@ class season_manager {
     }
 
     /**
+     * Whether any season exists, whatever its status.
+     *
+     * @return bool
+     */
+    public static function has_any(): bool {
+        global $DB;
+        return $DB->count_records('local_playergames_seasons') > 0;
+    }
+
+    /**
      * Decodes and returns the config snapshot for a season record.
      *
      * @param stdClass $season Season record from the DB.

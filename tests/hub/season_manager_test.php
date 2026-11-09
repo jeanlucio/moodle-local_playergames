@@ -128,4 +128,17 @@ final class season_manager_test extends \advanced_testcase {
         // A missing snapshot yields current settings, not an empty array.
         $this->assertArrayHasKey('xp_cap_quiz', $snapshot);
     }
+
+    public function test_has_any_counts_a_season_of_any_status(): void {
+        $this->resetAfterTest();
+        $this->assertFalse(season_manager::has_any());
+
+        $season = season_manager::create('First', time() - DAYSECS, time() + DAYSECS);
+        $this->assertTrue(season_manager::has_any());
+
+        season_manager::activate((int) $season->id);
+        season_manager::close((int) $season->id);
+        $this->assertNull(season_manager::get_active());
+        $this->assertTrue(season_manager::has_any());
+    }
 }
