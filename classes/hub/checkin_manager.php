@@ -32,9 +32,10 @@ use stdClass;
 /**
  * Awards the once-per-day check-in.
  *
- * The caller (hub.php) is responsible for access control — by the time the hub
- * renders, the per-user opt-out and the allowed_participants restriction have
- * already been enforced, so this only needs the season and the per-day guard.
+ * It is called from two places: the hub page, and the daily hook that runs on the first page a
+ * user opens each day. Both check access first (the per-user opt-out and the
+ * allowed_participants restriction, see is_participant()), so this only needs the season and the
+ * per-day guard.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
