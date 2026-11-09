@@ -76,21 +76,58 @@ $alreadyplayed = $remaining <= 0;
 $questions = $alreadyplayed ? [] : $manager->start_battle((int) $USER->id, $gamedate, $context);
 $noquestions = !$alreadyplayed && empty($questions);
 
-$config = [
+// Texts the script puts together while playing, with their {$a} placeholders left for it to fill.
+$jsstrings = [];
+foreach (
+    [
+        'msg_blocked', 'msg_cell', 'msg_correct', 'msg_heal', 'msg_hit_opponent', 'msg_hit_player',
+        'msg_no_match', 'msg_opponent_crit', 'msg_poison', 'msg_selected', 'msg_shuffled', 'msg_wrong',
+        'opponent', 'piece_grimoire', 'piece_orb', 'piece_potion', 'piece_shield', 'piece_star', 'piece_sword',
+        'player', 'save_error', 'start_error', 'summary', 'turn_opponent', 'turn_player', 'xp_earned',
+    ] as $key
+) {
+    $jsstrings[$key] = get_string('battle_' . $key, 'local_playergames');
+}
+
+$opponent = battle_manager::opponent_for($gamedate);
+$pixurl   = $CFG->wwwroot . '/local/playergames/pix/battle/';
+$config   = [
     'posturl'   => $formaction,
     'sesskey'   => sesskey(),
     'questions' => $questions,
+    'pixurl'    => $pixurl,
+    'opponent'  => $opponent,
+    'strings'   => $jsstrings,
 ];
 
+$strings = [];
+foreach (
+    [
+        'already_played', 'back_to_hub', 'board_label', 'continue', 'defeat', 'hp', 'instructions', 'loading',
+        'mana', 'multiplier', 'no_questions', 'opponent', 'play_again', 'player', 'poison', 'question_title',
+        'retry_save', 'shield', 'shield_ready', 'sound', 'victory',
+    ] as $key
+) {
+    $strings['str_' . $key] = get_string('battle_' . $key, 'local_playergames');
+}
+
+if (!$alreadyplayed && !$noquestions) {
+    $PAGE->requires->js_call_amd('local_playergames/battle_boot', 'init');
+}
+
 echo $OUTPUT->header();
-echo $OUTPUT->render_from_template('local_playergames/play_battle', [
-    'already_played'     => $alreadyplayed,
-    'no_questions'       => $noquestions,
-    'playable'           => !$alreadyplayed && !$noquestions,
-    'config'             => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
-    'huburl'             => (new moodle_url('/local/playergames/hub.php'))->out(false),
-    'str_already_played' => get_string('battle_already_played', 'local_playergames'),
-    'str_no_questions'   => get_string('battle_no_questions', 'local_playergames'),
-    'str_back_to_hub'    => get_string('battle_back_to_hub', 'local_playergames'),
+echo $OUTPUT->render_from_template('local_playergames/play_battle', $strings + [
+    'already_played'  => $alreadyplayed,
+    'no_questions'    => $noquestions,
+    'playable'        => !$alreadyplayed && !$noquestions,
+    'config'          => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+    'huburl'          => (new moodle_url('/local/playergames/hub.php'))->out(false),
+    'cards'           => [
+        ['side' => 'player', 'name' => $strings['str_player']],
+        ['side' => 'opponent', 'name' => $strings['str_opponent']],
+    ],
+    'opponentname'    => $opponent,
+    'opponenturl'     => $pixurl . $opponent . '.webp',
+    'stageurl'        => $pixurl . 'stage_' . $opponent . '.webp',
 ]);
 echo $OUTPUT->footer();

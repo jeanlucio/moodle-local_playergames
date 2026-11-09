@@ -14,4 +14,25 @@
     <version></version>
     <licenseversion></licenseversion>
   </library>
+  <library>
+    <location>pix/battle/swap.mp3</location>
+    <name>RPG sounds (Kenney)</name>
+    <license>CC0</license>
+    <version></version>
+    <licenseversion></licenseversion>
+  </library>
+  <library>
+    <location>pix/battle/match.mp3</location>
+    <name>Interface Sounds (Kenney)</name>
+    <license>CC0</license>
+    <version></version>
+    <licenseversion></licenseversion>
+  </library>
+  <library>
+    <location>pix/battle/hit.mp3</location>
+    <name>RPG sounds (Kenney)</name>
+    <license>CC0</license>
+    <version></version>
+    <licenseversion></licenseversion>
+  </library>
 </libraries>

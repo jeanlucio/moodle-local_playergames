@@ -1,14 +1,21 @@
 Third-party assets in this folder
 =================================
 
-The music is public domain (CC0), described below.
+The sounds and the music are public domain (CC0), described below. The images were generated with AI
+tools, see the Credits section of the README.
 
-Music (CC0)
------------
+Sounds and music (CC0)
+----------------------
 
-Released under Creative Commons Zero (https://creativecommons.org/publicdomain/zero/1.0/); credit is not
-required, it is given here as a courtesy. Converted to MP3 and level-adjusted; it is mono at 64 kbps, to keep
-the plugin small.
+All of them are released under Creative Commons Zero (https://creativecommons.org/publicdomain/zero/1.0/);
+credit is not required, it is given here as a courtesy. Converted to MP3 and level-adjusted; the hit is a
+mix of two files. The music is mono at 64 kbps, to keep the plugin small.
 
 pix/battle/music.mp3   "King's Feast" (Loop_Kings_Feast.wav), RandomMind
                        https://opengameart.org/content/medieval-kings-feast
+pix/battle/swap.mp3    "bookPlace1.ogg", RPG sounds, Kenney (https://kenney.nl)
+                       https://opengameart.org/content/50-rpg-sound-effects
+pix/battle/match.mp3   "confirmation_002.ogg", Interface Sounds, Kenney (https://kenney.nl)
+                       https://opengameart.org/content/interface-sounds
+pix/battle/hit.mp3     "chop.ogg" mixed with "metalClick.ogg", RPG sounds, Kenney (https://kenney.nl)
+                       https://opengameart.org/content/50-rpg-sound-effects

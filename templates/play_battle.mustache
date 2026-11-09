@@ -1,7 +1,8 @@
 {{!
     @template local_playergames/play_battle
 
-    Daily PlayerBattle game. The board is drawn into the game container by the battle module.
+    Daily PlayerBattle game. The status cards, the question and the end of the battle are plain HTML
+    filled in by the battle module; only the board is drawn on a canvas.
 
     Example context (json):
     {
@@ -10,9 +11,34 @@
         "playable": true,
         "config": "{}",
         "huburl": "/local/playergames/hub.php",
+        "opponentname": "goblin",
+        "opponenturl": "/local/playergames/pix/battle/goblin.webp",
+        "stageurl": "/local/playergames/pix/battle/stage_goblin.webp",
         "str_already_played": "You have already played PlayerBattle today. Come back tomorrow!",
+        "str_back_to_hub": "Back to Hub",
+        "str_board_label": "Game board.",
+        "str_continue": "Continue",
+        "str_defeat": "Defeat",
+        "str_hp": "HP",
+        "str_instructions": "Swap neighbouring pieces to line up three or more.",
+        "str_loading": "Loading the battle...",
+        "str_mana": "Mana",
+        "str_multiplier": "Multiplier",
         "str_no_questions": "No questions available.",
-        "str_back_to_hub": "Back to Hub"
+        "str_opponent": "Opponent",
+        "str_play_again": "Play again",
+        "str_player": "You",
+        "str_poison": "Poison",
+        "str_question_title": "Question",
+        "str_retry_save": "Try again",
+        "str_shield": "Shield",
+        "str_shield_ready": "Shield ready",
+        "str_sound": "Sound",
+        "str_victory": "Victory!",
+        "cards": [
+            {"side": "player", "name": "You"},
+            {"side": "opponent", "name": "Opponent"}
+        ]
     }
 }}
 <div class="local-playergames-play-battle pg-play-battle-wrap container py-4">
@@ -38,7 +64,104 @@
     {{/no_questions}}
 
     {{#playable}}
-    <div id="pg-battle-game" data-config="{{config}}"></div>
+    <div id="pg-battle-game" class="pg-battle" data-config="{{config}}" data-board-label="{{str_board_label}}">
+        <p class="pg-battle-instructions">{{str_instructions}}</p>
+
+        <div class="pg-battle-stage">
+            <img class="pg-battle-stage-bg" src="{{stageurl}}" alt="">
+            <img class="pg-battle-opponent-img" src="{{opponenturl}}" alt="">
+        </div>
+
+        <div class="pg-battle-cards">
+            {{#cards}}
+            <div class="pg-battle-card" data-side="{{side}}">
+                <div class="pg-battle-name">{{name}}</div>
+                <div class="pg-battle-row">
+                    <span class="pg-battle-label">{{str_hp}}</span>
+                    <div class="progress" role="progressbar" aria-label="{{str_hp}}" aria-valuemin="0"
+                         aria-valuemax="100" aria-valuenow="100" data-bar="hp">
+                        <div class="progress-bar bg-success"></div>
+                    </div>
+                    <span class="pg-battle-num" data-field="hp"></span>
+                </div>
+                <div class="pg-battle-row">
+                    <span class="pg-battle-label">{{str_mana}}</span>
+                    <div class="progress" role="progressbar" aria-label="{{str_mana}}" aria-valuemin="0"
+                         aria-valuemax="100" aria-valuenow="0" data-bar="mana">
+                        <div class="progress-bar bg-info"></div>
+                    </div>
+                    <span class="pg-battle-num" data-field="mana"></span>
+                </div>
+                <div class="pg-battle-row">
+                    <span class="pg-battle-label">{{str_shield}}</span>
+                    <div class="progress" role="progressbar" aria-label="{{str_shield}}" aria-valuemin="0"
+                         aria-valuemax="100" aria-valuenow="0" data-bar="shield">
+                        <div class="progress-bar bg-secondary"></div>
+                    </div>
+                    <span class="pg-battle-num" data-field="shield"></span>
+                </div>
+                <div class="pg-battle-row">
+                    <span class="pg-battle-label">{{str_poison}}</span>
+                    <div class="progress" role="progressbar" aria-label="{{str_poison}}" aria-valuemin="0"
+                         aria-valuemax="100" aria-valuenow="0" data-bar="poison">
+                        <div class="progress-bar bg-warning"></div>
+                    </div>
+                    <span class="pg-battle-num" data-field="poison"></span>
+                </div>
+                <div class="pg-battle-badges">
+                    <span class="badge bg-secondary pg-battle-multiplier" data-badge="multiplier">
+                        {{str_multiplier}} <span data-field="multiplier"></span>
+                    </span>
+                    <span class="badge bg-info text-dark" data-badge="shield" hidden>
+                        <i class="fa fa-shield" aria-hidden="true"></i> {{str_shield_ready}}
+                    </span>
+                </div>
+                <div class="pg-battle-floats" aria-hidden="true"></div>
+            </div>
+            {{/cards}}
+        </div>
+
+        <div class="pg-battle-board-wrap">
+            <div id="pg-battle-board" class="pg-battle-board">
+                <p class="pg-battle-loading" data-region="loading">{{str_loading}}</p>
+            </div>
+        </div>
+
+        <div class="pg-battle-tools">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="sound" aria-pressed="false">
+                <i class="fa fa-volume-off" aria-hidden="true" data-region="soundicon"></i>
+                {{str_sound}}
+            </button>
+        </div>
+
+        <div class="visually-hidden" aria-live="polite" data-region="live"></div>
+
+        <div class="pg-battle-overlay" data-region="question" role="dialog" aria-modal="true"
+             aria-labelledby="pg-battle-question-title" hidden>
+            <div class="pg-battle-panel">
+                <h2 id="pg-battle-question-title" class="h5">{{str_question_title}}</h2>
+                <div class="pg-battle-question-text" data-field="questiontext"></div>
+                <div class="pg-battle-answers" data-field="answers"></div>
+                <div class="pg-battle-feedback" data-field="feedback" hidden></div>
+                <button type="button" class="btn btn-primary mt-3" data-action="continue" hidden>{{str_continue}}</button>
+            </div>
+        </div>
+
+        <div class="pg-battle-overlay" data-region="end" role="dialog" aria-modal="true"
+             aria-labelledby="pg-battle-end-title" hidden>
+            <div class="pg-battle-panel text-center">
+                <h2 id="pg-battle-end-title" class="h4" data-field="endtitle" data-victory="{{str_victory}}" data-defeat="{{str_defeat}}"></h2>
+                <p data-field="endsummary"></p>
+                <p class="fw-bold" data-field="endxp"></p>
+                <p class="text-danger" data-field="enderror" hidden></p>
+                <div class="pg-battle-actions">
+                    <button type="button" class="btn btn-secondary" data-action="retry" hidden>{{str_retry_save}}</button>
+                    <button type="button" class="btn btn-primary" data-action="again" hidden>{{str_play_again}}</button>
+                    <a href="{{huburl}}" class="btn btn-outline-primary" data-action="hub">{{str_back_to_hub}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
     {{/playable}}
 
 </div>

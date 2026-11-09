@@ -150,6 +150,18 @@ final class battle_manager_test extends \advanced_testcase {
         return $DB->get_record('local_playergames_battle_scores', ['userid' => $user->id, 'gamedate' => $this->today]);
     }
 
+    public function test_the_opponent_is_one_per_day_and_changes_over_the_month(): void {
+        $seen = [];
+        for ($day = 0; $day < 30; $day++) {
+            $date = mktime(0, 0, 0, 3, 1 + $day, 2026);
+            $opponent = battle_manager::opponent_for($date);
+            $this->assertContains($opponent, battle_manager::OPPONENTS);
+            $this->assertSame($opponent, battle_manager::opponent_for($date + 3600));
+            $seen[$opponent] = true;
+        }
+        $this->assertCount(count(battle_manager::OPPONENTS), $seen);
+    }
+
     public function test_start_returns_questions_ready_for_the_browser(): void {
         $this->prepare();
         $first  = $this->add_question();
