@@ -195,6 +195,25 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
     });
 
     /**
+     * Lets the board settle after the battle was decided: the pieces fall and any match they make
+     * is cleared, with no effect on either side, so the board behind the end screen is not left
+     * with gaps or a match half played.
+     */
+    const settleBoard = async() => {
+        for (let round = 0; round < MAX_CASCADE; round++) {
+            await board.gravity(BoardRules.applyGravityToGrid(grid, ROWS, COLS, rng, types));
+            const toDestroy = [];
+            BoardRules.checkHorizontal(grid, ROWS, COLS, toDestroy, []);
+            BoardRules.checkVertical(grid, ROWS, COLS, toDestroy, []);
+            if (toDestroy.length === 0) {
+                return;
+            }
+            takePieces(toDestroy);
+            await board.clear(toDestroy);
+        }
+    };
+
+    /**
      * Plays out a swap: the match, its effects and the cascade that follows.
      *
      * @param {string} side Who moved.
@@ -239,6 +258,7 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
                 result = CombatRules.result(state);
             }
             if (result !== null) {
+                await settleBoard();
                 return result;
             }
             await board.gravity(BoardRules.applyGravityToGrid(grid, ROWS, COLS, rng, types));
