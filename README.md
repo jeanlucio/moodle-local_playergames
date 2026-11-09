@@ -77,6 +77,12 @@ Full disclosure:
 Found a bug or have a question? Open an issue on the
 [issue tracker](https://github.com/jeanlucio/moodle-local_playergames/issues).
 
+### 🎨 Credits
+
+* **Phaser** 4.2.1 (MIT) is bundled in `javascript/` and drives the PlayerBattle board. It is declared in `thirdpartylibs.xml`.
+* **Sounds and music:** the effects and the background music are public domain (CC0), from Kenney and RandomMind on OpenGameArt. The sources are listed in `pix/readme_moodle.txt`.
+* **Images:** the opponents, stages and board pieces were generated with Google Gemini, created for this ecosystem from original prompts. The art direction, the prompts and the review of every image are the author's, who is responsible for the content.
+
 ### 📄 License
 
 This project is licensed under the **GNU General Public License v3 (GPLv3)**.
@@ -152,6 +158,12 @@ Divulgação completa:
 
 Encontrou um bug ou tem alguma dúvida? Abra uma issue no
 [rastreador de issues](https://github.com/jeanlucio/moodle-local_playergames/issues).
+
+### 🎨 Créditos
+
+* **Phaser** 4.2.1 (MIT) vem empacotado em `javascript/` e move o tabuleiro do PlayerBattle. Está declarado no `thirdpartylibs.xml`.
+* **Sons e música:** os efeitos e a música de fundo são de domínio público (CC0), de Kenney e RandomMind no OpenGameArt. As fontes estão em `pix/readme_moodle.txt`.
+* **Imagens:** os oponentes, cenários e peças do tabuleiro foram gerados com o Google Gemini, criados para este ecossistema a partir de prompts originais. A direção de arte, os prompts e a revisão de todas as imagens são do autor, que responde pelo conteúdo.
 
 ### 📄 Licença
 
