@@ -1028,14 +1028,62 @@ body.path-local-playergames .pg-battle-board {
     touch-action: none;
 }
 
-body.path-local-playergames .pg-battle-board canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
+body.path-local-playergames .pg-battle-grid {
+    position: absolute;
+    inset: 0;
+    user-select: none;
+    background:
+        repeating-conic-gradient(var(--pg-board-dark, #2b3039) 0% 25%, var(--pg-board-light, #353b46) 0% 50%)
+        0 0 / calc(200% / var(--pg-board-cols)) calc(200% / var(--pg-board-rows));
 }
 
-body.path-local-playergames .pg-battle-board canvas:focus-visible {
-    outline: 3px solid var(--bs-warning, #ffc107);
+body.path-local-playergames .pg-battle-pieces,
+body.path-local-playergames .pg-battle-cells {
+    position: absolute;
+    inset: 0;
+}
+
+body.path-local-playergames .pg-battle-pieces {
+    pointer-events: none;
+}
+
+body.path-local-playergames .pg-battle-piece {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    width: calc(100% / var(--pg-board-cols));
+    height: calc(100% / var(--pg-board-rows));
+}
+
+/* The margin, as a share of the piece, is what leaves the gap around the image. */
+body.path-local-playergames .pg-battle-piece img {
+    display: block;
+    width: 86%;
+    height: 86%;
+    margin: 7%;
+}
+
+body.path-local-playergames .pg-battle-cells {
+    display: grid;
+    grid-template-columns: repeat(var(--pg-board-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--pg-board-rows), minmax(0, 1fr));
+}
+
+body.path-local-playergames .pg-battle-cell {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+body.path-local-playergames .pg-battle-cell[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 4px var(--bs-warning, #ffc107);
+}
+
+body.path-local-playergames .pg-battle-cell:focus-visible {
+    outline: 3px solid var(--bs-white, #fff);
     outline-offset: -3px;
 }
 

@@ -58,9 +58,8 @@ export const init = async() => {
             cols: COLS,
             label: root.dataset.boardLabel,
             reducedMotion,
-            onCursor: ({row, col, selected}) => {
-                ui.announce(selected ? game.describeSelection(row, col) : game.describeCell(row, col));
-            },
+            describe: (row, col, type) => game.describeCell(row, col, type),
+            onSelect: ({row, col}) => ui.announce(game.describeSelection(row, col)),
         });
         game = createGame({board, ui, sound, config, reducedMotion});
         await game.start();

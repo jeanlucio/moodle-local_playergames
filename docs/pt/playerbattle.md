@@ -67,8 +67,10 @@ Moodle** mantida para reuso (questões de múltipla escolha; ver [Como o PlayerQ
 ## Jogando
 
 - **Mouse ou toque:** clique numa peça e depois numa vizinha, ou arraste uma peça na direção de uma vizinha.
-- **Teclado:** as setas movem entre as peças, **Enter** seleciona uma, e uma seta troca a peça com a vizinha
-  naquela direção. O que está sob o cursor, e o que acontece, é anunciado para leitores de tela.
+- **Teclado:** **Tab** entra no tabuleiro, as setas movem entre as peças, **Enter** ou **Espaço** seleciona
+  uma, e uma seta troca a peça com a vizinha naquela direção. **Esc** desfaz a seleção.
+- **Leitores de tela:** cada casa do tabuleiro é um botão com o nome da linha, da coluna e da peça, e a
+  selecionada fica marcada como pressionada; o que acontece na batalha é anunciado.
 - A questão e o fim da batalha são diálogos: enquanto um está aberto, o teclado fica dentro dele. As
   respostas também podem ser escolhidas com as teclas 1 a 5 ou A a E.
 - As animações são puladas quando o navegador pede movimento reduzido.

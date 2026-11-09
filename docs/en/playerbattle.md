@@ -66,9 +66,11 @@ tab.
 ## Playing it
 
 - **Mouse or touch:** click a piece and then a neighbour, or drag a piece towards a neighbour.
-- **Keyboard:** the arrow keys move between the pieces, **Enter** selects one, and an arrow key then swaps it
-  with the neighbour in that direction. What is under the cursor, and what happens, is announced to screen
-  readers.
+- **Keyboard:** **Tab** enters the board, the arrow keys move between the pieces, **Enter** or **Space**
+  selects one, and an arrow key then swaps it with the neighbour in that direction. **Esc** drops the
+  selection.
+- **Screen readers:** every cell of the board is a button named with its row, column and piece, and the
+  selected one is marked as pressed; what happens in the battle is announced.
 - The question and the end of the battle are dialogs: while one is open, the keyboard stays inside it. The
   answers can also be chosen with the keys 1 to 5 or A to E.
 - Animations are skipped when the browser asks for reduced motion.

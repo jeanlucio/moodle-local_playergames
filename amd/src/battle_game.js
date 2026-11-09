@@ -362,18 +362,19 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
 
     return {
         /**
-         * Name of the piece at a cell, for the keyboard cursor.
+         * Accessible name of a cell of the board.
          *
          * @param {number} row Row.
          * @param {number} col Column.
+         * @param {number} type Type of the piece in it.
          * @returns {string}
          */
-        describeCell(row, col) {
-            return format(strings.msg_cell, {row: row + 1, col: col + 1, piece: pieceName(grid[row][col])});
+        describeCell(row, col, type) {
+            return format(strings.msg_cell, {row: row + 1, col: col + 1, piece: pieceName(type)});
         },
 
         /**
-         * Tells a piece has been selected with the keyboard.
+         * Tells a piece has been selected with the keyboard, and what to do next.
          *
          * @param {number} row Row.
          * @param {number} col Column.

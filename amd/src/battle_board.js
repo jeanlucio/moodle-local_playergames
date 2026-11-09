@@ -14,22 +14,17 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * The PlayerBattle board: draws the pieces on a Phaser canvas, takes the player's swaps from the
- * pointer or the keyboard, and animates what the rules decided.
+ * The PlayerBattle board: pieces are plain elements moved with the Web Animations API, over a layer of
+ * real buttons that carry the focus, the labels and the player's clicks, swipes and keys.
  *
  * It decides nothing. battle_game.js owns the grid and the rules; this module keeps a matching grid
- * of sprites and moves them as it is told. Every animation is a promise that resolves when it ends.
+ * of piece elements and moves them as it is told. Every animation is a promise that resolves when it ends.
  *
  * @module     local_playergames/battle_board
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {load as loadPhaser} from 'local_playergames/phaser';
-
-// The canvas is drawn at twice the size it is shown at, so the pieces stay sharp on high density screens.
-const CELL = 160;
-const PIECE_RATIO = 0.86;
 const PIECE_TYPES = 6;
 
 const SWAP_MS = 180;
@@ -45,94 +40,156 @@ const DIRECTIONS = {
 };
 
 /**
- * Creates the board and waits for its assets to load.
+ * Loads and decodes the piece images, so the first draw does not show them popping in.
+ *
+ * @param {string} pixUrl Base URL of the battle images, with a trailing slash.
+ * @returns {Promise<void>}
+ */
+const preload = pixUrl => Promise.all(Array.from({length: PIECE_TYPES}, async(unused, type) => {
+    const image = new Image();
+    image.src = `${pixUrl}piece${type}.png`;
+    try {
+        await image.decode();
+    } catch (error) {
+        throw new Error(`Could not load ${image.src}`);
+    }
+}));
+
+/**
+ * Creates the board and waits for its images to load.
  *
  * @param {object} options
- * @param {HTMLElement} options.parent Element the canvas goes into.
+ * @param {HTMLElement} options.parent Element the board goes into.
  * @param {string} options.pixUrl Base URL of the battle images, with a trailing slash.
  * @param {number} options.rows Board rows.
  * @param {number} options.cols Board columns.
  * @param {string} options.label Accessible name of the board.
  * @param {boolean} options.reducedMotion Whether animations should be skipped.
- * @param {Function} options.onCursor Called with {row, col} when the keyboard cursor moves or selects.
+ * @param {Function} options.describe Called with (row, col, type), returns the accessible name of a cell.
+ * @param {Function} options.onSelect Called with {row, col} when a piece is selected with the keyboard.
  * @returns {Promise<object>} The board controller.
  */
-export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMotion, onCursor}) => {
-    const Phaser = await loadPhaser();
+export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMotion, describe, onSelect}) => {
+    await preload(pixUrl);
 
-    let scene = null;
+    // Piece type of every cell, kept in step with the elements so the buttons can be named.
+    let types = [];
     let sprites = [];
-    let overlay = null;
     let selected = null;
     let cursor = {row: 0, col: 0};
-    let focused = false;
     let waiting = null;
-    let dragFrom = null;
+    let swipe = null;
+    let swiped = false;
 
-    const pieceSize = CELL * PIECE_RATIO;
-    const centre = index => (index + 0.5) * CELL;
+    const root = document.createElement('div');
+    root.className = 'pg-battle-grid';
+    root.style.setProperty('--pg-board-cols', cols);
+    root.style.setProperty('--pg-board-rows', rows);
+
+    const layer = document.createElement('div');
+    layer.className = 'pg-battle-pieces';
+    layer.setAttribute('aria-hidden', 'true');
+
+    const controls = document.createElement('div');
+    controls.className = 'pg-battle-cells';
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', label);
+
+    const buttons = [];
+    for (let row = 0; row < rows; row++) {
+        buttons.push([]);
+        for (let col = 0; col < cols; col++) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'pg-battle-cell';
+            button.dataset.row = row;
+            button.dataset.col = col;
+            button.tabIndex = row === 0 && col === 0 ? 0 : -1;
+            button.setAttribute('aria-pressed', 'false');
+            controls.appendChild(button);
+            buttons[row].push(button);
+        }
+    }
+    root.append(layer, controls);
+    parent.appendChild(root);
+
+    const inside = (row, col) => row >= 0 && row < rows && col >= 0 && col < cols;
+    const adjacent = (a, b) => Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
+    const place = (row, col) => `translate(${col * 100}%, ${row * 100}%)`;
 
     /**
-     * Runs tweens together and resolves when all of them end.
+     * Runs animations together and resolves when all of them end.
      *
-     * @param {Array<object>} configs Phaser tween configs; the duration is applied here.
+     * @param {Array<{element: HTMLElement, keyframes: Array<object>, duration: number, easing: string}>} configs
+     * @param {Function} done Called once they have ended, to leave the elements in their final state.
      * @returns {Promise<void>}
      */
-    const animate = configs => new Promise(resolve => {
-        if (configs.length === 0) {
-            resolve();
-            return;
+    const animate = async(configs, done = () => null) => {
+        if (!reducedMotion) {
+            await Promise.all(configs.map(({element, keyframes, duration, easing}) => {
+                const animation = element.animate(keyframes, {duration, easing, fill: 'forwards'});
+                return animation.finished.catch(() => null);
+            }));
         }
-        let pending = configs.length;
-        configs.forEach(config => {
-            const {duration, onComplete, ...rest} = config;
-            scene.tweens.add({
-                ...rest,
-                duration: reducedMotion ? 1 : duration,
-                onComplete: () => {
-                    if (onComplete) {
-                        onComplete();
-                    }
-                    pending--;
-                    if (pending === 0) {
-                        resolve();
-                    }
-                },
-            });
-        });
-    });
+        done();
+        configs.forEach(({element}) => element.getAnimations().forEach(animation => animation.cancel()));
+    };
 
     /**
-     * Adds a piece sprite at a cell.
+     * Names every button after the piece it covers.
+     */
+    const relabel = () => {
+        buttons.forEach((line, row) => line.forEach((button, col) => {
+            button.setAttribute('aria-label', describe(row, col, types[row][col]));
+        }));
+    };
+
+    /**
+     * Shows which piece is selected.
+     */
+    const markSelected = () => {
+        buttons.forEach((line, row) => line.forEach((button, col) => {
+            const on = selected !== null && selected.row === row && selected.col === col;
+            button.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }));
+    };
+
+    /**
+     * Moves the keyboard cursor to a cell: the one button in the tab order and the one with the focus.
+     *
+     * @param {{row: number, col: number}} cell The cell.
+     * @param {boolean} focus Whether to move the focus too.
+     */
+    const moveCursor = (cell, focus) => {
+        buttons[cursor.row][cursor.col].tabIndex = -1;
+        cursor = {row: cell.row, col: cell.col};
+        const button = buttons[cursor.row][cursor.col];
+        button.tabIndex = 0;
+        if (focus) {
+            button.focus();
+        }
+    };
+
+    /**
+     * Adds a piece element at a cell.
      *
      * @param {number} row Row.
      * @param {number} col Column.
      * @param {number} type Piece type.
-     * @param {number} y Vertical start, when it should not start in place.
-     * @returns {object} The sprite.
+     * @param {number} fromRow Row it starts from, when it should not start in place.
+     * @returns {HTMLElement} The element.
      */
-    const addPiece = (row, col, type, y = centre(row)) => {
-        const piece = scene.add.image(centre(col), y, `piece${type}`).setDisplaySize(pieceSize, pieceSize);
-        piece.row = row;
-        piece.col = col;
-        return piece;
-    };
-
-    /**
-     * Redraws the selection and the keyboard cursor.
-     */
-    const drawOverlay = () => {
-        overlay.clear();
-        const square = (cell, colour, width) => {
-            overlay.lineStyle(width, colour, 1);
-            overlay.strokeRect(cell.col * CELL + 6, cell.row * CELL + 6, CELL - 12, CELL - 12);
-        };
-        if (selected !== null) {
-            square(selected, 0xffc107, 10);
-        }
-        if (focused && waiting !== null) {
-            square(cursor, 0xffffff, 6);
-        }
+    const addPiece = (row, col, type, fromRow = row) => {
+        const element = document.createElement('div');
+        element.className = 'pg-battle-piece';
+        element.style.transform = place(fromRow, col);
+        const image = document.createElement('img');
+        image.src = `${pixUrl}piece${type}.png`;
+        image.alt = '';
+        image.draggable = false;
+        element.appendChild(image);
+        layer.appendChild(element);
+        return element;
     };
 
     /**
@@ -143,33 +200,35 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
      */
     const requestSwap = (from, to) => {
         selected = null;
-        dragFrom = null;
+        swipe = null;
+        markSelected();
         if (waiting !== null) {
             const resolve = waiting;
             waiting = null;
-            drawOverlay();
             resolve({r1: from.row, c1: from.col, r2: to.row, c2: to.col});
         }
     };
 
-    const inside = (row, col) => row >= 0 && row < rows && col >= 0 && col < cols;
-    const adjacent = (a, b) => Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
-    const cellAt = pointer => ({row: Math.floor(pointer.y / CELL), col: Math.floor(pointer.x / CELL)});
-
     /**
-     * Pointer pressed: selects a piece, or swaps it with the selected neighbour.
+     * A button was activated, by click, tap, Enter or Space: selects the piece, or swaps it with the selected
+     * neighbour.
      *
-     * @param {object} pointer Phaser pointer.
+     * @param {Event} event The click.
      */
-    const onPointerDown = pointer => {
+    const onClick = event => {
+        const button = event.target.closest('.pg-battle-cell');
+        if (button === null) {
+            return;
+        }
+        if (swiped) {
+            swiped = false;
+            return;
+        }
         if (waiting === null) {
             return;
         }
-        const cell = cellAt(pointer);
-        if (!inside(cell.row, cell.col)) {
-            return;
-        }
-        cursor = cell;
+        const cell = {row: Number(button.dataset.row), col: Number(button.dataset.col)};
+        moveCursor(cell, false);
         if (selected !== null && adjacent(selected, cell)) {
             requestSwap(selected, cell);
             return;
@@ -178,44 +237,63 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
             selected = null;
         } else {
             selected = cell;
-            dragFrom = {...cell, x: pointer.x, y: pointer.y};
+            if (event.detail === 0) {
+                onSelect(cell);
+            }
         }
-        drawOverlay();
+        markSelected();
+    };
+
+    /**
+     * Pointer pressed on a cell: remembers where, to tell a swipe from a tap.
+     *
+     * @param {PointerEvent} event The event.
+     */
+    const onPointerDown = event => {
+        const button = event.target.closest('.pg-battle-cell');
+        swiped = false;
+        swipe = button === null ? null : {
+            row: Number(button.dataset.row),
+            col: Number(button.dataset.col),
+            x: event.clientX,
+            y: event.clientY,
+        };
     };
 
     /**
      * Pointer moved while pressed: a swipe past a third of a cell swaps in its direction.
      *
-     * @param {object} pointer Phaser pointer.
+     * @param {PointerEvent} event The event.
      */
-    const onPointerMove = pointer => {
-        if (dragFrom === null || !pointer.isDown) {
+    const onPointerMove = event => {
+        if (swipe === null || waiting === null) {
             return;
         }
-        const dx = pointer.x - dragFrom.x;
-        const dy = pointer.y - dragFrom.y;
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < CELL / 3) {
+        const dx = event.clientX - swipe.x;
+        const dy = event.clientY - swipe.y;
+        const cellSize = root.clientWidth / cols;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < cellSize / 3) {
             return;
         }
         const target = Math.abs(dx) > Math.abs(dy) ?
-            {row: dragFrom.row, col: dragFrom.col + Math.sign(dx)} :
-            {row: dragFrom.row + Math.sign(dy), col: dragFrom.col};
+            {row: swipe.row, col: swipe.col + Math.sign(dx)} :
+            {row: swipe.row + Math.sign(dy), col: swipe.col};
+        const from = swipe;
+        swipe = null;
         if (inside(target.row, target.col)) {
-            requestSwap(dragFrom, target);
-        } else {
-            dragFrom = null;
+            swiped = true;
+            moveCursor(from, false);
+            requestSwap(from, target);
         }
     };
 
     /**
-     * Keyboard: arrows move the cursor, Enter or Space selects, and an arrow then swaps.
+     * Keyboard: arrows move the cursor, or swap the selected piece in their direction. Enter and Space
+     * are the buttons' own click.
      *
      * @param {KeyboardEvent} event The key event.
      */
     const onKeyDown = event => {
-        if (waiting === null) {
-            return;
-        }
         const direction = DIRECTIONS[event.key];
         if (direction) {
             event.preventDefault();
@@ -224,87 +302,43 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
                 return;
             }
             if (selected !== null) {
-                requestSwap(selected, next);
+                if (waiting !== null) {
+                    requestSwap(selected, next);
+                }
                 return;
             }
-            cursor = next;
-            onCursor({...cursor, selected: false});
-        } else if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            selected = selected === null ? {...cursor} : null;
-            onCursor({...cursor, selected: selected !== null});
-        } else if (event.key === 'Escape') {
+            moveCursor(next, true);
+        } else if (event.key === 'Escape' && selected !== null) {
             selected = null;
-        } else {
-            return;
+            markSelected();
         }
-        drawOverlay();
     };
 
-    let game = null;
-    await new Promise((resolve, reject) => {
-        const sceneConfig = {
-            preload() {
-                for (let type = 0; type < PIECE_TYPES; type++) {
-                    this.load.image(`piece${type}`, `${pixUrl}piece${type}.png`);
-                }
-                this.load.on('loaderror', file => reject(new Error(`Could not load ${file.src}`)));
-            },
-            create() {
-                scene = this;
-                const background = this.add.graphics();
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < cols; col++) {
-                        background.fillStyle((row + col) % 2 === 0 ? 0x2b3039 : 0x353b46, 1);
-                        background.fillRect(col * CELL, row * CELL, CELL, CELL);
-                    }
-                }
-                overlay = this.add.graphics().setDepth(10);
-                this.input.on('pointerdown', onPointerDown);
-                this.input.on('pointermove', onPointerMove);
-                this.input.on('pointerup', () => {
-                    dragFrom = null;
-                });
-                resolve();
-            },
-        };
-        game = new Phaser.Game({
-            type: Phaser.AUTO,
-            parent,
-            width: cols * CELL,
-            height: rows * CELL,
-            backgroundColor: '#2b3039',
-            scale: {mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH},
-            input: {touch: {capture: false}},
-            scene: sceneConfig,
-        });
-    });
-
-    const canvas = parent.querySelector('canvas');
-    canvas.tabIndex = 0;
-    canvas.setAttribute('role', 'application');
-    canvas.setAttribute('aria-label', label);
-    canvas.addEventListener('keydown', onKeyDown);
-    canvas.addEventListener('focus', () => {
-        focused = true;
-        drawOverlay();
-    });
-    canvas.addEventListener('blur', () => {
-        focused = false;
-        drawOverlay();
-    });
+    controls.addEventListener('click', onClick);
+    controls.addEventListener('keydown', onKeyDown);
+    controls.addEventListener('pointerdown', onPointerDown);
+    controls.addEventListener('pointermove', onPointerMove);
+    const endSwipe = () => {
+        swipe = null;
+    };
+    controls.addEventListener('pointerup', endSwipe);
+    controls.addEventListener('pointercancel', endSwipe);
 
     return {
         /**
          * Draws every piece from a grid of types, fading them in. Used at the start and after a shuffle.
          *
-         * @param {Array} types Grid of piece types.
+         * @param {Array} grid Grid of piece types.
          * @returns {Promise<void>}
          */
-        async refresh(types) {
-            sprites.flat().forEach(piece => piece && piece.destroy());
-            sprites = types.map((rowTypes, row) => rowTypes.map((type, col) => addPiece(row, col, type).setAlpha(0)));
-            await animate(sprites.flat().map(piece => ({targets: piece, alpha: 1, duration: FADE_MS})));
+        async refresh(grid) {
+            sprites.flat().forEach(piece => piece && piece.remove());
+            types = grid.map(line => [...line]);
+            sprites = grid.map((line, row) => line.map((type, col) => addPiece(row, col, type)));
+            relabel();
+            await animate(sprites.flat().map(element => ({
+                element, keyframes: [{opacity: 0}, {opacity: 1}], duration: FADE_MS, easing: 'ease-out',
+            })));
         },
 
         /**
@@ -315,13 +349,13 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
         nextMove() {
             return new Promise(resolve => {
                 selected = null;
+                markSelected();
                 waiting = resolve;
-                drawOverlay();
             });
         },
 
         /**
-         * Swaps two pieces with a tween.
+         * Swaps two pieces.
          *
          * @param {{r1: number, c1: number, r2: number, c2: number}} move The two cells.
          * @returns {Promise<void>}
@@ -331,14 +365,17 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
             const second = sprites[r2][c2];
             sprites[r1][c1] = second;
             sprites[r2][c2] = first;
-            first.row = r2;
-            first.col = c2;
-            second.row = r1;
-            second.col = c1;
+            [types[r1][c1], types[r2][c2]] = [types[r2][c2], types[r1][c1]];
             await animate([
-                {targets: first, x: centre(c2), y: centre(r2), duration: SWAP_MS},
-                {targets: second, x: centre(c1), y: centre(r1), duration: SWAP_MS},
-            ]);
+                {element: first, keyframes: [{transform: place(r1, c1)}, {transform: place(r2, c2)}],
+                    duration: SWAP_MS, easing: 'ease-in-out'},
+                {element: second, keyframes: [{transform: place(r2, c2)}, {transform: place(r1, c1)}],
+                    duration: SWAP_MS, easing: 'ease-in-out'},
+            ], () => {
+                first.style.transform = place(r2, c2);
+                second.style.transform = place(r1, c1);
+            });
+            relabel();
         },
 
         /**
@@ -349,13 +386,17 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
          */
         async clear(cells) {
             const doomed = cells.map(({row, col}) => {
-                const piece = sprites[row][col];
+                const element = sprites[row][col];
                 sprites[row][col] = null;
-                return piece;
+                return element;
             });
-            await animate(doomed.map(piece => ({
-                targets: piece, scaleX: 0, scaleY: 0, alpha: 0, duration: DESTROY_MS, onComplete: () => piece.destroy(),
-            })));
+            // The image shrinks, not the piece: the piece holds its place with its own transform.
+            await animate(doomed.map(element => ({
+                element: element.firstElementChild,
+                keyframes: [{opacity: 1, transform: 'scale(1)'}, {opacity: 0, transform: 'scale(0)'}],
+                duration: DESTROY_MS,
+                easing: 'ease-in',
+            })), () => doomed.forEach(element => element.remove()));
         },
 
         /**
@@ -365,38 +406,47 @@ export const createBoard = async({parent, pixUrl, rows, cols, label, reducedMoti
          * @returns {Promise<void>}
          */
         async gravity({fell, spawned}) {
-            const tweens = [];
+            const moves = [];
             fell.forEach(({fromRow, toRow, col}) => {
-                const piece = sprites[fromRow][col];
-                sprites[toRow][col] = piece;
+                const element = sprites[fromRow][col];
+                sprites[toRow][col] = element;
                 sprites[fromRow][col] = null;
-                piece.row = toRow;
-                tweens.push({targets: piece, y: centre(toRow), duration: FALL_MS});
+                types[toRow][col] = types[fromRow][col];
+                moves.push({element, from: fromRow, to: toRow, col});
             });
             const perColumn = {};
             spawned.forEach(({col}) => {
                 perColumn[col] = (perColumn[col] || 0) + 1;
             });
             spawned.forEach(({row, col, type}) => {
-                const piece = addPiece(row, col, type, centre(row - perColumn[col]));
-                sprites[row][col] = piece;
-                tweens.push({targets: piece, y: centre(row), duration: FALL_MS});
+                const element = addPiece(row, col, type, row - perColumn[col]);
+                sprites[row][col] = element;
+                types[row][col] = type;
+                moves.push({element, from: row - perColumn[col], to: row, col});
             });
-            await animate(tweens);
+            await animate(moves.map(({element, from, to, col}) => ({
+                element,
+                keyframes: [{transform: place(from, col)}, {transform: place(to, col)}],
+                duration: FALL_MS,
+                easing: 'ease-in',
+            })), () => moves.forEach(({element, to, col}) => {
+                element.style.transform = place(to, col);
+            }));
+            relabel();
         },
 
         /**
-         * Gives the canvas keyboard focus.
+         * Gives the keyboard focus to the cell the cursor is on.
          */
         focus() {
-            canvas.focus();
+            buttons[cursor.row][cursor.col].focus();
         },
 
         /**
-         * Stops the game and removes the canvas.
+         * Removes the board.
          */
         dispose() {
-            game.destroy(true);
+            root.remove();
         },
     };
 };
