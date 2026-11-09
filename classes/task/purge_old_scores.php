@@ -98,6 +98,10 @@ class purge_old_scores extends \core\task\scheduled_task {
                 ['start' => $season->startdate, 'end' => $season->enddate]
             );
             mtrace("Purged {$deleted} daily_scores rows for season {$seasonid}: {$season->name}");
+
+            $battles = $DB->count_records('local_playergames_battle_scores', ['seasonid' => $seasonid]);
+            $DB->delete_records('local_playergames_battle_scores', ['seasonid' => $seasonid]);
+            mtrace("Purged {$battles} battle_scores rows for season {$seasonid}: {$season->name}");
         }
 
         $preservednames = implode(', ', array_map(

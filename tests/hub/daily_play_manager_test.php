@@ -145,6 +145,40 @@ final class daily_play_manager_test extends \advanced_testcase {
         ]));
     }
 
+    /**
+     * Every game that can be played today links to its page, and one already played does not.
+     */
+    public function test_pending_games_link_to_their_pages_and_played_ones_do_not(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $now = time();
+        $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => 'quiz',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        $user     = $this->getDataGenerator()->create_user();
+        $snapshot = ['xp_per_game_battle' => 10, 'xp_games_battle' => 1];
+        $season   = $this->make_season($snapshot);
+
+        $games = array_column(daily_play_manager::get_games_today((int) $user->id, $snapshot), null, 'gametype');
+        foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
+            $this->assertTrue($games[$type]['pending'], $type);
+            $this->assertStringContainsString("/local/playergames/play_{$type}.php", $games[$type]['url'], $type);
+        }
+
+        daily_play_manager::register_play(
+            (int) $user->id,
+            'battle',
+            mktime(0, 0, 0),
+            $season,
+            \context_system::instance()
+        );
+        $games = array_column(daily_play_manager::get_games_today((int) $user->id, $snapshot), null, 'gametype');
+        $this->assertTrue($games['battle']['done']);
+        $this->assertSame('', $games['battle']['url']);
+    }
+
     public function test_play_beyond_daily_quota_is_rejected(): void {
         $this->resetAfterTest();
         $this->redirectEvents();

@@ -64,6 +64,22 @@ final class purge_old_scores_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Inserts a battle_scores row of a season.
+     *
+     * @param int $seasonid Season id.
+     * @param int $gamedate Battle date.
+     * @return void
+     */
+    private function add_battle(int $seasonid, int $gamedate): void {
+        global $DB;
+        $DB->insert_record('local_playergames_battle_scores', (object) [
+            'userid' => 5, 'seasonid' => $seasonid, 'gamedate' => $gamedate, 'bosshpdealt' => 10,
+            'questionscorrect' => 1, 'questionstotal' => 2, 'victory' => 1, 'xpawarded' => 10,
+            'duration' => 60, 'timeplayed' => $gamedate,
+        ]);
+    }
+
     public function test_purges_scores_beyond_retention_window(): void {
         global $DB;
         $this->resetAfterTest();
@@ -113,5 +129,24 @@ final class purge_old_scores_test extends \advanced_testcase {
 
         // Only one closed season exists, below the keep threshold: nothing purged.
         $this->assertSame(1, $DB->count_records('local_playergames_daily_scores'));
+    }
+
+    public function test_purges_battle_results_of_seasons_beyond_the_window(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('seasons_keep', 1, 'local_playergames');
+
+        $now = time();
+        $older = $this->make_closed_season($now - (DAYSECS * 100), $now - (DAYSECS * 70));
+        $newer = $this->make_closed_season($now - (DAYSECS * 60), $now - (DAYSECS * 30));
+        $this->add_battle($older, $now - (DAYSECS * 90));
+        $this->add_battle($newer, $now - (DAYSECS * 50));
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        $this->assertSame(0, $DB->count_records('local_playergames_battle_scores', ['seasonid' => $older]));
+        $this->assertSame(1, $DB->count_records('local_playergames_battle_scores', ['seasonid' => $newer]));
     }
 }

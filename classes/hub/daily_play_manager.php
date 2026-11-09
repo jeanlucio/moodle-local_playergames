@@ -216,7 +216,7 @@ class daily_play_manager {
             'quiz'   => (new moodle_url('/local/playergames/play_quiz.php'))->out(false),
             'guess'  => (new moodle_url('/local/playergames/play_guess.php'))->out(false),
             'fill'   => (new moodle_url('/local/playergames/play_fill.php'))->out(false),
-            'battle' => '',
+            'battle' => (new moodle_url('/local/playergames/play_battle.php'))->out(false),
         ];
         $result = [];
         foreach ($gametypes as $gametype) {
