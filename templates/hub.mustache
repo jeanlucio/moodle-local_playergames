@@ -160,8 +160,13 @@
 <div class="path-local-playergames pg-hub">
 
     {{#noseason}}
-    <div class="alert alert-info" role="alert">
-        <i class="fa fa-info-circle me-2" aria-hidden="true"></i>{{str_no_season}}
+    <div class="alert alert-info d-flex flex-wrap align-items-center" role="alert">
+        <span class="me-3"><i class="fa fa-info-circle me-2" aria-hidden="true"></i>{{str_no_season}}</span>
+        {{#manageurl}}
+        <a href="{{manageurl}}" class="btn btn-primary btn-sm ms-auto">
+            <i class="fa fa-cog me-1" aria-hidden="true"></i>{{str_manage_seasons}}
+        </a>
+        {{/manageurl}}
     </div>
     {{/noseason}}
 

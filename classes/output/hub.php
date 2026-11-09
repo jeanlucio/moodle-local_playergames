@@ -99,6 +99,10 @@ class hub implements renderable, templatable {
             return [
                 'noseason'      => true,
                 'str_no_season' => get_string('hub_no_season', 'local_playergames'),
+                'manageurl'     => $this->isadmin
+                    ? (new moodle_url('/local/playergames/manage_seasons.php'))->out(false)
+                    : '',
+                'str_manage_seasons' => get_string('season_manage_pagetitle', 'local_playergames'),
                 'str_pagetitle' => get_string('hub_pagetitle', 'local_playergames'),
                 'achievementsurl' => (new moodle_url('/local/playergames/achievements.php'))->out(false),
             ];
