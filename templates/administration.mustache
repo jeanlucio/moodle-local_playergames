@@ -1,0 +1,65 @@
+{{!
+    @template local_playergames/administration
+
+    The Administration tab: cards grouped in the order an administrator sets things up. Each card is a
+    link to the page of the function, with what it does and, where there is one, where things stand.
+
+    Example context (json):
+    {
+        "str_title": "Administration",
+        "str_intro": "What an administrator sets up, in the order it is usually done.",
+        "groups": [
+            {
+                "key": "start",
+                "title": "Get started",
+                "cards": [
+                    {
+                        "key": "seasons",
+                        "name": "Seasons",
+                        "description": "The period in which students earn XP.",
+                        "url": "/local/playergames/manage_seasons.php",
+                        "state": "Active: Season 1",
+                        "hasstate": true,
+                        "external": false
+                    },
+                    {
+                        "key": "docs",
+                        "name": "Documentation",
+                        "description": "The guide to each function.",
+                        "url": "https://example.com/docs",
+                        "state": "",
+                        "hasstate": false,
+                        "external": true
+                    }
+                ]
+            }
+        ]
+    }
+}}
+<div class="local-playergames-administration pg-administration">
+    <h2 class="h4 mb-2">{{str_title}}</h2>
+    <p class="text-muted">{{str_intro}}</p>
+
+    {{#groups}}
+    <section class="pg-admin-group" aria-labelledby="pg-admin-group-{{key}}">
+        <h3 class="h5" id="pg-admin-group-{{key}}">{{title}}</h3>
+        <div class="pg-admin-grid">
+            {{#cards}}
+            <a class="pg-admin-card" href="{{url}}"{{#external}} target="_blank" rel="noopener"{{/external}}>
+                <span class="pg-admin-card-name">
+                    {{name}}
+                    {{#external}}
+                    <i class="fa fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
+                    <span class="visually-hidden">{{#str}} opensinnewwindow {{/str}}</span>
+                    {{/external}}
+                </span>
+                <span class="pg-admin-card-desc">{{description}}</span>
+                {{#hasstate}}
+                <span class="badge pg-admin-card-state">{{state}}</span>
+                {{/hasstate}}
+            </a>
+            {{/cards}}
+        </div>
+    </section>
+    {{/groups}}
+</div>

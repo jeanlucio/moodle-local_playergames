@@ -30,6 +30,7 @@ use renderable;
 use renderer_base;
 use templatable;
 use local_playergames\local\access;
+use local_playergames\local\admin_cards;
 use local_playergames\local\preferences;
 
 /**
@@ -93,6 +94,9 @@ class nav_header implements renderable, templatable {
         }
         if ($staff) {
             $items[] = $this->item('ecosystem', 'fa-diagram-project', 'nav_ecosystem', '/local/playergames/dashboard.php');
+        }
+        if (admin_cards::can_open_any((int) $USER->id)) {
+            $items[] = $this->item('admin', 'fa-gear', 'nav_admin', '/local/playergames/administration.php');
         }
 
         if ($gamification) {
