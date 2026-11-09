@@ -111,6 +111,9 @@ class daily_play_manager {
      * @param int $gamedate Midnight timestamp of the day.
      * @param stdClass $season Active season record.
      * @param \context $context Context for the fired event.
+     * @param array $extra Extra payload merged into the event's other data, for facts only the
+     *                     game knows (e.g. victory for the battle). It never overrides the keys
+     *                     this method sets itself.
      * @return array {success: bool, xpawarded: int, remaining: int}
      */
     public static function register_play(
@@ -118,7 +121,8 @@ class daily_play_manager {
         string $gametype,
         int $gamedate,
         stdClass $season,
-        \context $context
+        \context $context,
+        array $extra = []
     ): array {
         global $DB;
 
@@ -166,7 +170,7 @@ class daily_play_manager {
                 'gametype'  => $gametype,
                 'gamedate'  => $gamedate,
                 'xpawarded' => $xpawarded,
-            ],
+            ] + $extra,
         ]);
         $event->trigger();
 
