@@ -33,8 +33,10 @@
   simultaneously.
   * **All games:** manual creation (inline editor), JSON upload, or AI generation (see
     [AI Provider Chain](#ai-provider-chain)).
-  * **PlayerQuiz and PlayerBattle:** also accept the **Moodle Question Bank** (multiple-choice
-    questions only).
+  * **PlayerQuiz and PlayerBattle:** also accept a **Moodle Question Bank** kept for reuse by the
+    whole site (multiple-choice questions only) — see [How PlayerQuiz Works](#playerquiz).
+  * **PlayerGuess and PlayerFill:** always use concept cartridges, which can also be created from a
+    **global glossary** of the site.
 * 🧠 **PlayerQuiz:** Daily multiple-choice mini-game using concepts from the active cartridge —
   see [How PlayerQuiz Works](#playerquiz).
 * 🔡 **PlayerGuess:** Daily Wordle-style mini-game — guess the term letter by letter — see
@@ -58,7 +60,7 @@
   weekly retention task removes older ones.
 * 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of
   all stored personal data; shared cartridges are preserved with the uploader anonymised.
-* 🧪 **Automated Tests:** 305-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
+* 🧪 **Automated Tests:** 315-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
   across the full CI matrix, Moodle 4.5 to 5.3 (see the [Automated Tests](#testing) section).
 
 ## ⏳ In Development / Planned

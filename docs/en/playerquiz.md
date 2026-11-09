@@ -3,6 +3,16 @@
 PlayerQuiz is the first daily mini-game. It draws multiple-choice questions from the active
 cartridges (and, optionally, the Moodle Question Bank) and shows them **one at a time**.
 
+## Question Bank source
+
+In the *Season games* card the administrator chooses, for PlayerQuiz and PlayerBattle, whether the
+questions come from cartridges only, from the question bank only, or from both. The question bank
+is limited to what Moodle keeps **for reuse**: question banks created to share questions across
+courses (Moodle 5.x) or categories in the system context (Moodle 4.5). A course's own bank is never
+offered, so questions that belong to one course are not exposed to the whole site. The list only
+shows categories the person configuring may use, and the choice is checked again on saving. Only
+multiple-choice questions that are ready to use are drawn.
+
 ## The play loop
 
 - One question is shown at a time, with a per-question countdown.

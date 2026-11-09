@@ -25,7 +25,10 @@ answers) feeds PlayerQuiz and PlayerBattle:
   single alphabetic word (no spaces, digits or hyphens) — see
   [How PlayerGuess Works](#playerguess)
 - Quiz-type cartridges: each question accepts an optional `generalfeedback` string, shown to the
-  player after they answer; PlayerQuiz and PlayerBattle can also draw from the **Moodle Question Bank**
-  instead of or alongside cartridges
+  player after they answer; PlayerQuiz and PlayerBattle can also draw from a **Moodle Question Bank**
+  category kept for reuse by the whole site, instead of or alongside cartridges
+- Concept cartridges can be created from a **global glossary** (the *Glossary* tab of the cartridge
+  page): the approved entries become concepts, up to the importer's limit. Glossaries of a single
+  course are not offered — only those Moodle marks as global
 - Admin can have multiple active cartridges simultaneously
 - Multi-language: each cartridge declares its `language`

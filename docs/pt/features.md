@@ -36,8 +36,10 @@
   simultaneamente.
   * **Todos os jogos:** criação manual (editor inline), upload de JSON ou geração com IA (ver
     [Cadeia de Provedores de IA](#ai-provider-chain)).
-  * **PlayerQuiz e PlayerBattle:** aceitam também o **Banco de Questões do Moodle** (apenas
-    questões de múltipla escolha).
+  * **PlayerQuiz e PlayerBattle:** aceitam também um **Banco de Questões do Moodle** mantido para reuso
+    por todo o site (apenas questões de múltipla escolha) — ver [Como o PlayerQuiz Funciona](#playerquiz).
+  * **PlayerGuess e PlayerFill:** usam sempre cartuchos de conceitos, que também podem ser criados a
+    partir de um **glossário global** do site.
 * 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo — ver
   [Como o PlayerQuiz Funciona](#playerquiz).
 * 🔡 **PlayerGuess:** Minijogo diário estilo Wordle — adivinhe o termo letra a letra — ver
@@ -63,7 +65,7 @@
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.
-* 🧪 **Testes Automatizados:** Suíte PHPUnit com 305 casos e 42 testes Node para as regras do
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 315 casos e 42 testes Node para as regras do
   PlayerBattle, verdes na matriz completa do CI, Moodle 4.5 a 5.3 (ver a seção
   [Testes Automatizados](#testing)).
 

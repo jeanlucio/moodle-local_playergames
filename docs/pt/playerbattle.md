@@ -55,8 +55,8 @@ ou enviado duas vezes, não rende nada.
 
 ## Conteúdo e configurações
 
-O PlayerBattle pergunta **cartuchos do tipo quiz** e, opcionalmente, o **Banco de Questões do Moodle**
-(questões de múltipla escolha), conforme escolhido para a temporada no card *Jogos da temporada* da aba
+O PlayerBattle pergunta **cartuchos do tipo quiz** e, opcionalmente, uma categoria do **Banco de Questões do
+Moodle** mantida para reuso (questões de múltipla escolha; ver [Como o PlayerQuiz Funciona](#playerquiz)), conforme escolhido para a temporada no card *Jogos da temporada* da aba
 [Administração](#administration).
 
 | Onde | Configuração |

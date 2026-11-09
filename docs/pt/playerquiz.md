@@ -4,6 +4,16 @@ O PlayerQuiz é o primeiro mini-jogo diário. Ele sorteia questões de múltipla
 cartuchos ativos (e, opcionalmente, do Banco de Questões do Moodle) e as exibe **uma de cada
 vez**.
 
+## Fonte do banco de questões
+
+No card *Jogos da temporada* o administrador escolhe, para o PlayerQuiz e o PlayerBattle, se as
+questões vêm só dos cartuchos, só do banco de questões ou dos dois. O banco de questões se limita ao que
+o Moodle mantém **para reuso**: bancos criados para compartilhar questões entre cursos (Moodle 5.x) ou
+categorias no contexto do sistema (Moodle 4.5). O banco de um curso nunca é oferecido, para que questões
+de um curso não fiquem expostas a todo o site. A lista mostra só as categorias que quem configura pode
+usar, e a escolha é conferida de novo ao salvar. Só são sorteadas questões de múltipla escolha prontas
+para uso.
+
 ## O fluxo da jogada
 
 - Uma questão é exibida por vez, com uma contagem regressiva por pergunta.

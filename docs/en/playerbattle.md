@@ -54,8 +54,8 @@ twice, earns nothing.
 
 ## Content and settings
 
-PlayerBattle asks **quiz-type cartridges** and, optionally, the **Moodle Question Bank** (multiple-choice
-questions), as chosen for the season in the *Season games* card of the [Administration](#administration)
+PlayerBattle asks **quiz-type cartridges** and, optionally, a **Moodle Question Bank** category kept for
+reuse (multiple-choice questions; see [How PlayerQuiz Works](#playerquiz)), as chosen for the season in the *Season games* card of the [Administration](#administration)
 tab.
 
 | Where | Setting |

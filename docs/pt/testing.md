@@ -29,7 +29,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
 | `observer_test.php` | 5 | `game_completed` aciona streak/missão/conquista; registra streak mesmo sem temporada; espelha mudanças de XP do `block_playerhud` no XP de Aprendizado |
 | `hook_callbacks_test.php` | 5 | Link na navegação principal: o hub para o estudante, nenhum depois de desativar a gamificação, o dashboard para o professor que a desativou, nenhum para visitante, e a consulta de equipe docente dispensada (contada em consultas) quando a gamificação está ligada |
-| `games/quiz_loader_test.php` | 12 | Fonte de cartucho: filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados, sorteio aleatório, exclusão de questões já vistas e reuso do pool |
+| `games/quiz_loader_test.php` | 13 | Fonte de cartucho: filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados, sorteio aleatório, exclusão de questões já vistas e reuso do pool; o banco de questões lê só uma categoria mantida para reuso |
 | `games/quiz_settings_test.php` | 8 | Configuração de cronômetro, máximo de tentativas e cooldown, e como interagem |
 | `games/guess_manager_test.php` | 7 | Resolução do conceito diário, normalização do termo, feedback de letras estilo Wordle (incluindo letras duplicadas), validação da tentativa |
 | `games/fill_manager_test.php` | 10 | Clamp da config de quantidade de palavras/tentativas máximas, atribuição de letra→slot compartilhado (incluindo termos sem letras em comum), estado de revelação das casas, cascata de revelação cruzada, ordenação/filtro dos termos do dia, regras de revelação no payload de resposta do POST |
@@ -48,14 +48,16 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `local/access_test.php` | 16 | Detecção de staff (admin de site, capacidade de edição de curso), resolução em lote de ids de staff, regras de visibilidade do hub; para onde cada papel é levado |
 | `local/admin_cards_test.php` | 8 | Aba Administração: cards e grupos por permissão (administrador, gerente, estudante), a aba na navegação, o estado de cada card, nome de temporada escapado uma vez e o link da documentação abrindo em nova aba |
 | `local/game_page_test.php` | 2 | O aviso das páginas de jogo quando não há temporada ativa, e que ele nunca diz que o jogo já foi jogado |
+| `local/question_bank_reuse_test.php` | 4 | Quais categorias do banco de questões são mantidas para reuso (bancos compartilhados no Moodle 5.x, contexto do sistema no 4.5), contagem de questões, o que o usuário pode escolher e a conferência de uma categoria dada |
+| `cartridge/glossary_importer_test.php` | 4 | Glossários globais listados com as entradas aprovadas, importação para um cartucho de conceitos, recusa de glossário de curso e de glossário vazio |
 | `local/text_test.php` | 4 | Nomes em texto plano: texto como digitado, o título do nível, páginas de cartucho escapando os nomes uma vez e formulários de edição preenchendo os campos com o texto armazenado |
 | `local/engagement_report_test.php` | 4 | Métricas vazias, contagem de cursos, detecção de curso Player, divisão por escopo |
 | `ecosystem/plugin_registry_test.php` | 2 | Estrutura do catálogo e componentes únicos |
 | `ecosystem/plugin_status_test.php` | 1 | Status de instalação por componente; hub reportado como instalado |
 | `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |
-| `db_upgrade_test.php` | 3 | Passo de upgrade que remove um índice que repete uma chave: dois índices idênticos viram um, uma coluna sem índice recebe o índice da chave, um índice único é mantido |
+| `db_upgrade_test.php` | 4 | Passo de upgrade que remove um índice que repete uma chave: dois índices idênticos viram um, uma coluna sem índice recebe o índice da chave, um índice único é mantido; os jogos de conceito perdem a fonte glossário e a categoria |
 | `uninstall_test.php` | 2 | A desinstalação remove só as preferências de usuário do próprio plugin, pelo prefixo, e não faz nada quando não há nenhuma |
-| **Total** | **305** | |
+| **Total** | **315** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames

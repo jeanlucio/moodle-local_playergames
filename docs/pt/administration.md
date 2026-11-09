@@ -14,7 +14,7 @@ o destino dele.
 |---|---|---|---|
 | **Começar** | Cartuchos | Os pacotes de questões e conceitos de onde os jogos tiram o conteúdo. Importe um arquivo, gere com IA ou crie à mão. | Gerenciar cartuchos |
 | | Temporadas | O período em que os estudantes acumulam XP e disputam o ranking. Crie, ative e encerre as temporadas. | Administrador do site |
-| | Jogos da temporada | Quais jogos rodam na temporada e de onde vêm as questões de cada um. | Administrador do site |
+| | Jogos da temporada | Quais jogos rodam na temporada e de onde vêm as questões de cada um (PlayerGuess e PlayerFill usam sempre cartuchos de conceitos). | Administrador do site |
 | **Regras** | Participação e temporadas | Quem joga (estudantes, corpo docente ou ambos), se as temporadas se renovam sozinhas e quanto duram. | Administrador do site |
 | | XP dos jogos | Quanto XP cada jogo dá e quantas vezes por dia ele rende XP. | Administrador do site |
 | | Regras dos jogos | Tempo por questão, tentativas e as demais regras de cada jogo. | Administrador do site |

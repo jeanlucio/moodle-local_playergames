@@ -14,7 +14,7 @@ open where it leads.
 |---|---|---|---|
 | **Get started** | Cartridges | The packs of questions and concepts the games draw from. Import a file, generate one with AI or write it by hand. | Manage cartridges |
 | | Seasons | The period in which students earn XP and compete in the ranking. Create, activate and close seasons. | Site administrator |
-| | Season games | Which games run in the season and where the questions of each one come from. | Site administrator |
+| | Season games | Which games run in the season and where the questions of each one come from (PlayerGuess and PlayerFill always use concept cartridges). | Site administrator |
 | **Rules** | Participation and seasons | Who plays (students, teaching staff or both), whether seasons renew by themselves and how long they last. | Site administrator |
 | | Game XP | How much XP each game gives and how many times a day it can be played for XP. | Site administrator |
 | | Game rules | Time per question, attempts and the other rules of each game. | Site administrator |
