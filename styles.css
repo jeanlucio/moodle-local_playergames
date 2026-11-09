@@ -36,6 +36,12 @@ body.path-local-playergames .visually-hidden {
     border: 0;
 }
 
+/* Boost colours every link inside an alert with the alert's dark text colour, which beat the white of a
+   button there and left it at a 3.1:1 contrast. */
+body.path-local-playergames .alert .btn-primary {
+    color: var(--bs-white, #fff);
+}
+
 body.path-local-playergames .local-playergames-engagement-meter .engmeter-chart-wrap {
     max-width: 300px;
     margin-inline: auto;
