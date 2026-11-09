@@ -1,0 +1,44 @@
+{{!
+    @template local_playergames/play_battle
+
+    Daily PlayerBattle game. The board is drawn into the game container by the battle module.
+
+    Example context (json):
+    {
+        "already_played": false,
+        "no_questions": false,
+        "playable": true,
+        "config": "{}",
+        "huburl": "/local/playergames/hub.php",
+        "str_already_played": "You have already played PlayerBattle today. Come back tomorrow!",
+        "str_no_questions": "No questions available.",
+        "str_back_to_hub": "Back to Hub"
+    }
+}}
+<div class="local-playergames-play-battle pg-play-battle-wrap container py-4">
+
+    {{#already_played}}
+    <div class="alert alert-info" role="alert">
+        <i class="fa fa-check-circle me-2" aria-hidden="true"></i>
+        {{str_already_played}}
+        <div class="mt-3">
+            <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
+        </div>
+    </div>
+    {{/already_played}}
+
+    {{#no_questions}}
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-exclamation-triangle me-2" aria-hidden="true"></i>
+        {{str_no_questions}}
+        <div class="mt-3">
+            <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
+        </div>
+    </div>
+    {{/no_questions}}
+
+    {{#playable}}
+    <div id="pg-battle-game" data-config="{{config}}"></div>
+    {{/playable}}
+
+</div>
