@@ -217,27 +217,36 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
     }
 
     /**
-     * Regression test: the battle results table lists exactly the columns it really has.
+     * Regression test: every declared table lists exactly the columns it really has.
      *
      * A column added to a table that is already declared stays undeclared unless something
-     * compares the two. Other tables still have timestamp columns pending a decision, so only
-     * this one is held to the comparison for now.
+     * compares the two. Cartridges are the exception: they are shared content that survives
+     * the user, and the only personal data in them is who uploaded them, which is all they declare.
      */
-    public function test_battle_scores_declares_every_column(): void {
+    public function test_declared_tables_list_every_column(): void {
         global $DB;
 
         $collection = provider::get_metadata(new collection('local_playergames'));
 
-        $declared = [];
+        $drift = [];
         foreach ($collection->get_collection() as $item) {
-            if ($item->get_name() === 'local_playergames_battle_scores') {
-                $declared = array_keys($item->get_privacy_fields());
+            $table = $item->get_name();
+            $isdatabasetable = $item instanceof \core_privacy\local\metadata\types\database_table;
+            if (!$isdatabasetable || $table === 'local_playergames_cartridges') {
+                continue;
+            }
+            $columns  = array_values(array_diff(array_keys($DB->get_columns($table)), ['id']));
+            $declared = array_keys($item->get_privacy_fields());
+            sort($columns);
+            sort($declared);
+            if ($columns !== $declared) {
+                $drift[$table] = [
+                    'undeclared' => array_values(array_diff($columns, $declared)),
+                    'unknown' => array_values(array_diff($declared, $columns)),
+                ];
             }
         }
-        $columns = array_values(array_diff(array_keys($DB->get_columns('local_playergames_battle_scores')), ['id']));
-        sort($columns);
-        sort($declared);
 
-        $this->assertSame($columns, $declared);
+        $this->assertSame([], $drift);
     }
 }

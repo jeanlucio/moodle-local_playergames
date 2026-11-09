@@ -72,18 +72,24 @@ class provider implements
             'userid'          => 'privacy:metadata:local_playergames_player_avatars:userid',
             'bestlevel'       => 'privacy:metadata:local_playergames_player_avatars:bestlevel',
             'equipped_avatar' => 'privacy:metadata:local_playergames_player_avatars:equipped_avatar',
+            'timecreated'     => 'privacy:metadata:local_playergames_player_avatars:timecreated',
+            'timemodified'    => 'privacy:metadata:local_playergames_player_avatars:timemodified',
         ], 'privacy:metadata:local_playergames_player_avatars');
 
         $collection->add_database_table('local_playergames_student_xp_monthly', [
-            'userid' => 'privacy:metadata:local_playergames_student_xp_monthly:userid',
-            'period' => 'privacy:metadata:local_playergames_student_xp_monthly:period',
-            'xp'     => 'privacy:metadata:local_playergames_student_xp_monthly:xp',
+            'userid'       => 'privacy:metadata:local_playergames_student_xp_monthly:userid',
+            'period'       => 'privacy:metadata:local_playergames_student_xp_monthly:period',
+            'xp'           => 'privacy:metadata:local_playergames_student_xp_monthly:xp',
+            'timecreated'  => 'privacy:metadata:local_playergames_student_xp_monthly:timecreated',
+            'timemodified' => 'privacy:metadata:local_playergames_student_xp_monthly:timemodified',
         ], 'privacy:metadata:local_playergames_student_xp_monthly');
 
         $collection->add_database_table('local_playergames_student_xp_cache', [
             'userid'        => 'privacy:metadata:local_playergames_student_xp_cache:userid',
             'windowedxp'    => 'privacy:metadata:local_playergames_student_xp_cache:windowedxp',
             'showinranking' => 'privacy:metadata:local_playergames_student_xp_cache:showinranking',
+            'timecreated'   => 'privacy:metadata:local_playergames_student_xp_cache:timecreated',
+            'timemodified'  => 'privacy:metadata:local_playergames_student_xp_cache:timemodified',
         ], 'privacy:metadata:local_playergames_student_xp_cache');
 
         $collection->add_database_table('local_playergames_player_profile', [
@@ -92,6 +98,8 @@ class provider implements
             'xp'            => 'privacy:metadata:local_playergames_player_profile:xp',
             'level'         => 'privacy:metadata:local_playergames_player_profile:level',
             'showinranking' => 'privacy:metadata:local_playergames_player_profile:showinranking',
+            'timecreated'   => 'privacy:metadata:local_playergames_player_profile:timecreated',
+            'timemodified'  => 'privacy:metadata:local_playergames_player_profile:timemodified',
         ], 'privacy:metadata:local_playergames_player_profile');
 
         $collection->add_database_table('local_playergames_streaks', [
@@ -111,12 +119,13 @@ class provider implements
         ], 'privacy:metadata:local_playergames_freeze_log');
 
         $collection->add_database_table('local_playergames_daily_scores', [
-            'userid'    => 'privacy:metadata:local_playergames_daily_scores:userid',
-            'gamedate'  => 'privacy:metadata:local_playergames_daily_scores:gamedate',
-            'gametype'  => 'privacy:metadata:local_playergames_daily_scores:gametype',
-            'completed' => 'privacy:metadata:local_playergames_daily_scores:completed',
-            'xpawarded' => 'privacy:metadata:local_playergames_daily_scores:xpawarded',
-            'attempts'  => 'privacy:metadata:local_playergames_daily_scores:attempts',
+            'userid'     => 'privacy:metadata:local_playergames_daily_scores:userid',
+            'gamedate'   => 'privacy:metadata:local_playergames_daily_scores:gamedate',
+            'gametype'   => 'privacy:metadata:local_playergames_daily_scores:gametype',
+            'completed'  => 'privacy:metadata:local_playergames_daily_scores:completed',
+            'xpawarded'  => 'privacy:metadata:local_playergames_daily_scores:xpawarded',
+            'attempts'   => 'privacy:metadata:local_playergames_daily_scores:attempts',
+            'timeplayed' => 'privacy:metadata:local_playergames_daily_scores:timeplayed',
         ], 'privacy:metadata:local_playergames_daily_scores');
 
         $collection->add_database_table('local_playergames_served_questions', [
