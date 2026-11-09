@@ -58,10 +58,11 @@ class hook_callbacks {
         $context = \context_system::instance();
         $hasgamification = has_capability('local/playergames:viewhub', $context)
             && preferences::is_gamification_enabled((int) $USER->id);
-        $isstaff = access::is_staff();
 
         // Show the entry only when the user has at least one PlayerGames page.
-        if (!$hasgamification && !$isstaff) {
+        // The staff check costs a query on every page, so it only runs for users
+        // without gamification, the only case where its answer matters.
+        if (!$hasgamification && !access::is_staff()) {
             return;
         }
 
