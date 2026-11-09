@@ -7,4 +7,11 @@
     <version>4.2.1</version>
     <licenseversion></licenseversion>
   </library>
+  <library>
+    <location>pix/battle/music.mp3</location>
+    <name>King's Feast (RandomMind)</name>
+    <license>CC0</license>
+    <version></version>
+    <licenseversion></licenseversion>
+  </library>
 </libraries>
