@@ -215,4 +215,29 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $this->assertObjectHasProperty('local_playergames_gamification', $prefs);
         $this->assertSame('0', $prefs->local_playergames_gamification->value);
     }
+
+    /**
+     * Regression test: the battle results table lists exactly the columns it really has.
+     *
+     * A column added to a table that is already declared stays undeclared unless something
+     * compares the two. Other tables still have timestamp columns pending a decision, so only
+     * this one is held to the comparison for now.
+     */
+    public function test_battle_scores_declares_every_column(): void {
+        global $DB;
+
+        $collection = provider::get_metadata(new collection('local_playergames'));
+
+        $declared = [];
+        foreach ($collection->get_collection() as $item) {
+            if ($item->get_name() === 'local_playergames_battle_scores') {
+                $declared = array_keys($item->get_privacy_fields());
+            }
+        }
+        $columns = array_values(array_diff(array_keys($DB->get_columns('local_playergames_battle_scores')), ['id']));
+        sort($columns);
+        sort($declared);
+
+        $this->assertSame($columns, $declared);
+    }
 }

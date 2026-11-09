@@ -132,10 +132,13 @@ class provider implements
             'userid'           => 'privacy:metadata:local_playergames_battle_scores:userid',
             'seasonid'         => 'privacy:metadata:local_playergames_battle_scores:seasonid',
             'gamedate'         => 'privacy:metadata:local_playergames_battle_scores:gamedate',
+            'bosshpdealt'      => 'privacy:metadata:local_playergames_battle_scores:bosshpdealt',
             'questionscorrect' => 'privacy:metadata:local_playergames_battle_scores:questionscorrect',
             'questionstotal'   => 'privacy:metadata:local_playergames_battle_scores:questionstotal',
             'victory'          => 'privacy:metadata:local_playergames_battle_scores:victory',
             'xpawarded'        => 'privacy:metadata:local_playergames_battle_scores:xpawarded',
+            'duration'         => 'privacy:metadata:local_playergames_battle_scores:duration',
+            'timeplayed'       => 'privacy:metadata:local_playergames_battle_scores:timeplayed',
         ], 'privacy:metadata:local_playergames_battle_scores');
 
         $collection->add_database_table('local_playergames_mission_progress', [
