@@ -61,6 +61,9 @@ PlayerGames para o Moodle. Serve a quatro propósitos principais:
 <span id="playerfill"></span>
 {% include_relative pt/playerfill.md %}
 
+<span id="playerbattle"></span>
+{% include_relative pt/playerbattle.md %}
+
 <span id="avatars"></span>
 {% include_relative pt/avatars.md %}
 

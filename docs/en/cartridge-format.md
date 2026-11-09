@@ -1,7 +1,8 @@
 # 📦 Cartridge Format
 
-Content cartridges are JSON files that power all mini-games. The same pack feeds PlayerQuiz,
-PlayerGuess, PlayerFill, and PlayerBattle:
+Content cartridges are JSON files that power the mini-games. A **concept** cartridge (terms and
+definitions, as below) feeds PlayerGuess and PlayerFill; a **quiz** cartridge (questions with their
+answers) feeds PlayerQuiz and PlayerBattle:
 
 ```json
 {
@@ -24,7 +25,7 @@ PlayerGuess, PlayerFill, and PlayerBattle:
   single alphabetic word (no spaces, digits or hyphens) — see
   [How PlayerGuess Works](#playerguess)
 - Quiz-type cartridges: each question accepts an optional `generalfeedback` string, shown to the
-  player after they answer; PlayerQuiz can also draw from the **Moodle Question Bank** instead of
-  or alongside cartridges
+  player after they answer; PlayerQuiz and PlayerBattle can also draw from the **Moodle Question Bank**
+  instead of or alongside cartridges
 - Admin can have multiple active cartridges simultaneously
 - Multi-language: each cartridge declares its `language`

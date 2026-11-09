@@ -59,6 +59,9 @@ ecosystem for Moodle. It serves four main purposes:
 <span id="playerfill"></span>
 {% include_relative en/playerfill.md %}
 
+<span id="playerbattle"></span>
+{% include_relative en/playerbattle.md %}
+
 <span id="avatars"></span>
 {% include_relative en/avatars.md %}
 
