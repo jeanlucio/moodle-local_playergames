@@ -48,8 +48,8 @@
   compartilha a mesma letra entre múltiplos termos; resolver um revela letras nos demais (efeito
   cascata). Grid gerado em PHP sem bibliotecas externas — ver
   [Como o PlayerFill Funciona](#playerfill).
-* ⚔️ **PlayerBattle:** Minijogo diário match-3 RPG — tabuleiro 8×8, combate por turnos contra o
-  oponente do dia e uma questão sempre que a barra de mana enche; acertar causa um golpe crítico. XP
+* ⚔️ **PlayerBattle:** Minijogo diário match-3 RPG — tabuleiro 8×8, combate por turnos contra um
+  oponente e uma questão sempre que a barra de mana enche; acertar causa um golpe crítico. XP
   só na vitória — ver [Como o PlayerBattle Funciona](#playerbattle).
 * 🧭 **Aba Administração:** Cards para tudo o que o administrador configura — cartuchos, temporadas,
   os jogos de uma temporada, as regras — na ordem em que é feito, cada um dizendo o que faz e em que
@@ -65,7 +65,7 @@
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.
-* 🧪 **Testes Automatizados:** Suíte PHPUnit com 321 casos e 42 testes Node para as regras do
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 320 casos e 42 testes Node para as regras do
   PlayerBattle, verdes na matriz completa do CI, Moodle 4.5 a 5.3 (ver a seção
   [Testes Automatizados](#testing)).
 

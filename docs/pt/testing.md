@@ -33,7 +33,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `games/quiz_settings_test.php` | 8 | Configuração de cronômetro, máximo de tentativas e cooldown, e como interagem |
 | `games/guess_manager_test.php` | 7 | Resolução do conceito diário, normalização do termo, feedback de letras estilo Wordle (incluindo letras duplicadas), validação da tentativa |
 | `games/fill_manager_test.php` | 10 | Clamp da config de quantidade de palavras/tentativas máximas, atribuição de letra→slot compartilhado (incluindo termos sem letras em comum), estado de revelação das casas, cascata de revelação cruzada, ordenação/filtro dos termos do dia, regras de revelação no payload de resposta do POST |
-| `games/battle_manager_test.php` | 13 | PlayerBattle no servidor: questões entregues prontas para o navegador com o texto escapado uma vez, nenhuma batalha sem questões, derrota salva sem XP e sem gastar a jogada, vitória com o XP da temporada (e sem XP além da cota), o melhor resultado do dia, batalha aceita uma só vez, contadores dentro do limite, só as questões entregues contam como vistas, o oponente do dia |
+| `games/battle_manager_test.php` | 12 | PlayerBattle no servidor: questões entregues prontas para o navegador com o texto escapado uma vez, nenhuma batalha sem questões, derrota salva sem XP e sem gastar a jogada, vitória com o XP da temporada (e sem XP além da cota), o melhor resultado do dia, batalha aceita uma só vez, contadores dentro do limite, só as questões entregues contam como vistas |
 | `games/season_game_config_test.php` | 7 | Helpers de fonte; busca do registro habilitado; listagem por temporada; seed de defaults e preservação |
 | `external/set_avatar_test.php` | 3 | Equipar/desequipar via o endpoint AJAX, rejeitando um avatar bloqueado |
 | `external/set_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de temporada |
@@ -57,7 +57,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |
 | `db_upgrade_test.php` | 4 | Passo de upgrade que remove um índice que repete uma chave: dois índices idênticos viram um, uma coluna sem índice recebe o índice da chave, um índice único é mantido; os jogos de conceito perdem a fonte glossário e a categoria |
 | `uninstall_test.php` | 2 | A desinstalação remove só as preferências de usuário do próprio plugin, pelo prefixo, e não faz nada quando não há nenhuma |
-| **Total** | **321** | |
+| **Total** | **320** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames

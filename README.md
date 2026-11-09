@@ -82,7 +82,7 @@ Found a bug or have a question? Open an issue on the
 
 * **Phaser** 4.2.1 (MIT) is bundled in `javascript/` and drives the PlayerBattle board. It is declared in `thirdpartylibs.xml`.
 * **Sounds and music:** the effects and the background music are public domain (CC0), from Kenney and RandomMind on OpenGameArt. The sources are listed in `pix/readme_moodle.txt`.
-* **Images:** the opponents, stages and board pieces were generated with Google Gemini, created for this ecosystem from original prompts. The art direction, the prompts and the review of every image are the author's, who is responsible for the content.
+* **Images:** the board pieces were generated with Google Gemini, created for this ecosystem from original prompts. The art direction, the prompts and the review of every image are the author's, who is responsible for the content.
 
 ### 📄 License
 

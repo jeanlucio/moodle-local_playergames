@@ -11,9 +11,6 @@
         "playable": true,
         "config": "{}",
         "huburl": "/local/playergames/hub.php",
-        "opponentname": "goblin",
-        "opponenturl": "/local/playergames/pix/battle/goblin.webp",
-        "stageurl": "/local/playergames/pix/battle/stage_goblin.webp",
         "str_already_played": "You have already played PlayerBattle today. Come back tomorrow!",
         "str_back_to_hub": "Back to Hub",
         "str_board_label": "Game board.",
@@ -36,8 +33,8 @@
         "str_sound": "Sound",
         "str_victory": "Victory!",
         "cards": [
-            {"side": "player", "name": "You"},
-            {"side": "opponent", "name": "Opponent"}
+            {"side": "player", "name": "You", "avatar": "🦊", "icon": "fa-user"},
+            {"side": "opponent", "name": "Opponent", "avatar": "", "icon": "fa-dragon"}
         ]
     }
 }}
@@ -67,15 +64,14 @@
     <div id="pg-battle-game" class="pg-battle" data-config="{{config}}" data-board-label="{{str_board_label}}">
         <p class="pg-battle-instructions">{{str_instructions}}</p>
 
-        <div class="pg-battle-stage">
-            <img class="pg-battle-stage-bg" src="{{stageurl}}" alt="">
-            <img class="pg-battle-opponent-img" src="{{opponenturl}}" alt="">
-        </div>
-
         <div class="pg-battle-cards">
             {{#cards}}
             <div class="pg-battle-card" data-side="{{side}}">
-                <div class="pg-battle-name">{{name}}</div>
+                <div class="pg-battle-name">
+                    {{#avatar}}<span class="pg-battle-token" aria-hidden="true">{{avatar}}</span>{{/avatar}}
+                    {{^avatar}}<i class="fa {{icon}} pg-battle-token" aria-hidden="true"></i>{{/avatar}}
+                    {{name}}
+                </div>
                 <div class="pg-battle-row">
                     <span class="pg-battle-label">{{str_hp}}</span>
                     <div class="progress" role="progressbar" aria-label="{{str_hp}}" aria-valuemin="0"

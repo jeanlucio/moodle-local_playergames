@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\battle_manager;
+use local_playergames\hub\avatar_manager;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
 use local_playergames\local\game_page;
@@ -93,14 +94,12 @@ foreach (
     $jsstrings[$key] = get_string('battle_' . $key, 'local_playergames');
 }
 
-$opponent = battle_manager::opponent_for($gamedate);
-$pixurl   = $CFG->wwwroot . '/local/playergames/pix/battle/';
-$config   = [
+$pixurl = $CFG->wwwroot . '/local/playergames/pix/battle/';
+$config = [
     'posturl'   => $formaction,
     'sesskey'   => sesskey(),
     'questions' => $questions,
     'pixurl'    => $pixurl,
-    'opponent'  => $opponent,
     'strings'   => $jsstrings,
 ];
 
@@ -127,11 +126,13 @@ echo $OUTPUT->render_from_template('local_playergames/play_battle', $strings + [
     'config'          => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
     'huburl'          => (new moodle_url('/local/playergames/hub.php'))->out(false),
     'cards'           => [
-        ['side' => 'player', 'name' => $strings['str_player']],
-        ['side' => 'opponent', 'name' => $strings['str_opponent']],
+        [
+            'side' => 'player',
+            'name' => $strings['str_player'],
+            'avatar' => avatar_manager::get_equipped((int) $USER->id),
+            'icon' => 'fa-user',
+        ],
+        ['side' => 'opponent', 'name' => $strings['str_opponent'], 'avatar' => '', 'icon' => 'fa-dragon'],
     ],
-    'opponentname'    => $opponent,
-    'opponenturl'     => $pixurl . $opponent . '.webp',
-    'stageurl'        => $pixurl . 'stage_' . $opponent . '.webp',
 ]);
 echo $OUTPUT->footer();

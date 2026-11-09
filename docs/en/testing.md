@@ -32,7 +32,7 @@ PostgreSQL & MariaDB).
 | `games/quiz_settings_test.php` | 8 | Timer, max-attempts and cooldown configuration and their interaction |
 | `games/guess_manager_test.php` | 7 | Daily concept resolution, term normalisation, Wordle-style letter feedback (including duplicate letters), guess validation |
 | `games/fill_manager_test.php` | 10 | Word count/max-attempts config clamping, shared letter→slot assignment (including disjoint terms), tile reveal state, cross-reveal cascade, per-day term ordering and filtering, POST response payload reveal rules |
-| `games/battle_manager_test.php` | 13 | PlayerBattle on the server: questions delivered ready for the browser with the text escaped once, no battle without questions, a defeat saved without XP and without spending the play, a victory with the season XP (also past the quota, with none), the best result of the day, a battle accepted once, counters kept in range, only the questions delivered counted as seen, the opponent of the day |
+| `games/battle_manager_test.php` | 12 | PlayerBattle on the server: questions delivered ready for the browser with the text escaped once, no battle without questions, a defeat saved without XP and without spending the play, a victory with the season XP (also past the quota, with none), the best result of the day, a battle accepted once, counters kept in range, only the questions delivered counted as seen |
 | `games/season_game_config_test.php` | 7 | Source helpers; enabled-record lookup; per-season listing; default seeding and preservation |
 | `external/set_avatar_test.php` | 3 | Equip/unequip via the AJAX endpoint, rejecting a locked avatar |
 | `external/set_ranking_visibility_test.php` | 2 | Season ranking opt-in/opt-out toggle |
@@ -56,7 +56,7 @@ PostgreSQL & MariaDB).
 | `event/events_test.php` | 1 | All nine events trigger, are captured and render a description |
 | `db_upgrade_test.php` | 4 | Upgrade step that removes an index duplicating a key: two identical indexes become one, a column with no index gets the key's index, a single index is left alone; concept games lose the glossary source and the category |
 | `uninstall_test.php` | 2 | Uninstall removes only the plugin's own prefixed user preferences, and does nothing when there are none |
-| **Total** | **321** | |
+| **Total** | **320** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames

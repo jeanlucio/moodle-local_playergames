@@ -1,6 +1,6 @@
 # ⚔️ Como o PlayerBattle Funciona
 
-O PlayerBattle é o minijogo diário de combinar peças (match-3). O jogador enfrenta o oponente do dia num
+O PlayerBattle é o minijogo diário de combinar peças (match-3). O jogador enfrenta um oponente num
 tabuleiro 8×8: alinhar peças fere o oponente, e o **Orbe** traz uma questão — acertar causa um golpe
 crítico. As questões vêm das mesmas fontes do PlayerQuiz.
 

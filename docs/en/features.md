@@ -44,8 +44,8 @@
 * 📝 **PlayerFill:** Daily crossword-style mini-game — numbered positions; the same number shares
   the same letter across multiple terms; solving one reveals letters in others (cascade effect).
   Grid generated in PHP without external libraries — see [How PlayerFill Works](#playerfill).
-* ⚔️ **PlayerBattle:** Daily match-3 RPG mini-game — an 8×8 board, turn-based combat against the
-  opponent of the day, and a question whenever the mana bar fills; a right answer lands a critical
+* ⚔️ **PlayerBattle:** Daily match-3 RPG mini-game — an 8×8 board, turn-based combat against an
+  opponent, and a question whenever the mana bar fills; a right answer lands a critical
   hit. XP only for a victory — see [How PlayerBattle Works](#playerbattle).
 * 🧭 **Administration tab:** Cards for everything an administrator sets up — cartridges, seasons,
   the games of a season, the rules — in the order it is done, each saying what it does and where
@@ -60,7 +60,7 @@
   weekly retention task removes older ones.
 * 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of
   all stored personal data; shared cartridges are preserved with the uploader anonymised.
-* 🧪 **Automated Tests:** 321-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
+* 🧪 **Automated Tests:** 320-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
   across the full CI matrix, Moodle 4.5 to 5.3 (see the [Automated Tests](#testing) section).
 
 ## ⏳ In Development / Planned

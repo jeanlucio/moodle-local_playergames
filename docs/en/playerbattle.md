@@ -1,6 +1,6 @@
 # ⚔️ How PlayerBattle Works
 
-PlayerBattle is the daily match-3 mini-game. The player fights the opponent of the day on an 8×8 board:
+PlayerBattle is the daily match-3 mini-game. The player fights an opponent on an 8×8 board:
 lining up pieces hurts the opponent, and the **Orb** brings a question — a right answer lands a critical
 hit. The questions come from the same sources as PlayerQuiz.
 

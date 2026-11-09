@@ -44,24 +44,11 @@ class battle_manager {
     /** @var int Questions loaded for a battle. The mana orb keeps asking from them, repeating when they run out. */
     public const QUESTIONS_PER_BATTLE = 10;
 
-    /** @var string[] The opponents, each with an image and a stage in pix/battle. One is chosen per day. */
-    public const OPPONENTS = ['goblin', 'wolf', 'slime'];
-
     /** @var int Upper bound for the answered-questions counter a client can report. */
     private const MAX_QUESTIONS_ANSWERED = 200;
 
     /** @var int Upper bound for the damage dealt a client can report. */
     private const MAX_DAMAGE_DEALT = 1000000;
-
-    /**
-     * The opponent everyone faces on a day.
-     *
-     * @param int $gamedate Midnight timestamp of the day.
-     * @return string One of {@see self::OPPONENTS}.
-     */
-    public static function opponent_for(int $gamedate): string {
-        return self::OPPONENTS[crc32(date('Ymd', $gamedate)) % count(self::OPPONENTS)];
-    }
 
     /**
      * Opens a battle for the user and returns its questions, ready to send to the browser.
