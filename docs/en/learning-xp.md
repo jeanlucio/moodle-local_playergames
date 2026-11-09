@@ -22,7 +22,7 @@ recomputes every user's windowed total to correct any drift and drop buckets tha
 
 Learning XP is shown only when **both** are true:
 - the admin has turned it on (*Site administration → Plugins → Local plugins → PlayerGames →
-  Learning XP*), and
+  Rules → Learning XP*), and
 - the site's participant setting allows students (`students` or `both`).
 
 Unlike most other student-facing features, visibility is **not** tied to whether the viewer is

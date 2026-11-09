@@ -23,8 +23,8 @@ descartar blocos que já saíram da janela.
 ## Visibilidade
 
 O XP de Aprendizado só é exibido quando **ambas** as condições são verdadeiras:
-- o admin ativou (*Administração do site → Plugins → Plugins locais → PlayerGames → XP de
-  Aprendizado*), e
+- o admin ativou (*Administração do site → Plugins → Plugins locais → PlayerGames → Regras →
+  XP de aprendizado*), e
 - a configuração de participantes do site permite estudantes (`students` ou `both`).
 
 Diferente da maioria das outras funcionalidades voltadas ao estudante, a visibilidade **não**

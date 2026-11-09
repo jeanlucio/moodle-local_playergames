@@ -8,9 +8,10 @@
 3. Renomeie para `playergames` (se necessário).
    Caminho final: `seu-moodle/local/playergames/`
 4. Acesse **Administração do site → Notificações** para concluir a instalação.
-5. Vá em **Administração do site → Plugins → Plugins locais → PlayerGames** para configurar
-   temporada, XP, avatares e regras dos jogos.
-6. Crie a primeira temporada na página **Gerenciar Temporadas**.
+5. Abra a aba **Administração** do PlayerGames (ou **Administração do site → Plugins → Plugins
+   locais → PlayerGames**) e siga os cards em ordem: crie um cartucho, crie e ative a primeira
+   temporada e escolha os jogos que ela roda. As regras de XP, níveis, avatares e jogos têm padrões
+   que funcionam, e você pode revisá-las em **Regras** — veja [Administração](#administration).
 7. Opcional: instale o **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)** se
    quiser geração de cartuchos assistida por IA com chaves pessoais/de site — ver
    [Cadeia de Provedores de IA](#ai-provider-chain).

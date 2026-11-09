@@ -31,7 +31,7 @@ exemplo, um hífen, nunca é atribuído a um dia de PlayerGuess.
 
 ## Configurações do administrador
 
-*Administração do site → Plugins → Plugins locais → PlayerGames → Regras dos jogos*
+*Administração do site → Plugins → Plugins locais → PlayerGames → Regras → Regras dos jogos*
 
 | Configuração | Padrão | O que faz |
 |---|---|---|
@@ -39,7 +39,7 @@ exemplo, um hífen, nunca é atribuído a um dia de PlayerGuess.
 | **Comprimento mínimo do termo** | 4 | Menor termo elegível para a atribuição diária. |
 | **Comprimento máximo do termo** | 8 | Maior termo elegível para a atribuição diária. |
 
-*Administração do site → Plugins → Plugins locais → PlayerGames → XP e recompensas*
+*Administração do site → Plugins → Plugins locais → PlayerGames → Regras → XP dos jogos*
 
 | Configuração | Padrão | O que faz |
 |---|---|---|

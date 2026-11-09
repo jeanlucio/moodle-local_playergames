@@ -44,7 +44,7 @@ partidas hoje* vs *qual o tamanho do baralho de cada partida*.
 
 ## Configurações do administrador
 
-*Administração do site → Plugins → Plugins locais → PlayerGames → Regras dos jogos*
+*Administração do site → Plugins → Plugins locais → PlayerGames → Regras → Regras dos jogos*
 
 | Configuração | Padrão | O que faz |
 |---|---|---|

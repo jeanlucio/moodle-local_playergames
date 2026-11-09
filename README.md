@@ -26,9 +26,9 @@ streak), an **Ecosystem Dashboard**, daily concept-reinforcement mini-games powe
 cartridges, and a companion sidebar block (`block_playergames`).
 
 📚 **[Full documentation](https://jeanlucio.github.io/moodle-local_playergames/)** — features,
-the AI provider chain, the cartridge format, how PlayerQuiz and PlayerGuess work, avatars,
-learning XP, ranking behavior, the educational purpose, the PlayerGames ecosystem, the full
-232-case test suite, and third-party service disclosure.
+the Administration tab, the AI provider chain, the cartridge format, how the daily games (PlayerQuiz,
+PlayerGuess, PlayerFill and PlayerBattle) work, avatars, learning XP, ranking behavior, the educational
+purpose, the PlayerGames ecosystem, the full test suite, and third-party service disclosure.
 
 ### 🔎 Third-party Service Disclosure
 
@@ -68,9 +68,10 @@ Full disclosure:
    Final path:
    `your-moodle/local/playergames/`
 4. Visit **Site administration > Notifications** to complete installation.
-5. Go to **Site administration > Plugins > Local plugins > PlayerGames** to configure season, XP,
-   avatar and game-rule settings.
-6. Create the first season via the **Season Management** page.
+5. Open the **Administration** tab of PlayerGames (or **Site administration > Plugins > Local
+   plugins > PlayerGames**) and follow its cards in order: create a cartridge, create and activate
+   the first season, and choose the games it runs. The XP, level, avatar and game rules have working
+   defaults you can review under **Rules**.
 
 ### 🆘 Support
 
@@ -107,10 +108,10 @@ streak), um **Dashboard do Ecossistema**, minijogos diários de reforço de conc
 por cartuchos de conteúdo, e um bloco companheiro de sidebar (`block_playergames`).
 
 📚 **[Documentação completa](https://jeanlucio.github.io/moodle-local_playergames/pt.html)** —
-funcionalidades, a cadeia de provedores de IA, o formato do cartucho, como o PlayerQuiz e o
-PlayerGuess funcionam, avatares, XP de aprendizado, como o ranking funciona, a finalidade
-educacional, o ecossistema PlayerGames, a suíte completa de 232 testes, e a divulgação de
-serviço de terceiros.
+funcionalidades, a aba Administração, a cadeia de provedores de IA, o formato do cartucho, como os
+jogos diários (PlayerQuiz, PlayerGuess, PlayerFill e PlayerBattle) funcionam, avatares, XP de
+aprendizado, como o ranking funciona, a finalidade educacional, o ecossistema PlayerGames, a suíte
+completa de testes, e a divulgação de serviço de terceiros.
 
 ### 🔎 Divulgação de Serviço de Terceiros
 
@@ -150,9 +151,10 @@ Divulgação completa:
    Caminho final:
    `seu-moodle/local/playergames/`
 4. Acesse **Administração do site > Notificações** para concluir a instalação.
-5. Vá em **Administração do site > Plugins > Plugins locais > PlayerGames** para configurar
-   temporada, XP, avatares e regras dos jogos.
-6. Crie a primeira temporada na página **Gerenciar Temporadas**.
+5. Abra a aba **Administração** do PlayerGames (ou **Administração do site > Plugins > Plugins
+   locais > PlayerGames**) e siga os cards em ordem: crie um cartucho, crie e ative a primeira
+   temporada e escolha os jogos que ela roda. As regras de XP, níveis, avatares e jogos têm padrões
+   que funcionam, e você pode revisá-las em **Regras**.
 
 ### 🆘 Suporte
 

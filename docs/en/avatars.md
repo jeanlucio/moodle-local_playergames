@@ -27,7 +27,7 @@ avatar away.
 | 4 | 20 |
 
 Admins can change each tier's minimum level independently
-(*Site administration → Plugins → Local plugins → PlayerGames → Avatars*).
+(*Site administration → Plugins → Local plugins → PlayerGames → Rules → Avatars*).
 
 ## Equip and display
 

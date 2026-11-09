@@ -40,7 +40,7 @@ rather than starting an undersized puzzle.
 
 ## Admin settings
 
-*Site administration → Plugins → Local plugins → PlayerGames → Game rules*
+*Site administration → Plugins → Local plugins → PlayerGames → Rules → Game rules*
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -49,7 +49,7 @@ rather than starting an undersized puzzle.
 | **Fill minimum term length** | 3 | Shortest term eligible for the daily assignment. |
 | **Fill maximum term length** | 12 | Longest term eligible for the daily assignment. |
 
-*Site administration → Plugins → Local plugins → PlayerGames → XP and rewards*
+*Site administration → Plugins → Local plugins → PlayerGames → Rules → Game XP*
 
 | Setting | Default | What it does |
 |---|---|---|

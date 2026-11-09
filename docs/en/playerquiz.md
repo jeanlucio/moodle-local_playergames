@@ -43,7 +43,7 @@ round's deck is*.
 
 ## Admin settings
 
-*Site administration → Plugins → Local plugins → PlayerGames → Game rules*
+*Site administration → Plugins → Local plugins → PlayerGames → Rules → Game rules*
 
 | Setting | Default | What it does |
 |---|---|---|

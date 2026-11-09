@@ -30,7 +30,7 @@ assigned to a PlayerGuess day.
 
 ## Admin settings
 
-*Site administration → Plugins → Local plugins → PlayerGames → Game rules*
+*Site administration → Plugins → Local plugins → PlayerGames → Rules → Game rules*
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -38,7 +38,7 @@ assigned to a PlayerGuess day.
 | **Minimum term length** | 4 | Shortest term eligible for the daily assignment. |
 | **Maximum term length** | 8 | Longest term eligible for the daily assignment. |
 
-*Site administration → Plugins → Local plugins → PlayerGames → XP and rewards*
+*Site administration → Plugins → Local plugins → PlayerGames → Rules → Game XP*
 
 | Setting | Default | What it does |
 |---|---|---|

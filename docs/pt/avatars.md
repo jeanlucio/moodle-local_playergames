@@ -28,7 +28,7 @@ avatar já desbloqueado.
 | 4 | 20 |
 
 Admins podem alterar o nível mínimo de cada faixa independentemente
-(*Administração do site → Plugins → Plugins locais → PlayerGames → Avatares*).
+(*Administração do site → Plugins → Plugins locais → PlayerGames → Regras → Avatares*).
 
 ## Equipar e exibir
 
