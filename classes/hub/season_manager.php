@@ -234,6 +234,78 @@ class season_manager {
     }
 
     /**
+     * Renames a season and, unless it is closed, changes its dates.
+     *
+     * The dates of a closed season are history, so only its name changes. The
+     * status is never touched here: activating and closing have their own methods.
+     *
+     * @param int $seasonid
+     * @param string $name New display name.
+     * @param int $startdate Unix timestamp of the start, ignored for a closed season.
+     * @param int $enddate Unix timestamp of the end, ignored for a closed season.
+     * @return void
+     * @throws \moodle_exception When the end does not come after the start.
+     */
+    public static function update(int $seasonid, string $name, int $startdate, int $enddate): void {
+        global $DB;
+        $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+
+        $record = new stdClass();
+        $record->id = $seasonid;
+        $record->name = $name;
+        if ($season->status !== self::STATUS_CLOSED) {
+            if ($enddate <= $startdate) {
+                throw new \moodle_exception('error_season_invalid_dates', 'local_playergames');
+            }
+            $record->startdate = $startdate;
+            $record->enddate = $enddate;
+        }
+        $record->timemodified = time();
+        $DB->update_record('local_playergames_seasons', $record);
+    }
+
+    /**
+     * Deletes a season that is not active, with everything the hub stored for it.
+     *
+     * Removes the player profiles (XP, streak of that season), mission progress, battle results and
+     * game settings of the season. The daily scores are kept by date, not by season, so they go
+     * only when no other season covers the same days. The active season cannot be deleted, as the
+     * hub would be left with no season in the middle of a day of play.
+     *
+     * @param int $seasonid
+     * @return void
+     * @throws \moodle_exception When the season is the active one.
+     */
+    public static function delete(int $seasonid): void {
+        global $DB;
+        $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+        if ($season->status === self::STATUS_ACTIVE) {
+            throw new \moodle_exception('error_season_delete_active', 'local_playergames');
+        }
+
+        $overlap = $DB->count_records_select(
+            'local_playergames_seasons',
+            'id <> :id AND startdate <= :end AND enddate >= :start',
+            ['id' => $seasonid, 'start' => $season->startdate, 'end' => $season->enddate]
+        );
+
+        $transaction = $DB->start_delegated_transaction();
+        if ($overlap === 0) {
+            $DB->delete_records_select(
+                'local_playergames_daily_scores',
+                'gamedate BETWEEN :start AND :end',
+                ['start' => $season->startdate, 'end' => $season->enddate]
+            );
+        }
+        $DB->delete_records('local_playergames_battle_scores', ['seasonid' => $seasonid]);
+        $DB->delete_records('local_playergames_mission_progress', ['seasonid' => $seasonid]);
+        $DB->delete_records('local_playergames_season_games', ['seasonid' => $seasonid]);
+        $DB->delete_records('local_playergames_player_profile', ['seasonid' => $seasonid]);
+        $DB->delete_records('local_playergames_seasons', ['id' => $seasonid]);
+        $transaction->allow_commit();
+    }
+
+    /**
      * Creates the next season inheriting the config_snapshot of the previous season.
      *
      * The new season starts the day after the previous season ended and lasts

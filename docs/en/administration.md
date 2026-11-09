@@ -13,7 +13,7 @@ open where it leads.
 | Group | Card | What it is for | Needs |
 |---|---|---|---|
 | **Get started** | Cartridges | The packs of questions and concepts the games draw from. Import a file, generate one with AI or write it by hand. | Manage cartridges |
-| | Seasons | The period in which students earn XP and compete in the ranking. Create, activate and close seasons. | Site administrator |
+| | Seasons | The period in which students earn XP and compete in the ranking. Create, edit, activate, close and delete seasons. | Site administrator |
 | | Season games | Which games run in the season and where the questions of each one come from (PlayerGuess and PlayerFill always use concept cartridges). | Site administrator |
 | **Rules** | Participation and seasons | Who plays (students, teaching staff or both), whether seasons renew by themselves and how long they last. | Site administrator |
 | | Game XP | How much XP each game gives and how many times a day it can be played for XP. | Site administrator |
@@ -37,6 +37,16 @@ The Engagement Meter and the Plugin ecosystem are not cards: they already have a
 
 When there is no active season, the Player Hub tells the administrator so and offers a button to the
 seasons page.
+
+### Editing and deleting a season
+
+On the seasons page each season has **Edit** and, unless it is the active one, **Delete**.
+
+* **Edit** changes the name and the dates. A closed season keeps its dates, as they are history; only its
+  name changes. The status is never changed here — use **Activate** and **Close season** for that.
+* **Delete** asks for confirmation and removes the season with its game settings and the XP, missions and
+  results of its players. The daily scores of those days go too, unless another season covers the same
+  days. The active season cannot be deleted: close it first. Deleting cannot be undone.
 
 ## The same order in the Moodle administration
 

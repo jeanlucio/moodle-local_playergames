@@ -13,7 +13,7 @@ o destino dele.
 | Grupo | Card | Para que serve | Exige |
 |---|---|---|---|
 | **Começar** | Cartuchos | Os pacotes de questões e conceitos de onde os jogos tiram o conteúdo. Importe um arquivo, gere com IA ou crie à mão. | Gerenciar cartuchos |
-| | Temporadas | O período em que os estudantes acumulam XP e disputam o ranking. Crie, ative e encerre as temporadas. | Administrador do site |
+| | Temporadas | O período em que os estudantes acumulam XP e disputam o ranking. Crie, edite, ative, encerre e exclua as temporadas. | Administrador do site |
 | | Jogos da temporada | Quais jogos rodam na temporada e de onde vêm as questões de cada um (PlayerGuess e PlayerFill usam sempre cartuchos de conceitos). | Administrador do site |
 | **Regras** | Participação e temporadas | Quem joga (estudantes, corpo docente ou ambos), se as temporadas se renovam sozinhas e quanto duram. | Administrador do site |
 | | XP dos jogos | Quanto XP cada jogo dá e quantas vezes por dia ele rende XP. | Administrador do site |
@@ -37,6 +37,16 @@ O Engajômetro e o Ecossistema de Plugins não são cards: já têm aba própria
 
 Quando não há temporada ativa, o Player Hub avisa o administrador e oferece um botão para a página de
 temporadas.
+
+### Editar e excluir uma temporada
+
+Na página de temporadas cada temporada tem **Editar** e, exceto a ativa, **Excluir**.
+
+* **Editar** muda o nome e as datas. Uma temporada encerrada mantém as datas, que são histórico; só o nome
+  muda. O status nunca muda aqui — use **Ativar** e **Encerrar temporada** para isso.
+* **Excluir** pede confirmação e remove a temporada com as configurações dos jogos e o XP, as missões e os
+  resultados dos jogadores dela. As pontuações diárias desses dias também saem, a menos que outra temporada
+  cubra os mesmos dias. A temporada ativa não pode ser excluída: encerre-a primeiro. Não dá para desfazer.
 
 ## A mesma ordem na administração do Moodle
 

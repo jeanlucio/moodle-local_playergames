@@ -59,13 +59,13 @@
   equipado, nível, XP, streak, jogos do dia e posição no ranking do usuário na página inicial do
   site e no Painel, com link para o Player Hub completo; enquanto não há temporada ativa, ele avisa e
   diz quando a próxima começa — ver [Ecossistema PlayerGames](#ecosystem).
-* 📅 **Gerenciamento de Temporadas:** Criar, fechar e renovar automaticamente temporadas com
+* 📅 **Gerenciamento de Temporadas:** Criar, editar, fechar, excluir e renovar automaticamente temporadas com
   snapshots de configuração. As pontuações das temporadas encerradas mais recentes são mantidas (duas
   por padrão, configurável); a tarefa semanal de retenção remove as mais antigas.
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.
-* 🧪 **Testes Automatizados:** Suíte PHPUnit com 315 casos e 42 testes Node para as regras do
+* 🧪 **Testes Automatizados:** Suíte PHPUnit com 321 casos e 42 testes Node para as regras do
   PlayerBattle, verdes na matriz completa do CI, Moodle 4.5 a 5.3 (ver a seção
   [Testes Automatizados](#testing)).
 

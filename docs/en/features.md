@@ -55,12 +55,12 @@
   equipped avatar, level, XP, streak, today's games, and ranking position on the site front page
   and Dashboard, linking to the full Player Hub; while no season is active it says so, and tells
   when the next one starts — see [PlayerGames Ecosystem](#ecosystem).
-* 📅 **Season Management:** Create, close, and auto-renew seasons with configuration snapshots.
+* 📅 **Season Management:** Create, edit, close, delete and auto-renew seasons with configuration snapshots.
   The scores of the most recent closed seasons are kept (two by default, configurable); the
   weekly retention task removes older ones.
 * 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of
   all stored personal data; shared cartridges are preserved with the uploader anonymised.
-* 🧪 **Automated Tests:** 315-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
+* 🧪 **Automated Tests:** 321-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
   across the full CI matrix, Moodle 4.5 to 5.3 (see the [Automated Tests](#testing) section).
 
 ## ⏳ In Development / Planned

@@ -22,7 +22,7 @@ PostgreSQL & MariaDB).
 | `hub/checkin_manager_test.php` | 11 | Check-in insert + XP award, idempotency, season cap, optional streak advance, participant eligibility |
 | `hub/served_questions_test.php` | 3 | Per-day "already shown" set grouped by source, idempotent scoping, invalid items ignored |
 | `hub/streak_manager_test.php` | 12 | Streak start/continue/reset, freeze consumption, overnight break processing |
-| `hub/season_manager_test.php` | 9 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next`; whether any season exists |
+| `hub/season_manager_test.php` | 15 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next`; whether any season exists; editing (a closed season keeps its dates), deleting only a season's own data, the active season refused |
 | `hub/mission_manager_test.php` | 7 | Mission sync, progress/completion with XP reward, daily and missed check-in resets |
 | `hub/achievement_manager_test.php` | 6 | Achievement sync, granting (first game/level/all-games-day), idempotency |
 | `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |
@@ -56,7 +56,7 @@ PostgreSQL & MariaDB).
 | `event/events_test.php` | 1 | All nine events trigger, are captured and render a description |
 | `db_upgrade_test.php` | 4 | Upgrade step that removes an index duplicating a key: two identical indexes become one, a column with no index gets the key's index, a single index is left alone; concept games lose the glossary source and the category |
 | `uninstall_test.php` | 2 | Uninstall removes only the plugin's own prefixed user preferences, and does nothing when there are none |
-| **Total** | **315** | |
+| **Total** | **321** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames

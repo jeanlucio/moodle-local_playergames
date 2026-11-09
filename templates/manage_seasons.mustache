@@ -33,6 +33,11 @@
                 "players": 12,
                 "canactivate": false,
                 "canclose": true,
+                "candelete": false,
+                "editurl": "/local/playergames/manage_seasons.php?action=edit&seasonid=1",
+                "deleteurl": "/local/playergames/manage_seasons.php?action=delete&seasonid=1",
+                "editlabel": "Edit season Season 1",
+                "deletelabel": "Delete season Season 1",
                 "gameconfigurl": "/local/playergames/manage_season_games.php?seasonid=1"
             }
         ],
@@ -42,7 +47,15 @@
         "defaultname": "Season 2",
         "defaultstart": "2026-07-01",
         "defaultend": "2026-12-31",
-        "str_create": "Create new season",
+        "formtitle": "Create new season",
+        "formaction_name": "create",
+        "formseasonid": 0,
+        "editing": false,
+        "lockdates": false,
+        "cancelurl": "/local/playergames/manage_seasons.php",
+        "str_edit": "Edit",
+        "str_delete": "Delete",
+        "str_cancel": "Cancel",
         "str_name": "Season name",
         "str_startdate": "Start date",
         "str_enddate": "End date",
@@ -62,12 +75,15 @@
 
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="card-title mb-0">{{str_create}}</h3>
+            <h3 class="card-title mb-0">{{formtitle}}</h3>
         </div>
         <div class="card-body">
             <form method="post" action="{{formaction}}">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <input type="hidden" name="action" value="create">
+                <input type="hidden" name="action" value="{{formaction_name}}">
+                {{#editing}}
+                <input type="hidden" name="seasonid" value="{{formseasonid}}">
+                {{/editing}}
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label for="pg-season-name" class="form-label">{{str_name}}</label>
@@ -85,7 +101,8 @@
                                name="startdate"
                                class="form-control"
                                value="{{defaultstart}}"
-                               required>
+                               {{#lockdates}}disabled{{/lockdates}}
+                               {{^lockdates}}required{{/lockdates}}>
                     </div>
                     <div class="col-md-3">
                         <label for="pg-season-end" class="form-label">{{str_enddate}}</label>
@@ -94,10 +111,14 @@
                                name="enddate"
                                class="form-control"
                                value="{{defaultend}}"
-                               required>
+                               {{#lockdates}}disabled{{/lockdates}}
+                               {{^lockdates}}required{{/lockdates}}>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100">{{str_save}}</button>
+                        {{#editing}}
+                        <a href="{{cancelurl}}" class="btn btn-outline-secondary ms-2">{{str_cancel}}</a>
+                        {{/editing}}
                     </div>
                 </div>
             </form>
@@ -144,6 +165,16 @@
                             </button>
                         </form>
                         {{/canactivate}}
+                        <a href="{{editurl}}" class="btn btn-sm btn-outline-secondary me-1" aria-label="{{editlabel}}">
+                            <i class="fa fa-pencil me-1" aria-hidden="true"></i>
+                            {{str_edit}}
+                        </a>
+                        {{#candelete}}
+                        <a href="{{deleteurl}}" class="btn btn-sm btn-outline-danger me-1" aria-label="{{deletelabel}}">
+                            <i class="fa fa-trash me-1" aria-hidden="true"></i>
+                            {{str_delete}}
+                        </a>
+                        {{/candelete}}
                         {{#canclose}}
                         <form method="post" action="{{formaction}}" class="d-inline">
                             <input type="hidden" name="sesskey" value="{{sesskey}}">

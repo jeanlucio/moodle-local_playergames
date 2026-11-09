@@ -23,7 +23,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/checkin_manager_test.php` | 11 | Insert do check-in + concessão de XP, idempotência, cap de temporada, avanço opcional de streak, elegibilidade de participante |
 | `hub/served_questions_test.php` | 3 | Conjunto "já exibido" do dia agrupado por fonte, escopo idempotente, itens inválidos ignorados |
 | `hub/streak_manager_test.php` | 12 | Início/continuação/reset de streak, consumo de freeze, processamento de quebra |
-| `hub/season_manager_test.php` | 9 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next`; se existe alguma temporada |
+| `hub/season_manager_test.php` | 15 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next`; se existe alguma temporada; edição (a encerrada mantém as datas), exclusão só dos dados da própria temporada, a ativa recusada |
 | `hub/mission_manager_test.php` | 7 | Sync de missão, progresso/conclusão com recompensa de XP, resets diário e de check-in perdido |
 | `hub/achievement_manager_test.php` | 6 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
@@ -57,7 +57,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |
 | `db_upgrade_test.php` | 4 | Passo de upgrade que remove um índice que repete uma chave: dois índices idênticos viram um, uma coluna sem índice recebe o índice da chave, um índice único é mantido; os jogos de conceito perdem a fonte glossário e a categoria |
 | `uninstall_test.php` | 2 | A desinstalação remove só as preferências de usuário do próprio plugin, pelo prefixo, e não faz nada quando não há nenhuma |
-| **Total** | **315** | |
+| **Total** | **321** | |
 
 ```bash
 vendor/bin/phpunit --testsuite local_playergames
