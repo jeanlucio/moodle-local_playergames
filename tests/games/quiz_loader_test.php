@@ -263,4 +263,52 @@ final class quiz_loader_test extends \advanced_testcase {
 
         $this->assertCount(2, $questions);
     }
+
+    /**
+     * Creates a multiple-choice question with one right answer and four wrong ones in a category.
+     *
+     * @param int $categoryid The category.
+     * @return void
+     */
+    private function add_bank_question(int $categoryid): void {
+        global $DB;
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
+            ->create_question('multichoice', 'one_of_four', ['category' => $categoryid]);
+        $DB->insert_record('question_answers', (object) [
+            'question' => $question->id, 'answer' => 'Another wrong', 'answerformat' => FORMAT_HTML,
+            'fraction' => 0, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
+        ]);
+    }
+
+    /**
+     * Regression test: the question bank source reads only a category kept for reuse.
+     *
+     * A category id that belongs to a course or a quiz, or no category at all, used to be read as it was
+     * given (or as the system context), which published a private bank to every player or read nothing.
+     */
+    public function test_question_bank_source_reads_only_a_category_kept_for_reuse(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        if ($DB->get_manager()->table_exists('qbank')) {
+            $bank = $generator->create_module('qbank', ['course' => $course->id]);
+            $sharedcontext = \context_module::instance($bank->cmid);
+        } else {
+            $sharedcontext = \context_system::instance();
+        }
+        $qgen = $generator->get_plugin_generator('core_question');
+        $shared = $qgen->create_question_category(['contextid' => $sharedcontext->id]);
+        $quiz = $generator->create_module('quiz', ['course' => $course->id]);
+        $private = $qgen->create_question_category(['contextid' => \context_module::instance($quiz->cmid)->id]);
+        $this->add_bank_question((int) $shared->id);
+        $this->add_bank_question((int) $private->id);
+
+        $loader = new quiz_loader();
+        $source = quiz_loader::SOURCE_QUESTIONBANK;
+
+        $this->assertCount(1, $loader->load_session(10, $source, (int) $shared->id));
+        $this->assertSame([], $loader->load_session(10, $source, (int) $private->id));
+        $this->assertSame([], $loader->load_session(10, $source, 0));
+    }
 }

@@ -70,14 +70,12 @@ final class season_game_config_test extends \advanced_testcase {
         $this->assertTrue(season_game_config::uses_cartridge(season_game_config::SOURCE_CARTRIDGE));
         $this->assertTrue(season_game_config::uses_cartridge(season_game_config::SOURCE_BOTH));
         $this->assertFalse(season_game_config::uses_cartridge(season_game_config::SOURCE_QUESTIONBANK));
-        $this->assertFalse(season_game_config::uses_cartridge(season_game_config::SOURCE_GLOSSARY));
     }
 
     public function test_uses_secondary(): void {
         $this->assertFalse(season_game_config::uses_secondary(season_game_config::SOURCE_CARTRIDGE));
         $this->assertTrue(season_game_config::uses_secondary(season_game_config::SOURCE_BOTH));
         $this->assertTrue(season_game_config::uses_secondary(season_game_config::SOURCE_QUESTIONBANK));
-        $this->assertTrue(season_game_config::uses_secondary(season_game_config::SOURCE_GLOSSARY));
     }
 
     public function test_get_for_active_season_without_season(): void {

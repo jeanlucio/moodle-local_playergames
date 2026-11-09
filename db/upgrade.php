@@ -918,5 +918,18 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026101501, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026110904) {
+        // The page that sets each game's source offered the glossary to PlayerGuess and PlayerFill and a
+        // category id to all of them, but no game ever read the glossary: those two draw only from
+        // cartridges. What was saved for them is put as they behave, and a source that no longer exists
+        // is dropped for every game. The category a quiz game saved is left: it is checked when it is read.
+        $conceptgames = "gametype IN ('guess', 'fill')";
+        $DB->set_field_select('local_playergames_season_games', 'source', 'cartridge', "$conceptgames AND source <> 'cartridge'");
+        $DB->set_field_select('local_playergames_season_games', 'auxid', 0, "$conceptgames AND auxid <> 0");
+        $DB->set_field_select('local_playergames_season_games', 'source', 'cartridge', "source = 'glossary'");
+
+        upgrade_plugin_savepoint(true, 2026110904, 'local', 'playergames');
+    }
+
     return true;
 }

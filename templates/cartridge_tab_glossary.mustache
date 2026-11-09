@@ -1,0 +1,59 @@
+{{!
+    @template local_playergames/cartridge_tab_glossary
+
+    Glossary tab: copy a global glossary into a new concept cartridge.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123",
+        "hasglossaries": true,
+        "glossaries": [
+            {"id": 3, "label": "Biology terms (42)"}
+        ]
+    }
+}}
+<div class="pg-tab-glossary">
+
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-book me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_glossary_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <p>{{#str}}cartridge_glossary_intro, local_playergames{{/str}}</p>
+            {{#hasglossaries}}
+            <div class="alert alert-info" role="note">
+                <i class="fa fa-info-circle me-2" aria-hidden="true"></i>
+                {{#str}}cartridge_glossary_notice, local_playergames{{/str}}
+            </div>
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="import_glossary">
+                <input type="hidden" name="tab" value="glossary">
+                <div class="mb-3">
+                    <label for="pg-glossary-select" class="form-label">
+                        {{#str}}cartridge_glossary_select, local_playergames{{/str}}
+                    </label>
+                    <select id="pg-glossary-select" name="glossaryid" class="form-select" required>
+                        {{#glossaries}}
+                        <option value="{{id}}">{{label}}</option>
+                        {{/glossaries}}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-book me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_glossary_submit, local_playergames{{/str}}
+                </button>
+            </form>
+            {{/hasglossaries}}
+            {{^hasglossaries}}
+            <div class="alert alert-warning mb-0" role="alert">
+                <i class="fa fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                {{#str}}cartridge_glossary_none, local_playergames{{/str}}
+            </div>
+            {{/hasglossaries}}
+        </div>
+    </div>
+
+</div>{{! .pg-tab-glossary }}

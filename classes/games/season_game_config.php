@@ -36,10 +36,7 @@ class season_game_config {
     /** @var string Source: Moodle question bank only (quiz/battle). */
     const SOURCE_QUESTIONBANK = 'questionbank';
 
-    /** @var string Source: Moodle glossary only (guess/fill). */
-    const SOURCE_GLOSSARY = 'glossary';
-
-    /** @var string Source: both cartridge and secondary source. */
+    /** @var string Source: both cartridge and the question bank (quiz/battle). */
     const SOURCE_BOTH = 'both';
 
     /** @var string[] Game type keys configurable per season. */
@@ -139,7 +136,7 @@ class season_game_config {
     }
 
     /**
-     * Whether a given source value includes the secondary source (questionbank or glossary).
+     * Whether a given source value includes the question bank as a source.
      *
      * @param string $source Source constant value.
      * @return bool

@@ -120,7 +120,8 @@ final class db_upgrade_test extends advanced_testcase {
     private function run_step(): void {
         set_config('version', self::PREVIOUS_VERSION, 'local_playergames');
         $this->assertTrue(xmldb_local_playergames_upgrade(self::PREVIOUS_VERSION));
-        $this->assertEquals(self::STEP_VERSION, get_config('local_playergames', 'version'));
+        // Later steps run after this one, so the version ends at or past it.
+        $this->assertGreaterThanOrEqual(self::STEP_VERSION, (int) get_config('local_playergames', 'version'));
     }
 
     /**
@@ -181,5 +182,36 @@ final class db_upgrade_test extends advanced_testcase {
         foreach (self::COLUMNS as $table => $field) {
             $this->assertSame($before[$table], $this->indexes_on($table, $field), "{$table}.{$field} after the step");
         }
+    }
+
+    /**
+     * What was saved for the concept games is put as they behave, and a quiz game keeps its choice.
+     *
+     * @return void
+     */
+    public function test_concept_games_lose_the_glossary_source_and_the_category(): void {
+        global $DB;
+
+        $rows = [
+            ['guess', 'glossary', 5],
+            ['fill', 'both', 3],
+            ['quiz', 'questionbank', 7],
+            ['battle', 'glossary', 0],
+        ];
+        foreach ($rows as [$game, $source, $auxid]) {
+            $DB->insert_record('local_playergames_season_games', (object) [
+                'seasonid' => 1, 'gametype' => $game, 'enabled' => 1, 'source' => $source, 'auxid' => $auxid,
+            ]);
+        }
+
+        set_config('version', 2026110903, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026110903));
+        $this->assertEquals(2026110904, get_config('local_playergames', 'version'));
+
+        $saved = $DB->get_records('local_playergames_season_games', ['seasonid' => 1], '', 'gametype, source, auxid');
+        $this->assertSame(['cartridge', 0], [$saved['guess']->source, (int) $saved['guess']->auxid]);
+        $this->assertSame(['cartridge', 0], [$saved['fill']->source, (int) $saved['fill']->auxid]);
+        $this->assertSame(['questionbank', 7], [$saved['quiz']->source, (int) $saved['quiz']->auxid]);
+        $this->assertSame('cartridge', $saved['battle']->source);
     }
 }

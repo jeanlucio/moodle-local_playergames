@@ -139,6 +139,8 @@ class controller {
 
         if ($postaction === 'import_json') {
             $this->action_import_json();
+        } else if ($postaction === 'import_glossary') {
+            $this->action_import_glossary();
         } else if ($postaction === 'generate_ai') {
             $this->action_generate_ai();
         } else if ($postaction === 'save_ai_cartridge') {
@@ -213,6 +215,8 @@ class controller {
         // Level 1: ways to obtain a cartridge. Legacy 'editor' with no id falls back to 'create'.
         if ($this->tab === 'import') {
             $contenthtml = $this->render_tab_import($output, $baseurl);
+        } else if ($this->tab === 'glossary') {
+            $contenthtml = $this->render_tab_glossary($output, $baseurl);
         } else if ($this->tab === 'ai') {
             $contenthtml = $this->render_tab_ai($output, $baseurl);
         } else if ($this->tab === 'create' || $this->tab === 'editor') {
@@ -344,6 +348,29 @@ class controller {
             'sesskey' => sesskey(),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_import', $ctx);
+    }
+
+    /**
+     * Renders the tab that copies a global glossary into a cartridge.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_glossary(\renderer_base $output, string $baseurl): string {
+        $options = [];
+        foreach ((new glossary_importer())->global_glossaries() as $glossary) {
+            $options[] = [
+                'id' => (int) $glossary->id,
+                'label' => get_string('cartridge_glossary_option', 'local_playergames', $glossary),
+            ];
+        }
+        return $output->render_from_template('local_playergames/cartridge_tab_glossary', [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'glossaries' => $options,
+            'hasglossaries' => $options !== [],
+        ]);
     }
 
     /**
@@ -615,6 +642,36 @@ class controller {
         } catch (\moodle_exception $e) {
             redirect(
                 $this->url(['tab' => 'import']),
+                $e->getMessage(),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+    }
+
+    /**
+     * Handles the import_glossary POST action.
+     */
+    private function action_import_glossary(): void {
+        global $USER;
+
+        $glossaryid = required_param('glossaryid', PARAM_INT);
+        try {
+            $result = (new glossary_importer())->import($glossaryid, (int) $USER->id);
+            $event = cartridge_imported::create([
+                'context' => $this->context,
+                'objectid' => $result->cartridgeid,
+            ]);
+            $event->trigger();
+            redirect(
+                $this->url(['cartridgeid' => $result->cartridgeid]),
+                get_string('cartridge_import_success', 'local_playergames', $result),
+                null,
+                \core\output\notification::NOTIFY_SUCCESS
+            );
+        } catch (\moodle_exception $e) {
+            redirect(
+                $this->url(['tab' => 'glossary']),
                 $e->getMessage(),
                 null,
                 \core\output\notification::NOTIFY_ERROR

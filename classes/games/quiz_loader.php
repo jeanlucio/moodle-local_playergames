@@ -24,6 +24,8 @@
 
 namespace local_playergames\games;
 
+use local_playergames\local\question_bank_reuse;
+
 /**
  * Loads quiz questions from one or both configured sources and returns a
  * shuffled session-sized slice of normalised quiz_question DTOs.
@@ -35,9 +37,6 @@ class quiz_loader {
     /** @var string Draw from the Moodle question bank only. */
     const SOURCE_QUESTIONBANK = 'questionbank';
 
-    /** @var string Draw from the Moodle glossary only (not used directly by quiz_loader). */
-    const SOURCE_GLOSSARY = 'glossary';
-
     /** @var string Draw from both sources and merge. */
     const SOURCE_BOTH = 'both';
 
@@ -46,7 +45,7 @@ class quiz_loader {
      *
      * @param int $sessionsize Number of questions to return.
      * @param string $sources One of the SOURCE_* constants.
-     * @param int $qbankcategoryid Moodle question category id; 0 = system context.
+     * @param int $qbankcategoryid Question bank category id; one that is not kept for reuse, or 0, yields nothing.
      * @param string|null $cartridgeids JSON-encoded array of cartridge IDs; null = all active quiz cartridges.
      * @param array $exclude Map of source => int[] of sourceids to skip (already seen today).
      * @return quiz_question[]
@@ -236,40 +235,32 @@ class quiz_loader {
     }
 
     /**
-     * Loads multiple-choice questions from the Moodle question bank.
+     * Loads questions from the Moodle question bank.
      *
-     * When categoryid is 0, all multichoice questions in the system context are used.
-     * Questions with fewer than 4 wrong answers are skipped.
+     * Only multiple-choice questions of a category kept for reuse are drawn (see question_bank_reuse): the
+     * games are site-wide, so a category that belongs to a course or to a quiz is never read, and neither is
+     * a missing one. Questions with fewer than 4 wrong answers are skipped.
      *
      * @param int $limit Maximum number of questions to return.
-     * @param int $categoryid Moodle question category id; 0 = system context.
+     * @param int $categoryid Question bank category id.
      * @param int[] $excludeids Question ids already seen today.
      * @return quiz_question[]
      */
     private function load_from_questionbank(int $limit, int $categoryid, array $excludeids = []): array {
         global $DB;
 
-        if ($categoryid > 0) {
-            $sql = "SELECT q.id
-                      FROM {question} q
-                      JOIN {question_versions} qv ON qv.questionid = q.id
-                      JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                     WHERE qbe.questioncategoryid = :catid
-                       AND q.qtype = 'multichoice'
-                       AND qv.status = 'ready'";
-            $params = ['catid' => $categoryid];
-        } else {
-            $systemctxid = \context_system::instance()->id;
-            $sql = "SELECT q.id
-                      FROM {question} q
-                      JOIN {question_versions} qv ON qv.questionid = q.id
-                      JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                      JOIN {question_categories} qc ON qc.id = qbe.questioncategoryid
-                     WHERE qc.contextid = :ctxid
-                       AND q.qtype = 'multichoice'
-                       AND qv.status = 'ready'";
-            $params = ['ctxid' => $systemctxid];
+        if (!question_bank_reuse::is_shared($categoryid)) {
+            return [];
         }
+
+        $sql = "SELECT q.id
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE qbe.questioncategoryid = :catid
+                   AND q.qtype = 'multichoice'
+                   AND qv.status = 'ready'";
+        $params = ['catid' => $categoryid];
 
         $rows = $this->fetch_random_rows(
             $sql,

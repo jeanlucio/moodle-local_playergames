@@ -26,6 +26,8 @@ require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\season_game_config;
 use local_playergames\hub\season_manager;
+use local_playergames\local\question_bank_reuse;
+use local_playergames\local\text;
 
 require_login();
 $context = context_system::instance();
@@ -57,8 +59,8 @@ $PAGE->set_title($pagetitle);
 $PAGE->set_heading($pagetitle);
 
 // Games grouped by content family.
-// Quiz family: use quiz cartridges or Moodle question bank.
-// Concept family: use concept cartridges or Moodle glossary.
+// Quiz family: quiz cartridges, or a shared Moodle question bank category, or both.
+// Concept family: concept cartridges only.
 $gametypes = [
     ['type' => 'quiz', 'family' => 'quiz'],
     ['type' => 'battle', 'family' => 'quiz'],
@@ -66,37 +68,79 @@ $gametypes = [
     ['type' => 'fill', 'family' => 'concept'],
 ];
 
+// Load cartridges by family type.
+$quizcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'], 'name ASC', 'id, name');
+$conceptcartridges = $DB->get_records(
+    'local_playergames_cartridges',
+    ['type' => 'concept'],
+    'name ASC',
+    'id, name'
+);
+
 // POST: save configuration.
 if (data_submitted()) {
     require_sesskey();
 
+    $existingconfigs = season_game_config::get_all_for_season($seasonid);
+    $records = [];
+    $errors  = [];
     foreach ($gametypes as $game) {
         $gametype = $game['type'];
-        $enabled  = (int) optional_param('enabled_' . $gametype, 0, PARAM_INT);
-        $source   = optional_param('source_' . $gametype, season_game_config::SOURCE_CARTRIDGE, PARAM_ALPHA);
-        $rawids   = optional_param_array('cartridges_' . $gametype, [], PARAM_INT);
-        $auxid    = (int) optional_param('auxid_' . $gametype, 0, PARAM_INT);
+        $isquiz   = $game['family'] === 'quiz';
 
-        $cartridgeids = empty($rawids) ? null : json_encode(array_values(array_map('intval', $rawids)));
+        // The concept games draw only from their cartridges. The quiz games may also draw from one shared
+        // question bank category, which has to be one this user may choose: it publishes its questions to
+        // every player.
+        $source = season_game_config::SOURCE_CARTRIDGE;
+        $auxid  = 0;
+        if ($isquiz) {
+            $source = optional_param('source_' . $gametype, season_game_config::SOURCE_CARTRIDGE, PARAM_ALPHA);
+            $allowed = [
+                season_game_config::SOURCE_CARTRIDGE,
+                season_game_config::SOURCE_QUESTIONBANK,
+                season_game_config::SOURCE_BOTH,
+            ];
+            if (!in_array($source, $allowed, true)) {
+                $source = season_game_config::SOURCE_CARTRIDGE;
+            }
+            if ($source !== season_game_config::SOURCE_CARTRIDGE) {
+                $auxid = (int) optional_param('auxid_' . $gametype, 0, PARAM_INT);
+                if (!question_bank_reuse::can_choose($auxid, (int) $USER->id)) {
+                    $errors[] = get_string(
+                        'season_game_qbank_required',
+                        'local_playergames',
+                        get_string('hub_game_' . $gametype, 'local_playergames')
+                    );
+                }
+            }
+        }
 
-        $existing = $DB->get_record('local_playergames_season_games', [
-            'seasonid' => $seasonid,
-            'gametype' => $gametype,
-        ]);
+        // Only cartridges of the kind this game reads count; none ticked means all of them.
+        $family = $isquiz ? $quizcartridges : $conceptcartridges;
+        $rawids = optional_param_array('cartridges_' . $gametype, [], PARAM_INT);
+        $kept   = array_values(array_intersect(array_map('intval', $rawids), array_map('intval', array_keys($family))));
 
-        $record           = new stdClass();
-        $record->seasonid = $seasonid;
-        $record->gametype = $gametype;
-        $record->enabled  = $enabled;
-        $record->source   = $source;
-        $record->cartridgeids = $cartridgeids;
-        $record->auxid    = $auxid;
+        $records[] = [
+            'gametype'     => $gametype,
+            'enabled'      => (int) optional_param('enabled_' . $gametype, 0, PARAM_INT),
+            'source'       => $source,
+            'cartridgeids' => empty($kept) ? null : json_encode($kept),
+            'auxid'        => $auxid,
+        ];
+    }
 
-        if ($existing) {
-            $record->id = (int) $existing->id;
-            $DB->update_record('local_playergames_season_games', $record);
+    if (!empty($errors)) {
+        redirect($pageurl, implode(' ', $errors), null, \core\output\notification::NOTIFY_ERROR);
+    }
+
+    foreach ($records as $record) {
+        $row           = (object) $record;
+        $row->seasonid = $seasonid;
+        if (isset($existingconfigs[$row->gametype])) {
+            $row->id = (int) $existingconfigs[$row->gametype]->id;
+            $DB->update_record('local_playergames_season_games', $row);
         } else {
-            $DB->insert_record('local_playergames_season_games', $record);
+            $DB->insert_record('local_playergames_season_games', $row);
         }
     }
 
@@ -108,17 +152,11 @@ if (data_submitted()) {
     );
 }
 
-// Load cartridges by family type.
-$quizcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'], 'name ASC', 'id, name');
-$conceptcartridges = $DB->get_records(
-    'local_playergames_cartridges',
-    ['type' => 'concept'],
-    'name ASC',
-    'id, name'
-);
-
 // Load saved config, keyed by gametype.
 $savedconfigs = season_game_config::get_all_for_season($seasonid);
+
+// The shared question bank categories this user may choose for the quiz games.
+$choosablecategories = question_bank_reuse::categories_for_user((int) $USER->id);
 
 // Build template data for each game row.
 $gamerows = [];
@@ -146,45 +184,42 @@ foreach ($gametypes as $game) {
         ];
     }
 
-    // Source options depend on family.
+    // Source options and the question bank category exist only for the quiz games.
+    $sourceoptions = [];
+    $qbankoptions  = [];
+    $unavailable   = false;
     if ($family === 'quiz') {
-        $sourceoptions = [
+        foreach (
             [
-                'value' => season_game_config::SOURCE_CARTRIDGE,
-                'label' => get_string('season_game_source_cartridge', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE,
-            ],
-            [
-                'value' => season_game_config::SOURCE_QUESTIONBANK,
-                'label' => get_string('season_game_source_questionbank', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_QUESTIONBANK,
-            ],
-            [
-                'value' => season_game_config::SOURCE_BOTH,
-                'label' => get_string('season_game_source_both', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_BOTH,
-            ],
-        ];
-        $auxlabel = get_string('season_game_auxid_qbank', 'local_playergames');
-    } else {
-        $sourceoptions = [
-            [
-                'value' => season_game_config::SOURCE_CARTRIDGE,
-                'label' => get_string('season_game_source_cartridge', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_CARTRIDGE,
-            ],
-            [
-                'value' => season_game_config::SOURCE_GLOSSARY,
-                'label' => get_string('season_game_source_glossary', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_GLOSSARY,
-            ],
-            [
-                'value' => season_game_config::SOURCE_BOTH,
-                'label' => get_string('season_game_source_both', 'local_playergames'),
-                'selected' => $currentsource === season_game_config::SOURCE_BOTH,
-            ],
-        ];
-        $auxlabel = get_string('season_game_auxid_glossary', 'local_playergames');
+                season_game_config::SOURCE_CARTRIDGE => 'season_game_source_cartridge',
+                season_game_config::SOURCE_QUESTIONBANK => 'season_game_source_questionbank',
+                season_game_config::SOURCE_BOTH => 'season_game_source_both',
+            ] as $value => $labelkey
+        ) {
+            $sourceoptions[] = [
+                'value' => $value,
+                'label' => get_string($labelkey, 'local_playergames'),
+                'selected' => $currentsource === $value,
+            ];
+        }
+
+        $savedaux = $saved ? (int) $saved->auxid : 0;
+        foreach ($choosablecategories as $category) {
+            $label = text::plain($category->name);
+            if ($category->bank !== '') {
+                $label = text::plain($category->bank) . ': ' . $label;
+            }
+            $qbankoptions[] = [
+                'id'       => (int) $category->id,
+                'label'    => get_string('season_game_qbank_option', 'local_playergames', (object) [
+                    'name' => $label,
+                    'count' => $category->questions,
+                ]),
+                'selected' => (int) $category->id === $savedaux,
+            ];
+        }
+        // A category saved earlier that can no longer be chosen is not read by the game either.
+        $unavailable = $savedaux > 0 && !isset($choosablecategories[$savedaux]);
     }
 
     $gamerows[] = [
@@ -192,20 +227,18 @@ foreach ($gametypes as $game) {
         'gamename'        => get_string('hub_game_' . $gametype, 'local_playergames'),
         'family'          => $family,
         'enabled'         => $saved ? (bool) $saved->enabled : true,
+        'hassource'       => $family === 'quiz',
         'sourceoptions'   => $sourceoptions,
         'cartridges'      => $cartridgerows,
         'nocartridges'    => empty($cartridgerows),
-        'auxid'           => $saved ? (int) $saved->auxid : 0,
-        'auxlabel'        => $auxlabel,
-        'showsecondary'   => $currentsource !== season_game_config::SOURCE_CARTRIDGE,
-        'showcartridges'  => $currentsource !== ($family === 'quiz'
-                                ? season_game_config::SOURCE_QUESTIONBANK
-                                : season_game_config::SOURCE_GLOSSARY),
+        'hasqbank'        => $family === 'quiz',
+        'qbankoptions'    => $qbankoptions,
+        'qbankunavailable' => $unavailable,
     ];
 }
 
 $templatedata = [
-    'seasonname'   => \local_playergames\local\text::plain($season->name),
+    'seasonname'   => text::plain($season->name),
     'formaction'   => $pageurl->out(false),
     'sesskey'      => sesskey(),
     'gamerows'     => $gamerows,
@@ -216,9 +249,14 @@ $templatedata = [
     'str_cartridges' => get_string('season_game_cartridges', 'local_playergames'),
     'str_cartridges_all' => get_string('season_game_cartridges_all', 'local_playergames'),
     'str_nocartridges' => get_string('season_game_cartridges_none', 'local_playergames'),
-    'str_auxhint'  => get_string('season_game_auxid_hint', 'local_playergames'),
+    'str_cartridge_only' => get_string('season_game_cartridge_only', 'local_playergames'),
+    'str_qbank'    => get_string('season_game_qbank', 'local_playergames'),
+    'str_qbank_choose' => get_string('season_game_qbank_choose', 'local_playergames'),
+    'str_qbank_none' => get_string('season_game_qbank_none', 'local_playergames'),
+    'str_qbank_hint' => get_string('season_game_qbank_hint', 'local_playergames'),
+    'str_qbank_unavailable' => get_string('season_game_qbank_unavailable', 'local_playergames'),
     'str_save'     => get_string('savechanges'),
-    'str_heading'  => get_string('season_game_heading', 'local_playergames', \local_playergames\local\text::plain($season->name)),
+    'str_heading'  => get_string('season_game_heading', 'local_playergames', text::plain($season->name)),
 ];
 
 echo $OUTPUT->header();
