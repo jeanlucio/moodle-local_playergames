@@ -114,6 +114,19 @@ jobs:
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci grunt --max-lint-warnings 0
 
+      - name: Set up Node for the battle rules tests
+        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # The PlayerBattle board and combat rules are UMD modules under amd/src/battle/, so they
+      # run headless here, without a Moodle or Phaser runtime.
+      - name: JS unit tests
+        if: ${{ !cancelled() && matrix.runchecks == 'all' }}
+        working-directory: plugin
+        run: node --test tests/js/battle/*.test.js
+
       - name: PHPUnit tests
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpunit --fail-on-warning
