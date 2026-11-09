@@ -33,23 +33,18 @@ if ($hassiteconfig) {
         )
     );
 
-    $ADMIN->add(
-        'playergames',
-        new admin_category(
-            'playergames_settings',
-            get_string('admin_category_settings', 'local_playergames')
-        )
-    );
+    // The groups follow the order an administrator works in: first the content and the season, then
+    // the rules, then how it is going. The Administration tab shows the same groups.
+    foreach (['start', 'rules', 'followup'] as $group) {
+        $ADMIN->add(
+            'playergames',
+            new admin_category(
+                'playergames_' . $group,
+                get_string('admin_group_' . $group, 'local_playergames')
+            )
+        );
+    }
 
-    $ADMIN->add(
-        'playergames',
-        new admin_category(
-            'playergames_management',
-            get_string('admin_category_management', 'local_playergames')
-        )
-    );
-
-    // Seasons (lifecycle only).
     $page2 = new admin_settingpage(
         'local_playergames_seasons',
         get_string('season_setup_heading', 'local_playergames')
@@ -104,7 +99,7 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames_settings', $page2);
+    $ADMIN->add('playergames_rules', $page2);
 
     // XP and rewards.
     $pagexp = new admin_settingpage(
@@ -151,7 +146,7 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames_settings', $pagexp);
+    $ADMIN->add('playergames_rules', $pagexp);
 
     // Avatars: minimum level to unlock each tier.
     $pageavatars = new admin_settingpage(
@@ -175,7 +170,7 @@ if ($hassiteconfig) {
         ));
     }
 
-    $ADMIN->add('playergames_settings', $pageavatars);
+    $ADMIN->add('playergames_rules', $pageavatars);
 
     // Learning XP: course XP mirrored from block_playerhud (separate, windowed pool).
     $pagelearning = new admin_settingpage(
@@ -211,7 +206,7 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames_settings', $pagelearning);
+    $ADMIN->add('playergames_rules', $pagelearning);
 
     // Streak and freeze.
     $pagestreak = new admin_settingpage(
@@ -245,7 +240,7 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $ADMIN->add('playergames_settings', $pagestreak);
+    $ADMIN->add('playergames_rules', $pagestreak, 'local_playergames_learning');
 
     // Game rules (global gameplay rules; per-season content is set in season management).
     $page3 = new admin_settingpage(
@@ -374,39 +369,50 @@ if ($hassiteconfig) {
         $conceptdayoptions
     ));
 
-    $ADMIN->add('playergames_settings', $page3);
+    $ADMIN->add('playergames_rules', $page3, 'local_playergames_avatars');
 
-    // Season management.
+    // Get started: the cartridges the games draw from, the season, and which games the season runs.
     $ADMIN->add(
-        'playergames_management',
+        'playergames_start',
+        new admin_externalpage(
+            'local_playergames_cartridge',
+            get_string('admin_item_cartridges', 'local_playergames'),
+            new moodle_url('/local/playergames/cartridge.php'),
+            'local/playergames:managecartridges'
+        )
+    );
+
+    $ADMIN->add(
+        'playergames_start',
         new admin_externalpage(
             'local_playergames_manage_seasons',
-            get_string('season_manage_pagetitle', 'local_playergames'),
+            get_string('admin_item_seasons', 'local_playergames'),
             new moodle_url('/local/playergames/manage_seasons.php'),
             'moodle/site:config'
         )
     );
 
-    // Level ladder.
+    // Without a season in the address the page opens the active one, or the next.
     $ADMIN->add(
-        'playergames_management',
+        'playergames_start',
         new admin_externalpage(
-            'local_playergames_manage_levels',
-            get_string('levels_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/manage_levels.php'),
+            'local_playergames_manage_season_games',
+            get_string('admin_item_seasongames', 'local_playergames'),
+            new moodle_url('/local/playergames/manage_season_games.php'),
             'moodle/site:config'
         )
     );
 
-    // Concept cartridges.
+    // Rules: the level ladder sits among the other rules, after the game rules.
     $ADMIN->add(
-        'playergames_management',
+        'playergames_rules',
         new admin_externalpage(
-            'local_playergames_cartridge',
-            get_string('cartridge_pagetitle', 'local_playergames'),
-            new moodle_url('/local/playergames/cartridge.php'),
-            'local/playergames:managecartridges'
-        )
+            'local_playergames_manage_levels',
+            get_string('admin_item_levels', 'local_playergames'),
+            new moodle_url('/local/playergames/manage_levels.php'),
+            'moodle/site:config'
+        ),
+        'local_playergames_avatars'
     );
 
     // Engagement meter, site-wide scope (every course).
@@ -417,7 +423,7 @@ if ($hassiteconfig) {
     // the user teaches). Both views are deliberate, so — unlike the dashboard — this
     // entry must NOT be removed from the admin tree. See engagement_meter.php.
     $ADMIN->add(
-        'playergames_management',
+        'playergames_followup',
         new admin_externalpage(
             'local_playergames_engagementmeter',
             get_string('engmeter_pagetitle', 'local_playergames'),

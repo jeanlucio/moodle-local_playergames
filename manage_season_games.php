@@ -25,12 +25,26 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\season_game_config;
+use local_playergames\hub\season_manager;
 
 require_login();
 $context = context_system::instance();
 require_capability('moodle/site:config', $context);
 
-$seasonid = required_param('seasonid', PARAM_INT);
+// Opened without a season (from the admin menu or the Administration tab), it shows the active one, or the next.
+$seasonid = optional_param('seasonid', 0, PARAM_INT);
+if ($seasonid === 0) {
+    $default = season_manager::get_active_or_upcoming();
+    if ($default === null) {
+        redirect(
+            new moodle_url('/local/playergames/manage_seasons.php'),
+            get_string('admin_state_games_none', 'local_playergames'),
+            null,
+            \core\output\notification::NOTIFY_INFO
+        );
+    }
+    $seasonid = (int) $default->id;
+}
 $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
 
 $pageurl = new moodle_url('/local/playergames/manage_season_games.php', ['seasonid' => $seasonid]);
