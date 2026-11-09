@@ -20,8 +20,13 @@ jobs:
     runs-on: ubuntu-24.04
 
     services:
+      # Only the database a given leg actually tests is started for it (matrix.database
+      # gates each image), matching moodlehq/moodle-plugin-ci's own gha.dist.yml template —
+      # a broken image for one engine no longer takes down legs that never touch it, which
+      # is exactly what happened earlier today when mariadb's healthcheck failed and every
+      # pgsql-only leg failed alongside it for no reason of its own.
       postgres:
-        image: postgres:16
+        image: ${{ matrix.database == 'pgsql' && 'postgres:17' || '' }}
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
@@ -29,22 +34,37 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
+      # Floating on the 11.x major, not pinned — the author's plugins get periodic
+      # maintenance, so an incompatible point release surfaces at the next visit rather than
+      # needing its own bump commit. A major can only move forward within itself, so this
+      # never resolves below 5.3's own 11.4.0 floor.
       mariadb:
-        image: mariadb:10.11
+        image: ${{ matrix.database == 'mariadb' && 'mariadb:11' || '' }}
         env:
-          MYSQL_USER: 'root'
-          MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
           MYSQL_CHARACTER_SET_SERVER: 'utf8mb4'
           MYSQL_COLLATION_SERVER: 'utf8mb4_unicode_ci'
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 3
+        # mariadb:11.4+ dropped the mysql*-prefixed client binaries entirely (confirmed by
+        # running the image locally: `mysqladmin` is gone) — a raw client ping is also the
+        # wrong tool regardless, since it doesn't know InnoDB is actually ready. healthcheck.sh
+        # is the image's own bundled script for exactly this, and matches the official template.
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval 10s --health-timeout 5s --health-retries 3
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'pgsql', runchecks: 'all'}
+          # Moodle 5.3 is stable (MOODLE_503_STABLE). PHP 8.3 is its declared minimum.
+          # runchecks: 'all' (the full lint suite) only needs one leg total: phpcs/phpdoc come
+          # from moodle-plugin-ci's own toolchain, fixed regardless of the branch, and
+          # phplint/phpmd/validate/savepoints/mustache/JS unit tests only read the plugin's own
+          # files. grunt is the one exception (the ESLint/stylelint configs live in the core and
+          # drift between releases), so this leg stays on the newest stable branch.
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.3', database: 'pgsql', runchecks: 'all'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.4', database: 'mariadb'}
+          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_502_STABLE', php: '8.4', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_501_STABLE', php: '8.3', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_501_STABLE', php: '8.2', database: 'mariadb'}
@@ -52,7 +72,6 @@ jobs:
           - {moodle-branch: 'MOODLE_500_STABLE', php: '8.2', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_405_STABLE', php: '8.2', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_405_STABLE', php: '8.2', database: 'mariadb'}
-
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5

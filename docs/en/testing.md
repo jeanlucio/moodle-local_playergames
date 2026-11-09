@@ -1,7 +1,7 @@
 # 🧪 Automated Tests
 
 PlayerGames ships with a PHPUnit suite covering the gamification engine, the cartridge pipeline,
-scheduled tasks, privacy and events. Every CI push runs the full matrix (Moodle 4.5 → 5.2,
+scheduled tasks, privacy and events. Every CI push runs the full matrix (Moodle 4.5 → 5.3,
 PostgreSQL & MariaDB).
 
 ## PHPUnit — Unit & Integration Tests

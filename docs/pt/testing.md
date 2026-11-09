@@ -2,7 +2,7 @@
 
 O PlayerGames acompanha uma suíte PHPUnit que cobre o motor de gamificação, o pipeline de
 cartuchos, as tarefas agendadas, a privacidade e os eventos. Cada push no CI roda a matriz
-completa (Moodle 4.5 → 5.2, PostgreSQL e MariaDB).
+completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 
 ## PHPUnit — Testes de Unidade e Integração
 

@@ -55,7 +55,7 @@ Full disclosure:
 
 | Component | Version |
 |-----------|---------|
-| Moodle    | 4.5 – 5.2 |
+| Moodle    | 4.5 – 5.3 |
 | PHP       | 8.1+    |
 
 ### 🛠️ Installation & Configuration
@@ -137,7 +137,7 @@ Divulgação completa:
 
 | Componente | Versão |
 |------------|--------|
-| Moodle     | 4.5 – 5.2 |
+| Moodle     | 4.5 – 5.3 |
 | PHP        | 8.1+   |
 
 ### 🛠️ Instalação e Configuração
