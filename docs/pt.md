@@ -82,6 +82,9 @@ PlayerGames para o Moodle. Serve a quatro propósitos principais:
 <span id="installation"></span>
 {% include_relative pt/installation.md %}
 
+<span id="administration"></span>
+{% include_relative pt/administration.md %}
+
 <span id="usage"></span>
 {% include_relative pt/usage.md %}
 

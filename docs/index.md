@@ -80,6 +80,9 @@ ecosystem for Moodle. It serves four main purposes:
 <span id="installation"></span>
 {% include_relative en/installation.md %}
 
+<span id="administration"></span>
+{% include_relative en/administration.md %}
+
 <span id="usage"></span>
 {% include_relative en/usage.md %}
 

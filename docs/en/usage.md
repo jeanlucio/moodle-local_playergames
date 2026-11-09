@@ -7,12 +7,15 @@
    want AI-assisted cartridge generation with personal/site keys (see
    [AI Provider Chain](#ai-provider-chain)) — otherwise cartridges can still be created manually
    or generated through Moodle's own `core_ai`.
-3. Create the first season in the **Season Management** page, setting name, start/end dates, and
-   the per-game XP and plays-per-day rewards.
-4. Optionally tune the **Level Ladder** page — adjust XP thresholds and titles, restore the
-   default ladder, or generate a longer linear one.
-5. Upload or generate a content cartridge in the **Cartridge** page.
-6. Monitor gamification impact in the **Engagement Meter** page.
+3. Create a content cartridge in the **Cartridges** page (upload one or generate it): the games need
+   something to ask.
+4. Create the first season in the **Seasons** page and activate it, setting name and dates.
+5. Choose the games the season runs, and where their questions come from, in **Season games**.
+6. Review the rules (XP, levels, who plays) under **Rules**: the defaults work, and you can tune them.
+7. Monitor gamification impact in the **Engagement Meter** page.
+
+Steps 3 to 6 are cards in the **Administration** tab, in this order (the Engagement Meter has its own tab); see
+[Administration](#administration).
 
 ## For Teachers
 
