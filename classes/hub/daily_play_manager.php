@@ -24,7 +24,10 @@
 
 namespace local_playergames\hub;
 
+use core\lock\lock_config;
 use local_playergames\event\game_completed;
+use local_playergames\games\season_game_config;
+use local_playergames\local\access;
 use moodle_url;
 use stdClass;
 
@@ -124,6 +127,49 @@ class daily_play_manager {
         \context $context,
         array $extra = []
     ): array {
+        $refused = ['success' => false, 'xpawarded' => 0, 'remaining' => 0];
+
+        // Defence in depth: the pages already turn these users away, but this is the one place XP is paid.
+        if (!access::is_participant($userid) || season_game_config::is_disabled((int) $season->id, $gametype)) {
+            return $refused;
+        }
+
+        // The quota and the XP cap are read, spent and written back as one step. Without the lock two
+        // parallel requests both pass the quota check and both pay.
+        $lock = lock_config::get_lock_factory('local_playergames')->get_lock("play_{$userid}_{$gametype}", 10);
+        if (!$lock) {
+            return $refused;
+        }
+
+        try {
+            return self::register_play_locked($userid, $gametype, $gamedate, $season, $context, $extra);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Does the work of register_play() while the caller holds the user's lock for the game.
+     *
+     * The XP, the daily row and the profile are written in one transaction, so a failure leaves
+     * neither a paid play without its row nor a row without its XP.
+     *
+     * @param int $userid User to credit.
+     * @param string $gametype One of the supported game types.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param stdClass $season Active season record.
+     * @param \context $context Context for the fired event.
+     * @param array $extra Extra payload merged into the event's other data.
+     * @return array {success: bool, xpawarded: int, remaining: int}
+     */
+    private static function register_play_locked(
+        int $userid,
+        string $gametype,
+        int $gamedate,
+        stdClass $season,
+        \context $context,
+        array $extra
+    ): array {
         global $DB;
 
         $snapshot = season_manager::get_config_snapshot($season);
@@ -139,40 +185,47 @@ class daily_play_manager {
             return ['success' => false, 'xpawarded' => 0, 'remaining' => 0];
         }
 
-        $pergame   = self::xp_per_game($snapshot, $gametype);
-        $xpawarded = xp_manager::award($userid, $pergame, $gametype, $gamedate, (int) $season->id);
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            $pergame   = self::xp_per_game($snapshot, $gametype);
+            $xpawarded = xp_manager::award($userid, $pergame, $gametype, $gamedate, (int) $season->id);
 
-        if ($existing) {
-            $existing->completed  = 1;
-            $existing->xpawarded  = (int) $existing->xpawarded + $xpawarded;
-            $existing->attempts   = $attempts + 1;
-            $existing->timeplayed = time();
-            $DB->update_record('local_playergames_daily_scores', $existing);
-            $scoreid = (int) $existing->id;
-        } else {
-            $record             = new stdClass();
-            $record->userid     = $userid;
-            $record->gamedate   = $gamedate;
-            $record->gametype   = $gametype;
-            $record->completed  = 1;
-            $record->xpawarded  = $xpawarded;
-            $record->attempts   = 1;
-            $record->timeplayed = time();
-            $scoreid = (int) $DB->insert_record('local_playergames_daily_scores', $record);
+            if ($existing) {
+                $existing->completed  = 1;
+                $existing->xpawarded  = (int) $existing->xpawarded + $xpawarded;
+                $existing->attempts   = $attempts + 1;
+                $existing->timeplayed = time();
+                $DB->update_record('local_playergames_daily_scores', $existing);
+                $scoreid = (int) $existing->id;
+            } else {
+                $record             = new stdClass();
+                $record->userid     = $userid;
+                $record->gamedate   = $gamedate;
+                $record->gametype   = $gametype;
+                $record->completed  = 1;
+                $record->xpawarded  = $xpawarded;
+                $record->attempts   = 1;
+                $record->timeplayed = time();
+                $scoreid = (int) $DB->insert_record('local_playergames_daily_scores', $record);
+            }
+
+            $event = game_completed::create([
+                'objectid' => $scoreid,
+                'context'  => $context,
+                'userid'   => $userid,
+                'other'    => [
+                    'seasonid'  => (int) $season->id,
+                    'gametype'  => $gametype,
+                    'gamedate'  => $gamedate,
+                    'xpawarded' => $xpawarded,
+                ] + $extra,
+            ]);
+            $event->trigger();
+
+            $transaction->allow_commit();
+        } catch (\Throwable $e) {
+            $transaction->rollback($e);
         }
-
-        $event = game_completed::create([
-            'objectid' => $scoreid,
-            'context'  => $context,
-            'userid'   => $userid,
-            'other'    => [
-                'seasonid'  => (int) $season->id,
-                'gametype'  => $gametype,
-                'gamedate'  => $gamedate,
-                'xpawarded' => $xpawarded,
-            ] + $extra,
-        ]);
-        $event->trigger();
 
         return ['success' => true, 'xpawarded' => $xpawarded, 'remaining' => $games - ($attempts + 1)];
     }
@@ -218,8 +271,18 @@ class daily_play_manager {
             'fill'   => (new moodle_url('/local/playergames/play_fill.php'))->out(false),
             'battle' => (new moodle_url('/local/playergames/play_battle.php'))->out(false),
         ];
+        $season   = season_manager::get_active();
+        $disabled = [];
+        foreach ($gametypes as $gametype) {
+            // A game the admin switched off for the season is not offered at all.
+            $disabled[$gametype] = $season !== null
+                && season_game_config::is_disabled((int) $season->id, $gametype);
+        }
         $result = [];
         foreach ($gametypes as $gametype) {
+            if ($disabled[$gametype] ?? false) {
+                continue;
+            }
             $games   = self::games_per_day($snapshot, $gametype);
             $done    = ($attempts[$gametype] ?? 0) >= $games;
             $locked  = !$hascartridge && !$done;

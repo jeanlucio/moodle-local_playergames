@@ -29,6 +29,7 @@ use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 use local_playergames\hub\avatar_manager;
+use local_playergames\local\access;
 
 /**
  * Equip or unequip an avatar for the current user.
@@ -62,6 +63,7 @@ class set_avatar extends external_api {
         $context = \context_system::instance();
         self::validate_context($context);
         require_capability('local/playergames:viewhub', $context);
+        access::require_participant(true);
 
         avatar_manager::equip((int) $USER->id, $params['emoji']);
 

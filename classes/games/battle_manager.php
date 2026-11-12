@@ -60,13 +60,19 @@ class battle_manager {
      *                 the season has no questions to offer, in which case no battle is opened.
      */
     public function start_battle(int $userid, int $gamedate, \context $context): array {
+        $season = season_manager::get_active();
+        if ($season === null || season_game_config::is_disabled((int) $season->id, 'battle')) {
+            self::run_cache()->delete($userid);
+            return [];
+        }
+
+        // A season with no row for the game predates per-season config: fall back to the cartridges.
         $config = season_game_config::get_for_active_season('battle');
         if ($config !== null) {
             $sources      = $config->source;
             $categoryid   = (int) $config->auxid;
             $cartridgeids = $config->cartridgeids;
         } else {
-            // Defensive fallback for a season created before per-season config existed.
             $sources      = season_game_config::SOURCE_CARTRIDGE;
             $categoryid   = 0;
             $cartridgeids = null;

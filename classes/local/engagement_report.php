@@ -32,6 +32,17 @@ class engagement_report {
     private const PLAYER_MODULES = ['playerwords', 'playerraid', 'playerpuzzle', 'playergroup'];
 
     /**
+     * Returns the log reader the event counts come from, or null when the site keeps no readable log.
+     *
+     * @return \core\log\sql_reader|null The first enabled log store that can be queried.
+     */
+    public static function get_log_reader(): ?\core\log\sql_reader {
+        $readers = get_log_manager()->get_readers('\core\log\sql_reader');
+        $reader  = reset($readers);
+        return $reader ?: null;
+    }
+
+    /**
      * Returns IDs of all courses that have at least one Player plugin installed.
      *
      * A course qualifies when it has the block_playerhud block OR any mod_player* activity.
@@ -111,19 +122,19 @@ class engagement_report {
 
         $since = time() - ($days * DAYSECS);
 
-        // Total log events in these courses during the selected period.
-        [$inevents, $evparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'ev');
-        $evparams['evlevel'] = CONTEXT_COURSE;
-        $evparams['evsince'] = $since;
-        $totalevents = (int) $DB->get_field_sql(
-            "SELECT COUNT(l.id)
-               FROM {logstore_standard_log} l
-               JOIN {context} ctx ON ctx.id = l.contextid
-              WHERE ctx.contextlevel = :evlevel
-                AND ctx.instanceid $inevents
-                AND l.timecreated > :evsince",
-            $evparams
-        );
+        // Total log events in these courses during the selected period, from whichever log store the
+        // site reads reports from.
+        $totalevents = 0;
+        $reader      = self::get_log_reader();
+        if ($reader !== null) {
+            [$inevents, $evparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'ev');
+            $evparams['evlevel'] = CONTEXT_COURSE;
+            $evparams['evsince'] = $since;
+            $totalevents = (int) $reader->get_events_select_count(
+                "contextlevel = :evlevel AND contextinstanceid $inevents AND timecreated > :evsince",
+                $evparams
+            );
+        }
 
         // Total distinct enrolled users across these courses.
         [$inusers, $userparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'eu');
@@ -137,10 +148,11 @@ class engagement_report {
 
         $eventsperuser = $totalusers > 0 ? round($totalevents / $totalusers, 1) : 0.0;
 
-        // Users who completed at least one course in the group.
+        // Users who completed at least one course in the group. Counting users, not completions,
+        // keeps the rate comparable with the distinct enrolled users it is divided by.
         [$incomp, $compparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cc');
         $completed = (int) $DB->get_field_sql(
-            "SELECT COUNT(cc.id)
+            "SELECT COUNT(DISTINCT cc.userid)
                FROM {course_completions} cc
               WHERE cc.course $incomp
                 AND cc.timecompleted IS NOT NULL",

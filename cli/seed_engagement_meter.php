@@ -23,6 +23,9 @@
  *
  * --reset deletes existing seed data and recreates it from scratch.
  *
+ * The script writes fake courses, users, log entries, completions and grades into the real tables, so
+ * it refuses to run unless the site is in developer debugging mode or --i-know-this-is-dev is passed.
+ *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -60,6 +63,14 @@ $completionplan = [
 // Helpers.
 
 $reset = in_array('--reset', $argv ?? [], true);
+
+// Guard: the seed data ends up in the site's real reports, so it is for development sites only.
+if (empty($CFG->debugdeveloper) && !in_array('--i-know-this-is-dev', $argv ?? [], true)) {
+    cli_error(
+        'This script creates fake courses, users, logs, completions and grades. Run it only on a development '
+        . 'site: set the debugging level to DEVELOPER, or pass --i-know-this-is-dev to confirm.'
+    );
+}
 
 /**
  * Writes a line to stdout.

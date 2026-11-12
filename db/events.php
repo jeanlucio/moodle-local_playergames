@@ -30,6 +30,10 @@ $observers = [
         'callback'  => '\local_playergames\observer::game_completed',
     ],
     [
+        'eventname' => '\core\event\user_deleted',
+        'callback'  => '\local_playergames\observer::user_deleted',
+    ],
+    [
         // Optional integration: block_playerhud is not a formal dependency.
         // This entry stays dormant (never fires) when that plugin is absent.
         'eventname' => '\block_playerhud\event\xp_changed',

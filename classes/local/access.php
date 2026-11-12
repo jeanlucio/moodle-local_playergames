@@ -153,4 +153,57 @@ class access {
         }
         return true;
     }
+
+    /**
+     * Whether the user takes part in the gamification.
+     *
+     * The single rule behind every page and service that records game data: the per-user opt-out and
+     * the allowed_participants site setting (students-only excludes non-admin staff, staff-only
+     * excludes students). The Hub, the games, the daily check-in and the XP awarding all ask this,
+     * so a user the Hub turns away cannot earn XP by opening a game's URL directly.
+     *
+     * @param int $userid The user to test.
+     * @return bool
+     */
+    public static function is_participant(int $userid): bool {
+        if (!preferences::is_gamification_enabled($userid)) {
+            return false;
+        }
+
+        $allowed = get_config('local_playergames', 'allowed_participants') ?: 'students';
+        $isstaff = self::is_staff($userid);
+        $isadmin = has_capability('moodle/site:config', context_system::instance(), $userid);
+
+        return self::can_view_hub($isstaff, $isadmin, $allowed);
+    }
+
+    /**
+     * Stops the request unless the current user takes part in the gamification.
+     *
+     * Call it right after require_login() and require_capability() on every entry point that shows
+     * or records game data, before any POST handling. A page sends a user who turned the gamification
+     * off back to their dashboard with a notice; a service (which cannot redirect) gets an exception.
+     *
+     * @param bool $service True when called from a web service or AJAX handler, to throw instead of redirect.
+     * @throws \moodle_exception When the user does not take part.
+     */
+    public static function require_participant(bool $service = false): void {
+        global $USER;
+
+        if (!preferences::is_gamification_enabled((int) $USER->id)) {
+            if ($service) {
+                throw new \moodle_exception('gamification_disabled_notice', 'local_playergames');
+            }
+            redirect(
+                new \moodle_url('/my/'),
+                get_string('gamification_disabled_notice', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_INFO
+            );
+        }
+
+        if (!self::is_participant((int) $USER->id)) {
+            throw new \moodle_exception('hub_access_restricted', 'local_playergames');
+        }
+    }
 }

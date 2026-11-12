@@ -191,4 +191,27 @@ final class observer_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_student_xp_monthly'));
         $this->assertSame(0, $DB->count_records('local_playergames_student_xp_cache'));
     }
+
+    /**
+     * Deleting an account removes what the plugin kept for it, and only for that account.
+     *
+     * Regression test: the account stayed in the ranking with a readable name until a privacy request
+     * was processed, because the plugin kept no observer for the deletion.
+     */
+    public function test_user_deleted_removes_the_users_rows(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $seasonid = $this->make_season();
+        $gone     = $this->getDataGenerator()->create_user();
+        $stays    = $this->getDataGenerator()->create_user();
+        foreach ([$gone, $stays] as $user) {
+            \local_playergames\hub\xp_manager::get_or_create_profile((int) $user->id, $seasonid);
+        }
+
+        delete_user($gone);
+
+        $this->assertFalse($DB->record_exists('local_playergames_player_profile', ['userid' => $gone->id]));
+        $this->assertTrue($DB->record_exists('local_playergames_player_profile', ['userid' => $stays->id]));
+    }
 }

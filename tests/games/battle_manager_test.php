@@ -341,4 +341,24 @@ final class battle_manager_test extends \advanced_testcase {
 
         $this->assertSame(["cartridge:{$other}"], array_column($next, 'key'));
     }
+
+    /**
+     * A battle switched off for the season opens no battle, and no result is accepted.
+     *
+     * Regression test: the missing row and the switched-off row both read as null, and the battle fell
+     * back to every cartridge and went on paying XP.
+     */
+    public function test_a_battle_switched_off_for_the_season_opens_nothing(): void {
+        global $DB;
+        $user = $this->prepare();
+        $this->add_question();
+        $DB->insert_record('local_playergames_season_games', (object) [
+            'seasonid' => $this->season->id, 'gametype' => 'battle', 'enabled' => 0,
+            'source' => 'cartridge', 'cartridgeids' => null, 'auxid' => 0,
+        ]);
+
+        $this->assertSame([], $this->start());
+        $this->assertFalse($this->finish(true)['success']);
+        $this->assertFalse($this->score_row($user));
+    }
 }

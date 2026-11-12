@@ -25,48 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    'local/playergames:viewdashboard' => [
-        'captype'      => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes'   => [
-            'manager'        => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-        ],
-    ],
-    'local/playergames:manageownkeys' => [
-        'captype'      => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes'   => [
-            'editingteacher' => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
-            'manager'        => CAP_ALLOW,
-        ],
-    ],
-    'local/playergames:playgames' => [
-        'captype'      => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes'   => [
-            'student'        => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager'        => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
-        ],
-    ],
     'local/playergames:viewhub' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [
             'user' => CAP_ALLOW,
-        ],
-    ],
-    'local/playergames:viewengagementmeter' => [
-        'captype'      => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes'   => [
-            'editingteacher' => CAP_ALLOW,
-            'manager'        => CAP_ALLOW,
-            'teacher'        => CAP_ALLOW,
         ],
     ],
     'local/playergames:managecartridges' => [

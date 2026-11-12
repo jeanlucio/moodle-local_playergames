@@ -11,7 +11,9 @@
         "cooldown_active": false,
         "no_questions": false,
         "question_seconds": 120,
-        "max_attempts": 0,
+        "first_seconds": 120,
+        "current_index": 0,
+        "attempt": 1,
         "huburl": "/local/playergames/hub.php",
         "str_already_played": "You have already played PlayerQuiz today.",
         "str_locked": "PlayerQuiz is on cooldown",
@@ -29,17 +31,13 @@
         "questions": [
             {
                 "index": 1,
-                "source": "cartridge",
-                "sourceid": 42,
                 "questiontext": "What is photosynthesis?",
-                "has_feedback": true,
-                "feedback": "Photosynthesis converts light energy into chemical energy stored as sugar.",
                 "answers": [
-                    {"letter": "A", "text": "A process converting light into sugar.", "correct": true},
-                    {"letter": "B", "text": "A method of cell division.", "correct": false},
-                    {"letter": "C", "text": "A type of fungal reproduction.", "correct": false},
-                    {"letter": "D", "text": "The breakdown of starch by saliva.", "correct": false},
-                    {"letter": "E", "text": "A form of animal digestion.", "correct": false}
+                    {"index": 0, "letter": "A", "text": "A process converting light into sugar."},
+                    {"index": 1, "letter": "B", "text": "A method of cell division."},
+                    {"index": 2, "letter": "C", "text": "A type of fungal reproduction."},
+                    {"index": 3, "letter": "D", "text": "The breakdown of starch by saliva."},
+                    {"index": 4, "letter": "E", "text": "A form of animal digestion."}
                 ]
             }
         ]
@@ -80,7 +78,9 @@
          data-action="{{formaction}}"
          data-sesskey="{{sesskey}}"
          data-question-seconds="{{question_seconds}}"
-         data-max-attempts="{{max_attempts}}"
+         data-first-seconds="{{first_seconds}}"
+         data-current="{{current_index}}"
+         data-attempt="{{attempt}}"
          data-str-attempt="{{str_attempt}}">
 
         <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -90,24 +90,22 @@
         </div>
 
         {{#questions}}
-        <div class="pg-quiz-question d-none" data-index="{{index}}"
-             data-source="{{source}}" data-source-id="{{sourceid}}">
+        <div class="pg-quiz-question d-none" data-index="{{index}}">
             <p class="fs-5 fw-semibold mb-4">{{{questiontext}}}</p>
             <div class="d-grid gap-2">
                 {{#answers}}
                 <button type="button"
                         class="pg-quiz-answer btn btn-outline-primary text-start"
-                        data-correct="{{#correct}}1{{/correct}}{{^correct}}0{{/correct}}">
+                        data-choice="{{index}}">
                     <span class="pg-answer-letter fw-bold me-2">{{letter}}.</span>
                     {{{text}}}
                 </button>
                 {{/answers}}
             </div>
-            {{#has_feedback}}
+            {{! Filled with the feedback the server returns once the question is answered. }}
             <div class="pg-quiz-feedback alert alert-info d-none mt-3" role="note">
-                <i class="fa fa-circle-info me-2" aria-hidden="true"></i>{{{feedback}}}
+                <i class="fa fa-circle-info me-2" aria-hidden="true"></i><span class="pg-quiz-feedback-text"></span>
             </div>
-            {{/has_feedback}}
         </div>
         {{/questions}}
 

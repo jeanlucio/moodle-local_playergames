@@ -29,15 +29,8 @@ require_login();
 $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
 
-// Respect the per-user gamification opt-out.
-if (!\local_playergames\local\preferences::is_gamification_enabled($USER->id)) {
-    redirect(
-        new moodle_url('/my/'),
-        get_string('gamification_disabled_notice', 'local_playergames'),
-        null,
-        \core\output\notification::NOTIFY_INFO
-    );
-}
+// Opt-out and the allowed_participants restriction.
+\local_playergames\local\access::require_participant();
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/achievements.php'));

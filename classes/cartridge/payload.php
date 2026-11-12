@@ -56,6 +56,25 @@ class payload {
     }
 
     /**
+     * Returns a field as a list of plain texts with the empty ones left out.
+     *
+     * A quiz question needs four real distractors: a blank one would reach the player as an empty button.
+     *
+     * @param mixed $value Field of the decoded payload: a list of texts, or a single text.
+     * @return string[] The non-empty texts, in order, re-indexed from zero.
+     */
+    public static function texts(mixed $value): array {
+        $texts = [];
+        foreach (self::values($value) as $item) {
+            $text = self::text($item);
+            if ($text !== '') {
+                $texts[] = $text;
+            }
+        }
+        return $texts;
+    }
+
+    /**
      * Returns a field as an integer clamped to a range, or $default when it is not a number.
      *
      * @param mixed $value Field of the decoded payload.

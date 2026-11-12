@@ -121,17 +121,41 @@ class category_manager {
     }
 
     /**
-     * Deletes a category and sets categoryid to NULL on its concepts.
+     * Deletes a category of a cartridge and clears it from that cartridge's concepts and questions.
+     *
+     * Does nothing when the category does not belong to the cartridge, so a request that pairs a
+     * category with another cartridge's id cannot strip the category from someone else's content.
      *
      * @param int $categoryid Category ID.
      * @param int $cartridgeid Owning cartridge ID (for ownership check).
+     * @return bool True when the category was deleted, false when it is not this cartridge's.
      */
-    public function delete(int $categoryid, int $cartridgeid): void {
+    public function delete(int $categoryid, int $cartridgeid): bool {
         global $DB;
-        $DB->set_field('local_playergames_concepts', 'categoryid', null, ['categoryid' => $categoryid]);
+
+        if (!$DB->record_exists('local_playergames_categories', ['id' => $categoryid, 'cartridgeid' => $cartridgeid])) {
+            return false;
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        $DB->set_field(
+            'local_playergames_concepts',
+            'categoryid',
+            null,
+            ['categoryid' => $categoryid, 'cartridgeid' => $cartridgeid]
+        );
+        $DB->set_field(
+            'local_playergames_concept_questions',
+            'categoryid',
+            null,
+            ['categoryid' => $categoryid, 'cartridgeid' => $cartridgeid]
+        );
         $DB->delete_records(
             'local_playergames_categories',
             ['id' => $categoryid, 'cartridgeid' => $cartridgeid]
         );
+        $transaction->allow_commit();
+
+        return true;
     }
 }

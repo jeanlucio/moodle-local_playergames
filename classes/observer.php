@@ -24,12 +24,14 @@
 
 namespace local_playergames;
 
+use cache;
 use local_playergames\event\game_completed;
 use local_playergames\hub\achievement_manager;
 use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\streak_manager;
 use local_playergames\hub\xp_manager;
+use local_playergames\privacy\provider;
 
 /**
  * Handles events that drive the Player Hub gamification loop.
@@ -38,6 +40,9 @@ use local_playergames\hub\xp_manager;
  *   - Records streak activity for the day.
  *   - Updates mission progress (game_played trigger).
  *   - Checks for new achievements.
+ *
+ * user_deleted:
+ *   - Removes the deleted user's rows and refreshes the ranking cache.
  *
  * playerhud_xp_changed (optional integration, dormant without block_playerhud):
  *   - Mirrors the course XP delta into the learning XP pool.
@@ -109,5 +114,19 @@ class observer {
             return;
         }
         learning_xp_manager::record_change($userid, $delta, $courseid);
+    }
+
+    /**
+     * Clears what the plugin keeps for a user whose account was just deleted.
+     *
+     * Moodle only marks the account as deleted and keeps the name, so without this the rankings would
+     * go on listing it until a privacy deletion request is processed.
+     *
+     * @param \core\event\user_deleted $event The deletion event.
+     * @return void
+     */
+    public static function user_deleted(\core\event\user_deleted $event): void {
+        provider::delete_user_rows((int) $event->objectid);
+        cache::make('local_playergames', 'ranking')->purge();
     }
 }

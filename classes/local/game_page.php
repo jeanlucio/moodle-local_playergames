@@ -49,4 +49,16 @@ final class game_page {
         return $OUTPUT->notification(get_string('hub_no_season', 'local_playergames'), notification::NOTIFY_INFO, false)
             . $OUTPUT->continue_button(new moodle_url('/local/playergames/hub.php'));
     }
+
+    /**
+     * The notice a game page shows instead of the game when the admin switched it off for the season.
+     *
+     * @return string HTML: the notice and a button back to the hub.
+     */
+    public static function disabled_html(): string {
+        global $OUTPUT;
+
+        return $OUTPUT->notification(get_string('game_disabled', 'local_playergames'), notification::NOTIFY_INFO, false)
+            . $OUTPUT->continue_button(new moodle_url('/local/playergames/hub.php'));
+    }
 }

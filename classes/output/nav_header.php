@@ -31,7 +31,6 @@ use renderer_base;
 use templatable;
 use local_playergames\local\access;
 use local_playergames\local\admin_cards;
-use local_playergames\local\preferences;
 
 /**
  * Builds the role-filtered button bar rendered on every PlayerGames page.
@@ -63,10 +62,11 @@ class nav_header implements renderable, templatable {
         global $USER;
 
         $context = context_system::instance();
-        $gamification = has_capability('local/playergames:viewhub', $context)
-            && preferences::is_gamification_enabled((int) $USER->id);
         $teaches = !empty(access::teacher_courseids((int) $USER->id));
         $staff = access::is_staff();
+        // The pages these links lead to turn away a user the participant rules exclude.
+        $gamification = has_capability('local/playergames:viewhub', $context)
+            && access::is_participant((int) $USER->id);
 
         $items = [];
         if ($gamification) {

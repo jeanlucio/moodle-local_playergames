@@ -29,6 +29,7 @@ use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 use local_playergames\hub\learning_xp_manager;
+use local_playergames\local\access;
 
 /**
  * Set whether the current user appears in the learning XP ranking.
@@ -65,6 +66,7 @@ class set_learning_ranking_visibility extends external_api {
         $context = \context_system::instance();
         self::validate_context($context);
         require_capability('local/playergames:viewhub', $context);
+        access::require_participant(true);
 
         $visible = (bool) $params['show'];
         learning_xp_manager::set_ranking_visibility((int) $USER->id, $visible);

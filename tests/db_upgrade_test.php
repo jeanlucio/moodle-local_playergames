@@ -206,12 +206,48 @@ final class db_upgrade_test extends advanced_testcase {
 
         set_config('version', 2026110903, 'local_playergames');
         $this->assertTrue(xmldb_local_playergames_upgrade(2026110903));
-        $this->assertEquals(2026110904, get_config('local_playergames', 'version'));
+        $this->assertEquals(2026111201, get_config('local_playergames', 'version'));
 
         $saved = $DB->get_records('local_playergames_season_games', ['seasonid' => 1], '', 'gametype, source, auxid');
         $this->assertSame(['cartridge', 0], [$saved['guess']->source, (int) $saved['guess']->auxid]);
         $this->assertSame(['cartridge', 0], [$saved['fill']->source, (int) $saved['fill']->auxid]);
         $this->assertSame(['questionbank', 7], [$saved['quiz']->source, (int) $saved['quiz']->auxid]);
         $this->assertSame('cartridge', $saved['battle']->source);
+    }
+
+    /**
+     * A season still open that ended at midnight now ends at the last second of that day.
+     *
+     * Regression test: the admin form stored the end date as 00:00 of the last day, and the task that
+     * closes expired seasons shut the season that night, so the announced last day could not be played.
+     *
+     * @return void
+     */
+    public function test_open_seasons_end_on_the_last_second_of_their_last_day(): void {
+        global $DB;
+
+        $midnight = mktime(0, 0, 0, 12, 31, 2026);
+        $noon     = mktime(12, 0, 0, 12, 31, 2026);
+        $ids      = [];
+        foreach (['active' => $midnight, 'upcoming' => $midnight, 'closed' => $midnight, 'manual' => $noon] as $name => $end) {
+            $ids[$name] = $DB->insert_record('local_playergames_seasons', (object) [
+                'name' => $name,
+                'startdate' => mktime(0, 0, 0, 7, 1, 2026),
+                'enddate' => $end,
+                'status' => $name === 'manual' ? 'active' : $name,
+                'timecreated' => time(),
+                'timemodified' => time(),
+            ]);
+        }
+
+        set_config('version', 2026110904, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026110904));
+
+        $lastsecond = mktime(23, 59, 59, 12, 31, 2026);
+        $this->assertEquals($lastsecond, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['active']]));
+        $this->assertEquals($lastsecond, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['upcoming']]));
+        // A closed season is history, and an end that is not midnight was not typed by the old form.
+        $this->assertEquals($midnight, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['closed']]));
+        $this->assertEquals($noon, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['manual']]));
     }
 }

@@ -12,6 +12,7 @@
             {"value": 90, "label": "Last 90 days"}
         ],
         "has_data": true,
+        "no_log_reader": false,
         "with_count": "5 courses",
         "without_count": "23 courses",
         "disclaimer": "This is correlation data, not causation.",
@@ -46,6 +47,12 @@
             </select>
         </form>
     </div>
+
+    {{#no_log_reader}}
+    <div class="alert alert-warning" role="alert">
+        {{#str}} engmeter_no_logstore, local_playergames {{/str}}
+    </div>
+    {{/no_log_reader}}
 
     {{#has_data}}
 

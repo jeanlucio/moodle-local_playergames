@@ -106,7 +106,9 @@ class controller {
      * @throws \moodle_exception If the cartridge does not exist.
      */
     public static function handle_export(int $cartridgeid, string $action): void {
-        global $DB;
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/filelib.php');
 
         if ($action !== 'export_cartridge' || $cartridgeid <= 0) {
             return;
@@ -120,12 +122,8 @@ class controller {
         $exportdata = (new exporter())->build($cartridge);
 
         $json = json_encode($exportdata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        $filename = preg_replace('/[^a-z0-9_-]/i', '_', $cartridge->name) . '.json';
-        header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($json));
-        echo $json;
-        die();
+        // The core download helper sets the cache and nosniff headers, encodes the file name and ends the request.
+        send_file($json, clean_filename($cartridge->name) . '.json', 0, 0, true, true, 'application/json');
     }
 
     /**
@@ -743,6 +741,34 @@ class controller {
     }
 
     /**
+     * Reads a table of editable rows posted as one flat array per column.
+     *
+     * The preview forms name each input "<column>[<row>]", which optional_param_array() can clean,
+     * unlike a nested "rows[<row>][<column>]" that would have to be read from the superglobal.
+     *
+     * @param array $columns Map of posted field name => key of that value in the row.
+     * @return array[] One array per row, keyed by the row keys; a column missing for a row is null.
+     */
+    private function read_rows(array $columns): array {
+        $values  = [];
+        $rowkeys = [];
+        foreach (array_keys($columns) as $field) {
+            $values[$field] = optional_param_array($field, [], PARAM_TEXT);
+            $rowkeys = array_merge($rowkeys, array_keys($values[$field]));
+        }
+
+        $rows = [];
+        foreach (array_slice(array_unique($rowkeys), 0, importer::MAX_QUESTIONS) as $rowkey) {
+            $row = [];
+            foreach ($columns as $field => $name) {
+                $row[$name] = $values[$field][$rowkey] ?? null;
+            }
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
      * Handles the save_ai_cartridge POST action.
      */
     private function action_save_ai_cartridge(): void {
@@ -750,9 +776,12 @@ class controller {
 
         $cartridgename = required_param('ai_cartridge_name', PARAM_TEXT);
         $cartridgelang = optional_param('ai_language', '', PARAM_TEXT);
-        $rawconcepts = isset($_POST['concepts']) && is_array($_POST['concepts'])
-            ? $_POST['concepts']
-            : [];
+        $rawconcepts = $this->read_rows([
+            'concept_term'       => 'term',
+            'concept_definition' => 'definition',
+            'concept_category'   => 'category',
+            'concept_difficulty' => 'difficulty',
+        ]);
 
         $newcartridge = new \stdClass();
         $newcartridge->name = \core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
@@ -1115,13 +1144,18 @@ class controller {
             );
             $indexed = [];
             foreach ($questions as $i => $q) {
+                $slots = [];
+                foreach (array_slice($q['distractors'], 0, 4) as $slot => $text) {
+                    $slots[] = ['slot' => $slot, 'number' => $slot + 1, 'text' => $text];
+                }
                 $indexed[] = [
-                    'index'        => $i,
-                    'questiontext' => $q['questiontext'],
-                    'correct'      => $q['correct'],
-                    'distractors'  => $q['distractors'],
-                    'category'     => $q['category'] ?? '',
-                    'difficulty'   => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
+                    'index'           => $i,
+                    'questiontext'    => $q['questiontext'],
+                    'correct'         => $q['correct'],
+                    'distractors'     => $slots,
+                    'category'        => $q['category'] ?? '',
+                    'difficulty'      => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
+                    'generalfeedback' => $q['generalfeedback'] ?? '',
                 ];
             }
             $this->quizpreview = [
@@ -1145,8 +1179,17 @@ class controller {
         $cartridgename  = required_param('ai_cartridge_name', PARAM_TEXT);
         $cartridgelang  = optional_param('ai_language', '', PARAM_TEXT);
         $aiauthor       = optional_param('ai_author', '', PARAM_TEXT);
-        $rawquestions   = isset($_POST['questions']) && is_array($_POST['questions'])
-            ? $_POST['questions'] : [];
+        $rawquestions   = $this->read_rows([
+            'question_text'       => 'questiontext',
+            'question_correct'    => 'correct',
+            'question_distractor_0' => 'distractor0',
+            'question_distractor_1' => 'distractor1',
+            'question_distractor_2' => 'distractor2',
+            'question_distractor_3' => 'distractor3',
+            'question_category'   => 'category',
+            'question_difficulty' => 'difficulty',
+            'question_feedback'   => 'generalfeedback',
+        ]);
 
         $newcartridge               = new \stdClass();
         $newcartridge->name         = \core_text::substr(
@@ -1177,17 +1220,20 @@ class controller {
             }
             $qtext       = payload::text($q['questiontext'] ?? null);
             $correct     = payload::text($q['correct'] ?? null);
-            $distractors = [];
-            foreach (payload::values($q['distractors'] ?? null) as $d) {
-                $distractors[] = payload::text($d);
-            }
-            if ($qtext !== '' && $correct !== '' && count($distractors) >= 4) {
+            $distractors = payload::texts([
+                $q['distractor0'] ?? null,
+                $q['distractor1'] ?? null,
+                $q['distractor2'] ?? null,
+                $q['distractor3'] ?? null,
+            ]);
+            if ($qtext !== '' && $correct !== '' && count($distractors) === 4) {
                 $questions[] = [
-                    'questiontext' => $qtext,
-                    'correct'      => $correct,
-                    'distractors'  => array_slice($distractors, 0, 4),
-                    'category'     => payload::text($q['category'] ?? null),
-                    'difficulty'   => payload::number($q['difficulty'] ?? null, 1, 5, 3),
+                    'questiontext'    => $qtext,
+                    'correct'         => $correct,
+                    'distractors'     => $distractors,
+                    'category'        => payload::text($q['category'] ?? null),
+                    'difficulty'      => payload::number($q['difficulty'] ?? null, 1, 5, 3),
+                    'generalfeedback' => payload::text($q['generalfeedback'] ?? null),
                 ];
             }
         }
@@ -1216,12 +1262,12 @@ class controller {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postcategoryid = required_param('category_id', PARAM_INT);
         $catmgr = new category_manager();
-        $catmgr->delete($postcategoryid, $postcartridgeid);
+        $deleted = $catmgr->delete($postcategoryid, $postcartridgeid);
         redirect(
             $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-            get_string('category_deleted', 'local_playergames'),
+            get_string($deleted ? 'category_deleted' : 'error_category_notfound', 'local_playergames'),
             null,
-            \core\output\notification::NOTIFY_SUCCESS
+            $deleted ? \core\output\notification::NOTIFY_SUCCESS : \core\output\notification::NOTIFY_ERROR
         );
     }
 
@@ -1441,10 +1487,10 @@ class controller {
             $distractors[] = $d;
         }
 
-        if ($qtext === '' || $correct === '') {
+        if ($qtext === '' || $correct === '' || in_array('', $distractors, true)) {
             redirect(
                 $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                get_string('error_concept_empty_term', 'local_playergames'),
+                get_string('error_quiz_question_incomplete', 'local_playergames'),
                 null,
                 \core\output\notification::NOTIFY_ERROR
             );
@@ -1521,14 +1567,14 @@ class controller {
             $distractors[] = $d;
         }
 
-        if ($qtext === '' || $correct === '') {
+        if ($qtext === '' || $correct === '' || in_array('', $distractors, true)) {
             redirect(
                 $this->url([
                     'tab' => 'editor',
                     'cartridgeid' => $postcartridgeid,
                     'editquestion' => $postquestionid,
                 ]),
-                get_string('error_concept_empty_term', 'local_playergames'),
+                get_string('error_quiz_question_incomplete', 'local_playergames'),
                 null,
                 \core\output\notification::NOTIFY_ERROR
             );
@@ -1581,6 +1627,13 @@ class controller {
 
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postquestionid = required_param('question_id', PARAM_INT);
+        // The answers go only when the question really belongs to the cartridge the request names.
+        $DB->get_record(
+            'local_playergames_concept_questions',
+            ['id' => $postquestionid, 'cartridgeid' => $postcartridgeid],
+            'id',
+            MUST_EXIST
+        );
         $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);
         $DB->delete_records(
             'local_playergames_concept_questions',

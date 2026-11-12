@@ -16,11 +16,12 @@
 /**
  * PlayerQuiz game interaction module.
  *
- * Shows one question at a time with a per-question countdown. A wrong answer
- * (or a question whose timer runs out) reveals the correct option and the
- * general feedback, then waits for the player to continue — it never advances
- * on its own. A correct answer ends the play and opens the result as a modal
- * over the reviewable question; running out of attempts opens a failure modal.
+ * Shows one question at a time with a per-question countdown. The page never knows which option is
+ * right: every answer (or a timeout) is sent to the server, which says whether it was correct, counts
+ * the wrong answers, ends the play and pays the XP. A wrong answer reveals the correct option and the
+ * general feedback the server returns, then waits for the player to continue — it never advances on
+ * its own. A correct answer opens the result as a modal over the reviewable question; running out of
+ * attempts opens a failure modal.
  *
  * @module     local_playergames/play_quiz
  * @copyright  2026 Jean Lúcio
@@ -28,20 +29,34 @@
  */
 
 import Modal from 'core/modal';
+import Notification from 'core/notification';
 
 let currentIndex = 0;
 let attemptNumber = 1;
-let wrongCount = 0;
 let finished = false;
+let busy = false;
 let endKind = '';
 let container = null;
 let questions = [];
 let questionSeconds = 0;
-let maxAttempts = 0;
 let timerEl = null;
 let timerInterval = null;
 let deadline = 0;
-const seen = new Set();
+
+/**
+ * Sends one request to the page and returns the server's JSON answer.
+ *
+ * @param {Object} params Form fields, besides the sesskey.
+ * @returns {Promise<Object>} The decoded response.
+ */
+const post = async(params) => {
+    const response = await fetch(container.dataset.action, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({sesskey: container.dataset.sesskey, ...params}),
+    });
+    return response.json();
+};
 
 /**
  * Stops and hides the per-question countdown timer.
@@ -72,17 +87,19 @@ const renderTimer = (seconds) => {
 
 /**
  * Starts the countdown for the current question. When it reaches zero the
- * question is treated as a wrong answer. Does nothing when the timer is
- * disabled (zero seconds configured).
+ * server is told, and counts the question as a wrong answer. Does nothing
+ * when the timer is disabled (zero seconds configured).
+ *
+ * @param {number} seconds Seconds the question has left.
  */
-const startTimer = () => {
+const startTimer = (seconds) => {
     clearTimer();
     if (questionSeconds <= 0 || !timerEl) {
         return;
     }
-    deadline = Date.now() + questionSeconds * 1000;
+    deadline = Date.now() + seconds * 1000;
     timerEl.classList.remove('d-none');
-    renderTimer(questionSeconds);
+    renderTimer(seconds);
     timerInterval = window.setInterval(() => {
         const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
         renderTimer(remaining);
@@ -91,62 +108,6 @@ const startTimer = () => {
             handleTimeout();
         }
     }, 250);
-};
-
-/**
- * Reveals the question at the given pool index, resets its per-question
- * controls (feedback, continue) and restarts the timer.
- *
- * @param {number} index Zero-based index into the questions pool.
- */
-const showQuestion = (index) => {
-    questions.forEach(q => {
-        q.classList.add('d-none');
-    });
-    hideContinue();
-    if (questions.length > 0) {
-        const current = questions[index];
-        current.classList.remove('d-none');
-        const feedback = current.querySelector('.pg-quiz-feedback');
-        if (feedback) {
-            feedback.classList.add('d-none');
-        }
-        const {source, sourceId} = current.dataset;
-        if (source && sourceId) {
-            seen.add(`${source}:${sourceId}`);
-        }
-    }
-    const progressText = document.getElementById('pg-quiz-progress-text');
-    if (progressText) {
-        const label = container.dataset.strAttempt || 'Attempt';
-        progressText.textContent = `${label} ${attemptNumber}`;
-    }
-    startTimer();
-};
-
-/**
- * Highlights the correct option within the current question.
- */
-const revealCorrect = () => {
-    const question = questions[currentIndex];
-    question.querySelectorAll('.pg-quiz-answer').forEach(b => {
-        b.disabled = true;
-        if (b.dataset.correct === '1') {
-            b.classList.remove('btn-outline-primary');
-            b.classList.add('btn-success');
-        }
-    });
-};
-
-/**
- * Reveals the general feedback block below the current question, when present.
- */
-const revealFeedback = () => {
-    const question = questions[currentIndex];
-    const feedback = question.querySelector('.pg-quiz-feedback');
-    if (feedback) {
-        feedback.classList.remove('d-none');
-    }
 };
 
 /**
@@ -170,73 +131,63 @@ const hideContinue = () => {
 };
 
 /**
- * Records a wrong answer or timeout. Ends the play in failure once the attempt
- * limit is reached; otherwise offers the continue button.
- */
-const registerWrong = () => {
-    wrongCount++;
-    if (maxAttempts > 0 && wrongCount >= maxAttempts) {
-        endWithFailure();
-        return;
-    }
-    showContinue();
-};
-
-/**
- * Advances to the next question after the player presses continue.
- */
-const goToNextQuestion = () => {
-    if (finished) {
-        return;
-    }
-    attemptNumber++;
-    currentIndex = (currentIndex + 1) % questions.length;
-    showQuestion(currentIndex);
-};
-
-/**
- * Handles the current question's timer running out: treated as a wrong answer
- * with the correct option and feedback revealed before the player continues.
- */
-const handleTimeout = () => {
-    if (finished) {
-        return;
-    }
-    const question = questions[currentIndex];
-    question.querySelectorAll('.pg-quiz-answer').forEach(b => {
-        b.disabled = true;
-    });
-    revealCorrect();
-    revealFeedback();
-    registerWrong();
-};
-
-/**
- * Handles a click on an answer button.
- * Correct: highlights green, reveals feedback and ends the play.
- * Wrong: highlights red, reveals the correct answer and feedback, then waits.
+ * Reveals the question at the given pool index, resets its controls and restarts the timer.
  *
- * @param {HTMLButtonElement} btn The clicked answer button.
+ * @param {number} index Zero-based index into the questions pool.
+ * @param {number} seconds Seconds the question has left.
  */
-const handleAnswer = (btn) => {
-    clearTimer();
-    const question = questions[currentIndex];
-    question.querySelectorAll('.pg-quiz-answer').forEach(b => {
+const showQuestion = (index, seconds) => {
+    questions.forEach(q => {
+        q.classList.add('d-none');
+    });
+    hideContinue();
+    currentIndex = index;
+    const current = questions[index];
+    current.classList.remove('d-none');
+    const feedback = current.querySelector('.pg-quiz-feedback');
+    if (feedback) {
+        feedback.classList.add('d-none');
+    }
+    current.querySelectorAll('.pg-quiz-answer').forEach(b => {
+        b.disabled = false;
+        b.classList.remove('btn-success', 'btn-danger');
+        b.classList.add('btn-outline-primary');
+    });
+    const progressText = document.getElementById('pg-quiz-progress-text');
+    if (progressText) {
+        const label = container.dataset.strAttempt || 'Attempt';
+        progressText.textContent = `${label} ${attemptNumber}`;
+    }
+    startTimer(seconds);
+};
+
+/**
+ * Locks the options of the current question.
+ */
+const lockAnswers = () => {
+    questions[currentIndex].querySelectorAll('.pg-quiz-answer').forEach(b => {
         b.disabled = true;
     });
+};
 
-    const isCorrect = btn.dataset.correct === '1';
-    btn.classList.remove('btn-outline-primary');
-
-    if (isCorrect) {
-        btn.classList.add('btn-success');
-        revealFeedback();
-        endWithSuccess();
-    } else {
-        btn.classList.add('btn-danger');
-        revealCorrect();
-        revealFeedback();
-        registerWrong();
+/**
+ * Highlights the option the server named as correct and shows the feedback it sent.
+ *
+ * @param {Object} result The server's verdict.
+ */
+const revealResult = (result) => {
+    const question = questions[currentIndex];
+    const buttons = Array.from(question.querySelectorAll('.pg-quiz-answer'));
+    const right = buttons.find(b => parseInt(b.dataset.choice, 10) === result.correctindex);
+    if (right) {
+        right.classList.remove('btn-outline-primary');
+        right.classList.add('btn-success');
+    }
+    const feedback = question.querySelector('.pg-quiz-feedback');
+    const text = question.querySelector('.pg-quiz-feedback-text');
+    if (feedback && text && result.feedback) {
+        text.innerHTML = result.feedback;
+        feedback.classList.remove('d-none');
     }
 };
 
@@ -271,72 +222,97 @@ const showEndActions = () => {
 };
 
 /**
- * Ends the play with a correct answer: submits the score, fills the XP value
- * and opens the result modal over the reviewable question.
+ * Applies the server's verdict on an answer: ends the play or offers to continue.
+ *
+ * @param {Object} result The server's verdict.
  */
-const endWithSuccess = async() => {
-    if (finished) {
+const applyResult = (result) => {
+    attemptNumber = result.attempt;
+    revealResult(result);
+
+    if (!result.finished) {
+        showContinue();
         return;
     }
+
     finished = true;
-    endKind = 'pg-quiz-result';
-
-    try {
-        const response = await fetch(container.dataset.action, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({
-                sesskey: container.dataset.sesskey,
-                action: 'submit_correct',
-                seen: JSON.stringify(Array.from(seen)),
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-            const xpEl = document.getElementById('pg-quiz-xp-count');
-            if (xpEl) {
-                xpEl.textContent = String(data.xpawarded);
-            }
-        }
-    } catch (e) {
-        void e;
-    }
-
     showEndActions();
-    openEndModal('pg-quiz-result');
+    if (result.won) {
+        endKind = 'pg-quiz-result';
+        const xpEl = document.getElementById('pg-quiz-xp-count');
+        if (xpEl) {
+            xpEl.textContent = String(result.xpawarded);
+        }
+    } else {
+        endKind = 'pg-quiz-failed';
+    }
+    openEndModal(endKind);
 };
 
 /**
- * Ends the play in failure: reports it so the server can start the cooldown,
- * then opens the failure modal over the reviewable question.
+ * Sends the player's choice (or -1 for a timeout) and shows what the server decides.
+ *
+ * @param {number} choice Zero-based option, or -1 when the time ran out.
  */
-const endWithFailure = async() => {
-    if (finished) {
+const submitChoice = async(choice) => {
+    if (finished || busy) {
         return;
     }
-    finished = true;
-    endKind = 'pg-quiz-failed';
+    busy = true;
+    clearTimer();
+    lockAnswers();
 
     try {
-        await fetch(container.dataset.action, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({
-                sesskey: container.dataset.sesskey,
-                action: 'submit_failed',
-            }),
+        const result = await post({action: 'answer', question: currentIndex, choice});
+        if (result.success) {
+            applyResult(result);
+        } else {
+            // The play is no longer one the server accepts answers for (ended elsewhere, expired).
+            window.location.reload();
+        }
+    } catch (error) {
+        Notification.exception(error);
+        questions[currentIndex].querySelectorAll('.pg-quiz-answer').forEach(b => {
+            b.disabled = false;
         });
-    } catch (e) {
-        void e;
+    } finally {
+        busy = false;
     }
+};
 
-    showEndActions();
-    openEndModal('pg-quiz-failed');
+/**
+ * Handles the current question's timer running out.
+ */
+const handleTimeout = () => {
+    submitChoice(-1);
+};
+
+/**
+ * Advances to the question the server names, after the player presses continue.
+ */
+const goToNextQuestion = async() => {
+    if (finished || busy) {
+        return;
+    }
+    busy = true;
+    try {
+        const result = await post({action: 'next'});
+        if (result.success) {
+            attemptNumber = result.attempt;
+            showQuestion(result.index, questionSeconds);
+        } else {
+            window.location.reload();
+        }
+    } catch (error) {
+        Notification.exception(error);
+    } finally {
+        busy = false;
+    }
 };
 
 export default {
     /**
-     * Initialises the quiz: reads DOM state, shows the first question and wires
+     * Initialises the quiz: reads DOM state, shows the current question and wires
      * the answer, continue and reopen-result interactions.
      */
     init: () => {
@@ -351,17 +327,18 @@ export default {
         }
 
         questionSeconds = parseInt(container.dataset.questionSeconds, 10) || 0;
-        maxAttempts = parseInt(container.dataset.maxAttempts, 10) || 0;
+        attemptNumber = parseInt(container.dataset.attempt, 10) || 1;
         timerEl = document.getElementById('pg-quiz-timer');
 
-        showQuestion(0);
+        const start = Math.min(parseInt(container.dataset.current, 10) || 0, questions.length - 1);
+        showQuestion(start, parseInt(container.dataset.firstSeconds, 10) || questionSeconds);
 
         container.addEventListener('click', (e) => {
             const btn = e.target.closest('.pg-quiz-answer');
             if (!btn || btn.disabled) {
                 return;
             }
-            handleAnswer(btn);
+            submitChoice(parseInt(btn.dataset.choice, 10));
         });
 
         const continueBtn = document.getElementById('pg-quiz-continue');

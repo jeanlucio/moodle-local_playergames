@@ -29,24 +29,12 @@ require_login();
 $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
 
-// Respect the per-user gamification opt-out.
-if (!\local_playergames\local\preferences::is_gamification_enabled($USER->id)) {
-    redirect(
-        new moodle_url('/my/'),
-        get_string('gamification_disabled_notice', 'local_playergames'),
-        null,
-        \core\output\notification::NOTIFY_INFO
-    );
-}
+// Opt-out and the allowed_participants restriction.
+\local_playergames\local\access::require_participant();
 
 $allowed  = get_config('local_playergames', 'allowed_participants') ?: 'students';
 $isstaff  = \local_playergames\local\access::is_staff();
 $isadmin  = has_capability('moodle/site:config', $context);
-
-// Access control: enforce participant group restriction.
-if (!\local_playergames\local\access::can_view_hub($isstaff, $isadmin, $allowed)) {
-    throw new moodle_exception('hub_access_restricted', 'local_playergames');
-}
 
 // Ranking visibility and avatar equip are handled via AJAX (see amd/src/hub.js).
 

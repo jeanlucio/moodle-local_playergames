@@ -14,13 +14,13 @@ Feature: Play the PlayerQuiz daily game
 
   @javascript
   Scenario: A wrong answer reveals the correct option and feedback and then waits
-    When I click on ".pg-quiz-answer[data-correct='0']" "css_element"
-    Then ".pg-quiz-answer[data-correct='1'].btn-success" "css_element" should exist
+    When I click on "Wrong 1" "button"
+    Then ".pg-quiz-answer.btn-success" "css_element" should exist
     And I should see "Behat feedback after answering."
     And I should see "Continue"
 
   @javascript
   Scenario: A correct answer shows the result as a modal
-    When I click on ".pg-quiz-answer[data-correct='1']" "css_element"
+    When I click on "Correct option" "button"
     Then I should see "Quiz completed!"
     And I should see "XP earned:"

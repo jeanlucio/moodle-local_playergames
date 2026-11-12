@@ -376,6 +376,8 @@ class hub implements renderable, templatable {
                       JOIN {user} u ON u.id = p.userid
                      WHERE p.seasonid = :seasonid
                        AND p.showinranking = 1
+                       AND u.deleted = 0
+                       AND u.suspended = 0
                        {$filter}
                   ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
 
@@ -431,6 +433,8 @@ class hub implements renderable, templatable {
                       FROM {local_playergames_student_xp_cache} c
                       JOIN {user} u ON u.id = c.userid
                      WHERE c.showinranking = 1
+                       AND u.deleted = 0
+                       AND u.suspended = 0
                        AND c.windowedxp > 0
                   ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
 

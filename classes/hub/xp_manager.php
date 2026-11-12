@@ -274,8 +274,11 @@ class xp_manager {
 
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_player_profile} p
+                  JOIN {user} u ON u.id = p.userid
                  WHERE p.seasonid = :seasonid
                    AND p.showinranking = 1
+                   AND u.deleted = 0
+                   AND u.suspended = 0
                    {$filter}
                    AND (p.xp > :xpgt
                         OR (p.xp = :xpeq1 AND p.timemodified < :tmlt)

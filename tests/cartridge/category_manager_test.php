@@ -122,4 +122,44 @@ final class category_manager_test extends \advanced_testcase {
         $this->assertFalse($DB->record_exists('local_playergames_categories', ['id' => $catid]));
         $this->assertNull($DB->get_field('local_playergames_concepts', 'categoryid', ['id' => $conceptid]));
     }
+
+    /**
+     * Deleting a category also clears it from the questions of the cartridge.
+     *
+     * Regression test: the questions of a quiz cartridge were left pointing at a category that no
+     * longer existed.
+     */
+    public function test_delete_nulls_question_category(): void {
+        global $DB;
+        $catid = $this->manager->create($this->cartridgeid, 'Removable');
+        $questionid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
+            'conceptid' => null, 'cartridgeid' => $this->cartridgeid, 'questiontext' => 'Q?',
+            'source' => 'manual', 'difficulty' => 3, 'categoryid' => $catid,
+            'generalfeedback' => null, 'timecreated' => time(),
+        ]);
+
+        $this->assertTrue($this->manager->delete($catid, $this->cartridgeid));
+
+        $this->assertNull($DB->get_field('local_playergames_concept_questions', 'categoryid', ['id' => $questionid]));
+    }
+
+    /**
+     * A category paired with another cartridge's id deletes nothing and touches nobody's content.
+     *
+     * Regression test: the concepts were cleared by category id alone, so naming another cartridge
+     * stripped the category from the concepts of the one that owns it while the category stayed.
+     */
+    public function test_delete_with_another_cartridges_id_changes_nothing(): void {
+        global $DB;
+        $catid = $this->manager->create($this->cartridgeid, 'Mine');
+        $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $this->cartridgeid, 'term' => 'T', 'definition' => 'D',
+            'categoryid' => $catid, 'difficulty' => 3, 'language' => null,
+        ]);
+
+        $this->assertFalse($this->manager->delete($catid, $this->cartridgeid + 999));
+
+        $this->assertTrue($DB->record_exists('local_playergames_categories', ['id' => $catid]));
+        $this->assertEquals($catid, $DB->get_field('local_playergames_concepts', 'categoryid', ['id' => $conceptid]));
+    }
 }

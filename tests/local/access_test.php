@@ -148,7 +148,7 @@ final class access_test extends \advanced_testcase {
         $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
 
         $this->assertFalse(
-            has_capability('local/playergames:viewdashboard', \context_system::instance(), $teacher),
+            has_capability('moodle/course:update', \context_system::instance(), $teacher),
             'the premise: a course role does not reach the system context'
         );
         $this->assertStringEndsWith('/local/playergames/dashboard.php', access::landing_url((int) $teacher->id)->get_path());
@@ -178,5 +178,71 @@ final class access_test extends \advanced_testcase {
         $this->setAdminUser();
 
         $this->assertStringEndsWith('/local/playergames/dashboard.php', access::landing_url()->get_path());
+    }
+
+    /**
+     * The opt-out and the allowed_participants setting decide who takes part, for every entry point.
+     *
+     * Regression test: only the hub and the check-in applied them, so a user the hub turned away
+     * could still play and earn XP by opening a game's URL.
+     */
+    public function test_is_participant_applies_the_optout_and_the_participants_setting(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+
+        set_config('allowed_participants', 'students', 'local_playergames');
+        $this->assertTrue(access::is_participant((int) $student->id));
+        $this->assertFalse(access::is_participant((int) $teacher->id));
+
+        set_config('allowed_participants', 'staff', 'local_playergames');
+        $this->assertFalse(access::is_participant((int) $student->id));
+        $this->assertTrue(access::is_participant((int) $teacher->id));
+
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $this->assertTrue(access::is_participant((int) $student->id));
+        set_user_preference('local_playergames_gamification', 0, $student);
+        $this->assertFalse(access::is_participant((int) $student->id));
+    }
+
+    /**
+     * A page or service stops a user who does not take part, and lets one who does through.
+     */
+    public function test_require_participant_throws_for_a_user_outside_the_participants(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        set_config('allowed_participants', 'students', 'local_playergames');
+
+        $this->setUser($teacher);
+        try {
+            access::require_participant();
+            $this->fail('A teacher was let into a students-only hub.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('hub_access_restricted', $e->errorcode);
+        }
+
+        $student = $this->getDataGenerator()->create_user();
+        $this->setUser($student);
+        access::require_participant();
+        $this->assertTrue(true);
+    }
+
+    /**
+     * A service cannot redirect, so a user who turned the gamification off gets an exception.
+     */
+    public function test_require_participant_as_a_service_throws_for_the_optout(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $student);
+        $this->setUser($student);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('gamification_disabled_notice', 'local_playergames'));
+        access::require_participant(true);
     }
 }

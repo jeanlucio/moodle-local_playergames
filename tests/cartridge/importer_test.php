@@ -262,13 +262,15 @@ final class importer_test extends \advanced_testcase {
         $cartridgeid = (int) $DB->insert_record('local_playergames_cartridges', $cartridge);
 
         $questions = [
-            ['questiontext' => 'Valid?', 'correct' => 'Yes', 'distractors' => ['No', 'Maybe']],
-            ['questiontext' => '', 'correct' => 'X', 'distractors' => ['a', 'b']],
-            ['questiontext' => 'No correct', 'correct' => '', 'distractors' => ['a', 'b']],
+            ['questiontext' => 'Valid?', 'correct' => 'Yes', 'distractors' => ['No', 'Maybe', 'Never', 'Rarely']],
+            ['questiontext' => '', 'correct' => 'X', 'distractors' => ['a', 'b', 'c', 'd']],
+            ['questiontext' => 'No correct', 'correct' => '', 'distractors' => ['a', 'b', 'c', 'd']],
+            ['questiontext' => 'Too few', 'correct' => 'X', 'distractors' => ['a', 'b', 'c']],
+            ['questiontext' => 'Blank one', 'correct' => 'X', 'distractors' => ['a', 'b', 'c', '  ']],
         ];
         $result = (new importer())->save_questions($cartridgeid, $questions);
 
-        // Only the first question is complete.
+        // Only the first question is complete: the game needs four distractors that are not empty.
         $this->assertSame(1, $result->count);
         $this->assertSame(1, $DB->count_records('local_playergames_concept_questions', ['cartridgeid' => $cartridgeid]));
     }
@@ -336,7 +338,7 @@ final class importer_test extends \advanced_testcase {
     }
 
     /**
-     * Distractors that are not text become empty entries, and questions that are not objects are skipped.
+     * Distractors that are not text are left out, and questions that are not objects are skipped.
      */
     public function test_save_questions_survives_fields_of_the_wrong_type(): void {
         global $DB;
@@ -350,12 +352,11 @@ final class importer_test extends \advanced_testcase {
                 'category' => ['x'],
                 'generalfeedback' => ['y'],
             ],
-            ['questiontext' => 'No distractors list', 'correct' => 'C', 'distractors' => 'single'],
         ]]), 1);
 
-        $this->assertSame(2, $result->count);
+        $this->assertSame(1, $result->count);
         $this->assertSame(
-            ['C', 'a', '', 'c', 'd'],
+            ['C', 'a', 'c', 'd', 'e'],
             array_values($DB->get_fieldset_select(
                 'local_playergames_concept_answers',
                 'answertext',
@@ -365,6 +366,35 @@ final class importer_test extends \advanced_testcase {
         );
         $result = (new importer())->save_questions($result->cartridgeid, ['a string instead of a question']);
         $this->assertSame(0, $result->count);
+    }
+
+    /**
+     * A quiz question with fewer than four distractors that are not empty is refused with the file.
+     *
+     * Regression test: it was saved and counted as imported, but the game drops it, so the cartridge
+     * looked full while the quiz found no question; a blank distractor reached the player as an empty button.
+     */
+    public function test_import_refuses_a_question_without_four_real_distractors(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $cases = [
+            ['Vasco', 'Colombo', 'Américo'],
+            ['Vasco', 'Colombo', 'Américo', ''],
+            ['Vasco', 'Colombo', 'Américo', ['x']],
+            'single',
+        ];
+        foreach ($cases as $distractors) {
+            try {
+                (new importer())->import($this->quiz_json(['questions' => [
+                    ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => $distractors],
+                ]]), 1);
+                $this->fail('Accepted: ' . json_encode($distractors));
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_question_distractors', $e->errorcode);
+            }
+        }
+        $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
     }
 
     /**

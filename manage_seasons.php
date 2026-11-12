@@ -42,7 +42,7 @@ $PAGE->set_heading(get_string('season_manage_pagetitle', 'local_playergames'));
 $notifications = [];
 $editing = null;
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $seasonid > 0) {
+if (!data_submitted() && $seasonid > 0) {
     $target = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
     if ($action === 'delete' && $target->status !== season_manager::STATUS_ACTIVE) {
         $message = get_string('season_delete_confirm', 'local_playergames', (object) [
@@ -68,15 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $seasonid > 0) {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (data_submitted()) {
     require_sesskey();
 
     if ($action === 'create') {
         $name      = required_param('name', PARAM_TEXT);
         $startstr  = required_param('startdate', PARAM_TEXT);
         $endstr    = required_param('enddate', PARAM_TEXT);
-        $startdate = (int) strtotime($startstr);
-        $enddate   = (int) strtotime($endstr);
+        $startdate = season_manager::date_to_timestamp($startstr, false);
+        $enddate   = season_manager::date_to_timestamp($endstr, true);
 
         if (!$startdate || !$enddate || $enddate <= $startdate) {
             $notifications[] = $OUTPUT->notification(
@@ -92,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else if ($action === 'update' && $seasonid > 0) {
         $name      = required_param('name', PARAM_TEXT);
-        $startdate = (int) strtotime(optional_param('startdate', '', PARAM_TEXT));
-        $enddate   = (int) strtotime(optional_param('enddate', '', PARAM_TEXT));
+        $startdate = season_manager::date_to_timestamp(optional_param('startdate', '', PARAM_TEXT), false);
+        $enddate   = season_manager::date_to_timestamp(optional_param('enddate', '', PARAM_TEXT), true);
         $existing  = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
         $closed    = $existing->status === season_manager::STATUS_CLOSED;
         if (!$closed && (!$startdate || !$enddate || $enddate <= $startdate)) {
@@ -188,8 +188,8 @@ foreach ($seasons as $season) {
 }
 
 $months      = (int) get_config('local_playergames', 'season_duration_months') ?: 6;
-$defaultstart = date('Y-m-d');
-$defaultend   = date('Y-m-d', strtotime("+{$months} months"));
+$defaultstart = userdate(time(), '%Y-%m-%d');
+$defaultend   = userdate(strtotime("+{$months} months"), '%Y-%m-%d');
 $nextnum      = $DB->count_records('local_playergames_seasons') + 1;
 $defaultname  = get_string('defaultseasonname', 'local_playergames');
 $defaultname  = preg_replace('/\d+$/', (string) $nextnum, $defaultname) ?? $defaultname;
@@ -232,8 +232,8 @@ if ($editing) {
     $templatedata['editing']         = true;
     $templatedata['lockdates']       = $editing->status === season_manager::STATUS_CLOSED;
     $templatedata['defaultname']     = \local_playergames\local\text::plain($editing->name);
-    $templatedata['defaultstart']    = date('Y-m-d', (int) $editing->startdate);
-    $templatedata['defaultend']      = date('Y-m-d', (int) $editing->enddate);
+    $templatedata['defaultstart']    = userdate((int) $editing->startdate, '%Y-%m-%d');
+    $templatedata['defaultend']      = userdate((int) $editing->enddate, '%Y-%m-%d');
 }
 
 echo $OUTPUT->header();

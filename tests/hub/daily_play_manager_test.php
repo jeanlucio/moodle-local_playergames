@@ -222,4 +222,60 @@ final class daily_play_manager_test extends \advanced_testcase {
 
         $this->assertSame(25, $awarded);
     }
+
+    /**
+     * A game the admin switched off for the season pays nothing and is not offered in the hub.
+     */
+    public function test_a_game_switched_off_for_the_season_earns_nothing_and_is_hidden(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+
+        $user     = $this->getDataGenerator()->create_user();
+        $snapshot = ['xp_per_game_quiz' => 10, 'xp_games_quiz' => 1];
+        $season   = $this->make_season($snapshot);
+        $DB->insert_record('local_playergames_season_games', (object) [
+            'seasonid' => $season->id, 'gametype' => 'quiz', 'enabled' => 0,
+            'source' => 'cartridge', 'cartridgeids' => null, 'auxid' => 0,
+        ]);
+
+        $result = daily_play_manager::register_play(
+            (int) $user->id,
+            'quiz',
+            mktime(0, 0, 0),
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $user->id]));
+        $types = array_column(daily_play_manager::get_games_today((int) $user->id, $snapshot), 'gametype');
+        $this->assertNotContains('quiz', $types);
+        $this->assertContains('guess', $types);
+    }
+
+    /**
+     * A user the participant rules exclude earns nothing, whichever page the play came from.
+     */
+    public function test_a_user_outside_the_participants_earns_nothing(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+
+        $user   = $this->getDataGenerator()->create_user();
+        $season = $this->make_season(['xp_per_game_quiz' => 10, 'xp_games_quiz' => 1]);
+        set_user_preference('local_playergames_gamification', 0, $user);
+
+        $result = daily_play_manager::register_play(
+            (int) $user->id,
+            'quiz',
+            mktime(0, 0, 0),
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $user->id]));
+        $this->assertSame(0, $DB->count_records('local_playergames_player_profile', ['userid' => $user->id]));
+    }
 }

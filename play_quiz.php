@@ -28,6 +28,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\quiz_loader;
+use local_playergames\games\quiz_play;
 use local_playergames\games\quiz_settings;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\daily_play_manager;
@@ -38,59 +39,51 @@ use local_playergames\local\game_page;
 require_login();
 $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
+\local_playergames\local\access::require_participant();
 
 $gamedate   = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
 $formaction = (new moodle_url('/local/playergames/play_quiz.php'))->out(false);
 
-// POST: AJAX score submission.
+// POST: AJAX answers. The server judges each one, so the page never receives which option is right.
 if (data_submitted()) {
     require_sesskey();
+    header('Content-Type: application/json');
+
+    $season = season_manager::get_active();
+    $remaining = $season === null ? 0 : daily_play_manager::remaining_plays(
+        (int) $USER->id,
+        'quiz',
+        $gamedate,
+        season_manager::get_config_snapshot($season)
+    );
+    if (
+        $season === null
+        || $remaining <= 0
+        || season_game_config::is_disabled((int) $season->id, 'quiz')
+        || (new quiz_settings())->is_on_cooldown((int) $USER->id)
+    ) {
+        echo json_encode(['success' => false, 'reason' => 'unavailable']);
+        exit;
+    }
+
     $submitaction = optional_param('action', '', PARAM_ALPHAEXT);
-
-    if ($submitaction === 'submit_failed') {
-        // The player ran out of attempts. Start the configured cooldown so the
-        // quiz stays locked until it elapses. No XP and no daily play is spent.
-        header('Content-Type: application/json');
-
-        (new quiz_settings())->start_cooldown((int) $USER->id);
-
-        echo json_encode(['success' => true]);
+    if ($submitaction === 'answer') {
+        echo json_encode(quiz_play::answer(
+            (int) $USER->id,
+            optional_param('question', -1, PARAM_INT),
+            optional_param('choice', -2, PARAM_INT),
+            $season,
+            $context
+        ));
+        exit;
+    }
+    if ($submitaction === 'next') {
+        echo json_encode(quiz_play::next());
         exit;
     }
 
-    if ($submitaction === 'submit_correct') {
-        header('Content-Type: application/json');
-
-        $season = season_manager::get_active();
-        if ($season === null) {
-            echo json_encode(['success' => false, 'xpawarded' => 0]);
-            exit;
-        }
-
-        $result = daily_play_manager::register_play((int) $USER->id, 'quiz', $gamedate, $season, $context);
-
-        // Record the questions the client actually showed this play so the next
-        // play today excludes them. Entries arrive as "source:sourceid" strings.
-        if (!empty($result['success'])) {
-            $items = json_decode(optional_param('seen', '', PARAM_RAW), true);
-            if (is_array($items)) {
-                $served = [];
-                foreach ($items as $entry) {
-                    if (!is_string($entry) || strpos($entry, ':') === false) {
-                        continue;
-                    }
-                    [$source, $sourceid] = explode(':', $entry, 2);
-                    if (in_array($source, ['cartridge', 'questionbank'], true) && (int) $sourceid > 0) {
-                        $served[] = ['source' => $source, 'sourceid' => (int) $sourceid];
-                    }
-                }
-                served_questions::record((int) $USER->id, 'quiz', $gamedate, $served);
-            }
-        }
-
-        echo json_encode($result);
-        exit;
-    }
+    echo json_encode(['success' => false, 'reason' => 'unknownaction']);
+    exit;
 }
 
 // GET: render game page.
@@ -107,6 +100,12 @@ if ($activeseason === null) {
     echo $OUTPUT->footer();
     exit;
 }
+if (season_game_config::is_disabled((int) $activeseason->id, 'quiz')) {
+    echo $OUTPUT->header();
+    echo game_page::disabled_html();
+    echo $OUTPUT->footer();
+    exit;
+}
 $snapshot      = season_manager::get_config_snapshot($activeseason);
 $remaining     = daily_play_manager::remaining_plays((int) $USER->id, 'quiz', $gamedate, $snapshot);
 $alreadyplayed = $remaining <= 0;
@@ -114,7 +113,6 @@ $alreadyplayed = $remaining <= 0;
 // Gameplay rules configured by the admin (read live so changes apply at once).
 $settings        = new quiz_settings();
 $questionseconds = $settings->question_seconds();
-$maxattempts     = $settings->max_attempts();
 $cooldownminutes = $settings->cooldown_minutes();
 $sessionsize     = $settings->session_size();
 
@@ -122,62 +120,49 @@ $sessionsize     = $settings->session_size();
 $cooldownremaining = $settings->cooldown_remaining((int) $USER->id);
 $cooldownactive    = !$alreadyplayed && $cooldownremaining > 0;
 
-$questions   = [];
-$noquestions = false;
+$questions    = [];
+$noquestions  = false;
+$currentindex = 0;
+$attempt      = 1;
+$firstseconds = $questionseconds;
 
 if (!$alreadyplayed && !$cooldownactive) {
-    $gameconfig = season_game_config::get_for_active_season('quiz');
-    if ($gameconfig !== null) {
-        $sources      = $gameconfig->source;
-        $categoryid   = (int) $gameconfig->auxid;
-        $cartridgeids = $gameconfig->cartridgeids;
-    } else {
-        // Defensive fallback for a season created before per-season config existed.
-        $sources      = season_game_config::SOURCE_CARTRIDGE;
-        $categoryid   = 0;
-        $cartridgeids = null;
+    // A play left open by a reload continues with the same questions and wrong-answer count.
+    $play = quiz_play::resume((int) $USER->id, $gamedate, (int) $activeseason->id);
+
+    if ($play === null) {
+        // A cooldown can start while resuming, when time ran out during an absence.
+        $cooldownremaining = $settings->cooldown_remaining((int) $USER->id);
+        $cooldownactive    = $cooldownremaining > 0;
     }
 
-    $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
-    $loader  = new quiz_loader();
-    $loaded  = $loader->load_session($sessionsize, $sources, $categoryid, $cartridgeids, $exclude);
-
-    if (empty($loaded)) {
-        $noquestions = true;
-    } else {
-        $letters = ['A', 'B', 'C', 'D', 'E'];
-        foreach ($loaded as $i => $q) {
-            $qtext = $q->source === 'questionbank'
-                ? format_text($q->questiontext, FORMAT_HTML, ['context' => $context])
-                : s($q->questiontext);
-
-            $answers = [];
-            foreach ($q->answers as $j => $a) {
-                $atext = $q->source === 'questionbank'
-                    ? format_text($a->text, FORMAT_HTML, ['context' => $context])
-                    : s($a->text);
-                $answers[] = [
-                    'letter'  => $letters[$j] ?? (string) ($j + 1),
-                    'text'    => $atext,
-                    'correct' => $a->correct,
-                ];
-            }
-
-            $feedbackraw = (string) ($q->generalfeedback ?? '');
-            $feedback    = $feedbackraw === ''
-                ? ''
-                : format_text($feedbackraw, $q->generalfeedbackformat, ['context' => $context]);
-
-            $questions[] = [
-                'index'        => $i + 1,
-                'questiontext' => $qtext,
-                'answers'      => $answers,
-                'source'       => $q->source,
-                'sourceid'     => (int) $q->sourceid,
-                'feedback'     => $feedback,
-                'has_feedback' => $feedback !== '',
-            ];
+    if ($play === null && !$cooldownactive) {
+        // A season with no row for the game predates per-season config: fall back to the cartridges.
+        $gameconfig = season_game_config::get_for_active_season('quiz');
+        if ($gameconfig !== null) {
+            $sources      = $gameconfig->source;
+            $categoryid   = (int) $gameconfig->auxid;
+            $cartridgeids = $gameconfig->cartridgeids;
+        } else {
+            $sources      = season_game_config::SOURCE_CARTRIDGE;
+            $categoryid   = 0;
+            $cartridgeids = null;
         }
+
+        $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
+        $loaded  = (new quiz_loader())->load_session($sessionsize, $sources, $categoryid, $cartridgeids, $exclude);
+        if (!empty($loaded)) {
+            $play = quiz_play::start($gamedate, (int) $activeseason->id, $loaded, $context);
+        }
+    }
+
+    if ($play !== null) {
+        $questions    = quiz_play::view($play);
+        $currentindex = (int) $play['current'];
+        $attempt      = (int) $play['wrong'] + 1;
+        $firstseconds = quiz_play::seconds_left($play);
+    } else if (!$cooldownactive) {
+        $noquestions = true;
     }
 }
 
@@ -189,11 +174,13 @@ $templatedata = [
     'sesskey'            => sesskey(),
     'formaction'         => $formaction,
     'questions'          => $questions,
+    'current_index'      => $currentindex,
+    'attempt'            => $attempt,
+    'first_seconds'      => $firstseconds,
     'already_played'     => $alreadyplayed,
     'cooldown_active'    => $cooldownactive,
     'no_questions'       => $noquestions,
     'question_seconds'   => $questionseconds,
-    'max_attempts'       => $maxattempts,
     'huburl'             => (new moodle_url('/local/playergames/hub.php'))->out(false),
     'str_already_played' => get_string('quiz_already_played', 'local_playergames'),
     'str_locked'         => get_string('quiz_locked', 'local_playergames'),

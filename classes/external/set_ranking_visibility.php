@@ -30,6 +30,7 @@ use core_external\external_single_structure;
 use core_external\external_value;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\xp_manager;
+use local_playergames\local\access;
 
 /**
  * Set whether the current user appears in the ranking.
@@ -63,6 +64,7 @@ class set_ranking_visibility extends external_api {
         $context = \context_system::instance();
         self::validate_context($context);
         require_capability('local/playergames:viewhub', $context);
+        access::require_participant(true);
 
         $visible = (bool) $params['show'];
         $season  = season_manager::get_active();

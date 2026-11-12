@@ -67,6 +67,9 @@ if ($scope === 'all' && $canseeall) {
     $scopeids = $report->get_teacher_courseids($USER->id);
 }
 
+// Without a readable log store the events metric would read as zero engagement, so say so.
+$nologreader = \local_playergames\local\engagement_report::get_log_reader() === null;
+
 $data    = $report->compare($days, $scopeids);
 $with    = $data['with'];
 $without = $data['without'];
@@ -156,6 +159,7 @@ $templatedata = [
     'scope'           => $scope,
     'days'            => $days,
     'day_options'     => $dayoptions,
+    'no_log_reader'   => $nologreader,
     'has_data'        => $with['course_count'] > 0 || $without['course_count'] > 0,
     'with_count'      => get_string('engmeter_courses_count', 'local_playergames', $with['course_count']),
     'without_count'   => get_string('engmeter_courses_count', 'local_playergames', $without['course_count']),

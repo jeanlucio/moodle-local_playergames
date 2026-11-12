@@ -931,5 +931,28 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110904, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111201) {
+        // A season typed in the admin form used to end at 00:00 of its last day, so the task that closes
+        // expired seasons shut it that night and the announced last day could not be played. The form now
+        // ends it at the last second of that day, as create_next() always did: do the same for the seasons
+        // still open. A closed season is history and stays as it was. The capabilities that nothing checked
+        // (playgames, viewdashboard, viewengagementmeter, manageownkeys) are dropped by Moodle itself,
+        // as access.php no longer defines them.
+        $open = $DB->get_records_select('local_playergames_seasons', "status <> 'closed'", [], '', 'id, enddate');
+        foreach ($open as $season) {
+            $end = (int) $season->enddate;
+            if (date('His', $end) === '000000') {
+                $DB->set_field(
+                    'local_playergames_seasons',
+                    'enddate',
+                    mktime(23, 59, 59, (int) date('n', $end), (int) date('j', $end), (int) date('Y', $end)),
+                    ['id' => $season->id]
+                );
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026111201, 'local', 'playergames');
+    }
+
     return true;
 }

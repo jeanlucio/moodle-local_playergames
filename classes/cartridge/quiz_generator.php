@@ -104,7 +104,7 @@ class quiz_generator extends ai_generator {
             }
             $qtext = payload::text($qdata['questiontext'] ?? null);
             $correct = payload::text($qdata['correct'] ?? null);
-            $distractors = array_map([payload::class, 'text'], payload::values($qdata['distractors'] ?? null));
+            $distractors = payload::texts($qdata['distractors'] ?? null);
             if ($qtext === '' || $correct === '' || count($distractors) < 4) {
                 continue;
             }
@@ -264,13 +264,14 @@ class quiz_generator extends ai_generator {
             if (!is_array($q) || !isset($q['questiontext'], $q['correct'], $q['distractors'])) {
                 continue;
             }
-            if (!is_array($q['distractors']) || count($q['distractors']) < 4) {
+            $distractors = payload::texts($q['distractors']);
+            if (!is_array($q['distractors']) || count($distractors) < 4) {
                 continue;
             }
             $result[] = [
                 'questiontext'    => payload::text($q['questiontext']),
                 'correct'         => payload::text($q['correct']),
-                'distractors'     => array_map([payload::class, 'text'], array_slice($q['distractors'], 0, 4)),
+                'distractors'     => array_slice($distractors, 0, 4),
                 'category'        => payload::text($q['category'] ?? null),
                 'difficulty'      => payload::number($q['difficulty'] ?? null, 1, 5, 3),
                 'generalfeedback' => payload::text($q['generalfeedback'] ?? null),
@@ -469,13 +470,14 @@ class quiz_generator extends ai_generator {
             if (!isset($concepts[$conceptid])) {
                 continue;
             }
-            if (!is_array($q['distractors']) || count($q['distractors']) < 4) {
+            $distractors = payload::texts($q['distractors']);
+            if (!is_array($q['distractors']) || count($distractors) < 4) {
                 continue;
             }
             $result[] = [
                 'conceptid' => $conceptid,
                 'questiontext' => payload::text($q['questiontext']),
-                'distractors' => array_map([payload::class, 'text'], array_slice($q['distractors'], 0, 4)),
+                'distractors' => array_slice($distractors, 0, 4),
             ];
         }
 

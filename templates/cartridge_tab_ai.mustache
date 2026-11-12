@@ -107,7 +107,7 @@
                         </label>
                         <input type="text" id="pg-ai-language" name="ai_language"
                                value="{{ai_form_language}}" class="form-control"
-                               placeholder="English">
+                               placeholder="{{#str}}cartridge_ai_language_placeholder, local_playergames{{/str}}">
                     </div>
                     <div class="col-md-4">
                         <label for="pg-ai-categories" class="form-label">
@@ -202,25 +202,25 @@
                             {{#ai_preview.concepts}}
                             <tr>
                                 <td>
-                                    <input type="text" name="concepts[{{index}}][term]"
+                                    <input type="text" name="concept_term[{{index}}]"
                                            value="{{term}}"
                                            aria-label="{{#str}}concept_term, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="text" name="concepts[{{index}}][definition]"
+                                    <input type="text" name="concept_definition[{{index}}]"
                                            value="{{definition}}"
                                            aria-label="{{#str}}concept_definition, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
-                                    <input type="text" name="concepts[{{index}}][category]"
+                                    <input type="text" name="concept_category[{{index}}]"
                                            value="{{category}}"
                                            aria-label="{{#str}}concept_category, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-category-input">
                                 </td>
                                 <td>
-                                    <input type="number" name="concepts[{{index}}][difficulty]"
+                                    <input type="number" name="concept_difficulty[{{index}}]"
                                            value="{{difficulty}}" min="1" max="5"
                                            aria-label="{{#str}}concept_difficulty, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-difficulty-input">
@@ -283,7 +283,7 @@
                         </label>
                         <input type="text" id="pg-quiz-language" name="ai_language"
                                value="{{quiz_form_language}}" class="form-control"
-                               placeholder="Português">
+                               placeholder="{{#str}}cartridge_ai_language_placeholder, local_playergames{{/str}}">
                     </div>
                     <div class="col-md-4">
                         <label for="pg-quiz-categories" class="form-label">
@@ -382,6 +382,7 @@
                                 </th>
                                 <th scope="col">{{#str}}concept_category, local_playergames{{/str}}</th>
                                 <th scope="col">{{#str}}concept_difficulty, local_playergames{{/str}}</th>
+                                <th scope="col">{{#str}}quiz_editor_feedback, local_playergames{{/str}}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -390,37 +391,45 @@
                                 <td class="text-muted small align-top pt-2">{{index}}</td>
                                 <td>
                                     <input type="text"
-                                           name="questions[{{index}}][questiontext]"
+                                           name="question_text[{{index}}]"
                                            value="{{questiontext}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
                                     <input type="text"
-                                           name="questions[{{index}}][correct]"
+                                           name="question_correct[{{index}}]"
                                            value="{{correct}}"
                                            class="form-control form-control-sm">
                                 </td>
                                 <td>
                                     {{#distractors}}
                                     <input type="text"
-                                           name="questions[{{index}}][distractors][]"
-                                           value="{{.}}"
+                                           name="question_distractor_{{slot}}[{{index}}]"
+                                           value="{{text}}"
+                                           aria-label="{{#str}}cartridge_quiz_preview_distractors, local_playergames{{/str}} {{number}}"
                                            class="form-control form-control-sm mb-1">
                                     {{/distractors}}
                                 </td>
                                 <td>
                                     <input type="text"
-                                           name="questions[{{index}}][category]"
+                                           name="question_category[{{index}}]"
                                            value="{{category}}"
                                            aria-label="{{#str}}concept_category, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-category-input">
                                 </td>
                                 <td>
                                     <input type="number"
-                                           name="questions[{{index}}][difficulty]"
+                                           name="question_difficulty[{{index}}]"
                                            value="{{difficulty}}" min="1" max="5"
                                            aria-label="{{#str}}concept_difficulty, local_playergames{{/str}} {{index}}"
                                            class="form-control form-control-sm pg-difficulty-input">
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           name="question_feedback[{{index}}]"
+                                           value="{{generalfeedback}}"
+                                           aria-label="{{#str}}quiz_editor_feedback, local_playergames{{/str}} {{index}}"
+                                           class="form-control form-control-sm">
                                 </td>
                             </tr>
                             {{/quiz_preview.questions}}

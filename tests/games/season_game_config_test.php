@@ -140,4 +140,22 @@ final class season_game_config_test extends \advanced_testcase {
         $this->assertSame(0, (int) $all['quiz']->enabled);
         $this->assertSame(1, (int) $all['guess']->enabled);
     }
+
+    /**
+     * A game switched off is told apart from a season that has no row for it.
+     *
+     * Regression test: get_for_active_season() returns null for both, and Quiz and Battle took the null
+     * for "season before per-season config" and fell back to every cartridge, so switching them off did nothing.
+     */
+    public function test_is_disabled_tells_a_switched_off_game_from_a_missing_row(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_active_season();
+        $this->add_game($seasonid, 'quiz', 0);
+        $this->add_game($seasonid, 'guess', 1);
+
+        $this->assertTrue(season_game_config::is_disabled($seasonid, 'quiz'));
+        $this->assertFalse(season_game_config::is_disabled($seasonid, 'guess'));
+        $this->assertFalse(season_game_config::is_disabled($seasonid, 'battle'));
+        $this->assertNull(season_game_config::get_for_active_season('quiz'));
+    }
 }

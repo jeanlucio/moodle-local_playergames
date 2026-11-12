@@ -189,9 +189,10 @@ class importer {
             if ($qtext === '' || $correct === '') {
                 continue;
             }
-            $distractors = [];
-            foreach (payload::values($raw['distractors'] ?? null) as $d) {
-                $distractors[] = payload::text($d);
+            // The game needs four real distractors; the schema check already refuses a question without them.
+            $distractors = payload::texts($raw['distractors'] ?? null);
+            if (count($distractors) < 4) {
+                continue;
             }
 
             $catname = payload::text($raw['category'] ?? null);
@@ -312,6 +313,9 @@ class importer {
             }
             if (payload::text($question['correct'] ?? null) === '') {
                 throw new \moodle_exception('error_question_empty_correct', 'local_playergames');
+            }
+            if (count(payload::texts($question['distractors'] ?? null)) < 4) {
+                throw new \moodle_exception('error_question_distractors', 'local_playergames');
             }
         }
     }

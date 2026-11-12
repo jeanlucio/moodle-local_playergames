@@ -339,4 +339,27 @@ final class xp_manager_test extends \advanced_testcase {
         $seasonid = $this->make_season([]);
         $this->assertSame(0, xp_manager::get_season_position(1, $seasonid, 0, 1000, [], true));
     }
+
+    /**
+     * A deleted or suspended account does not count ahead of the players who remain.
+     *
+     * Regression test: the position was counted from the profiles alone, so an account the site had
+     * deleted still pushed everyone below it down a place.
+     */
+    public function test_get_season_position_ignores_deleted_and_suspended_accounts(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $gone      = $this->getDataGenerator()->create_user();
+        $suspended = $this->getDataGenerator()->create_user(['suspended' => 1]);
+        $me        = (int) $this->getDataGenerator()->create_user()->id;
+        // The account is deleted first: the observer clears the rows of a deleted account, so the profile
+        // is added afterwards to leave only the query itself to keep it out of the count.
+        delete_user($gone);
+        $this->make_profile((int) $gone->id, $seasonid, 999, true, $t);
+        $this->make_profile((int) $suspended->id, $seasonid, 998, true, $t);
+        $this->make_profile($me, $seasonid, 100, true, $t);
+
+        $this->assertSame(1, xp_manager::get_season_position($me, $seasonid, 100, $t, [], false));
+    }
 }

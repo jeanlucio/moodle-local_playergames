@@ -58,4 +58,11 @@ final class payload_test extends \advanced_testcase {
         $this->assertSame(3, payload::number(null, 1, 5, 3));
         $this->assertSame(3, payload::number('abc', 1, 5, 3));
     }
+
+    public function test_texts_keeps_only_the_texts_that_are_not_empty(): void {
+        $this->assertSame(['a', 'c', '4'], payload::texts(['a', '', ['b'], 'c', '  ', null, 4]));
+        $this->assertSame(['one'], payload::texts('one'));
+        $this->assertSame([], payload::texts(''));
+        $this->assertSame([], payload::texts(null));
+    }
 }

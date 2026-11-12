@@ -267,4 +267,45 @@ final class season_manager_test extends \advanced_testcase {
             'xpawarded' => 0, 'attempts' => 1, 'timeplayed' => $now,
         ]);
     }
+
+    /**
+     * A typed date becomes the first or the last second of that day.
+     *
+     * Regression test: the end date was stored as 00:00 of the last day, and the task that closes expired
+     * seasons shut the season that night, so the announced last day could not be played.
+     */
+    public function test_date_to_timestamp_gives_the_first_and_the_last_second_of_the_day(): void {
+        $start = season_manager::date_to_timestamp('2026-12-31', false);
+        $end   = season_manager::date_to_timestamp('2026-12-31', true);
+
+        $this->assertSame('2026-12-31 00:00:00', userdate($start, '%Y-%m-%d %H:%M:%S'));
+        $this->assertSame('2026-12-31 23:59:59', userdate($end, '%Y-%m-%d %H:%M:%S'));
+        $this->assertSame(DAYSECS - 1, $end - $start);
+    }
+
+    public function test_date_to_timestamp_refuses_what_is_not_a_real_date(): void {
+        foreach (['', 'tomorrow', '2026-13-01', '2026-02-30', '31/12/2026', '2026-1-1'] as $text) {
+            $this->assertSame(0, season_manager::date_to_timestamp($text, true), $text);
+        }
+    }
+
+    /**
+     * A season that ends on the typed day is still open during that whole day.
+     */
+    public function test_a_season_typed_to_end_today_is_not_closed_until_tomorrow(): void {
+        global $DB;
+
+        $start = season_manager::date_to_timestamp(userdate(time() - DAYSECS, '%Y-%m-%d'), false);
+        $end   = season_manager::date_to_timestamp(userdate(time(), '%Y-%m-%d'), true);
+        $season = season_manager::create('Ends today', $start, $end);
+        season_manager::activate((int) $season->id);
+
+        $expired = $DB->get_records_select(
+            'local_playergames_seasons',
+            "status = 'active' AND enddate < :now",
+            ['now' => time()]
+        );
+
+        $this->assertSame([], $expired);
+    }
 }

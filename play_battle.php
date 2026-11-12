@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\battle_manager;
+use local_playergames\games\season_game_config;
 use local_playergames\hub\avatar_manager;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
@@ -33,6 +34,7 @@ use local_playergames\local\game_page;
 require_login();
 $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
+\local_playergames\local\access::require_participant();
 
 $gamedate   = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
 $formaction = (new moodle_url('/local/playergames/play_battle.php'))->out(false);
@@ -44,7 +46,11 @@ if (data_submitted()) {
     header('Content-Type: application/json');
 
     $season = season_manager::get_active();
-    if ($season === null || optional_param('action', '', PARAM_ALPHAEXT) !== 'submit_result') {
+    if (
+        $season === null
+        || season_game_config::is_disabled((int) $season->id, 'battle')
+        || optional_param('action', '', PARAM_ALPHAEXT) !== 'submit_result'
+    ) {
         echo json_encode(['success' => false, 'xpawarded' => 0]);
         exit;
     }
@@ -71,6 +77,12 @@ $activeseason = season_manager::get_active();
 if ($activeseason === null) {
     echo $OUTPUT->header();
     echo game_page::no_season_html();
+    echo $OUTPUT->footer();
+    exit;
+}
+if (season_game_config::is_disabled((int) $activeseason->id, 'battle')) {
+    echo $OUTPUT->header();
+    echo game_page::disabled_html();
     echo $OUTPUT->footer();
     exit;
 }

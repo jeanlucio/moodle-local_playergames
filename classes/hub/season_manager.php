@@ -234,6 +234,30 @@ class season_manager {
     }
 
     /**
+     * Turns a date typed as YYYY-MM-DD into a timestamp in the user's timezone.
+     *
+     * A season starts at the first second of its first day and ends at the last second of its last
+     * day, the way create_next() sets them, so the day announced as the last one can still be played.
+     *
+     * @param string $date The typed date, YYYY-MM-DD.
+     * @param bool $endofday True for 23:59:59 of that day, false for 00:00:00.
+     * @return int The timestamp, or 0 when the text is not a real date.
+     */
+    public static function date_to_timestamp(string $date, bool $endofday): int {
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', trim($date), $matches)) {
+            return 0;
+        }
+        [, $year, $month, $day] = array_map('intval', $matches);
+        if (!checkdate($month, $day, $year)) {
+            return 0;
+        }
+
+        return $endofday
+            ? make_timestamp($year, $month, $day, 23, 59, 59)
+            : make_timestamp($year, $month, $day, 0, 0, 0);
+    }
+
+    /**
      * Renames a season and, unless it is closed, changes its dates.
      *
      * The dates of a closed season are history, so only its name changes. The

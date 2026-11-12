@@ -220,7 +220,10 @@ class learning_xp_manager {
 
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_student_xp_cache} c
+                  JOIN {user} u ON u.id = c.userid
                  WHERE c.showinranking = 1
+                   AND u.deleted = 0
+                   AND u.suspended = 0
                    AND (c.windowedxp > :xpgt
                         OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
                         OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";

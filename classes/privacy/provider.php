@@ -319,7 +319,6 @@ class provider implements
      * @return void
      */
     public static function delete_data_for_user(approved_contextlist $contextlist): void {
-        global $DB;
         $hassystem = false;
         foreach ($contextlist->get_contexts() as $context) {
             if ($context instanceof context_system) {
@@ -331,7 +330,23 @@ class provider implements
             return;
         }
 
-        $userid = $contextlist->get_user()->id;
+        self::delete_user_rows((int) $contextlist->get_user()->id);
+    }
+
+    /**
+     * Deletes every row the plugin keeps for one user and unlinks the cartridges they uploaded.
+     *
+     * Shared by the privacy deletion request and by the observer that clears a deleted account at once,
+     * so a ranking never lists a name the site already deleted.
+     *
+     * @param int $userid The user whose rows go.
+     * @return void
+     */
+    public static function delete_user_rows(int $userid): void {
+        global $DB;
+        if ($userid <= 0) {
+            return;
+        }
         foreach (self::USER_TABLES as $table) {
             $DB->delete_records($table, ['userid' => $userid]);
         }

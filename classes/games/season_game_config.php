@@ -109,6 +109,29 @@ class season_game_config {
     }
 
     /**
+     * Whether the admin switched a game off for a season.
+     *
+     * get_for_active_season() returns null both for a game that was switched off and for a season
+     * with no row for it (one created before per-season configuration), so it cannot tell the two
+     * apart. Only the first must stop the game: Quiz and Battle keep a cartridge fallback for the second.
+     *
+     * @param int $seasonid Season id.
+     * @param string $gametype Game type key.
+     * @return bool True only when a row exists for the game with enabled = 0.
+     */
+    public static function is_disabled(int $seasonid, string $gametype): bool {
+        global $DB;
+
+        $enabled = $DB->get_field(
+            'local_playergames_season_games',
+            'enabled',
+            ['seasonid' => $seasonid, 'gametype' => $gametype]
+        );
+
+        return $enabled !== false && (int) $enabled === 0;
+    }
+
+    /**
      * Returns all season_games records for a given season, keyed by gametype.
      *
      * @param int $seasonid Season id.

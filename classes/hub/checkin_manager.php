@@ -24,9 +24,7 @@
 
 namespace local_playergames\hub;
 
-use context_system;
 use local_playergames\local\access;
-use local_playergames\local\preferences;
 use stdClass;
 
 /**
@@ -128,15 +126,7 @@ class checkin_manager {
      * @return bool
      */
     public static function is_participant(int $userid): bool {
-        if (!preferences::is_gamification_enabled($userid)) {
-            return false;
-        }
-
-        $allowed = get_config('local_playergames', 'allowed_participants') ?: 'students';
-        $isstaff = access::is_staff($userid);
-        $isadmin = has_capability('moodle/site:config', context_system::instance(), $userid);
-
-        return access::can_view_hub($isstaff, $isadmin, $allowed);
+        return access::is_participant($userid);
     }
 
     /**

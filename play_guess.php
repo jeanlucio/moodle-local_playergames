@@ -38,6 +38,7 @@ use local_playergames\local\game_page;
 require_login();
 $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
+\local_playergames\local\access::require_participant();
 
 $gamedate   = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
 $formaction = (new moodle_url('/local/playergames/play_guess.php'))->out(false);
