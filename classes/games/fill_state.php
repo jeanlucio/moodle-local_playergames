@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Session-backed round state for the daily PlayerFill play.
+ * Stored round state for the daily PlayerFill play.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -25,9 +25,9 @@
 namespace local_playergames\games;
 
 /**
- * Keeps the in-progress PlayerFill round (per-word progress and revealed slots) in the
- * user's session, mirroring guess_state and, further back, mod_playercross's own
- * session-only round state (mod_playercross\local\round_service).
+ * Keeps the in-progress PlayerFill round (per-word progress and revealed slots) in the database, one
+ * row per user and day (see {@see round_store}), mirroring guess_state. A lost round therefore stays
+ * lost for the day, whatever the session.
  *
  * The state is discarded and rebuilt whenever today's gamedate or assigned concept set
  * no longer matches, so a stale round from a previous day never leaks into a new one.
@@ -35,25 +35,24 @@ namespace local_playergames\games;
  * @package    local_playergames
  */
 class fill_state {
-    /** @var string Session property holding the round state. */
-    private const SESSION_KEY = 'local_playergames_fill';
+    /** @var string Game type the rounds are stored under. */
+    private const GAMETYPE = 'fill';
 
     /**
      * Loads today's round state, (re)building the puzzle when stale.
      *
+     * @param int $userid User id.
      * @param int $gamedate Midnight timestamp of the day.
      * @param \stdClass[] $concepts Today's assigned concepts, as returned by
      *     fill_manager::get_daily_concepts().
      * @return array
      */
-    public static function load(int $gamedate, array $concepts): array {
-        global $SESSION;
-
+    public static function load(int $userid, int $gamedate, array $concepts): array {
         $conceptids = array_map(fn($c) => (int) $c->id, $concepts);
 
-        $state = $SESSION->{self::SESSION_KEY} ?? null;
+        $state = round_store::fetch($userid, self::GAMETYPE, $gamedate);
         if (
-            !is_array($state)
+            $state === null
             || (int) ($state['gamedate'] ?? 0) !== $gamedate
             || ($state['conceptids'] ?? []) !== $conceptids
         ) {
@@ -83,11 +82,11 @@ class fill_state {
     /**
      * Persists the round state.
      *
+     * @param int $userid User id.
      * @param array $state Current state, as returned by load().
      * @return void
      */
-    public static function save(array $state): void {
-        global $SESSION;
-        $SESSION->{self::SESSION_KEY} = $state;
+    public static function save(int $userid, array $state): void {
+        round_store::store($userid, self::GAMETYPE, (int) $state['gamedate'], $state);
     }
 }

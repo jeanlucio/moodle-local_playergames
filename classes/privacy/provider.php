@@ -53,6 +53,7 @@ class provider implements
         'local_playergames_freeze_log',
         'local_playergames_daily_scores',
         'local_playergames_served_questions',
+        'local_playergames_rounds',
         'local_playergames_battle_scores',
         'local_playergames_mission_progress',
         'local_playergames_user_achievements',
@@ -127,6 +128,14 @@ class provider implements
             'attempts'   => 'privacy:metadata:local_playergames_daily_scores:attempts',
             'timeplayed' => 'privacy:metadata:local_playergames_daily_scores:timeplayed',
         ], 'privacy:metadata:local_playergames_daily_scores');
+
+        $collection->add_database_table('local_playergames_rounds', [
+            'userid'       => 'privacy:metadata:local_playergames_rounds:userid',
+            'gamedate'     => 'privacy:metadata:local_playergames_rounds:gamedate',
+            'gametype'     => 'privacy:metadata:local_playergames_rounds:gametype',
+            'state'        => 'privacy:metadata:local_playergames_rounds:state',
+            'timemodified' => 'privacy:metadata:local_playergames_rounds:timemodified',
+        ], 'privacy:metadata:local_playergames_rounds');
 
         $collection->add_database_table('local_playergames_served_questions', [
             'userid'      => 'privacy:metadata:local_playergames_served_questions:userid',

@@ -31,7 +31,6 @@ require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\fill_manager;
 use local_playergames\games\fill_state;
-use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
@@ -54,90 +53,20 @@ if (data_submitted()) {
     if ($submitaction === 'submit_word_guess') {
         header('Content-Type: application/json');
 
-        $season     = season_manager::get_active();
-        $gameconfig = $season !== null ? season_game_config::get_for_active_season('fill') : null;
-        $concepts   = $gameconfig !== null ? fill_manager::get_daily_concepts($gamedate) : [];
-
-        if ($season === null || $gameconfig === null || count($concepts) < 2) {
+        $season = season_manager::get_active();
+        if ($season === null) {
             echo json_encode(['success' => false, 'reason' => 'unavailable']);
             exit;
         }
 
-        $state = fill_state::load($gamedate, $concepts);
-        if (!empty($state['finished'])) {
-            echo json_encode(['success' => false, 'reason' => 'finished']);
-            exit;
-        }
-
-        $conceptid = optional_param('conceptid', 0, PARAM_INT);
-        $index = null;
-        foreach ($state['words'] as $key => $word) {
-            if ($word['conceptid'] === $conceptid) {
-                $index = $key;
-                break;
-            }
-        }
-
-        if ($index === null || $state['words'][$index]['resolved'] || $state['words'][$index]['exhausted']) {
-            echo json_encode(['success' => false, 'reason' => 'invalid']);
-            exit;
-        }
-
-        $targetword = $state['words'][$index]['word'];
-        $targetlength = core_text::strlen($targetword);
-        $normalizedguess = guess_manager::normalize(optional_param('guess', '', PARAM_TEXT));
-
-        if (!guess_manager::is_valid_guess($normalizedguess, $targetlength)) {
-            echo json_encode(['success' => false, 'reason' => 'invalid']);
-            exit;
-        }
-
-        $state['words'][$index]['attemptsused']++;
-        $resolved = false;
-        $xpawarded = 0;
-
-        if ($normalizedguess === $targetword) {
-            $resolved = true;
-            $state['words'][$index]['resolved'] = true;
-            $state['revealedslots'] = array_values(array_unique(array_merge(
-                $state['revealedslots'],
-                $state['words'][$index]['slots']
-            )));
-            $state['words'] = fill_manager::apply_cascade($state['words'], $state['revealedslots']);
-
-            $allresolved = true;
-            foreach ($state['words'] as $word) {
-                if (!$word['resolved']) {
-                    $allresolved = false;
-                    break;
-                }
-            }
-
-            if ($allresolved) {
-                $state['finished'] = true;
-                $state['won'] = true;
-                $result = daily_play_manager::register_play((int) $USER->id, 'fill', $gamedate, $season, $context);
-                $xpawarded = (int) ($result['xpawarded'] ?? 0);
-            }
-        } else if ($state['words'][$index]['attemptsused'] >= $maxattempts) {
-            $state['words'][$index]['exhausted'] = true;
-            $state['finished'] = true;
-            $state['won'] = false;
-        }
-
-        fill_state::save($state);
-
-        echo json_encode([
-            'success'   => true,
-            'resolved'  => $resolved,
-            'finished'  => (bool) $state['finished'],
-            'won'       => (bool) $state['won'],
-            'xpawarded' => $xpawarded,
-            'words'     => fill_manager::build_words_payload(
-                $state,
-                !empty($state['finished']) && empty($state['won'])
-            ),
-        ]);
+        echo json_encode(fill_manager::submit_word_guess(
+            (int) $USER->id,
+            optional_param('conceptid', 0, PARAM_INT),
+            optional_param('guess', '', PARAM_TEXT),
+            $gamedate,
+            $season,
+            $context
+        ));
         exit;
     }
 }
@@ -168,7 +97,7 @@ $revealed = false;
 $rows = [];
 
 if (!$noconcept && !$alreadyplayed) {
-    $state = fill_state::load($gamedate, $concepts);
+    $state = fill_state::load((int) $USER->id, $gamedate, $concepts);
     $revealed = !empty($state['finished']) && empty($state['won']);
 
     foreach ($state['words'] as $word) {

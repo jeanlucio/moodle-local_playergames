@@ -134,4 +134,146 @@ final class guess_manager_test extends \advanced_testcase {
         $this->assertNotNull($concept);
         $this->assertSame('planet', $concept->term);
     }
+
+    /**
+     * Opens an active season with PlayerGuess on and today's concept assigned.
+     *
+     * @param string $term Today's term.
+     * @return \stdClass Season record.
+     */
+    private function open_round(string $term = 'planet'): \stdClass {
+        global $DB;
+        $this->redirectEvents();
+
+        $now = time();
+        $seasonid = (int) $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + (DAYSECS * 30),
+            'status' => 'active', 'config_snapshot' => json_encode(['xp_per_game_guess' => 10, 'xp_games_guess' => 1]),
+            'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $DB->insert_record('local_playergames_season_games', (object) [
+            'seasonid' => $seasonid, 'gametype' => 'guess', 'enabled' => 1, 'source' => 'cartridge', 'auxid' => 0,
+        ]);
+        $conceptid = $this->add_concept($this->make_cartridge(), $term);
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => mktime(0, 0, 0), 'gametype' => 'guess', 'conceptid' => $conceptid,
+        ]);
+        set_config('guess_max_attempts', 2, 'local_playergames');
+
+        return $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+    }
+
+    /**
+     * Regression test: the round used to live in the session, so a new login gave the lost round again,
+     * with the term the loss had just revealed, and the player won it on the first try.
+     */
+    public function test_a_lost_round_stays_lost_after_a_new_session(): void {
+        global $DB, $SESSION;
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $first = guess_manager::submit_guess((int) $user->id, 'zzzzzz', $today, $season, $context);
+        $this->assertTrue($first['success']);
+        $second = guess_manager::submit_guess((int) $user->id, 'yyyyyy', $today, $season, $context);
+        $this->assertTrue($second['finished']);
+        $this->assertFalse($second['won']);
+        $this->assertSame('planet', $second['target']);
+
+        // Logging in again or opening another browser starts with an empty session.
+        $SESSION = new \stdClass();
+        $replay = guess_manager::submit_guess((int) $user->id, 'planet', $today, $season, $context);
+
+        $this->assertSame(['success' => false, 'reason' => 'finished'], $replay);
+        // The loss pays nothing, and the page still finds the round over when it loads the state.
+        $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $user->id]));
+        $state = guess_state::load((int) $user->id, $today, (int) guess_manager::get_daily_concept($today)->id);
+        $this->assertTrue($state['finished']);
+        $this->assertFalse($state['won']);
+    }
+
+    public function test_the_attempts_used_survive_a_new_session(): void {
+        global $SESSION;
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $first = guess_manager::submit_guess((int) $user->id, 'zzzzzz', $today, $season, $context);
+        $SESSION = new \stdClass();
+        $second = guess_manager::submit_guess((int) $user->id, 'yyyyyy', $today, $season, $context);
+
+        $this->assertSame(1, $first['attemptsleft']);
+        $this->assertSame(0, $second['attemptsleft']);
+        $this->assertTrue($second['finished']);
+    }
+
+    public function test_a_win_pays_the_xp_once_and_closes_the_round(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $won = guess_manager::submit_guess((int) $user->id, 'Planet', $today, $season, $context);
+        $again = guess_manager::submit_guess((int) $user->id, 'planet', $today, $season, $context);
+
+        $this->assertTrue($won['won']);
+        $this->assertSame(10, $won['xpawarded']);
+        $this->assertSame('finished', $again['reason']);
+        $this->assertSame(1, (int) $DB->get_field('local_playergames_daily_scores', 'attempts', [
+            'userid' => $user->id, 'gamedate' => $today, 'gametype' => 'guess',
+        ]));
+    }
+
+    public function test_the_term_is_not_revealed_while_the_round_is_open(): void {
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+
+        $answer = guess_manager::submit_guess(
+            (int) $user->id,
+            'zzzzzz',
+            mktime(0, 0, 0),
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertFalse($answer['finished']);
+        $this->assertNull($answer['target']);
+    }
+
+    public function test_an_invalid_guess_does_not_use_an_attempt(): void {
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $invalid = guess_manager::submit_guess((int) $user->id, 'abc', $today, $season, $context);
+        $valid = guess_manager::submit_guess((int) $user->id, 'zzzzzz', $today, $season, $context);
+
+        $this->assertSame(['success' => false, 'reason' => 'invalid'], $invalid);
+        $this->assertSame(1, $valid['attemptsleft']);
+    }
+
+    public function test_submit_is_unavailable_without_a_concept_for_the_day(): void {
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        $user = $this->getDataGenerator()->create_user();
+
+        $answer = guess_manager::submit_guess(
+            (int) $user->id,
+            'planet',
+            mktime(0, 0, 0) - DAYSECS,
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertSame(['success' => false, 'reason' => 'unavailable'], $answer);
+    }
 }

@@ -124,7 +124,9 @@ class season_manager {
         $snapshot = [];
         foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
             $pergame = (int) get_config('local_playergames', 'xp_per_game_' . $type) ?: 25;
-            $games   = (int) get_config('local_playergames', 'xp_games_' . $type) ?: 1;
+            $games   = in_array($type, daily_play_manager::SINGLE_ROUND_GAMES, true)
+                ? 1
+                : ((int) get_config('local_playergames', 'xp_games_' . $type) ?: 1);
             $snapshot['xp_per_game_' . $type] = $pergame;
             $snapshot['xp_games_' . $type]    = $games;
             // Derived daily cap consumed by xp_manager::award(): the last play is

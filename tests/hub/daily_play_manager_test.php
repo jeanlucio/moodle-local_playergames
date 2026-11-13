@@ -278,4 +278,55 @@ final class daily_play_manager_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $user->id]));
         $this->assertSame(0, $DB->count_records('local_playergames_player_profile', ['userid' => $user->id]));
     }
+
+    /**
+     * Regression test: the setting offered two games a day for Guess and Fill, but their single round
+     * could only be played once, so the hub kept showing the game as pending for the rest of the day.
+     */
+    public function test_single_round_games_allow_one_play_a_day_whatever_the_snapshot_says(): void {
+        $snapshot = ['xp_games_guess' => 3, 'xp_games_fill' => 2, 'xp_games_quiz' => 3, 'xp_games_battle' => 2];
+
+        $this->assertSame(1, daily_play_manager::games_per_day($snapshot, 'guess'));
+        $this->assertSame(1, daily_play_manager::games_per_day($snapshot, 'fill'));
+        $this->assertSame(3, daily_play_manager::games_per_day($snapshot, 'quiz'));
+        $this->assertSame(2, daily_play_manager::games_per_day($snapshot, 'battle'));
+    }
+
+    public function test_a_single_round_game_is_done_after_its_one_play(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+
+        $user    = $this->getDataGenerator()->create_user();
+        $today   = mktime(0, 0, 0);
+        $season  = $this->make_season(['xp_per_game_guess' => 10, 'xp_games_guess' => 2, 'xp_cap_guess' => 20]);
+        $context = \context_system::instance();
+
+        $first  = daily_play_manager::register_play((int) $user->id, 'guess', $today, $season, $context);
+        $second = daily_play_manager::register_play((int) $user->id, 'guess', $today, $season, $context);
+
+        $this->assertSame(10, $first['xpawarded']);
+        $this->assertSame(0, $first['remaining']);
+        $this->assertFalse($second['success']);
+        $this->assertSame(0, daily_play_manager::remaining_plays(
+            (int) $user->id,
+            'guess',
+            $today,
+            ['xp_games_guess' => 2]
+        ));
+    }
+
+    public function test_the_season_snapshot_stores_one_game_a_day_for_the_single_round_games(): void {
+        $this->resetAfterTest();
+        set_config('xp_games_guess', 3, 'local_playergames');
+        set_config('xp_games_fill', 3, 'local_playergames');
+        set_config('xp_games_quiz', 3, 'local_playergames');
+        set_config('xp_per_game_guess', 10, 'local_playergames');
+
+        $snapshot = season_manager::build_snapshot();
+
+        $this->assertSame(1, $snapshot['xp_games_guess']);
+        $this->assertSame(1, $snapshot['xp_games_fill']);
+        $this->assertSame(10, $snapshot['xp_cap_guess']);
+        $this->assertSame(3, $snapshot['xp_games_quiz']);
+    }
 }

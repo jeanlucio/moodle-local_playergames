@@ -24,7 +24,9 @@
 
 namespace local_playergames\games;
 
+use context;
 use core_text;
+use local_playergames\hub\daily_play_manager;
 use stdClass;
 
 /**
@@ -211,6 +213,108 @@ class fill_manager {
             ];
         }
         return $payload;
+    }
+
+    /**
+     * Judges one word guess of the daily round and keeps the round state.
+     *
+     * The state is read, changed and written under a per-user lock. A correct word can reveal letters of
+     * the other words too, which is why the whole panel is returned. The XP is paid once, when the last
+     * word is resolved; a word that runs out of attempts ends the round as a loss.
+     *
+     * @param int $userid The player.
+     * @param int $conceptid Concept the guess is for.
+     * @param string $guess The word typed, as received.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param stdClass $season Active season record.
+     * @param context $context Context of the fired event.
+     * @return array The JSON answer for the page: {success: bool, reason?: string, ...}.
+     */
+    public static function submit_word_guess(
+        int $userid,
+        int $conceptid,
+        string $guess,
+        int $gamedate,
+        stdClass $season,
+        context $context
+    ): array {
+        $concepts = season_game_config::get_for_active_season('fill') !== null
+            ? self::get_daily_concepts($gamedate)
+            : [];
+        if (count($concepts) < 2) {
+            return ['success' => false, 'reason' => 'unavailable'];
+        }
+
+        $lock = round_store::lock($userid, 'fill');
+        try {
+            $state = fill_state::load($userid, $gamedate, $concepts);
+            if (!empty($state['finished'])) {
+                return ['success' => false, 'reason' => 'finished'];
+            }
+
+            $index = null;
+            foreach ($state['words'] as $key => $word) {
+                if ($word['conceptid'] === $conceptid) {
+                    $index = $key;
+                    break;
+                }
+            }
+            if ($index === null || $state['words'][$index]['resolved'] || $state['words'][$index]['exhausted']) {
+                return ['success' => false, 'reason' => 'invalid'];
+            }
+
+            $targetword = $state['words'][$index]['word'];
+            $normalizedguess = guess_manager::normalize($guess);
+            if (!guess_manager::is_valid_guess($normalizedguess, core_text::strlen($targetword))) {
+                return ['success' => false, 'reason' => 'invalid'];
+            }
+
+            $state['words'][$index]['attemptsused']++;
+            $resolved = false;
+            $xpawarded = 0;
+
+            if ($normalizedguess === $targetword) {
+                $resolved = true;
+                $state['words'][$index]['resolved'] = true;
+                $state['revealedslots'] = array_values(array_unique(array_merge(
+                    $state['revealedslots'],
+                    $state['words'][$index]['slots']
+                )));
+                $state['words'] = self::apply_cascade($state['words'], $state['revealedslots']);
+
+                $allresolved = true;
+                foreach ($state['words'] as $word) {
+                    if (!$word['resolved']) {
+                        $allresolved = false;
+                        break;
+                    }
+                }
+
+                if ($allresolved) {
+                    $state['finished'] = true;
+                    $state['won'] = true;
+                    $result = daily_play_manager::register_play($userid, 'fill', $gamedate, $season, $context);
+                    $xpawarded = (int) ($result['xpawarded'] ?? 0);
+                }
+            } else if ($state['words'][$index]['attemptsused'] >= self::max_attempts()) {
+                $state['words'][$index]['exhausted'] = true;
+                $state['finished'] = true;
+                $state['won'] = false;
+            }
+
+            fill_state::save($userid, $state);
+        } finally {
+            $lock->release();
+        }
+
+        return [
+            'success'   => true,
+            'resolved'  => $resolved,
+            'finished'  => (bool) $state['finished'],
+            'won'       => (bool) $state['won'],
+            'xpawarded' => $xpawarded,
+            'words'     => self::build_words_payload($state, !empty($state['finished']) && empty($state['won'])),
+        ];
     }
 
     /**

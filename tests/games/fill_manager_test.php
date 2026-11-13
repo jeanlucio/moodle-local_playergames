@@ -243,4 +243,133 @@ final class fill_manager_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->assertSame([], fill_manager::get_daily_concepts(time()));
     }
+
+    /**
+     * Opens an active season with PlayerFill on and today's two words assigned.
+     *
+     * @return array [season record, concept id of "gato", concept id of "rede"]
+     */
+    private function open_round(): array {
+        global $DB;
+        $this->redirectEvents();
+
+        $now = time();
+        $seasonid = (int) $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + (DAYSECS * 30),
+            'status' => 'active', 'config_snapshot' => json_encode(['xp_per_game_fill' => 10, 'xp_games_fill' => 1]),
+            'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $DB->insert_record('local_playergames_season_games', (object) [
+            'seasonid' => $seasonid, 'gametype' => 'fill', 'enabled' => 1, 'source' => 'cartridge', 'auxid' => 0,
+        ]);
+        $cartridgeid = $this->make_cartridge();
+        $ids = [$this->add_concept($cartridgeid, 'gato'), $this->add_concept($cartridgeid, 'rede')];
+        foreach ($ids as $conceptid) {
+            $DB->insert_record('local_playergames_daily_assignments', (object) [
+                'gamedate' => mktime(0, 0, 0), 'gametype' => 'fill', 'conceptid' => $conceptid,
+            ]);
+        }
+        set_config('fill_max_attempts', 2, 'local_playergames');
+
+        return [$DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST), $ids[0], $ids[1]];
+    }
+
+    /**
+     * Regression test: the round used to live in the session, so a new login gave the lost round again,
+     * with every word the loss had just revealed.
+     */
+    public function test_a_lost_round_stays_lost_after_a_new_session(): void {
+        global $DB, $SESSION;
+        $this->resetAfterTest();
+        [$season, $gato, $rede] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $first = fill_manager::submit_word_guess((int) $user->id, $gato, 'zzzz', $today, $season, $context);
+        $this->assertFalse($first['finished']);
+        $second = fill_manager::submit_word_guess((int) $user->id, $gato, 'yyyy', $today, $season, $context);
+        $this->assertTrue($second['finished']);
+        $this->assertFalse($second['won']);
+        $this->assertSame('gato', $second['words'][0]['revealword']);
+
+        $SESSION = new \stdClass();
+        $replay = fill_manager::submit_word_guess((int) $user->id, $gato, 'gato', $today, $season, $context);
+
+        $this->assertSame(['success' => false, 'reason' => 'finished'], $replay);
+        $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $user->id]));
+    }
+
+    public function test_the_attempts_used_on_a_word_survive_a_new_session(): void {
+        global $SESSION;
+        $this->resetAfterTest();
+        [$season, $gato] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $first = fill_manager::submit_word_guess((int) $user->id, $gato, 'zzzz', $today, $season, $context);
+        $SESSION = new \stdClass();
+        $second = fill_manager::submit_word_guess((int) $user->id, $gato, 'yyyy', $today, $season, $context);
+
+        $this->assertSame(1, $first['words'][0]['attemptsused']);
+        $this->assertSame(2, $second['words'][0]['attemptsused']);
+        $this->assertTrue($second['words'][0]['exhausted']);
+    }
+
+    public function test_resolving_every_word_pays_the_xp_once(): void {
+        global $DB;
+        $this->resetAfterTest();
+        [$season, $gato, $rede] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        $one = fill_manager::submit_word_guess((int) $user->id, $gato, 'gato', $today, $season, $context);
+        $two = fill_manager::submit_word_guess((int) $user->id, $rede, 'rede', $today, $season, $context);
+        $again = fill_manager::submit_word_guess((int) $user->id, $rede, 'rede', $today, $season, $context);
+
+        $this->assertTrue($one['resolved']);
+        $this->assertFalse($one['finished']);
+        $this->assertTrue($two['won']);
+        $this->assertSame(10, $two['xpawarded']);
+        $this->assertSame('finished', $again['reason']);
+        $this->assertSame(1, (int) $DB->get_field('local_playergames_daily_scores', 'attempts', [
+            'userid' => $user->id, 'gamedate' => $today, 'gametype' => 'fill',
+        ]));
+    }
+
+    public function test_a_word_of_another_day_is_refused(): void {
+        $this->resetAfterTest();
+        [$season] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+
+        $answer = fill_manager::submit_word_guess(
+            (int) $user->id,
+            999999,
+            'gato',
+            mktime(0, 0, 0),
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertSame(['success' => false, 'reason' => 'invalid'], $answer);
+    }
+
+    public function test_submit_is_unavailable_without_words_for_the_day(): void {
+        $this->resetAfterTest();
+        [$season, $gato] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+
+        $answer = fill_manager::submit_word_guess(
+            (int) $user->id,
+            $gato,
+            'gato',
+            mktime(0, 0, 0) - DAYSECS,
+            $season,
+            \context_system::instance()
+        );
+
+        $this->assertSame(['success' => false, 'reason' => 'unavailable'], $answer);
+    }
 }

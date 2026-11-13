@@ -53,57 +53,18 @@ if (data_submitted()) {
         header('Content-Type: application/json');
 
         $season = season_manager::get_active();
-        $gameconfig = $season !== null ? season_game_config::get_for_active_season('guess') : null;
-        $concept = $gameconfig !== null ? guess_manager::get_daily_concept($gamedate) : null;
-
-        if ($season === null || $gameconfig === null || $concept === null) {
+        if ($season === null) {
             echo json_encode(['success' => false, 'reason' => 'unavailable']);
             exit;
         }
 
-        $state = guess_state::load($gamedate, (int) $concept->id);
-        if (!empty($state['finished'])) {
-            echo json_encode(['success' => false, 'reason' => 'finished']);
-            exit;
-        }
-
-        $normalizedtarget = guess_manager::normalize($concept->term);
-        $targetlength = core_text::strlen($normalizedtarget);
-        $normalizedguess = guess_manager::normalize(optional_param('guess', '', PARAM_TEXT));
-
-        if (!guess_manager::is_valid_guess($normalizedguess, $targetlength)) {
-            echo json_encode(['success' => false, 'reason' => 'invalid']);
-            exit;
-        }
-
-        $feedback = guess_manager::build_letter_feedback($normalizedguess, $normalizedtarget);
-        $state['rows'][] = ['guess' => $normalizedguess, 'feedback' => $feedback];
-
-        $won = ($normalizedguess === $normalizedtarget);
-        $outofattempts = count($state['rows']) >= $maxattempts;
-        $xpawarded = 0;
-
-        if ($won) {
-            $state['finished'] = true;
-            $state['won'] = true;
-            $result = daily_play_manager::register_play((int) $USER->id, 'guess', $gamedate, $season, $context);
-            $xpawarded = (int) ($result['xpawarded'] ?? 0);
-        } else if ($outofattempts) {
-            $state['finished'] = true;
-            $state['won'] = false;
-        }
-
-        guess_state::save($state);
-
-        echo json_encode([
-            'success'      => true,
-            'feedback'     => array_values($feedback),
-            'finished'     => (bool) $state['finished'],
-            'won'          => $won,
-            'xpawarded'    => $xpawarded,
-            'target'       => $state['finished'] ? $concept->term : null,
-            'attemptsleft' => max(0, $maxattempts - count($state['rows'])),
-        ]);
+        echo json_encode(guess_manager::submit_guess(
+            (int) $USER->id,
+            optional_param('guess', '', PARAM_TEXT),
+            $gamedate,
+            $season,
+            $context
+        ));
         exit;
     }
 }
@@ -136,7 +97,7 @@ $targetlength = 0;
 $rowsjson     = '[]';
 
 if (!$noconcept && !$alreadyplayed) {
-    $state = guess_state::load($gamedate, (int) $concept->id);
+    $state = guess_state::load((int) $USER->id, $gamedate, (int) $concept->id);
     $revealed = !empty($state['finished']) && empty($state['won']);
     if ($revealed) {
         // Not pre-escaped: get_string() interpolates it raw and the whole

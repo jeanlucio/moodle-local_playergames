@@ -69,6 +69,9 @@ class purge_old_scores extends \core\task\scheduled_task {
         );
         mtrace("Purged {$stalecount} stale served_questions rows.");
 
+        // A round only matters on its own day; the day's score is kept in daily_scores.
+        $DB->delete_records_select('local_playergames_rounds', 'gamedate < :today', ['today' => $today]);
+
         $closedseasons = $DB->get_records_select(
             'local_playergames_seasons',
             "status = 'closed'",

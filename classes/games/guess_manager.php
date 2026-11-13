@@ -24,7 +24,9 @@
 
 namespace local_playergames\games;
 
+use context;
 use core_text;
+use local_playergames\hub\daily_play_manager;
 use stdClass;
 
 /**
@@ -46,6 +48,79 @@ class guess_manager {
     public static function max_attempts(): int {
         $value = (int) get_config('local_playergames', 'guess_max_attempts');
         return $value > 0 ? $value : self::DEFAULT_MAX_ATTEMPTS;
+    }
+
+    /**
+     * Judges one guess of the daily round and keeps the round state.
+     *
+     * The state is read, changed and written under a per-user lock, and pays the XP (once, on the win)
+     * through daily_play_manager. The term is only part of the answer once the round is over.
+     *
+     * @param int $userid The player.
+     * @param string $guess The word typed, as received.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param stdClass $season Active season record.
+     * @param context $context Context of the fired event.
+     * @return array The JSON answer for the page: {success: bool, reason?: string, ...}.
+     */
+    public static function submit_guess(
+        int $userid,
+        string $guess,
+        int $gamedate,
+        stdClass $season,
+        context $context
+    ): array {
+        $concept = season_game_config::get_for_active_season('guess') !== null
+            ? self::get_daily_concept($gamedate)
+            : null;
+        if ($concept === null) {
+            return ['success' => false, 'reason' => 'unavailable'];
+        }
+
+        $lock = round_store::lock($userid, 'guess');
+        try {
+            $state = guess_state::load($userid, $gamedate, (int) $concept->id);
+            if (!empty($state['finished'])) {
+                return ['success' => false, 'reason' => 'finished'];
+            }
+
+            $normalizedtarget = self::normalize($concept->term);
+            $normalizedguess = self::normalize($guess);
+            if (!self::is_valid_guess($normalizedguess, core_text::strlen($normalizedtarget))) {
+                return ['success' => false, 'reason' => 'invalid'];
+            }
+
+            $maxattempts = self::max_attempts();
+            $feedback = self::build_letter_feedback($normalizedguess, $normalizedtarget);
+            $state['rows'][] = ['guess' => $normalizedguess, 'feedback' => $feedback];
+
+            $won = ($normalizedguess === $normalizedtarget);
+            $xpawarded = 0;
+
+            if ($won) {
+                $state['finished'] = true;
+                $state['won'] = true;
+                $result = daily_play_manager::register_play($userid, 'guess', $gamedate, $season, $context);
+                $xpawarded = (int) ($result['xpawarded'] ?? 0);
+            } else if (count($state['rows']) >= $maxattempts) {
+                $state['finished'] = true;
+                $state['won'] = false;
+            }
+
+            guess_state::save($userid, $state);
+        } finally {
+            $lock->release();
+        }
+
+        return [
+            'success'      => true,
+            'feedback'     => array_values($feedback),
+            'finished'     => (bool) $state['finished'],
+            'won'          => $won,
+            'xpawarded'    => $xpawarded,
+            'target'       => $state['finished'] ? $concept->term : null,
+            'attemptsleft' => max(0, $maxattempts - count($state['rows'])),
+        ];
     }
 
     /**

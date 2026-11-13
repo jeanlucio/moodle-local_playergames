@@ -206,7 +206,7 @@ final class db_upgrade_test extends advanced_testcase {
 
         set_config('version', 2026110903, 'local_playergames');
         $this->assertTrue(xmldb_local_playergames_upgrade(2026110903));
-        $this->assertEquals(2026111201, get_config('local_playergames', 'version'));
+        $this->assertGreaterThanOrEqual(2026111201, get_config('local_playergames', 'version'));
 
         $saved = $DB->get_records('local_playergames_season_games', ['seasonid' => 1], '', 'gametype, source, auxid');
         $this->assertSame(['cartridge', 0], [$saved['guess']->source, (int) $saved['guess']->auxid]);
@@ -249,5 +249,26 @@ final class db_upgrade_test extends advanced_testcase {
         // A closed season is history, and an end that is not midnight was not typed by the old form.
         $this->assertEquals($midnight, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['closed']]));
         $this->assertEquals($noon, $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $ids['manual']]));
+    }
+
+    /**
+     * The "games per day" settings of PlayerGuess and PlayerFill are dropped; the other games keep theirs.
+     *
+     * @return void
+     */
+    public function test_games_per_day_settings_of_the_single_round_games_are_removed(): void {
+        global $DB;
+
+        set_config('xp_games_guess', 3, 'local_playergames');
+        set_config('xp_games_fill', 2, 'local_playergames');
+        set_config('xp_games_quiz', 4, 'local_playergames');
+
+        set_config('version', 2026111201, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111201));
+
+        $this->assertFalse(get_config('local_playergames', 'xp_games_guess'));
+        $this->assertFalse(get_config('local_playergames', 'xp_games_fill'));
+        $this->assertEquals(4, get_config('local_playergames', 'xp_games_quiz'));
+        $this->assertTrue($DB->get_manager()->table_exists('local_playergames_rounds'));
     }
 }

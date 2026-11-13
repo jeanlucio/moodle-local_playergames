@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Session-backed round state for the daily PlayerGuess play.
+ * Stored round state for the daily PlayerGuess play.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -25,39 +25,31 @@
 namespace local_playergames\games;
 
 /**
- * Keeps the in-progress PlayerGuess round (rows guessed so far today) in the
- * user's session, mirroring the pattern proven by mod_playerwords's round
- * service. There is only ever one PlayerGuess round in flight per user, so a
- * single session key is enough — no per-instance keying is needed.
+ * Keeps the in-progress PlayerGuess round (rows guessed so far today) in the database, one row per
+ * user and day (see {@see round_store}), so it survives a logout or a switch of browser: a lost round
+ * stays lost for the day instead of starting again with the term already revealed.
  *
- * The state is discarded and rebuilt whenever the stored gamedate or
- * conceptid no longer matches today's assignment, so a stale round from a
- * previous day (or a re-assigned concept) never leaks into a new day's play.
- *
- * Known limitation: the state lives only in the PHP session, so a round in
- * progress does not survive a logout or a switch to a different browser
- * session. This mirrors mod_playerwords's own tradeoff and avoids adding a
- * dedicated database table for a same-day, single-device play.
+ * The state is discarded and rebuilt whenever the stored gamedate or conceptid no longer matches
+ * today's assignment, so a stale round (or a re-assigned concept) never leaks into a new play.
  *
  * @package    local_playergames
  */
 class guess_state {
-    /** @var string Session property holding the round state. */
-    private const SESSION_KEY = 'local_playergames_guess';
+    /** @var string Game type the rounds are stored under. */
+    private const GAMETYPE = 'guess';
 
     /**
      * Loads today's round state, resetting it when stale.
      *
+     * @param int $userid User id.
      * @param int $gamedate Midnight timestamp of the day.
      * @param int $conceptid Concept id assigned to today's play.
      * @return array
      */
-    public static function load(int $gamedate, int $conceptid): array {
-        global $SESSION;
-
-        $state = $SESSION->{self::SESSION_KEY} ?? null;
+    public static function load(int $userid, int $gamedate, int $conceptid): array {
+        $state = round_store::fetch($userid, self::GAMETYPE, $gamedate);
         if (
-            !is_array($state)
+            $state === null
             || (int) ($state['gamedate'] ?? 0) !== $gamedate
             || (int) ($state['conceptid'] ?? 0) !== $conceptid
         ) {
@@ -76,11 +68,11 @@ class guess_state {
     /**
      * Persists the round state.
      *
+     * @param int $userid User id.
      * @param array $state Current state, as returned by load().
      * @return void
      */
-    public static function save(array $state): void {
-        global $SESSION;
-        $SESSION->{self::SESSION_KEY} = $state;
+    public static function save(int $userid, array $state): void {
+        round_store::store($userid, self::GAMETYPE, (int) $state['gamedate'], $state);
     }
 }

@@ -954,5 +954,30 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111201, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111301) {
+        // The round of PlayerGuess and PlayerFill used to live in the session, so a new login started it
+        // again with the answer already revealed: it is kept per user and day from now on. Those two games
+        // have a single round a day, so their "games per day" setting no longer exists.
+        $table = new xmldb_table('local_playergames_rounds');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_field('gamedate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_field('gametype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL);
+        $table->add_field('state', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('fk_user', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']);
+        $table->add_key('uq_userid_gamedate_gametype', XMLDB_KEY_UNIQUE, ['userid', 'gamedate', 'gametype']);
+        $table->add_index('idx_gamedate', XMLDB_INDEX_NOTUNIQUE, ['gamedate']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        unset_config('xp_games_guess', 'local_playergames');
+        unset_config('xp_games_fill', 'local_playergames');
+
+        upgrade_plugin_savepoint(true, 2026111301, 'local', 'playergames');
+    }
+
     return true;
 }

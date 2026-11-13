@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/playergames/db" VERSION="20261015" COMMENT="XMLDB file for Moodle local/playergames"
+<XMLDB PATH="local/playergames/db" VERSION="20261113" COMMENT="XMLDB file for Moodle local/playergames"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -228,6 +228,24 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="idx_gamedate_gametype" UNIQUE="false" FIELDS="gamedate, gametype"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_rounds" COMMENT="Round in progress of the single-round games (PlayerGuess, PlayerFill), per user and day">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="gamedate" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="state" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_gamedate_gametype" TYPE="unique" FIELDS="userid, gamedate, gametype"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_gamedate" UNIQUE="false" FIELDS="gamedate"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="local_playergames_served_questions" COMMENT="Questions already shown to a user on a day, to avoid repeats across plays">

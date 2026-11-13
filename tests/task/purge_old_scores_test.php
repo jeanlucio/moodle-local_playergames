@@ -149,4 +149,23 @@ final class purge_old_scores_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_battle_scores', ['seasonid' => $older]));
         $this->assertSame(1, $DB->count_records('local_playergames_battle_scores', ['seasonid' => $newer]));
     }
+
+    public function test_purges_the_rounds_of_earlier_days_and_keeps_today(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $today = mktime(0, 0, 0);
+        foreach ([$today - DAYSECS, $today] as $gamedate) {
+            $DB->insert_record('local_playergames_rounds', (object) [
+                'userid' => 5, 'gamedate' => $gamedate, 'gametype' => 'guess', 'state' => '{}', 'timemodified' => time(),
+            ]);
+        }
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        $this->assertSame(1, $DB->count_records('local_playergames_rounds'));
+        $this->assertSame(1, $DB->count_records('local_playergames_rounds', ['gamedate' => $today]));
+    }
 }

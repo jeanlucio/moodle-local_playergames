@@ -121,6 +121,9 @@ if ($hassiteconfig) {
             '25',
             PARAM_INT
         ));
+        if (in_array($gametype, \local_playergames\hub\daily_play_manager::SINGLE_ROUND_GAMES, true)) {
+            continue;
+        }
         $pagexp->add(new admin_setting_configtext(
             'local_playergames/xp_games_' . $gametype,
             get_string('settings_xp_games_' . $gametype, 'local_playergames'),

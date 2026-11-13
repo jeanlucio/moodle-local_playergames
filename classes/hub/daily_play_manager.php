@@ -51,14 +51,23 @@ class daily_play_manager {
         'battle' => 'fa-dragon',
     ];
 
+    /** @var string[] Games with a single round a day (one concept or word set per day), whatever the setting says. */
+    public const SINGLE_ROUND_GAMES = ['guess', 'fill'];
+
     /**
      * Number of plays allowed per day for a game type.
+     *
+     * PlayerGuess and PlayerFill have one concept (or word set) a day, so a second play would be the same
+     * round again: they always allow one, and the quota in the snapshot is ignored.
      *
      * @param array $snapshot Season config snapshot.
      * @param string $gametype Game type.
      * @return int At least 1.
      */
     public static function games_per_day(array $snapshot, string $gametype): int {
+        if (in_array($gametype, self::SINGLE_ROUND_GAMES, true)) {
+            return 1;
+        }
         $games = (int) ($snapshot['xp_games_' . $gametype] ?? 1);
         return max(1, $games);
     }
