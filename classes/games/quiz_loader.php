@@ -24,6 +24,7 @@
 
 namespace local_playergames\games;
 
+use local_playergames\local\bank_file;
 use local_playergames\local\question_bank_reuse;
 
 /**
@@ -253,20 +254,28 @@ class quiz_loader {
             return [];
         }
 
+        // Editing a question adds a version and leaves the earlier ones ready, so only the latest ready
+        // version of each question may be drawn, the way the core quiz picks it: an older one still carries
+        // the statement or the answer key the teacher has corrected.
         $sql = "SELECT q.id
                   FROM {question} q
                   JOIN {question_versions} qv ON qv.questionid = q.id
                   JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
                  WHERE qbe.questioncategoryid = :catid
                    AND q.qtype = 'multichoice'
-                   AND qv.status = 'ready'";
+                   AND qv.status = 'ready'
+                   AND qv.version = (SELECT MAX(lv.version)
+                                       FROM {question_versions} lv
+                                      WHERE lv.questionbankentryid = qbe.id
+                                        AND lv.status = 'ready')";
         $params = ['catid' => $categoryid];
+        $contextid = (int) $DB->get_field('question_categories', 'contextid', ['id' => $categoryid]);
 
         $rows = $this->fetch_random_rows(
             $sql,
             $params,
             'question',
-            'id, questiontext, generalfeedback, generalfeedbackformat',
+            'id, questiontext, questiontextformat, generalfeedback, generalfeedbackformat',
             $limit,
             $excludeids
         );
@@ -310,14 +319,41 @@ class quiz_loader {
             $dto = new quiz_question();
             $dto->source = 'questionbank';
             $dto->sourceid = $qid;
-            $dto->questiontext = $q->questiontext;
-            $dto->generalfeedback = $q->generalfeedback !== null ? (string) $q->generalfeedback : null;
+            // The files of a question sit in its bank's context and are referred to as @@PLUGINFILE@@:
+            // point them at the plugin's own file callback (see bank_file).
+            $dto->questiontext = file_rewrite_pluginfile_urls(
+                (string) $q->questiontext,
+                'pluginfile.php',
+                $contextid,
+                'local_playergames',
+                bank_file::AREA_QUESTION,
+                $qid
+            );
+            $dto->questiontextformat = (string) $q->questiontextformat;
+            $dto->generalfeedback = $q->generalfeedback !== null
+                ? file_rewrite_pluginfile_urls(
+                    (string) $q->generalfeedback,
+                    'pluginfile.php',
+                    $contextid,
+                    'local_playergames',
+                    bank_file::AREA_FEEDBACK,
+                    $qid
+                )
+                : null;
             $dto->generalfeedbackformat = isset($q->generalfeedbackformat)
                 ? (string) $q->generalfeedbackformat
                 : FORMAT_HTML;
-            $dto->answers = array_map(function ($a): quiz_answer {
+            $dto->answers = array_map(function ($a) use ($contextid): quiz_answer {
                 $ans = new quiz_answer();
-                $ans->text = $a->answer;
+                $ans->text = file_rewrite_pluginfile_urls(
+                    (string) $a->answer,
+                    'pluginfile.php',
+                    $contextid,
+                    'local_playergames',
+                    bank_file::AREA_ANSWER,
+                    (int) $a->id
+                );
+                $ans->format = (string) $a->answerformat;
                 $ans->correct = (float) $a->fraction > 0;
                 return $ans;
             }, $selected);

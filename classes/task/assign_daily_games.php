@@ -27,6 +27,7 @@ namespace local_playergames\task;
 use core_text;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
+use local_playergames\games\season_game_config;
 
 /**
  * Picks a random concept from active cartridges for each concept-based game
@@ -97,7 +98,8 @@ class assign_daily_games extends \core\task\scheduled_task {
                 continue;
             }
 
-            $conceptid = $this->pick_concept($activeids, $gametype, $minlen, $maxlen);
+            $pool = $this->season_cartridges($gametype, $activeids);
+            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $gametype, $minlen, $maxlen);
             if ($conceptid === null) {
                 mtrace("No eligible concept found for {$gametype} — skipping.");
                 continue;
@@ -111,7 +113,38 @@ class assign_daily_games extends \core\task\scheduled_task {
             mtrace("Assigned concept {$conceptid} to {$gametype} for today.");
         }
 
-        $this->assign_fill($activeids, $today);
+        $fillpool = $this->season_cartridges('fill', $activeids);
+        if ($fillpool === []) {
+            mtrace('No cartridge kept for fill in the active season — skipping assignment.');
+            return;
+        }
+        $this->assign_fill($fillpool, $today);
+    }
+
+    /**
+     * Narrows the active cartridges to the ones the active season kept for a game.
+     *
+     * The admin picks them per game in the season's game settings; none picked, no active season or a
+     * season without a row for the game (one that predates per-season configuration) means all of them.
+     * Only PlayerGuess and PlayerFill read the pick here: the quiz games filter by it when they load
+     * their questions.
+     *
+     * @param string $gametype Game type.
+     * @param int[] $activeids Ids of the active cartridges.
+     * @return int[] Ids the game may draw from, a subset of $activeids.
+     */
+    private function season_cartridges(string $gametype, array $activeids): array {
+        $config = season_game_config::get_for_active_season($gametype);
+        if ($config === null || $config->cartridgeids === null) {
+            return $activeids;
+        }
+
+        $kept = json_decode((string) $config->cartridgeids, true);
+        if (!is_array($kept)) {
+            return $activeids;
+        }
+
+        return array_values(array_intersect($activeids, array_map('intval', $kept)));
     }
 
     /**

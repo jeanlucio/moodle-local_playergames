@@ -311,4 +311,109 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->assertSame([], $loader->load_session(10, $source, (int) $private->id));
         $this->assertSame([], $loader->load_session(10, $source, 0));
     }
+
+    /**
+     * Gives a question the wrong answer the loader needs to have four of.
+     *
+     * @param int $questionid The question (one version of it).
+     * @return void
+     */
+    private function add_extra_wrong_answer(int $questionid): void {
+        global $DB;
+        $DB->insert_record('question_answers', (object) [
+            'question' => $questionid, 'answer' => 'Another wrong', 'answerformat' => FORMAT_HTML,
+            'fraction' => 0, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
+        ]);
+    }
+
+    /**
+     * A category kept for reuse, on every Moodle version.
+     *
+     * @return \stdClass The category.
+     */
+    private function shared_category(): \stdClass {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        if ($DB->get_manager()->table_exists('qbank')) {
+            $course = $generator->create_course();
+            $bank = $generator->create_module('qbank', ['course' => $course->id]);
+            $context = \context_module::instance($bank->cmid);
+        } else {
+            $context = \context_system::instance();
+        }
+        return $generator->get_plugin_generator('core_question')->create_question_category(['contextid' => $context->id]);
+    }
+
+    /**
+     * Regression test: editing a question leaves the earlier versions ready, and the loader drew from all
+     * of them, so a player could be given (and judged by) the statement or key the teacher had corrected.
+     */
+    public function test_question_bank_source_draws_only_the_latest_version_of_a_question(): void {
+        $this->resetAfterTest();
+        $qgen = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $category = $this->shared_category();
+        $first = $qgen->create_question('multichoice', 'one_of_four', [
+            'category' => $category->id, 'questiontext' => ['text' => 'Old statement', 'format' => FORMAT_HTML],
+        ]);
+        $second = $qgen->update_question($first, 'one_of_four', [
+            'category' => $category->id,
+            'questiontext' => ['text' => 'Corrected statement', 'format' => FORMAT_HTML],
+        ]);
+        $this->add_extra_wrong_answer((int) $first->id);
+        $this->add_extra_wrong_answer((int) $second->id);
+
+        for ($i = 0; $i < 10; $i++) {
+            $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id);
+            $this->assertCount(1, $questions);
+            $this->assertSame((int) $second->id, $questions[0]->sourceid);
+        }
+    }
+
+    /**
+     * Regression test: the text format of the question was never read and the text was always shown as
+     * HTML, so Markdown or plain text questions appeared with their raw markup.
+     */
+    public function test_question_bank_questions_keep_the_text_format_of_the_stem_and_the_answers(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $category = $this->shared_category();
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
+            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
+        $this->add_extra_wrong_answer((int) $question->id);
+        $DB->set_field('question', 'questiontextformat', FORMAT_MARKDOWN, ['id' => $question->id]);
+        $DB->set_field('question_answers', 'answerformat', FORMAT_PLAIN, ['question' => $question->id]);
+
+        $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
+
+        $this->assertSame(FORMAT_MARKDOWN, $loaded->questiontextformat);
+        foreach ($loaded->answers as $answer) {
+            $this->assertSame(FORMAT_PLAIN, $answer->format);
+        }
+    }
+
+    /**
+     * Regression test: a file embedded in a question reached the browser as the literal @@PLUGINFILE@@
+     * marker, a broken image that no pluginfile callback could serve.
+     */
+    public function test_question_bank_files_point_at_the_plugin_file_areas(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $category = $this->shared_category();
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
+            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
+        $this->add_extra_wrong_answer((int) $question->id);
+        $DB->set_field('question', 'questiontext', '<img src="@@PLUGINFILE@@/chart.png" alt="">', ['id' => $question->id]);
+        $DB->set_field('question', 'generalfeedback', '<img src="@@PLUGINFILE@@/key.png" alt="">', ['id' => $question->id]);
+        $answerid = (int) $DB->get_field('question_answers', 'id', ['question' => $question->id], IGNORE_MULTIPLE);
+        $DB->set_field('question_answers', 'answer', '<img src="@@PLUGINFILE@@/a.png" alt="">', ['id' => $answerid]);
+
+        $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
+
+        $base = "/pluginfile.php/{$category->contextid}/local_playergames";
+        $this->assertStringContainsString("{$base}/qbquestiontext/{$question->id}/chart.png", $loaded->questiontext);
+        $this->assertStringContainsString("{$base}/qbfeedback/{$question->id}/key.png", $loaded->generalfeedback);
+        $this->assertStringNotContainsString('@@PLUGINFILE@@', $loaded->questiontext);
+        $answertexts = implode(' ', array_map(static fn($a): string => $a->text, $loaded->answers));
+        $this->assertStringNotContainsString('@@PLUGINFILE@@', $answertexts);
+    }
 }

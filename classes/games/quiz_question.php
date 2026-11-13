@@ -40,6 +40,9 @@ class quiz_question {
     /** @var string Question stem text. */
     public string $questiontext = '';
 
+    /** @var string Text format of the stem (FORMAT_PLAIN for cartridge content, which is never formatted). */
+    public string $questiontextformat = FORMAT_PLAIN;
+
     /** @var int Difficulty 1–5 (0 when not applicable, e.g. question-bank source). */
     public int $difficulty = 0;
 

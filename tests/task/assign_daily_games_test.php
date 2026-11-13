@@ -216,4 +216,109 @@ final class assign_daily_games_test extends \advanced_testcase {
         $term = $DB->get_field('local_playergames_concepts', 'term', ['id' => $conceptid]);
         $this->assertSame('table', $term);
     }
+
+    /**
+     * Opens an active season whose PlayerGuess and PlayerFill draw only from the given cartridges.
+     *
+     * @param int[]|null $kept Cartridge ids kept for both games, or null for "all of them".
+     * @return void
+     */
+    private function open_season_keeping(?array $kept): void {
+        global $DB;
+        $now = time();
+        $seasonid = (int) $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + (DAYSECS * 30),
+            'status' => 'active', 'config_snapshot' => json_encode([]),
+            'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        foreach (['guess', 'fill'] as $gametype) {
+            $DB->insert_record('local_playergames_season_games', (object) [
+                'seasonid' => $seasonid, 'gametype' => $gametype, 'enabled' => 1, 'source' => 'cartridge',
+                'cartridgeids' => $kept === null ? null : json_encode($kept), 'auxid' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Adds a second active concept cartridge, with terms that no other cartridge has.
+     *
+     * @return int Cartridge id.
+     */
+    private function seed_other_concepts(): int {
+        global $DB;
+        $now = time();
+        $cid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Other', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        foreach (['zebra', 'tiger', 'koala', 'panda', 'camel'] as $term) {
+            $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => 'An animal',
+                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+            ]);
+        }
+        return $cid;
+    }
+
+    /**
+     * Cartridge ids of the concepts assigned today to a game.
+     *
+     * @param string $gametype Game type.
+     * @return int[]
+     */
+    private function assigned_cartridges(string $gametype): array {
+        global $DB;
+        return array_map('intval', $DB->get_fieldset_sql(
+            "SELECT DISTINCT c.cartridgeid
+               FROM {local_playergames_daily_assignments} a
+               JOIN {local_playergames_concepts} c ON c.id = a.conceptid
+              WHERE a.gamedate = :gd AND a.gametype = :gt",
+            ['gd' => mktime(0, 0, 0), 'gt' => $gametype]
+        ));
+    }
+
+    /**
+     * Regression test: the cartridges ticked per game in the season settings were saved and never read,
+     * so the words of an excluded cartridge reached the players anyway.
+     */
+    public function test_guess_and_fill_draw_only_from_the_cartridges_the_season_kept(): void {
+        $this->resetAfterTest();
+        $kept = $this->seed_concepts();
+        $this->seed_other_concepts();
+        $this->open_season_keeping([$kept]);
+
+        $this->run_task();
+
+        $this->assertSame([$kept], $this->assigned_cartridges('guess'));
+        $this->assertSame([$kept], $this->assigned_cartridges('fill'));
+    }
+
+    public function test_no_cartridge_ticked_means_all_active_cartridges(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->seed_concepts();
+        $this->seed_other_concepts();
+        $this->open_season_keeping(null);
+
+        $this->run_task();
+
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'guess']));
+        $this->assertSame(fill_manager::num_words(), $DB->count_records('local_playergames_daily_assignments', [
+            'gametype' => 'fill',
+        ]));
+    }
+
+    public function test_a_kept_cartridge_that_is_no_longer_active_assigns_nothing(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $kept = $this->seed_concepts();
+        $this->seed_other_concepts();
+        $this->open_season_keeping([$kept]);
+        $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $kept]);
+
+        $this->run_task();
+
+        $this->assertSame([], $this->assigned_cartridges('guess'));
+        $this->assertSame([], $this->assigned_cartridges('fill'));
+    }
 }

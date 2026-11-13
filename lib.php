@@ -57,3 +57,27 @@ function local_playergames_extend_navigation_user_settings(
         'local_playergames_gamification'
     );
 }
+
+/**
+ * Serves the files embedded in question bank questions shown by the quiz games.
+ *
+ * @param stdClass|null $course Course of the context, when it has one.
+ * @param stdClass|null $cm Course module of the context, when it has one.
+ * @param context $context The context in the URL: the one of the question's bank.
+ * @param string $filearea File area, one of the bank_file constants.
+ * @param array $args The rest of the URL: item id, then the path of the file.
+ * @param bool $forcedownload Whether to force a download.
+ * @param array $options Options for send_stored_file().
+ * @return bool False when there is nothing to serve.
+ */
+function local_playergames_pluginfile(
+    ?stdClass $course,
+    ?stdClass $cm,
+    context $context,
+    string $filearea,
+    array $args,
+    bool $forcedownload,
+    array $options = []
+): bool {
+    return \local_playergames\local\bank_file::serve($context, $filearea, $args, $forcedownload, $options);
+}

@@ -31,6 +31,9 @@ class quiz_answer {
     /** @var string Answer text. */
     public string $text = '';
 
+    /** @var string Text format of the answer (FORMAT_PLAIN for cartridge content, which is never formatted). */
+    public string $format = FORMAT_PLAIN;
+
     /** @var bool Whether this is the correct answer. */
     public bool $correct = false;
 }

@@ -238,19 +238,19 @@ class battle_manager {
      */
     private function format_question(quiz_question $question, string $key, \context $context): array {
         $isbank = $question->source === 'questionbank';
-        $format = static fn(string $text, int $textformat = FORMAT_HTML): string => $isbank
+        $format = static fn(string $text, int $textformat): string => $isbank
             ? format_text($text, $textformat, ['context' => $context])
             : s($text);
 
         $answers = [];
         foreach ($question->answers as $answer) {
-            $answers[] = ['text' => $format($answer->text), 'correct' => $answer->correct];
+            $answers[] = ['text' => $format($answer->text, $answer->format), 'correct' => $answer->correct];
         }
 
         $feedback = (string) ($question->generalfeedback ?? '');
         return [
             'key'          => $key,
-            'questiontext' => $format($question->questiontext),
+            'questiontext' => $format($question->questiontext, $question->questiontextformat),
             'feedback'     => $feedback === ''
                 ? ''
                 : format_text($feedback, $question->generalfeedbackformat, ['context' => $context]),

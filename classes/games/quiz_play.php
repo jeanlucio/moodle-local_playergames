@@ -309,14 +309,14 @@ class quiz_play {
      */
     private static function describe(quiz_question $question, \context $context): array {
         $isbank = $question->source === 'questionbank';
-        $format = static fn(string $text): string => $isbank
-            ? format_text($text, FORMAT_HTML, ['context' => $context])
+        $format = static fn(string $text, int $textformat): string => $isbank
+            ? format_text($text, $textformat, ['context' => $context])
             : s($text);
 
         $answers = [];
         $correct = -1;
         foreach ($question->answers as $j => $answer) {
-            $answers[] = $format($answer->text);
+            $answers[] = $format($answer->text, $answer->format);
             if ($answer->correct && $correct < 0) {
                 $correct = (int) $j;
             }
@@ -327,7 +327,7 @@ class quiz_play {
             'key'          => "{$question->source}:{$question->sourceid}",
             'source'       => $question->source,
             'sourceid'     => (int) $question->sourceid,
-            'questiontext' => $format($question->questiontext),
+            'questiontext' => $format($question->questiontext, $question->questiontextformat),
             'answers'      => $answers,
             'correct'      => $correct,
             'feedback'     => $feedbackraw === ''
