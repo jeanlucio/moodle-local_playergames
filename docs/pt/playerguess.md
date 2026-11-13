@@ -44,24 +44,21 @@ exemplo, um hífen, nunca é atribuído a um dia de PlayerGuess.
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | **XP por jogo do Guess** | 25 | XP concedido numa rodada vencida. |
-| **Jogos de Guess por dia** | 1 | Quantas vitórias por dia valem XP — atingido o limite, o jogo mostra "já jogou hoje". |
 
-## Estado da rodada e seus limites
+O Guess tem um conceito por dia, então tem uma rodada por dia e paga o XP uma vez, na vitória; não
+existe configuração de "jogos por dia" para ele.
+
+## Estado da rodada
 
 A rodada em andamento (tentativas feitas até agora, se está finalizada, se foi vencida) fica
-guardada na **sessão** do usuário, não numa tabela de banco de dados. Ela reseta automaticamente
-se a rodada guardada não corresponder mais ao conceito atribuído hoje (um novo dia, ou um
-conceito reatribuído). Isso significa:
+guardada no banco de dados, uma linha por usuário e dia. Ela reseta automaticamente se a rodada
+guardada não corresponder mais ao conceito atribuído hoje (um novo dia, ou um conceito
+reatribuído). Isso significa:
 
-- Sair da página e voltar dentro da mesma sessão retoma a rodada exatamente de onde parou,
-  incluindo uma rodada finalizada — uma vitória ou derrota permanece final pelo resto do dia
-  naquela sessão.
-- Apenas uma **vitória** é registrada no servidor (pelo mesmo mecanismo de contagem diária usado
-  pelos demais jogos); uma derrota não é gravada em lugar nenhum fora da sessão.
-- **Limitação conhecida:** como uma derrota não deixa rastro no servidor, sair da conta ou
-  continuar em uma sessão de navegador diferente dá um tabuleiro novo e vazio para o mesmo termo
-  do dia — a nova sessão não tem memória da derrota anterior. Uma vitória não é afetada: ela já
-  foi registrada, então a tela de "já jogou hoje" continua valendo. Isso espelha uma escolha que
-  o `mod_playerwords` também faz para suas próprias rodadas baseadas em sessão, aceita em troca de
-  não adicionar uma tabela de banco de dados dedicada para uma jogada de mesmo-dia e
-  mesmo-dispositivo.
+- Sair da página e voltar — mesmo depois de sair da conta ou de outro navegador — retoma a rodada
+  exatamente de onde parou, incluindo uma rodada finalizada: uma vitória ou derrota permanece final
+  pelo resto do dia, e o limite de tentativas não pode ser reiniciado entrando de novo.
+- Apenas uma **vitória** paga XP (pelo mesmo mecanismo de contagem diária usado pelos demais
+  jogos). A derrota é guardada para que a rodada continue perdida, mas não rende nada.
+- O termo só é revelado quando a rodada termina.
+- As linhas de dias anteriores são apagadas pela tarefa diária de limpeza.

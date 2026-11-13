@@ -43,22 +43,20 @@ assigned to a PlayerGuess day.
 | Setting | Default | What it does |
 |---|---|---|
 | **XP per Guess game** | 25 | XP awarded on a winning round. |
-| **Guess games per day** | 1 | How many wins per day earn XP — once reached, the game shows "already played today". |
 
-## Round state and its limits
+Guess has one concept a day, so it has one round a day and pays its XP once, on the win; there is
+no "games per day" setting for it.
+
+## Round state
 
 The in-progress round (guesses made so far, whether it's finished, whether it was won) is kept in
-the user's **session**, not in a database table. It automatically resets if the stored round no
-longer matches today's assigned concept (a new day, or a re-assigned concept). This means:
+the database, one row per user and day. It automatically resets if the stored round no longer
+matches today's assigned concept (a new day, or a re-assigned concept). This means:
 
-- Leaving the page and coming back within the same session resumes the round exactly where it
-  was left, including a finished round — a win or a loss stays final for the rest of the day in
-  that session.
-- Only a **win** is recorded server-side (through the same daily-play accounting used by the
-  other games); a loss is not written anywhere outside the session.
-- **Known limitation:** because a loss leaves no server-side trace, logging out or continuing
-  from a different browser session gives a fresh, empty board for the same day's term — the new
-  session has no memory of the earlier loss. A win is unaffected: it is already recorded, so the
-  "already played today" screen still applies. This mirrors a tradeoff `mod_playerwords` makes for
-  its own session-backed rounds, accepted in favour of not adding a dedicated database table for a
-  same-day, single-device play.
+- Leaving the page and coming back — even after logging out or from another browser — resumes the
+  round exactly where it was left, including a finished round: a win or a loss stays final for the
+  rest of the day, and the attempt limit cannot be reset by logging in again.
+- Only a **win** pays XP (through the same daily-play accounting used by the other games). A loss
+  is kept so the round stays lost, but earns nothing.
+- The term is only revealed once the round is over.
+- Rows of earlier days are purged by the daily cleanup task.

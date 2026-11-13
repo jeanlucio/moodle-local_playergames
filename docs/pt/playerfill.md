@@ -55,27 +55,25 @@ simplesmente fica sem atribuição naquele dia, em vez de iniciar uma cruzadinha
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | **XP por jogo de Completar** | 25 | XP concedido num dia vencido. |
-| **Jogos de Completar por dia** | 1 | Quantas vitórias por dia valem XP — atingido o limite, o jogo mostra "já jogou hoje". |
 
-## Estado da rodada e seus limites
+O Fill tem uma cruzadinha por dia, então tem uma rodada por dia e paga o XP uma vez, na vitória;
+não existe configuração de "jogos por dia" para ele.
+
+## Estado da rodada
 
 A cruzadinha em andamento (quais termos estão resolvidos, quais slots estão revelados, tentativas
-usadas por termo) fica guardada na **sessão** do usuário, não numa tabela de banco de dados — a
-mesma escolha que o PlayerGuess faz, e pelo mesmo motivo: toda tentativa precisa de validação no
-servidor contra um termo que nunca pode ser exposto ao navegador antes da hora. Ela é reconstruída
-automaticamente se a cruzadinha guardada não corresponder mais aos termos atribuídos hoje (um novo
-dia, ou um conjunto reatribuído).
+usadas por termo) fica guardada no banco de dados, uma linha por usuário e dia, e toda tentativa é
+validada no servidor contra um termo que nunca é exposto ao navegador antes da hora. Ela é
+reconstruída automaticamente se a cruzadinha guardada não corresponder mais aos termos atribuídos
+hoje (um novo dia, ou um conjunto reatribuído).
 
-- Sair da página e voltar dentro da mesma sessão retoma a cruzadinha exatamente de onde parou,
-  incluindo um dia finalizado — uma vitória ou derrota permanece final pelo resto do dia naquela
-  sessão.
-- Apenas uma **vitória** é registrada no servidor (pelo mesmo mecanismo de contagem diária usado
-  pelos demais jogos); uma derrota não é gravada em lugar nenhum fora da sessão.
-- **Limitação conhecida:** como uma derrota não deixa rastro no servidor, sair da conta ou
-  continuar em uma sessão de navegador diferente dá uma cruzadinha nova para os mesmos termos do
-  dia — a nova sessão não tem memória da derrota anterior. Uma vitória não é afetada: ela já foi
-  registrada, então a tela de "já jogou hoje" continua valendo. Isso espelha a mesma escolha aceita
-  pelo PlayerGuess.
+- Sair da página e voltar — mesmo depois de sair da conta ou de outro navegador — retoma a
+  cruzadinha exatamente de onde parou, incluindo um dia finalizado: uma vitória ou derrota permanece
+  final pelo resto do dia, e o limite de tentativas não pode ser reiniciado entrando de novo.
+- Apenas uma **vitória** paga XP (pelo mesmo mecanismo de contagem diária usado pelos demais
+  jogos). A derrota é guardada para que a rodada continue perdida, mas não rende nada.
+- As palavras só são reveladas quando a rodada termina.
+- As linhas de dias anteriores são apagadas pela tarefa diária de limpeza.
 
 ## Adaptado do mod_playercross
 
