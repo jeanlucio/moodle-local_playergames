@@ -125,4 +125,87 @@ final class ai_generator_test extends \advanced_testcase {
             }
         }
     }
+
+    /**
+     * Makes the generator reach a core_ai manager that answers with the given response, and nothing else.
+     *
+     * @param object|null $response What process_action() returns, or null to make it throw.
+     * @param string $exceptionmessage Message of the exception thrown when there is no response.
+     * @return void
+     */
+    private function use_core_ai_answering(?object $response, string $exceptionmessage = ''): void {
+        if ((new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions'))->isStatic()) {
+            // Moodle 4.5 declares it static, which PHPUnit cannot stub; the messages are the same code path.
+            $this->markTestSkipped('The core_ai manager cannot be mocked on this Moodle version.');
+        }
+        $action = \core_ai\aiactions\generate_text::class;
+        $manager = $this->createMock(\core_ai\manager::class);
+        $manager->method('get_providers_for_actions')->willReturn([$action => [new \stdClass()]]);
+        if ($response === null) {
+            $manager->method('process_action')->willThrowException(new \RuntimeException($exceptionmessage));
+        } else {
+            $manager->method('process_action')->willReturn($response);
+        }
+        \core\di::set(\core_ai\manager::class, $manager);
+    }
+
+    /**
+     * Calls the core_ai fallback, which is the only AI source when the hub is not installed.
+     *
+     * @return array Result of call_core_ai().
+     */
+    private function call_core_ai(): array {
+        $generator = new ai_generator();
+        $rm = new \ReflectionMethod($generator, 'call_core_ai');
+        $rm->setAccessible(true);
+        return $rm->invokeArgs($generator, ['', 'prompt']);
+    }
+
+    /**
+     * Regression test: the failure messages were fixed English text ("core_ai: provider returned
+     * failure") shown inside a translated sentence, and the reason the provider gave was thrown away.
+     */
+    public function test_core_ai_failure_reports_the_providers_reason_in_the_site_language(): void {
+        $this->resetAfterTest();
+        $response = $this->createMock(\core_ai\aiactions\responses\response_generate_text::class);
+        $response->method('get_success')->willReturn(false);
+        $response->method('get_errormessage')->willReturn('Invalid API key');
+        $this->use_core_ai_answering($response);
+
+        $result = $this->call_core_ai();
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(get_string('error_coreai_failed_detail', 'local_playergames', 'Invalid API key'), $result['message']);
+        $this->assertStringNotContainsString('core_ai:', $result['message']);
+    }
+
+    public function test_core_ai_failure_without_a_reason_uses_the_generic_message(): void {
+        $this->resetAfterTest();
+        $response = $this->createMock(\core_ai\aiactions\responses\response_generate_text::class);
+        $response->method('get_success')->willReturn(false);
+        $response->method('get_errormessage')->willReturn('');
+        $this->use_core_ai_answering($response);
+
+        $this->assertSame(get_string('error_coreai_failed', 'local_playergames'), $this->call_core_ai()['message']);
+    }
+
+    public function test_core_ai_empty_response_uses_the_translated_message(): void {
+        $this->resetAfterTest();
+        $response = $this->createMock(\core_ai\aiactions\responses\response_generate_text::class);
+        $response->method('get_success')->willReturn(true);
+        $response->method('get_response_data')->willReturn(['generatedcontent' => '']);
+        $this->use_core_ai_answering($response);
+
+        $this->assertSame(get_string('error_coreai_empty', 'local_playergames'), $this->call_core_ai()['message']);
+    }
+
+    public function test_core_ai_exception_is_wrapped_in_the_translated_message(): void {
+        $this->resetAfterTest();
+        $this->use_core_ai_answering(null, 'Quota exhausted');
+
+        $this->assertSame(
+            get_string('error_coreai_failed_detail', 'local_playergames', 'Quota exhausted'),
+            $this->call_core_ai()['message']
+        );
+    }
 }

@@ -33,6 +33,7 @@ $capabilities = [
         ],
     ],
     'local/playergames:managecartridges' => [
+        'riskbitmask'  => RISK_SPAM,
         'captype'      => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [

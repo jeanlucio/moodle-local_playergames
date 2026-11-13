@@ -279,19 +279,25 @@ class ai_generator {
             $response = $manager->process_action($action);
 
             if (!$response->get_success()) {
-                return ['success' => false, 'message' => 'core_ai: provider returned failure'];
+                $detail = trim((string) $response->get_errormessage());
+                return ['success' => false, 'message' => $detail === ''
+                    ? get_string('error_coreai_failed', 'local_playergames')
+                    : get_string('error_coreai_failed_detail', 'local_playergames', $detail)];
             }
 
             $data = $response->get_response_data();
             $content = (string) ($data['generatedcontent'] ?? '');
 
             if ($content === '') {
-                return ['success' => false, 'message' => 'core_ai: empty response'];
+                return ['success' => false, 'message' => get_string('error_coreai_empty', 'local_playergames')];
             }
 
             return ['success' => true, 'data' => $content, 'provider' => 'Moodle AI', 'model' => ''];
         } catch (\Throwable $e) {
-            return ['success' => false, 'message' => 'core_ai: ' . $e->getMessage()];
+            return [
+                'success' => false,
+                'message' => get_string('error_coreai_failed_detail', 'local_playergames', $e->getMessage()),
+            ];
         }
     }
 
