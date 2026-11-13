@@ -30,4 +30,9 @@ $definitions = [
         'ttl'       => 60,
         'simplekeys' => true,
     ],
+    'staffids' => [
+        'mode'      => cache_store::MODE_APPLICATION,
+        'ttl'       => 300,
+        'simplekeys' => true,
+    ],
 ];

@@ -284,8 +284,6 @@ class hub implements renderable, templatable {
             'str_show_learningxpranking' => get_string('hub_show_learningxpranking', 'local_playergames'),
             'str_learningxp_invite'  => get_string('hub_learningxp_invite', 'local_playergames'),
             'str_learningxp_zero'    => get_string('hub_learningxp_zero', 'local_playergames'),
-            'sesskey'            => sesskey(),
-            'formaction'         => (new moodle_url('/local/playergames/hub.php'))->out(false),
             'achievementsurl'    => (new moodle_url('/local/playergames/achievements.php'))->out(false),
             'showbothtabs'       => $showbothtabs,
             'studentranking'     => $studentranking,

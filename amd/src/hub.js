@@ -74,6 +74,7 @@ const init = () => {
     initRankingToggle();
     AvatarModal.init();
     RankingToggle.wire('[data-ranking-visibility]', 'local_playergames_set_ranking_visibility');
+    RankingToggle.wireJoin('[data-ranking-join]', 'local_playergames_set_ranking_visibility');
     RankingToggle.wire(
         '[data-learning-ranking-visibility]',
         'local_playergames_set_learning_ranking_visibility'

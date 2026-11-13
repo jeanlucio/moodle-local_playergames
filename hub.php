@@ -36,7 +36,7 @@ $allowed  = get_config('local_playergames', 'allowed_participants') ?: 'students
 $isstaff  = \local_playergames\local\access::is_staff();
 $isadmin  = has_capability('moodle/site:config', $context);
 
-// Ranking visibility and avatar equip are handled via AJAX (see amd/src/hub.js).
+// Ranking visibility and avatar equip are handled via AJAX (see amd/src/hub.js); this page takes no POST.
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/hub.php'));

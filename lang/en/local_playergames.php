@@ -147,6 +147,7 @@ $string['battle_turn_player'] = 'Your turn.';
 $string['battle_victory'] = 'Victory!';
 $string['battle_xp_earned'] = 'XP earned: {$a}';
 $string['cachedef_ranking'] = 'Season and learning rankings';
+$string['cachedef_staffids'] = 'Site staff user ids';
 $string['cartridge_activate'] = 'Activate';
 $string['cartridge_active'] = 'Active';
 $string['cartridge_add_concept'] = 'Add concept';

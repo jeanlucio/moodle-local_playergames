@@ -60,8 +60,6 @@
         "learningranking": [
             {"pos": 1, "name": "Bob Jones", "xp": 240, "isself": true, "extra": false}
         ],
-        "sesskey": "abc123",
-        "formaction": "/local/playergames/hub.php",
         "achievementsurl": "/local/playergames/achievements.php",
         "showbothtabs": false,
         "hasstudentranking": true,
@@ -476,13 +474,9 @@
                         <div class="alert alert-secondary mx-3 mt-3">
                             <i class="fa fa-user-slash me-2" aria-hidden="true"></i>
                             {{str_invite}}
-                            <form method="post" action="{{formaction}}" class="d-inline ms-2">
-                                <input type="hidden" name="sesskey" value="{{sesskey}}">
-                                <input type="hidden" name="showinranking" value="1">
-                                <button type="submit" class="btn btn-sm btn-primary">
-                                    {{str_join}}
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-primary ms-2" data-ranking-join>
+                                {{str_join}}
+                            </button>
                         </div>
                         {{/showinranking}}
                         {{#showinranking}}{{^selfinstudents}}

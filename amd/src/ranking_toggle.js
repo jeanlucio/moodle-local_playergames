@@ -56,4 +56,30 @@ const wire = (selector, methodname, reload = true) => {
     });
 };
 
-export {wire};
+/**
+ * Wires a "join the ranking" button to switch the visibility on through the web service.
+ *
+ * Unlike the switch, the button only ever turns it on, so a failure needs no state to revert.
+ *
+ * @param {string} selector Attribute selector for the button.
+ * @param {string} methodname Web service method name to call.
+ */
+const wireJoin = (selector, methodname) => {
+    const button = document.querySelector(selector);
+    if (!button) {
+        return;
+    }
+    button.addEventListener('click', async() => {
+        button.disabled = true;
+        try {
+            await Ajax.call([{methodname, args: {show: 1}}])[0];
+            // Reload so the ranking list shows the user, as it does for the switch.
+            window.location.reload();
+        } catch (error) {
+            button.disabled = false;
+            Notification.exception(error);
+        }
+    });
+};
+
+export {wire, wireJoin};

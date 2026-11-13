@@ -95,34 +95,56 @@ class access {
     /**
      * Returns the IDs of every user is_staff() would return true for.
      *
-     * A bulk equivalent of is_staff(), for ranking/group-split queries that need
-     * the whole staff set at once. Uses a single query against role_assignments
-     * joined to course contexts and role_capabilities — get_users_by_capability()
-     * cannot be used here because, called against the system context, it only
-     * finds capabilities granted at system level, not via course-level role
-     * assignments (the common case for teachers) — the same pitfall is_staff()
-     * avoids by checking teacher_courseids() instead.
+     * A bulk equivalent of is_staff(), for ranking/group-split queries that need the whole staff set at
+     * once. The capability is not evaluated in SQL: whether a role holds it at a given course depends on
+     * the role definition, the overrides on the way down (an override can grant or forbid it in one
+     * course only) and on roles assigned at category level, none of which a join on role_capabilities
+     * reproduces. So the query only narrows the users to those holding a role that is allowed one of the
+     * capabilities anywhere, and each of them goes through is_staff(), the single definition of staff.
+     * The set is cached for a few minutes because that check costs a few queries per candidate.
      *
      * @return int[]
      */
     public static function get_staff_ids(): array {
+        $cache = \cache::make('local_playergames', 'staffids');
+        $ids = $cache->get('ids');
+        if (is_array($ids)) {
+            return $ids;
+        }
+
+        $ids = self::compute_staff_ids();
+        $cache->set('ids', $ids);
+        return $ids;
+    }
+
+    /**
+     * Works out the staff set, see get_staff_ids().
+     *
+     * @return int[]
+     */
+    private static function compute_staff_ids(): array {
         global $CFG, $DB;
 
         $sql = "SELECT DISTINCT ra.userid
                   FROM {role_assignments} ra
-                  JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = :coursecontextlevel
                   JOIN {role_capabilities} rc ON rc.roleid = ra.roleid
-                       AND rc.capability = :capability
-                       AND rc.permission = :allow";
-        $ids = $DB->get_fieldset_sql($sql, [
-            'coursecontextlevel' => CONTEXT_COURSE,
-            'capability'         => 'moodle/course:update',
-            'allow'              => CAP_ALLOW,
+                       AND rc.capability IN (:updatecap, :configcap)
+                       AND rc.permission = :allow
+                  JOIN {user} u ON u.id = ra.userid AND u.deleted = 0";
+        $candidates = $DB->get_fieldset_sql($sql, [
+            'updatecap' => 'moodle/course:update',
+            'configcap' => 'moodle/site:config',
+            'allow'     => CAP_ALLOW,
         ]);
-        $ids = array_map('intval', $ids);
 
-        // Site admins have all capabilities implicitly but are not returned by
-        // the query above. Merge them into the staff set.
+        $ids = [];
+        foreach ($candidates as $candidate) {
+            if (self::is_staff((int) $candidate)) {
+                $ids[] = (int) $candidate;
+            }
+        }
+
+        // Site admins have all capabilities implicitly and may hold no role at all.
         if (!empty($CFG->siteadmins)) {
             $adminids = array_map('intval', explode(',', $CFG->siteadmins));
             $ids      = array_values(array_unique(array_merge($ids, $adminids)));

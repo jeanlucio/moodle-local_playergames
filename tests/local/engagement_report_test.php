@@ -133,6 +133,38 @@ final class engagement_report_test extends \advanced_testcase {
     }
 
     /**
+     * The events of the activities count, not only those of the course page.
+     *
+     * Regression test: the query filtered by the course context, so an activity's own events (views,
+     * attempts, submissions) were left out and the metric measured little more than visits to the course page.
+     */
+    public function test_events_inside_activities_are_counted(): void {
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+        set_config('enabled_stores', 'logstore_standard', 'tool_log');
+        set_config('buffersize', 0, 'logstore_standard');
+        get_log_manager(true);
+
+        $course = $this->getDataGenerator()->create_course();
+        $page   = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
+        $user   = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id);
+        $this->setUser($user);
+        get_log_manager()->dispose();
+        $before = (new engagement_report())->get_metrics([(int) $course->id], 30)['events_per_user'];
+
+        \mod_page\event\course_module_viewed::create([
+            'objectid' => $page->id,
+            'context'  => \context_module::instance($page->cmid),
+        ])->trigger();
+        get_log_manager()->dispose();
+        $after = (new engagement_report())->get_metrics([(int) $course->id], 30)['events_per_user'];
+
+        // One enrolled user and one more event, which lives in the module context.
+        $this->assertSame($before + 1.0, $after);
+    }
+
+    /**
      * With no readable log store there is no reader, and the events metric is zero instead of an error.
      */
     public function test_without_a_log_reader_the_events_metric_is_zero(): void {

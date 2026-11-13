@@ -109,6 +109,76 @@ final class access_test extends \advanced_testcase {
         $this->assertSame(access::is_staff((int) $student->id), in_array((int) $student->id, $staffids, true));
     }
 
+    /**
+     * Regression test: a role assigned at category level made is_staff() true but never reached the
+     * bulk query, which only looked at role assignments in course contexts.
+     */
+    public function test_get_staff_ids_includes_a_manager_assigned_in_a_category(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user     = $this->getDataGenerator()->create_user();
+        $category = $this->getDataGenerator()->create_category();
+        $this->getDataGenerator()->create_course(['category' => $category->id]);
+        $managerid = (int) $DB->get_field('role', 'id', ['shortname' => 'manager'], MUST_EXIST);
+        role_assign($managerid, $user->id, \context_coursecat::instance($category->id));
+
+        $this->assertTrue(access::is_staff((int) $user->id));
+        $this->assertContains((int) $user->id, access::get_staff_ids());
+    }
+
+    /**
+     * Regression test: an override that allows the capability for a role in one course made every holder
+     * of that role in any course count as staff, because the query ignored the context of the override.
+     */
+    public function test_get_staff_ids_ignores_an_override_in_a_course_the_user_is_not_in(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $outsider = $this->getDataGenerator()->create_user();
+        $insider  = $this->getDataGenerator()->create_user();
+        $other    = $this->getDataGenerator()->create_course();
+        $overridden = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($outsider->id, $other->id, 'teacher');
+        $this->getDataGenerator()->enrol_user($insider->id, $overridden->id, 'teacher');
+        $roleid = (int) $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability('moodle/course:update', CAP_ALLOW, $roleid, \context_course::instance($overridden->id), true);
+
+        $staffids = access::get_staff_ids();
+
+        $this->assertFalse(access::is_staff((int) $outsider->id));
+        $this->assertNotContains((int) $outsider->id, $staffids);
+        $this->assertTrue(access::is_staff((int) $insider->id));
+        $this->assertContains((int) $insider->id, $staffids);
+    }
+
+    public function test_get_staff_ids_excludes_a_teacher_whose_capability_is_prohibited(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $roleid = (int) $DB->get_field('role', 'id', ['shortname' => 'editingteacher'], MUST_EXIST);
+        assign_capability('moodle/course:update', CAP_PROHIBIT, $roleid, \context_course::instance($course->id), true);
+
+        $this->assertFalse(access::is_staff((int) $teacher->id));
+        $this->assertNotContains((int) $teacher->id, access::get_staff_ids());
+    }
+
+    public function test_get_staff_ids_is_cached_for_a_few_minutes(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+
+        $before = access::get_staff_ids();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $cached = access::get_staff_ids();
+        \cache_helper::purge_by_definition('local_playergames', 'staffids');
+        $fresh = access::get_staff_ids();
+
+        $this->assertNotContains((int) $teacher->id, $before);
+        $this->assertSame($before, $cached);
+        $this->assertContains((int) $teacher->id, $fresh);
+    }
+
     public function test_can_view_hub_blocks_staff_when_students_only(): void {
         $this->assertFalse(access::can_view_hub(true, false, 'students'));
     }

@@ -88,8 +88,9 @@ class streak_manager {
      * Processes overnight streak breaks for all users.
      *
      * Called by reset_daily_missions at midnight. For every user whose last
-     * activity was before yesterday: if they have a freeze, consume it;
-     * otherwise reset the streak to 0 and fire streak_broken.
+     * activity was before yesterday: if they have a freeze, consume it and
+     * mark yesterday as covered; otherwise reset the streak to 0 and fire
+     * streak_broken.
      *
      * @return int Number of streaks broken (not counting freeze consumptions).
      */
@@ -108,6 +109,10 @@ class streak_manager {
         foreach ($records as $streak) {
             if ($streak->freezesavailable > 0) {
                 $streak->freezesavailable--;
+                // The freeze covers the day that was missed: count it as an active day, so that the next
+                // play continues the streak (record_activity() looks for activity yesterday) and the same
+                // missed day is not charged again tomorrow night.
+                $streak->lastactivedate = $yesterday;
                 $DB->update_record('local_playergames_streaks', $streak);
                 self::log_freeze((int) $streak->userid, 'used', 1, 'streak_break');
 

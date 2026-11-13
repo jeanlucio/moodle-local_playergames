@@ -138,6 +138,43 @@ final class streak_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $streak->freezesavailable);
     }
 
+    /**
+     * Regression test: the freeze was spent and recorded, but the next play still restarted the streak at 1,
+     * as it would have without the freeze.
+     */
+    public function test_a_streak_protected_by_a_freeze_continues_on_the_next_play(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $twodaysago = mktime(0, 0, 0) - (2 * DAYSECS);
+        $this->set_streak((int) $user->id, 5, 5, $twodaysago, 1);
+
+        streak_manager::process_breaks();
+        streak_manager::record_activity((int) $user->id);
+
+        $streak = streak_manager::get_or_create((int) $user->id);
+        $this->assertSame(6, (int) $streak->currentstreak);
+        $this->assertSame(6, (int) $streak->longeststreak);
+        $this->assertSame(mktime(0, 0, 0), (int) $streak->lastactivedate);
+    }
+
+    public function test_a_freeze_covers_a_missed_day_only_once(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $twodaysago = mktime(0, 0, 0) - (2 * DAYSECS);
+        $this->set_streak((int) $user->id, 5, 5, $twodaysago, 2);
+
+        streak_manager::process_breaks();
+        $secondrun = streak_manager::process_breaks();
+
+        // The same night run twice must not spend the second freeze on the day already covered.
+        $streak = streak_manager::get_or_create((int) $user->id);
+        $this->assertSame(0, $secondrun);
+        $this->assertSame(1, (int) $streak->freezesavailable);
+        $this->assertSame(5, (int) $streak->currentstreak);
+    }
+
     public function test_process_breaks_records_streak_broken_activity_log(): void {
         global $DB;
         $this->resetAfterTest();

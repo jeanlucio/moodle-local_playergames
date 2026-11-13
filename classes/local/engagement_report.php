@@ -128,10 +128,11 @@ class engagement_report {
         $reader      = self::get_log_reader();
         if ($reader !== null) {
             [$inevents, $evparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'ev');
-            $evparams['evlevel'] = CONTEXT_COURSE;
             $evparams['evsince'] = $since;
+            // The log's course column covers the course page and everything inside it. Filtering by the
+            // course context would keep only the course page and drop the activities' own events.
             $totalevents = (int) $reader->get_events_select_count(
-                "contextlevel = :evlevel AND contextinstanceid $inevents AND timecreated > :evsince",
+                "courseid $inevents AND timecreated > :evsince",
                 $evparams
             );
         }
