@@ -309,4 +309,75 @@ final class quiz_generator_test extends \advanced_testcase {
         ]]), $concepts]);
         $this->assertSame([], $fromconcepts);
     }
+
+    /**
+     * A generator whose AI call answers with the given result, and nothing else.
+     *
+     * @param array $result What the AI call returns.
+     * @return quiz_generator
+     */
+    private function generator_answering(array $result): quiz_generator {
+        return new class ($result) extends quiz_generator {
+            /** @var array The canned answer of the AI call. */
+            private array $canned;
+
+            /**
+             * Keeps the answer to give.
+             *
+             * @param array $canned What the AI call returns.
+             */
+            public function __construct(array $canned) {
+                $this->canned = $canned;
+            }
+
+            #[\Override]
+            protected function call_api(string $system, string $user, bool $jsonmode, string $description = ''): array {
+                return $this->canned;
+            }
+        };
+    }
+
+    /**
+     * Regression test: a failure of the AI call came back as an empty list, which the page showed as an
+     * empty preview with a Save button, and the provider's message was lost.
+     */
+    public function test_generate_preview_reports_the_providers_failure(): void {
+        $generator = $this->generator_answering(['success' => false, 'message' => 'Invalid API key']);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage('Invalid API key');
+        $generator->generate_preview('Topic', 'en', 5);
+    }
+
+    public function test_generate_preview_without_an_ai_source_says_so(): void {
+        $generator = $this->generator_answering(['success' => false, 'message' => '']);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('error_no_ai_key', 'local_playergames'));
+        $generator->generate_preview('Topic', 'en', 5);
+    }
+
+    public function test_generate_preview_rejects_an_answer_with_no_usable_question(): void {
+        foreach (['not json at all', '{"questions": []}', '{"other": 1}'] as $answer) {
+            $generator = $this->generator_answering(['success' => true, 'data' => $answer]);
+            try {
+                $generator->generate_preview('Topic', 'en', 5);
+                $this->fail("No exception for: {$answer}");
+            } catch (\moodle_exception $e) {
+                $this->assertSame(get_string('error_ai_no_questions', 'local_playergames'), $e->getMessage());
+            }
+        }
+    }
+
+    public function test_generate_preview_returns_the_questions_of_a_good_answer(): void {
+        $json = json_encode(['questions' => [[
+            'questiontext' => 'Q?', 'correct' => 'A', 'distractors' => ['B', 'C', 'D', 'E'],
+        ]]]);
+        $generator = $this->generator_answering(['success' => true, 'data' => $json]);
+
+        $questions = $generator->generate_preview('Topic', 'en', 5);
+
+        $this->assertCount(1, $questions);
+        $this->assertSame('Q?', $questions[0]['questiontext']);
+    }
 }

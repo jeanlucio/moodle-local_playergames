@@ -1191,28 +1191,6 @@ class controller {
             'question_feedback'   => 'generalfeedback',
         ]);
 
-        $newcartridge               = new \stdClass();
-        $newcartridge->name         = \core_text::substr(
-            clean_param($cartridgename, PARAM_TEXT),
-            0,
-            255
-        );
-        $newcartridge->version      = '1.0';
-        $newcartridge->language     = \core_text::substr(
-            clean_param($cartridgelang, PARAM_TEXT),
-            0,
-            20
-        );
-        $newcartridge->author       = $aiauthor !== ''
-            ? \core_text::substr(clean_param($aiauthor, PARAM_TEXT), 0, 255) : null;
-        $newcartridge->type         = 'quiz';
-        $newcartridge->active       = 1;
-        $now = time();
-        $newcartridge->timecreated  = $now;
-        $newcartridge->timemodified = $now;
-        $newcartridge->uploadedby   = (int) $USER->id;
-        $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
-
         $questions = [];
         foreach ($rawquestions as $q) {
             if (!is_array($q)) {
@@ -1237,6 +1215,38 @@ class controller {
                 ];
             }
         }
+
+        // A cartridge with no question has nothing to serve: refuse it instead of creating an empty one.
+        if ($questions === []) {
+            redirect(
+                $this->url(['tab' => 'ai', 'ai_subtab' => 'quiz']),
+                get_string('error_ai_no_questions', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+
+        $newcartridge               = new \stdClass();
+        $newcartridge->name         = \core_text::substr(
+            clean_param($cartridgename, PARAM_TEXT),
+            0,
+            255
+        );
+        $newcartridge->version      = '1.0';
+        $newcartridge->language     = \core_text::substr(
+            clean_param($cartridgelang, PARAM_TEXT),
+            0,
+            20
+        );
+        $newcartridge->author       = $aiauthor !== ''
+            ? \core_text::substr(clean_param($aiauthor, PARAM_TEXT), 0, 255) : null;
+        $newcartridge->type         = 'quiz';
+        $newcartridge->active       = 1;
+        $now = time();
+        $newcartridge->timecreated  = $now;
+        $newcartridge->timemodified = $now;
+        $newcartridge->uploadedby   = (int) $USER->id;
+        $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
 
         $gen = new quiz_generator();
         $gen->save_standalone($newcartridgeid, $questions);

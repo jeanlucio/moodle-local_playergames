@@ -290,6 +290,7 @@ $string['engmeter_pagetitle'] = 'Engajômetro';
 $string['engmeter_period'] = 'Período de análise';
 $string['engmeter_with_player'] = 'Com plugins Player';
 $string['engmeter_without_player'] = 'Sem plugins Player';
+$string['error_ai_no_questions'] = 'A IA respondeu, mas não saiu nenhuma questão aproveitável. Tente de novo ou peça menos questões.';
 $string['error_ai_request_failed'] = 'Falha na requisição à IA: {$a}';
 $string['error_cartridge_invalid_json'] = 'O arquivo enviado não contém JSON válido.';
 $string['error_cartridge_missing_field'] = 'Campo obrigatório ausente no cartucho: {$a}';

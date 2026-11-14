@@ -290,6 +290,7 @@ $string['engmeter_pagetitle'] = 'Engagement Meter';
 $string['engmeter_period'] = 'Analysis period';
 $string['engmeter_with_player'] = 'With Player plugins';
 $string['engmeter_without_player'] = 'Without Player plugins';
+$string['error_ai_no_questions'] = 'The AI answered, but no usable question came out of it. Try again, or ask for fewer questions.';
 $string['error_ai_request_failed'] = 'AI request failed: {$a}';
 $string['error_cartridge_invalid_json'] = 'The uploaded file does not contain valid JSON.';
 $string['error_cartridge_missing_field'] = 'Required field missing in cartridge: {$a}';

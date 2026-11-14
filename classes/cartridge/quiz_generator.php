@@ -43,8 +43,9 @@ class quiz_generator extends ai_generator {
      * @param int $difficulty Target average difficulty (1–5).
      * @param array $categorynames Optional list of category names the AI must use.
      * @param string $context Optional reference text to focus the questions.
-     * @return array Array of arrays with keys: questiontext, correct, distractors[4], category, difficulty.
-     * @throws \moodle_exception If no AI key is available.
+     * @return array Non-empty array of arrays with keys: questiontext, correct, distractors[4], category, difficulty.
+     * @throws \moodle_exception If no AI source is available, the request fails (with the provider's
+     *     message) or the answer holds no usable question.
      */
     public function generate_preview(
         string $topic,
@@ -65,9 +66,17 @@ class quiz_generator extends ai_generator {
         $description = get_string('cartridge_ai_usage_quiz', 'local_playergames', $topic);
         $result = $this->call_api('', $prompt, true, $description);
         if (!$result['success']) {
-            return [];
+            if (empty($result['message'])) {
+                throw new \moodle_exception('error_no_ai_key', 'local_playergames');
+            }
+            throw new \moodle_exception('error_ai_request_failed', 'local_playergames', '', $result['message']);
         }
-        return $this->parse_standalone_response($result['data']);
+
+        $questions = $this->parse_standalone_response($result['data']);
+        if ($questions === []) {
+            throw new \moodle_exception('error_ai_no_questions', 'local_playergames');
+        }
+        return $questions;
     }
 
     /**
