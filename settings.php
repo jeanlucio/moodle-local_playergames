@@ -163,14 +163,8 @@ if ($hassiteconfig) {
         get_string('settings_avatars_heading_desc', 'local_playergames')
     ));
 
-    foreach ([1 => 1, 2 => 5, 3 => 10, 4 => 20] as $tier => $defaultlevel) {
-        $pageavatars->add(new admin_setting_configtext(
-            'local_playergames/avatar_tier' . $tier . '_level',
-            get_string('settings_avatar_tier_level', 'local_playergames', $tier),
-            get_string('settings_avatar_tier_level_desc', 'local_playergames', $tier),
-            (string) $defaultlevel,
-            PARAM_INT
-        ));
+    foreach (range(1, \local_playergames\hub\avatar_manager::TIER_COUNT) as $tier) {
+        $pageavatars->add(new \local_playergames\local\setting_avatar_tier($tier));
     }
 
     $ADMIN->add('playergames_rules', $pageavatars);

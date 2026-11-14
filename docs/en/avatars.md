@@ -19,14 +19,18 @@ avatar away.
 
 ## Tier thresholds
 
-| Tier | Default minimum level |
-|---|---|
-| 1 | 1 |
-| 2 | 5 |
-| 3 | 10 |
-| 4 | 20 |
+By default the tiers are spread evenly across the level ladder, so every avatar stays reachable
+however many levels the ladder has: tier 1 opens at level 1 and each later tier a further quarter
+of the ladder up.
 
-Admins can change each tier's minimum level independently
+| Tier | 5 levels (default ladder) | 20 levels |
+|---|---|---|
+| 1 | 1 | 1 |
+| 2 | 2 | 6 |
+| 3 | 3 | 11 |
+| 4 | 4 | 16 |
+
+Admins can set a fixed minimum level for any tier (0 keeps the automatic spread)
 (*Site administration → Plugins → Local plugins → PlayerGames → Rules → Avatars*).
 
 ## Equip and display

@@ -271,4 +271,42 @@ final class db_upgrade_test extends advanced_testcase {
         $this->assertEquals(4, get_config('local_playergames', 'xp_games_quiz'));
         $this->assertTrue($DB->get_manager()->table_exists('local_playergames_rounds'));
     }
+
+    /**
+     * Avatar tier levels still on the old defaults become automatic; a customised set is kept.
+     *
+     * @return void
+     */
+    public function test_avatar_tiers_on_the_old_defaults_become_automatic(): void {
+        foreach ([1 => 1, 2 => 5, 3 => 10, 4 => 20] as $tier => $level) {
+            set_config('avatar_tier' . $tier . '_level', $level, 'local_playergames');
+        }
+
+        set_config('version', 2026111301, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111301));
+
+        foreach ([1, 2, 3, 4] as $tier) {
+            $this->assertEquals(0, get_config('local_playergames', 'avatar_tier' . $tier . '_level'));
+        }
+        $this->assertSame(1, \local_playergames\hub\avatar_manager::tier_threshold(1));
+        $this->assertSame(4, \local_playergames\hub\avatar_manager::tier_threshold(4));
+    }
+
+    /**
+     * An admin who picked any tier level keeps all four exactly as saved.
+     *
+     * @return void
+     */
+    public function test_customised_avatar_tiers_are_kept(): void {
+        foreach ([1 => 1, 2 => 3, 3 => 10, 4 => 20] as $tier => $level) {
+            set_config('avatar_tier' . $tier . '_level', $level, 'local_playergames');
+        }
+
+        set_config('version', 2026111301, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111301));
+
+        $this->assertEquals(3, get_config('local_playergames', 'avatar_tier2_level'));
+        $this->assertEquals(10, get_config('local_playergames', 'avatar_tier3_level'));
+        $this->assertEquals(20, get_config('local_playergames', 'avatar_tier4_level'));
+    }
 }

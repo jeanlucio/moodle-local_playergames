@@ -20,14 +20,18 @@ avatar já desbloqueado.
 
 ## Limiares por faixa
 
-| Faixa | Nível mínimo padrão |
-|---|---|
-| 1 | 1 |
-| 2 | 5 |
-| 3 | 10 |
-| 4 | 20 |
+Por padrão as faixas se distribuem de forma proporcional ao longo da escada de níveis, então todo
+avatar continua alcançável, não importa quantos níveis a escada tenha: a faixa 1 abre no nível 1 e
+cada faixa seguinte avança mais um quarto da escada.
 
-Admins podem alterar o nível mínimo de cada faixa independentemente
+| Faixa | 5 níveis (escada padrão) | 20 níveis |
+|---|---|---|
+| 1 | 1 | 1 |
+| 2 | 2 | 6 |
+| 3 | 3 | 11 |
+| 4 | 4 | 16 |
+
+Admins podem fixar o nível mínimo de qualquer faixa (0 mantém a distribuição automática)
 (*Administração do site → Plugins → Plugins locais → PlayerGames → Regras → Avatares*).
 
 ## Equipar e exibir

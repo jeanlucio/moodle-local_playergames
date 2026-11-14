@@ -64,12 +64,8 @@ class avatar_manager {
         '🦁' => ['avatar_name_lion', 4],
     ];
 
-    /**
-     * Default minimum level to unlock each tier.
-     *
-     * @var array<int, int>
-     */
-    const DEFAULT_TIER_LEVELS = [1 => 1, 2 => 5, 3 => 10, 4 => 20];
+    /** @var int Number of avatar tiers the catalog is split into. */
+    const TIER_COUNT = 4;
 
     /**
      * Returns the avatar catalog ordered by tier then sortorder.
@@ -114,17 +110,21 @@ class avatar_manager {
     /**
      * Returns the minimum level required to unlock a tier.
      *
-     * Reads the admin setting when present; otherwise falls back to the default.
+     * An admin-set level wins. Otherwise the tiers are spread evenly across the level ladder, the way
+     * the level titles are, so every tier stays reachable whether the ladder has 5 levels or 50: tier 1
+     * opens at level 1 and each later tier a further quarter of the ladder up.
      *
      * @param int $tier Tier number (1–4).
      * @return int Minimum level.
      */
     public static function tier_threshold(int $tier): int {
-        $configured = get_config('local_playergames', 'avatar_tier' . $tier . '_level');
-        if ($configured !== false && $configured !== '') {
-            return (int) $configured;
+        $configured = (int) get_config('local_playergames', 'avatar_tier' . $tier . '_level');
+        if ($configured > 0) {
+            return $configured;
         }
-        return self::DEFAULT_TIER_LEVELS[$tier] ?? 1;
+        $maxlevel = level_manager::max_level();
+        $position = max(0, min(self::TIER_COUNT, $tier) - 1);
+        return min($maxlevel, 1 + intdiv($position * $maxlevel, self::TIER_COUNT));
     }
 
     /**

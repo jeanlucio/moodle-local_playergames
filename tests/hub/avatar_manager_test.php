@@ -55,12 +55,30 @@ final class avatar_manager_test extends \advanced_testcase {
         $this->assertCount(17, avatar_manager::get_avatars());
     }
 
-    public function test_tier_threshold_defaults(): void {
+    public function test_tier_threshold_follows_the_default_ladder(): void {
         $this->resetAfterTest();
+        $this->assertSame(5, level_manager::max_level());
         $this->assertSame(1, avatar_manager::tier_threshold(1));
-        $this->assertSame(5, avatar_manager::tier_threshold(2));
-        $this->assertSame(10, avatar_manager::tier_threshold(3));
-        $this->assertSame(20, avatar_manager::tier_threshold(4));
+        $this->assertSame(2, avatar_manager::tier_threshold(2));
+        $this->assertSame(3, avatar_manager::tier_threshold(3));
+        $this->assertSame(4, avatar_manager::tier_threshold(4));
+    }
+
+    public function test_tier_threshold_scales_with_a_longer_ladder(): void {
+        $this->resetAfterTest();
+        level_manager::generate_linear(100, 20);
+        $this->assertSame(1, avatar_manager::tier_threshold(1));
+        $this->assertSame(6, avatar_manager::tier_threshold(2));
+        $this->assertSame(11, avatar_manager::tier_threshold(3));
+        $this->assertSame(16, avatar_manager::tier_threshold(4));
+    }
+
+    public function test_every_default_tier_unlocks_at_the_top_level(): void {
+        $this->resetAfterTest();
+        $top = level_manager::max_level();
+        foreach (avatar_manager::get_avatars() as $avatar) {
+            $this->assertTrue(avatar_manager::is_unlocked($avatar->emoji, $top));
+        }
     }
 
     public function test_tier_threshold_reads_admin_setting(): void {
@@ -71,10 +89,10 @@ final class avatar_manager_test extends \advanced_testcase {
 
     public function test_is_unlocked_respects_tier_level(): void {
         $this->resetAfterTest();
-        // Tier 1 (robot) unlocks at level 1; tier 3 (elf) at level 10.
+        // Tier 1 (robot) unlocks at level 1; tier 3 (elf) at level 3 on the default 5-level ladder.
         $this->assertTrue(avatar_manager::is_unlocked('🤖', 1));
-        $this->assertFalse(avatar_manager::is_unlocked('🧝', 9));
-        $this->assertTrue(avatar_manager::is_unlocked('🧝', 10));
+        $this->assertFalse(avatar_manager::is_unlocked('🧝', 2));
+        $this->assertTrue(avatar_manager::is_unlocked('🧝', 3));
         $this->assertFalse(avatar_manager::is_unlocked('not-an-avatar', 99));
     }
 
@@ -121,7 +139,7 @@ final class avatar_manager_test extends \advanced_testcase {
     public function test_get_collection_flags_unlocked_and_equipped(): void {
         $this->resetAfterTest();
         $user = (int) $this->getDataGenerator()->create_user()->id;
-        avatar_manager::record_level($user, 10);
+        avatar_manager::record_level($user, 3);
         avatar_manager::equip($user, '🤖');
 
         $byemoji = [];
@@ -133,10 +151,10 @@ final class avatar_manager_test extends \advanced_testcase {
         // Tier 1 robot: unlocked and equipped.
         $this->assertTrue($byemoji['🤖']['unlocked']);
         $this->assertTrue($byemoji['🤖']['equipped']);
-        // Tier 3 elf: unlocked at level 10, not equipped.
+        // Tier 3 elf: unlocked at level 3 on the default 5-level ladder, not equipped.
         $this->assertTrue($byemoji['🧝']['unlocked']);
         $this->assertFalse($byemoji['🧝']['equipped']);
-        // Tier 4 dragon: still locked at level 10 (needs 20).
+        // Tier 4 dragon: still locked at level 3 (needs 4).
         $this->assertFalse($byemoji['🐉']['unlocked']);
     }
 }

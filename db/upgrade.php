@@ -979,5 +979,25 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111301, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111401) {
+        // The avatar tiers used to default to levels 1/5/10/20, but the default ladder stops at level 5, so
+        // the upper tiers could never unlock. They now follow the size of the ladder when set to 0. Moodle
+        // stores each setting's default on install, so sites that never touched them hold the old numbers;
+        // switch those to the automatic spread, and leave alone any site where an admin chose a level.
+        $olddefaults = [1 => 1, 2 => 5, 3 => 10, 4 => 20];
+        $untouched = true;
+        foreach ($olddefaults as $tier => $level) {
+            $stored = get_config('local_playergames', 'avatar_tier' . $tier . '_level');
+            $untouched = $untouched && ($stored === false || $stored === '' || (int) $stored === $level);
+        }
+        if ($untouched) {
+            foreach (array_keys($olddefaults) as $tier) {
+                set_config('avatar_tier' . $tier . '_level', 0, 'local_playergames');
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026111401, 'local', 'playergames');
+    }
+
     return true;
 }
