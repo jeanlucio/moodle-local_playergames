@@ -56,10 +56,44 @@ class preferences {
     /**
      * Store the gamification opt-in choice for the given user.
      *
+     * Opting out also takes the user off both rankings: the button that would do it later is behind the
+     * participant rule, which turns away exactly this user, so a name left on the list could never be
+     * removed. Opting back in starts invisible, and the user chooses again whether to show up.
+     *
      * @param int $userid The user whose preference is being set.
      * @param bool $enabled Whether gamification should be enabled.
      */
     public static function set(int $userid, bool $enabled): void {
+        global $DB;
+
         set_user_preference(self::PREF_GAMIFICATION, $enabled ? 1 : 0, $userid);
+
+        if (!$enabled) {
+            $DB->set_field('local_playergames_player_profile', 'showinranking', 0, ['userid' => $userid]);
+            $DB->set_field('local_playergames_student_xp_cache', 'showinranking', 0, ['userid' => $userid]);
+            \cache::make('local_playergames', 'ranking')->purge();
+        }
+    }
+
+    /**
+     * SQL condition that leaves out the users who chose to opt out of the gamification.
+     *
+     * The ranking queries add it next to showinranking, so a name does not stay on a list because of a
+     * flag that was set before the opt-out, or by a path that did not go through set().
+     *
+     * @param string $useralias Alias of the table with the userid column the condition is about.
+     * @param string $prefix Prefix of the condition's parameter names and table alias, unique in the query.
+     * @return array [string SQL condition, array parameters]
+     */
+    public static function sql_not_opted_out(string $useralias, string $prefix = 'optout'): array {
+        global $DB;
+
+        $sql = "NOT EXISTS (SELECT 1
+                              FROM {user_preferences} {$prefix}up
+                             WHERE {$prefix}up.userid = {$useralias}.userid
+                               AND {$prefix}up.name = :{$prefix}name
+                               AND " . $DB->sql_compare_text("{$prefix}up.value") . " = :{$prefix}value)";
+
+        return [$sql, [$prefix . 'name' => self::PREF_GAMIFICATION, $prefix . 'value' => '0']];
     }
 }

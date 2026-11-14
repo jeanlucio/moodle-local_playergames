@@ -457,4 +457,75 @@ final class hub_test extends \advanced_testcase {
         $this->assertStringContainsString('Visible', $html);
         $this->assertStringContainsString(get_string('hub_ranking_section', 'local_playergames'), $html);
     }
+
+    /**
+     * Opting out of the gamification takes the user off both rankings, and opting back in does not put
+     * them back: the choice to show up is made again.
+     */
+    public function test_opting_out_takes_the_user_off_both_rankings(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        set_config('showlearningxp', 1, 'local_playergames');
+        set_config('learningxpranking', 1, 'local_playergames');
+        $leaver = $this->player($season, 30, true, ['firstname' => 'Leaver']);
+        $viewer = $this->player($season, 20, true);
+        foreach ([$leaver, $viewer] as $user) {
+            $DB->insert_record('local_playergames_student_xp_cache', (object) [
+                'userid' => $user->id, 'windowedxp' => 50, 'showinranking' => 1,
+                'timecreated' => 1700000000, 'timemodified' => 1700000000,
+            ]);
+        }
+        $this->assertSame(
+            [(int) $leaver->id, (int) $viewer->id],
+            array_column($this->export_for($viewer)['studentranking'], 'userid')
+        );
+
+        \local_playergames\local\preferences::set((int) $leaver->id, false);
+        $after = $this->export_for($viewer);
+
+        $this->assertSame([(int) $viewer->id], array_column($after['studentranking'], 'userid'));
+        $this->assertSame([(int) $viewer->id], array_column($after['learningranking'], 'userid'));
+        $this->assertSame(
+            0,
+            (int) $DB->get_field('local_playergames_player_profile', 'showinranking', ['userid' => $leaver->id])
+        );
+        $this->assertSame(
+            0,
+            (int) $DB->get_field('local_playergames_student_xp_cache', 'showinranking', ['userid' => $leaver->id])
+        );
+
+        \local_playergames\local\preferences::set((int) $leaver->id, true);
+        $this->assertSame([(int) $viewer->id], array_column($this->export_for($viewer)['studentranking'], 'userid'));
+    }
+
+    /**
+     * Someone whose flag was left on, or set by a path that skipped the preference page, is still kept
+     * out of the lists and out of the positions counted for the others.
+     */
+    public function test_a_user_with_the_optout_preference_is_left_out_of_lists_and_positions(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        $leaver = $this->player($season, 30, true);
+        $viewer = $this->player($season, 20, true);
+        $DB->insert_record('local_playergames_student_xp_cache', (object) [
+            'userid' => $leaver->id, 'windowedxp' => 90, 'showinranking' => 1,
+            'timecreated' => 1700000000, 'timemodified' => 1700000000,
+        ]);
+        $DB->insert_record('local_playergames_student_xp_cache', (object) [
+            'userid' => $viewer->id, 'windowedxp' => 50, 'showinranking' => 1,
+            'timecreated' => 1700000000, 'timemodified' => 1700000000,
+        ]);
+        set_user_preference('local_playergames_gamification', 0, $leaver);
+
+        $data = $this->export_for($viewer);
+
+        $this->assertSame([(int) $viewer->id], array_column($data['studentranking'], 'userid'));
+        $this->assertSame(
+            1,
+            xp_manager::get_season_position((int) $viewer->id, (int) $season->id, 20, 1700000000, [], false)
+        );
+        $this->assertSame(1, \local_playergames\hub\learning_xp_manager::get_position((int) $viewer->id, 50, 1700000000));
+    }
 }

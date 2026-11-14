@@ -26,6 +26,7 @@ namespace local_playergames\hub;
 
 use cache;
 use local_playergames\event\level_reached;
+use local_playergames\local\preferences;
 use stdClass;
 
 /**
@@ -272,6 +273,9 @@ class xp_manager {
             return 0;
         }
 
+        [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('p');
+        $params = array_merge($params, $optoutparams);
+
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_player_profile} p
                   JOIN {user} u ON u.id = p.userid
@@ -279,6 +283,7 @@ class xp_manager {
                    AND p.showinranking = 1
                    AND u.deleted = 0
                    AND u.suspended = 0
+                   AND {$optoutsql}
                    {$filter}
                    AND (p.xp > :xpgt
                         OR (p.xp = :xpeq1 AND p.timemodified < :tmlt)

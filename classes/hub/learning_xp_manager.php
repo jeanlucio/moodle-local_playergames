@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use cache;
+use local_playergames\local\preferences;
 use stdClass;
 
 /**
@@ -221,12 +222,14 @@ class learning_xp_manager {
     public static function get_position(int $userid, int $mywindowedxp, int $mytimemodified): int {
         global $DB;
 
+        [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('c');
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_student_xp_cache} c
                   JOIN {user} u ON u.id = c.userid
                  WHERE c.showinranking = 1
                    AND u.deleted = 0
                    AND u.suspended = 0
+                   AND {$optoutsql}
                    AND (c.windowedxp > :xpgt
                         OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
                         OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";
@@ -237,7 +240,7 @@ class learning_xp_manager {
             'xpeq2'    => $mywindowedxp,
             'tmeq'     => $mytimemodified,
             'myuserid' => $userid,
-        ];
+        ] + $optoutparams;
 
         return (int) $DB->count_records_sql($sql, $params) + 1;
     }

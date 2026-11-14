@@ -40,6 +40,7 @@ use local_playergames\hub\streak_manager;
 use local_playergames\hub\title_manager;
 use local_playergames\hub\xp_manager;
 use local_playergames\local\access;
+use local_playergames\local\preferences;
 use local_playergames\local\text;
 use stdClass;
 
@@ -366,6 +367,9 @@ class hub implements renderable, templatable {
                 return [];
             }
 
+            [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('p');
+            $params = array_merge($params, $optoutparams);
+
             $sql = "SELECT p.userid, p.xp, p.level,
                            u.firstname, u.lastname,
                            u.firstnamephonetic, u.lastnamephonetic,
@@ -376,6 +380,7 @@ class hub implements renderable, templatable {
                        AND p.showinranking = 1
                        AND u.deleted = 0
                        AND u.suspended = 0
+                       AND {$optoutsql}
                        {$filter}
                   ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
 
@@ -424,6 +429,8 @@ class hub implements renderable, templatable {
         $ranking = $cache->get(learning_xp_manager::RANKING_CACHE_KEY);
 
         if ($ranking === false) {
+            [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('c');
+
             $sql = "SELECT c.userid, c.windowedxp,
                            u.firstname, u.lastname,
                            u.firstnamephonetic, u.lastnamephonetic,
@@ -434,9 +441,10 @@ class hub implements renderable, templatable {
                        AND u.deleted = 0
                        AND u.suspended = 0
                        AND c.windowedxp > 0
+                       AND {$optoutsql}
                   ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
 
-            $records = $DB->get_records_sql($sql, [], 0, self::RANKING_LIMIT);
+            $records = $DB->get_records_sql($sql, $optoutparams, 0, self::RANKING_LIMIT);
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
