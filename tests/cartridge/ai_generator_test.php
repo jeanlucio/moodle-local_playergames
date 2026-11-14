@@ -206,4 +206,300 @@ final class ai_generator_test extends \advanced_testcase {
             $this->call_core_ai()['message']
         );
     }
+
+    /**
+     * Builds a generator whose AI call answers with a fixed result and records what it was asked.
+     *
+     * @param array $result What the call returns.
+     * @return ai_generator
+     */
+    private function generator_answering(array $result): ai_generator {
+        return new class ($result) extends ai_generator {
+            /** @var array The calls received: system, user, jsonmode and description of each. */
+            public array $calls = [];
+
+            /** @var array What call_api() returns. */
+            private array $result;
+
+            /**
+             * Keeps the fixed answer.
+             *
+             * @param array $result What call_api() returns.
+             */
+            public function __construct(array $result) {
+                $this->result = $result;
+            }
+
+            #[\Override]
+            protected function call_api(string $system, string $user, bool $jsonmode, string $description = ''): array {
+                $this->calls[] = compact('system', 'user', 'jsonmode', 'description');
+                return $this->result;
+            }
+        };
+    }
+
+    /**
+     * Builds a generator whose only AI source is a core_ai that answers with a fixed result.
+     *
+     * @param bool $hascoreai Whether core_ai has a provider.
+     * @param array $coreresult What the core_ai call returns.
+     * @return ai_generator
+     */
+    private function generator_with_core_ai(bool $hascoreai, array $coreresult = []): ai_generator {
+        return new class ($hascoreai, $coreresult) extends ai_generator {
+            /** @var array The calls to core_ai: system and user of each. */
+            public array $corecalls = [];
+
+            /** @var bool Whether core_ai has a provider. */
+            private bool $hascoreai;
+
+            /** @var array What call_core_ai() returns. */
+            private array $coreresult;
+
+            /**
+             * Keeps the core_ai setup.
+             *
+             * @param bool $hascoreai Whether core_ai has a provider.
+             * @param array $coreresult What call_core_ai() returns.
+             */
+            public function __construct(bool $hascoreai, array $coreresult) {
+                $this->hascoreai = $hascoreai;
+                $this->coreresult = $coreresult;
+            }
+
+            #[\Override]
+            protected function has_core_ai(): bool {
+                return $this->hascoreai;
+            }
+
+            #[\Override]
+            protected function call_core_ai(string $system, string $user): array {
+                $this->corecalls[] = compact('system', 'user');
+                return $this->coreresult;
+            }
+
+            /**
+             * Runs the protected call.
+             *
+             * @return array The result of call_api().
+             */
+            public function ask(): array {
+                return $this->call_api('rules', 'question', false);
+            }
+        };
+    }
+
+    /**
+     * Builds the concept prompt.
+     *
+     * @param array $args Arguments of build_prompt().
+     * @return string
+     */
+    private function prompt(array $args): string {
+        $generator = new ai_generator();
+        $method = new \ReflectionMethod($generator, 'build_prompt');
+        return $method->invokeArgs($generator, $args);
+    }
+
+    /**
+     * The prompt carries the topic, the count, the difficulty and the language, and asks for raw JSON.
+     */
+    public function test_the_prompt_states_what_to_generate(): void {
+        $prompt = $this->prompt(['Photosynthesis', 'Portuguese', 25, 4]);
+
+        $this->assertStringContainsString('Generate exactly 25 educational concepts about the topic: "Photosynthesis"', $prompt);
+        $this->assertStringContainsString('Target average difficulty: 4 out of 5', $prompt);
+        $this->assertStringContainsString('Respond in language: Portuguese.', $prompt);
+        $this->assertStringContainsString('only raw JSON', $prompt);
+        $this->assertStringContainsString('{"concepts":[{"term":', $prompt);
+        $this->assertStringNotContainsString('reference text', $prompt);
+    }
+
+    /**
+     * Without a language the prompt asks for English, and without categories the model is told to keep few.
+     */
+    public function test_the_prompt_defaults_to_english_and_free_categories(): void {
+        $prompt = $this->prompt(['Topic', '', 10, 3]);
+
+        $this->assertStringContainsString('Respond in language: English.', $prompt);
+        $this->assertStringContainsString('Use at most 3 distinct categories', $prompt);
+        $this->assertStringContainsString('MUST be written in English', $prompt);
+    }
+
+    /**
+     * Given category names, the model must use exactly those.
+     */
+    public function test_the_prompt_restricts_the_categories_when_they_are_given(): void {
+        $prompt = $this->prompt(['Topic', 'English', 10, 3, ['Biology', 'Chemistry']]);
+
+        $this->assertStringContainsString('MUST be exactly one of these values (verbatim): "Biology", "Chemistry"', $prompt);
+        $this->assertStringNotContainsString('at most 3 distinct categories', $prompt);
+    }
+
+    /**
+     * A reference text is passed on between separators, so the model uses it.
+     */
+    public function test_the_prompt_includes_the_reference_text(): void {
+        $prompt = $this->prompt(['Topic', 'English', 10, 3, [], 'Chlorophyll absorbs light.']);
+
+        $this->assertStringContainsString("---\nChlorophyll absorbs light.\n---", $prompt);
+        $this->assertStringContainsString('reference text', $prompt);
+    }
+
+    /**
+     * A good answer becomes concepts, and the call states the topic for the usage log and asks for JSON.
+     */
+    public function test_generate_parses_the_answer_and_names_the_topic(): void {
+        $this->resetAfterTest();
+        $answer = json_encode(['concepts' => [
+            ['term' => 'XP', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => 2],
+        ]]);
+        $generator = $this->generator_answering(['success' => true, 'data' => $answer]);
+
+        $concepts = $generator->generate('Games', 'English', 10, 2);
+
+        $this->assertSame('XP', $concepts[0]['term']);
+        $this->assertSame('', $generator->calls[0]['system']);
+        $this->assertTrue($generator->calls[0]['jsonmode']);
+        $this->assertSame(
+            get_string('cartridge_ai_usage_concepts', 'local_playergames', 'Games'),
+            $generator->calls[0]['description']
+        );
+        $this->assertStringContainsString('"Games"', $generator->calls[0]['user']);
+    }
+
+    /**
+     * A failure with a reason shows the reason, and one without says there is no AI source.
+     */
+    public function test_generate_reports_why_it_failed(): void {
+        $this->resetAfterTest();
+
+        try {
+            $this->generator_answering(['success' => false, 'message' => 'Invalid key'])->generate('T', 'English', 10, 3);
+            $this->fail('A failed request returned concepts.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_ai_request_failed', $e->errorcode);
+            $this->assertSame('Invalid key', $e->a);
+        }
+
+        try {
+            $this->generator_answering(['success' => false, 'message' => ''])->generate('T', 'English', 10, 3);
+            $this->fail('A request without a source returned concepts.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_no_ai_key', $e->errorcode);
+        }
+    }
+
+    /**
+     * An answer that is not the JSON asked for is refused instead of saved.
+     */
+    public function test_generate_refuses_an_answer_that_is_not_json(): void {
+        $this->resetAfterTest();
+        $generator = $this->generator_answering(['success' => true, 'data' => 'Sorry, I cannot do that.']);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('error_cartridge_invalid_json', 'local_playergames'));
+        $generator->generate('T', 'English', 10, 3);
+    }
+
+    /**
+     * The raw prompt goes out as it is, in JSON mode, with no system text.
+     */
+    public function test_send_passes_the_prompt_on(): void {
+        $generator = $this->generator_answering(['success' => true, 'data' => 'ok']);
+
+        $this->assertSame(['success' => true, 'data' => 'ok'], $generator->send('Hello'));
+        $this->assertSame(
+            ['system' => '', 'user' => 'Hello', 'jsonmode' => true, 'description' => ''],
+            $generator->calls[0]
+        );
+    }
+
+    /**
+     * Free text goes out with its system instruction, and comes back as text.
+     */
+    public function test_generate_text_returns_the_text_and_reports_failures(): void {
+        $generator = $this->generator_answering(['success' => true, 'data' => 'A story']);
+
+        $this->assertSame('A story', $generator->generate_text('Be brief', 'Tell one', false));
+        $this->assertSame(
+            ['system' => 'Be brief', 'user' => 'Tell one', 'jsonmode' => false, 'description' => ''],
+            $generator->calls[0]
+        );
+
+        try {
+            $this->generator_answering(['success' => false, 'message' => 'Quota'])->generate_text('', 'x');
+            $this->fail('A failed request returned text.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_ai_request_failed', $e->errorcode);
+            $this->assertSame('Quota', $e->a);
+        }
+
+        $this->expectExceptionMessage(get_string('error_no_ai_key', 'local_playergames'));
+        $this->generator_answering(['success' => false, 'message' => ''])->generate_text('', 'x');
+    }
+
+    /**
+     * When core_ai has a provider it answers, and its failure with a reason is the one reported.
+     */
+    public function test_call_api_falls_back_to_core_ai(): void {
+        $this->resetAfterTest();
+        $answer = ['success' => true, 'data' => 'text', 'provider' => 'Moodle AI'];
+        $generator = $this->generator_with_core_ai(true, $answer);
+
+        $this->assertSame($answer, $generator->ask());
+        $this->assertSame([['system' => 'rules', 'user' => 'question']], $generator->corecalls);
+
+        $failure = ['success' => false, 'message' => 'Provider down'];
+        $this->assertSame('Provider down', $this->generator_with_core_ai(true, $failure)->ask()['message']);
+    }
+
+    /**
+     * With no source at all the answer is a failure with nothing to say, which callers turn into "no key".
+     */
+    public function test_call_api_without_any_source_fails_quietly(): void {
+        $this->resetAfterTest();
+        $generator = $this->generator_with_core_ai(false);
+
+        $result = $generator->ask();
+
+        $this->assertFalse($result['success']);
+        $this->assertSame([], $generator->corecalls);
+    }
+
+    /**
+     * A core_ai that has no provider and says nothing does not hide that no source answered.
+     */
+    public function test_call_api_ignores_a_silent_core_ai_failure(): void {
+        $this->resetAfterTest();
+
+        $result = $this->generator_with_core_ai(true, ['success' => false, 'message' => ''])->ask();
+
+        $this->assertFalse($result['success']);
+    }
+
+    /**
+     * Whether an AI source exists follows core_ai when the hub has no key.
+     */
+    public function test_has_key_follows_core_ai_when_the_hub_has_no_key(): void {
+        $this->resetAfterTest();
+        if (class_exists(\local_aihub\ai::class) && \local_aihub\ai::is_available()) {
+            $this->markTestSkipped('The AI hub of this site has a key, which is a source in itself.');
+        }
+        $this->use_core_ai_answering($this->createMock(\core_ai\aiactions\responses\response_generate_text::class));
+
+        $this->assertTrue((new ai_generator())->has_key());
+    }
+
+    /**
+     * Without a hub key or a core_ai provider there is no source.
+     */
+    public function test_has_key_is_false_without_any_source(): void {
+        $this->resetAfterTest();
+        if (class_exists(\local_aihub\ai::class) && \local_aihub\ai::is_available()) {
+            $this->markTestSkipped('The AI hub of this site has a key, which is a source in itself.');
+        }
+
+        $this->assertFalse((new ai_generator())->has_key());
+    }
 }
