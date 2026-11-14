@@ -104,9 +104,8 @@ if (!$noconcept && !$alreadyplayed) {
         $tiles = fill_manager::build_tiles($word['word'], $word['slots'], $state['revealedslots']);
         $rows[] = [
             'conceptid'    => $word['conceptid'],
-            // Not pre-escaped: s() output rendered via the template's triple-mustache
-            // avoids double-encoding, the same pattern used for PlayerGuess's definition.
-            'definition'   => s($word['definition']),
+            // Plain text: the template escapes it once.
+            'definition'   => $word['definition'],
             'tiles'        => array_values($tiles),
             'resolved'     => $word['resolved'],
             'exhausted'    => $word['exhausted'],
