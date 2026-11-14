@@ -40,17 +40,16 @@ use context_system;
  */
 class access {
     /**
-     * Returns the IDs of courses where the user can update the course (teaches).
+     * Whether the user can update at least one course (teaches).
+     *
+     * Asks for a single course: the answer is a yes or a no, and for a manager the complete list is
+     * every course of the site.
      *
      * @param int $userid The user to inspect.
-     * @return int[]
+     * @return bool
      */
-    public static function teacher_courseids(int $userid): array {
-        $courses = get_user_capability_course('moodle/course:update', $userid, true, 'id');
-        if (!$courses) {
-            return [];
-        }
-        return array_map('intval', array_column($courses, 'id'));
+    public static function teaches_any(int $userid): bool {
+        return !empty(get_user_capability_course('moodle/course:update', $userid, true, 'id', '', 1));
     }
 
     /**
@@ -67,7 +66,30 @@ class access {
         }
 
         return has_capability('moodle/site:config', context_system::instance(), $userid)
-            || !empty(self::teacher_courseids($userid));
+            || self::teaches_any($userid);
+    }
+
+    /**
+     * Whether the user is staff, for deciding what to show, from a copy kept for a few minutes.
+     *
+     * The primary navigation asks on every page of the site, and the answer rarely changes. Never use
+     * this to allow something: the pages and services check is_staff() themselves, live, so a link
+     * that lingers after a role was removed leads to a refusal and nothing more.
+     *
+     * @param int $userid The user to inspect.
+     * @return bool
+     */
+    public static function is_staff_for_display(int $userid): bool {
+        $cache = \cache::make('local_playergames', 'staffids');
+        $key = 'user' . $userid;
+        $kept = $cache->get($key);
+        if ($kept !== false) {
+            return (int) $kept === 1;
+        }
+
+        $staff = self::is_staff($userid);
+        $cache->set($key, $staff ? 1 : 0);
+        return $staff;
     }
 
     /**
@@ -185,15 +207,17 @@ class access {
      * so a user the Hub turns away cannot earn XP by opening a game's URL directly.
      *
      * @param int $userid The user to test.
+     * @param bool|null $isstaff Whether the user is staff, when the caller already knows (for display only);
+     *     null looks it up with is_staff().
      * @return bool
      */
-    public static function is_participant(int $userid): bool {
+    public static function is_participant(int $userid, ?bool $isstaff = null): bool {
         if (!preferences::is_gamification_enabled($userid)) {
             return false;
         }
 
         $allowed = get_config('local_playergames', 'allowed_participants') ?: 'students';
-        $isstaff = self::is_staff($userid);
+        $isstaff = $isstaff ?? self::is_staff($userid);
         $isadmin = has_capability('moodle/site:config', context_system::instance(), $userid);
 
         return self::can_view_hub($isstaff, $isadmin, $allowed);

@@ -132,24 +132,69 @@ final class hook_callbacks_test extends \advanced_testcase {
     }
 
     /**
-     * Regression test: the staff check runs only when gamification is off.
-     *
-     * The hook runs on every page, and the staff lookup is a query on the user's
-     * role assignments. A student with gamification on already gets the hub link,
-     * so that lookup must be skipped: the same student pays one query less per
-     * page than after opting out, when the lookup is needed to decide the link.
+     * Regression test: with the default "students only" setting a teacher was sent to the hub, which turns
+     * staff away, so the only link to the plugin ended in an error page.
      */
-    public function test_staff_lookup_skipped_when_gamification_is_on(): void {
+    public function test_teacher_with_the_default_setting_lands_on_dashboard(): void {
         $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $this->assertSame('/local/playergames/dashboard.php', $this->node_url($this->run_primary_hook()));
+    }
+
+    /**
+     * The link follows the participant setting both ways: staff-only turns students away from the hub and
+     * leaves them nothing else to open, and lets staff in.
+     */
+    public function test_the_link_follows_the_participants_setting(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
         $student = $this->getDataGenerator()->create_user();
         $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
         $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        set_config('allowed_participants', 'staff', 'local_playergames');
         $this->setUser($student);
+        $this->assertNull($this->node_url($this->run_primary_hook()));
+        $this->setUser($teacher);
+        $this->assertSame('/local/playergames/hub.php', $this->node_url($this->run_primary_hook()));
 
-        $readson = $this->reads_per_page();
-        preferences::set((int) $student->id, false);
-        $readsoff = $this->reads_per_page();
+        set_config('allowed_participants', 'both', 'local_playergames');
+        \cache_helper::purge_by_definition('local_playergames', 'staffids');
+        $this->setUser($student);
+        $this->assertSame('/local/playergames/hub.php', $this->node_url($this->run_primary_hook()));
+        $this->setUser($teacher);
+        $this->assertSame('/local/playergames/hub.php', $this->node_url($this->run_primary_hook()));
+    }
 
-        $this->assertLessThan($readsoff, $readson);
+    /**
+     * An administrator is a participant whatever the setting, so the link goes to the hub.
+     */
+    public function test_an_administrator_lands_on_the_hub(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $this->assertSame('/local/playergames/hub.php', $this->node_url($this->run_primary_hook()));
+    }
+
+    /**
+     * Regression test for the cost of the hook: it runs on every page of the site, and whether the user is
+     * staff is not looked up again on each one.
+     */
+    public function test_the_staff_lookup_is_kept_between_pages(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $reads = $this->reads_per_page();
+
+        $this->assertSame(0, $reads);
     }
 }

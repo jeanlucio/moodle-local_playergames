@@ -28,7 +28,6 @@ use core\hook\navigation\primary_extend;
 use core\hook\output\before_standard_top_of_body_html_generation;
 use local_playergames\hub\checkin_manager;
 use local_playergames\local\access;
-use local_playergames\local\preferences;
 
 /**
  * Hook listener callbacks for local_playergames.
@@ -41,10 +40,10 @@ class hook_callbacks {
     /**
      * Add the PlayerGames link to the primary navigation.
      *
-     * Everyone lands on the Player Hub, the secondary header on each page then
-     * exposes the other sections by role. The only exception is staff who have
-     * opted out of gamification: with no hub to show, they land on the ecosystem
-     * dashboard, where their tools live.
+     * A user the participant rules let in lands on the Player Hub, and the secondary header on each
+     * page then exposes the other sections by role. Staff the rules turn away from the hub (the default
+     * "students only" setting, or an opt-out of gamification) land on the ecosystem dashboard, where
+     * their tools live. Anyone else gets no entry, since neither page would open for them.
      *
      * @param primary_extend $hook The primary navigation hook.
      */
@@ -55,22 +54,21 @@ class hook_callbacks {
             return;
         }
 
+        // Whether the user is staff takes part in every rule below and costs queries on every page of the
+        // site, so it comes from a copy kept for a few minutes. It only decides what to show: the pages the
+        // link leads to check the real thing themselves.
+        $isstaff = access::is_staff_for_display((int) $USER->id);
         $context = \context_system::instance();
-        $hasgamification = has_capability('local/playergames:viewhub', $context)
-            && preferences::is_gamification_enabled((int) $USER->id);
+        $hub = has_capability('local/playergames:viewhub', $context)
+            && access::is_participant((int) $USER->id, $isstaff);
 
-        // Show the entry only when the user has at least one PlayerGames page.
-        // The staff check costs a query on every page, so it only runs for users
-        // without gamification, the only case where its answer matters.
-        if (!$hasgamification && !access::is_staff()) {
+        if ($hub) {
+            $url = new \moodle_url('/local/playergames/hub.php');
+        } else if ($isstaff) {
+            $url = new \moodle_url('/local/playergames/dashboard.php');
+        } else {
             return;
         }
-
-        // Players land on the hub. Staff who opted out of gamification land on
-        // the ecosystem dashboard instead, where their tools live.
-        $url = $hasgamification
-            ? new \moodle_url('/local/playergames/hub.php')
-            : new \moodle_url('/local/playergames/dashboard.php');
 
         $view = $hook->get_primaryview();
 

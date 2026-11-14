@@ -62,7 +62,7 @@ class nav_header implements renderable, templatable {
         global $USER;
 
         $context = context_system::instance();
-        $teaches = !empty(access::teacher_courseids((int) $USER->id));
+        $teaches = access::teaches_any((int) $USER->id);
         $staff = access::is_staff();
         // The pages these links lead to turn away a user the participant rules exclude.
         $gamification = has_capability('local/playergames:viewhub', $context)

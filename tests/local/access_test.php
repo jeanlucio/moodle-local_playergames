@@ -179,6 +179,47 @@ final class access_test extends \advanced_testcase {
         $this->assertContains((int) $teacher->id, $fresh);
     }
 
+    public function test_teaches_any_is_true_for_a_teacher_and_false_for_a_student(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $student = $this->getDataGenerator()->create_user();
+        $first   = $this->getDataGenerator()->create_course();
+        $second  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $first->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($teacher->id, $second->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($student->id, $first->id, 'student');
+
+        $this->assertTrue(access::teaches_any((int) $teacher->id));
+        $this->assertFalse(access::teaches_any((int) $student->id));
+    }
+
+    /**
+     * The copy kept for display lags behind a role change, and the check that allows things does not.
+     */
+    public function test_the_staff_flag_for_display_is_kept_but_is_staff_stays_live(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+
+        $this->assertFalse(access::is_staff_for_display((int) $teacher->id));
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+
+        $this->assertTrue(access::is_staff((int) $teacher->id));
+        $this->assertFalse(access::is_staff_for_display((int) $teacher->id));
+
+        \cache_helper::purge_by_definition('local_playergames', 'staffids');
+        $this->assertTrue(access::is_staff_for_display((int) $teacher->id));
+    }
+
+    public function test_is_participant_takes_a_staff_flag_the_caller_already_has(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        // The setting is "students only": a user who is not staff takes part, one who is does not.
+        $this->assertTrue(access::is_participant((int) $user->id, false));
+        $this->assertFalse(access::is_participant((int) $user->id, true));
+    }
+
     public function test_can_view_hub_blocks_staff_when_students_only(): void {
         $this->assertFalse(access::can_view_hub(true, false, 'students'));
     }
