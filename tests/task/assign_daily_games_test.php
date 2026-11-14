@@ -347,4 +347,13 @@ final class assign_daily_games_test extends \advanced_testcase {
             'gamedate' => $today, 'gametype' => 'fill',
         ]));
     }
+
+    /**
+     * The task has a name for the scheduled tasks page.
+     */
+    public function test_get_name_is_the_task_string(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(get_string('task_assign_daily_games', 'local_playergames'), (new assign_daily_games())->get_name());
+    }
 }

@@ -56,4 +56,16 @@ final class game_page_test extends \advanced_testcase {
             $this->assertStringNotContainsString(get_string($game . '_already_played', 'local_playergames'), $html);
         }
     }
+
+    /**
+     * The notice for a game the admin switched off leads back to the hub.
+     */
+    public function test_disabled_notice_says_so_and_leads_back_to_the_hub(): void {
+        $this->resetAfterTest();
+
+        $html = game_page::disabled_html();
+
+        $this->assertStringContainsString(get_string('game_disabled', 'local_playergames'), $html);
+        $this->assertStringContainsString('/local/playergames/hub.php', $html);
+    }
 }

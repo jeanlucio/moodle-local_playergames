@@ -354,4 +354,23 @@ final class access_test extends \advanced_testcase {
         $this->expectExceptionMessage(get_string('gamification_disabled_notice', 'local_playergames'));
         access::require_participant(true);
     }
+
+    /**
+     * A page sends a user who turned the gamification off back to the dashboard instead of throwing the
+     * error of a user who is not allowed in.
+     */
+    public function test_require_participant_on_a_page_redirects_the_optout(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $student);
+        $this->setUser($student);
+
+        try {
+            access::require_participant();
+            $this->fail('A user who opted out was let through.');
+        } catch (\moodle_exception $e) {
+            // The test environment turns the redirect into this exception, not into the access error.
+            $this->assertSame('redirecterrordetected', $e->errorcode);
+        }
+    }
 }

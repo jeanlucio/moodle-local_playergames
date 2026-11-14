@@ -25,6 +25,7 @@
 namespace local_playergames;
 
 use core\hook\navigation\primary_extend;
+use core\hook\output\before_standard_top_of_body_html_generation;
 use core\navigation\views\primary;
 use local_playergames\local\preferences;
 
@@ -196,5 +197,67 @@ final class hook_callbacks_test extends \advanced_testcase {
         $reads = $this->reads_per_page();
 
         $this->assertSame(0, $reads);
+    }
+
+    /**
+     * Builds the hook the page runs at the top of every page, for the current user.
+     *
+     * @return before_standard_top_of_body_html_generation
+     */
+    private function top_of_body_hook(): before_standard_top_of_body_html_generation {
+        global $PAGE;
+
+        return new before_standard_top_of_body_html_generation($PAGE->get_renderer('core'));
+    }
+
+    /**
+     * The first page of the day checks the participant in, and the later ones of the session do not repeat it.
+     */
+    public function test_the_first_page_of_the_day_checks_the_participant_in_once(): void {
+        global $DB, $SESSION;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $now = time();
+        $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + DAYSECS, 'status' => 'active',
+            'config_snapshot' => json_encode([]), 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->setUser($student);
+        $flag = 'playergames_checkin_' . date('Ymd');
+        unset($SESSION->$flag);
+
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+        $checkins = $DB->count_records('local_playergames_daily_scores', ['userid' => $student->id, 'gametype' => 'checkin']);
+        $DB->delete_records('local_playergames_daily_scores', ['userid' => $student->id, 'gametype' => 'checkin']);
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+
+        $this->assertSame(1, $checkins);
+        $this->assertTrue($SESSION->$flag);
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $student->id]));
+    }
+
+    /**
+     * Nobody is checked in without being logged in, or when they opted out of the gamification.
+     */
+    public function test_guests_and_users_who_opted_out_are_not_checked_in(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $now = time();
+        $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + DAYSECS, 'status' => 'active',
+            'config_snapshot' => json_encode([]), 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+
+        $this->setGuestUser();
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+
+        $student = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $student);
+        $this->setUser($student);
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores'));
     }
 }

@@ -178,4 +178,34 @@ final class engagement_report_test extends \advanced_testcase {
         $this->assertNull(engagement_report::get_log_reader());
         $this->assertSame(0.0, (new engagement_report())->get_metrics([(int) $course->id], 30)['events_per_user']);
     }
+
+    /**
+     * The teacher's courses are the ones where the user can update the course.
+     */
+    public function test_get_teacher_courseids_lists_only_the_courses_the_user_teaches(): void {
+        $this->resetAfterTest();
+        $taught = $this->getDataGenerator()->create_course();
+        $attended = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($teacher->id, $taught->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($teacher->id, $attended->id, 'student');
+        $report = new engagement_report();
+
+        $this->assertSame([(int) $taught->id], $report->get_teacher_courseids((int) $teacher->id));
+        $this->assertSame([], $report->get_teacher_courseids((int) $this->getDataGenerator()->create_user()->id));
+    }
+
+    /**
+     * The site-wide comparison takes every course but the site course.
+     */
+    public function test_the_all_courses_scope_excludes_the_site_course(): void {
+        $this->resetAfterTest();
+        $first = $this->getDataGenerator()->create_course();
+        $second = $this->getDataGenerator()->create_course();
+
+        $method = new \ReflectionMethod(engagement_report::class, 'get_all_courseids');
+        $ids = $method->invoke(new engagement_report());
+
+        $this->assertEqualsCanonicalizing([(int) $first->id, (int) $second->id], $ids);
+    }
 }

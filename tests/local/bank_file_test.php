@@ -198,4 +198,31 @@ final class bank_file_test extends \advanced_testcase {
 
         $this->assertNull(bank_file::find($context, bank_file::AREA_QUESTION, [$question->id, 'chart.png']));
     }
+
+    /**
+     * A participant asking for a file nobody may see gets "not found", not an error.
+     */
+    public function test_serve_returns_false_when_there_is_nothing_to_serve(): void {
+        $this->resetAfterTest();
+        $context = $this->shared_context();
+        [$question] = $this->question_with_file($context);
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $this->assertFalse(bank_file::serve($context, bank_file::AREA_QUESTION, [$question->id, 'chart.png'], false, []));
+    }
+
+    /**
+     * The files are only for users who take part in the games.
+     */
+    public function test_serve_refuses_a_user_who_does_not_take_part(): void {
+        $this->resetAfterTest();
+        $context = $this->shared_context();
+        [$question] = $this->question_with_file($context);
+        $student = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $student);
+        $this->setUser($student);
+
+        $this->expectException(\moodle_exception::class);
+        bank_file::serve($context, bank_file::AREA_QUESTION, [$question->id, 'chart.png'], false, []);
+    }
 }

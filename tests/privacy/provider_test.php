@@ -248,4 +248,42 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
 
         $this->assertSame([], $drift);
     }
+
+    /**
+     * A user who only uploaded a cartridge gets it exported, with nothing but its descriptive fields.
+     */
+    public function test_export_user_data_includes_the_uploaded_cartridges(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->seed_cartridge((int) $user->id);
+
+        provider::export_user_data(new approved_contextlist($user, 'local_playergames', [\context_system::instance()->id]));
+
+        $subcontext = [
+            get_string('pluginname', 'local_playergames'),
+            get_string('privacy:metadata:local_playergames_cartridges', 'local_playergames'),
+        ];
+        $data = writer::with_context(\context_system::instance())->get_data($subcontext);
+        $this->assertCount(1, $data->rows);
+        $this->assertSame('Pack', $data->rows[0]['name']);
+        $this->assertArrayNotHasKey('uploadedby', $data->rows[0]);
+    }
+
+    /**
+     * Nothing is exported without a context to export from, or from a context other than the system one.
+     */
+    public function test_export_user_data_ignores_other_contexts(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->seed_user((int) $user->id);
+
+        provider::export_user_data(new approved_contextlist($user, 'local_playergames', []));
+        provider::export_user_data(new approved_contextlist(
+            $user,
+            'local_playergames',
+            [\context_user::instance($user->id)->id]
+        ));
+
+        $this->assertFalse(writer::with_context(\context_system::instance())->has_any_data());
+    }
 }

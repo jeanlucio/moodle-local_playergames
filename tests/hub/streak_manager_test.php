@@ -258,4 +258,32 @@ final class streak_manager_test extends \advanced_testcase {
         $this->assertSame(0, $third);
         $this->assertSame(2, (int) streak_manager::get_or_create((int) $user->id)->freezesavailable);
     }
+
+    /**
+     * The freeze log lists the latest events first and stops at the limit.
+     */
+    public function test_get_freeze_log_returns_the_latest_events_first(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+        set_config('freeze_max', 10, 'local_playergames');
+
+        foreach ([1, 2, 3] as $amount) {
+            streak_manager::add_freezes((int) $user->id, $amount);
+            $DB->set_field(
+                'local_playergames_freeze_log',
+                'timecreated',
+                1000 + $amount,
+                ['userid' => $user->id, 'amount' => $amount]
+            );
+        }
+        streak_manager::add_freezes((int) $other->id, 1);
+
+        $log = streak_manager::get_freeze_log((int) $user->id, 2);
+
+        $this->assertSame([3, 2], array_map(fn($entry) => (int) $entry->amount, $log));
+        $this->assertCount(3, streak_manager::get_freeze_log((int) $user->id));
+        $this->assertSame([], streak_manager::get_freeze_log((int) $this->getDataGenerator()->create_user()->id));
+    }
 }

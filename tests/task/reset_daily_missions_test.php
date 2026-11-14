@@ -79,4 +79,13 @@ final class reset_daily_missions_test extends \advanced_testcase {
         // Streak broken to zero.
         $this->assertSame(0, (int) streak_manager::get_or_create((int) $user->id)->currentstreak);
     }
+
+    /**
+     * The task has a name for the scheduled tasks page.
+     */
+    public function test_get_name_is_the_task_string(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(get_string('task_reset_daily_missions', 'local_playergames'), (new reset_daily_missions())->get_name());
+    }
 }

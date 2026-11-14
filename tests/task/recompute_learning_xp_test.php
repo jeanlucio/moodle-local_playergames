@@ -79,4 +79,13 @@ final class recompute_learning_xp_test extends \advanced_testcase {
     public function test_get_name_returns_a_string(): void {
         $this->assertNotEmpty((new recompute_learning_xp())->get_name());
     }
+
+    /**
+     * The task has a name for the scheduled tasks page.
+     */
+    public function test_get_name_is_the_task_string(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(get_string('task_recompute_learning_xp', 'local_playergames'), (new recompute_learning_xp())->get_name());
+    }
 }

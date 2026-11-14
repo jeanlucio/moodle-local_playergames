@@ -93,4 +93,13 @@ final class close_expired_seasons_test extends \advanced_testcase {
         $this->assertNotNull($active);
         $this->assertNotEquals($oldid, (int) $active->id);
     }
+
+    /**
+     * The task has a name for the scheduled tasks page.
+     */
+    public function test_get_name_is_the_task_string(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(get_string('task_close_expired_seasons', 'local_playergames'), (new close_expired_seasons())->get_name());
+    }
 }

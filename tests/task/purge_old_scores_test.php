@@ -166,4 +166,13 @@ final class purge_old_scores_test extends \advanced_testcase {
         $this->assertSame(1, $DB->count_records('local_playergames_rounds'));
         $this->assertSame(1, $DB->count_records('local_playergames_rounds', ['gamedate' => $today]));
     }
+
+    /**
+     * The task has a name for the scheduled tasks page.
+     */
+    public function test_get_name_is_the_task_string(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(get_string('task_purge_old_scores', 'local_playergames'), (new purge_old_scores())->get_name());
+    }
 }

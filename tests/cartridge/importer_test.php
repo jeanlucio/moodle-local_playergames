@@ -441,4 +441,85 @@ final class importer_test extends \advanced_testcase {
         $this->assertSame($before, $depth(), 'The import left its transaction open.');
         $this->assertSame(1, $DB->count_records('local_playergames_cartridges'));
     }
+
+    /**
+     * Runs an import expected to be refused, and reports why.
+     *
+     * @param string $json The cartridge.
+     * @return string The error code.
+     */
+    private function refusal(string $json): string {
+        global $DB;
+
+        try {
+            (new importer())->import($json, 1);
+        } catch (\moodle_exception $e) {
+            $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
+            return $e->errorcode;
+        }
+        $this->fail('The cartridge was accepted.');
+    }
+
+    /**
+     * A concept cartridge is refused for a missing field, an empty item or too many items, saving nothing.
+     */
+    public function test_import_refuses_an_invalid_concept_cartridge(): void {
+        $this->resetAfterTest();
+        $term = ['term' => 'XP', 'definition' => 'Experience'];
+
+        $this->assertSame('error_cartridge_no_concepts', $this->refusal(json_encode(['name' => 'N', 'concepts' => 'x'])));
+        $this->assertSame(
+            'error_concept_empty_term',
+            $this->refusal(json_encode(['name' => 'N', 'concepts' => [$term, ['term' => ' ', 'definition' => 'D']]]))
+        );
+        $this->assertSame(
+            'error_concept_empty_term',
+            $this->refusal(json_encode(['name' => 'N', 'concepts' => [$term, 'not an item']]))
+        );
+        $this->assertSame(
+            'error_concept_empty_definition',
+            $this->refusal(json_encode(['name' => 'N', 'concepts' => [['term' => 'XP']]]))
+        );
+        $this->assertSame(
+            'error_cartridge_tooconcepts',
+            $this->refusal(json_encode(['name' => 'N', 'concepts' => array_fill(0, importer::MAX_CONCEPTS + 1, $term)]))
+        );
+    }
+
+    /**
+     * A quiz cartridge is refused for an empty question, a missing right answer or too many questions.
+     */
+    public function test_import_refuses_an_invalid_quiz_cartridge(): void {
+        $this->resetAfterTest();
+        $question = [
+            'questiontext' => 'Q',
+            'correct' => 'C',
+            'distractors' => ['a', 'b', 'c', 'd'],
+        ];
+
+        $this->assertSame(
+            'error_cartridge_missing_field',
+            $this->refusal(json_encode(['name' => '', 'type' => 'quiz', 'questions' => [$question]]))
+        );
+        $this->assertSame(
+            'error_cartridge_no_questions',
+            $this->refusal(json_encode(['name' => 'N', 'type' => 'quiz', 'questions' => 'x']))
+        );
+        $this->assertSame(
+            'error_question_empty_text',
+            $this->refusal($this->quiz_json(['questions' => [array_merge($question, ['questiontext' => ''])]]))
+        );
+        $this->assertSame(
+            'error_question_empty_text',
+            $this->refusal($this->quiz_json(['questions' => ['not a question']]))
+        );
+        $this->assertSame(
+            'error_question_empty_correct',
+            $this->refusal($this->quiz_json(['questions' => [array_merge($question, ['correct' => ''])]]))
+        );
+        $this->assertSame(
+            'error_cartridge_tooquestions',
+            $this->refusal($this->quiz_json(['questions' => array_fill(0, importer::MAX_QUESTIONS + 1, $question)]))
+        );
+    }
 }

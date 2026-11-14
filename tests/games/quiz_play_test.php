@@ -388,4 +388,25 @@ final class quiz_play_test extends \advanced_testcase {
         $this->assertTrue($result['correct']);
         $this->assertSame(0, $result['xpawarded']);
     }
+
+    /**
+     * The page that resumes a play gets the time the question has left, never less than a second.
+     */
+    public function test_seconds_left_counts_down_from_when_the_question_was_shown(): void {
+        $this->prepare();
+        set_config('quiz_question_seconds', 30, 'local_playergames');
+
+        $this->assertSame(30, quiz_play::seconds_left(['shownat' => time()]));
+        $this->assertSame(20, quiz_play::seconds_left(['shownat' => time() - 10]));
+        $this->assertSame(1, quiz_play::seconds_left(['shownat' => time() - 500]));
+    }
+
+    /**
+     * A question without a timer has no seconds to report.
+     */
+    public function test_seconds_left_is_zero_when_the_question_has_no_timer(): void {
+        $this->prepare();
+
+        $this->assertSame(0, quiz_play::seconds_left(['shownat' => time() - 10]));
+    }
 }
