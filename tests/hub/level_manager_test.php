@@ -133,4 +133,40 @@ final class level_manager_test extends \advanced_testcase {
         $this->assertCount(level_manager::MAX_GENERATED_LEVELS, $levels);
         $this->assertSame(1, (int) $levels[1]->minxp);
     }
+
+    /**
+     * Regression test: every lookup read the ladder again, about six times to build the hub and more on
+     * every XP award. It is read once per request.
+     */
+    public function test_the_ladder_is_read_once_per_request(): void {
+        global $DB;
+        $this->resetAfterTest();
+        level_manager::get_levels();
+
+        $before = $DB->perf_get_reads();
+        level_manager::level_for_xp(5000);
+        level_manager::max_level();
+        level_manager::minxp_for_level(3);
+        level_manager::title_for_level(2);
+        level_manager::get_levels();
+
+        $this->assertSame(0, $DB->perf_get_reads() - $before);
+    }
+
+    public function test_editing_the_ladder_forgets_the_copy(): void {
+        $this->resetAfterTest();
+        $this->assertSame(5, level_manager::max_level());
+
+        level_manager::save_ladder([
+            ['minxp' => 0, 'title' => 'A'],
+            ['minxp' => 100, 'title' => 'B'],
+        ]);
+        $this->assertSame(2, level_manager::max_level());
+
+        level_manager::generate_linear(50, 7);
+        $this->assertSame(7, level_manager::max_level());
+
+        level_manager::restore_defaults();
+        $this->assertSame(5, level_manager::max_level());
+    }
 }

@@ -66,18 +66,36 @@ class level_manager {
     /**
      * Returns the ladder rows ordered by ascending minimum XP (i.e. by level).
      *
-     * Seeds the default ladder the first time the table is found empty.
+     * Seeds the default ladder the first time the table is found empty. The ladder is read once per
+     * request: the hub, the XP award and the achievement check each ask for it several times, and
+     * it only changes when an administrator edits it, which forgets the copy.
      *
      * @return stdClass[]
      */
     public static function get_levels(): array {
         global $DB;
+        $cache = self::request_cache();
+        $kept = $cache->get('ladder');
+        if (is_array($kept)) {
+            return $kept;
+        }
+
         $levels = array_values($DB->get_records('local_playergames_levels', null, 'minxp ASC'));
         if (empty($levels)) {
             self::seed_defaults();
             $levels = array_values($DB->get_records('local_playergames_levels', null, 'minxp ASC'));
         }
+        $cache->set('ladder', $levels);
         return $levels;
+    }
+
+    /**
+     * The per-request copy of the ladder.
+     *
+     * @return \cache_request
+     */
+    private static function request_cache(): \cache_request {
+        return \cache::make_from_params(\cache_store::MODE_REQUEST, 'local_playergames', 'levels');
     }
 
     /**
@@ -99,6 +117,7 @@ class level_manager {
             $records[] = $record;
         }
         $DB->insert_records('local_playergames_levels', $records);
+        self::request_cache()->delete('ladder');
     }
 
     /**
@@ -129,6 +148,7 @@ class level_manager {
         $DB->delete_records('local_playergames_levels');
         $DB->insert_records('local_playergames_levels', $records);
         $transaction->allow_commit();
+        self::request_cache()->delete('ladder');
     }
 
     /**
@@ -171,6 +191,7 @@ class level_manager {
         $DB->delete_records('local_playergames_levels');
         $DB->insert_records('local_playergames_levels', $records);
         $transaction->allow_commit();
+        self::request_cache()->delete('ladder');
     }
 
     /**
@@ -182,6 +203,7 @@ class level_manager {
         global $DB;
         $DB->delete_records('local_playergames_levels');
         self::seed_defaults();
+        self::request_cache()->delete('ladder');
     }
 
     /**

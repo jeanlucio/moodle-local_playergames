@@ -66,11 +66,11 @@ final class text_test extends \advanced_testcase {
     }
 
     public function test_the_level_title_is_plain_text(): void {
-        global $DB;
-
         $this->resetAfterTest();
-        level_manager::get_levels();
-        $DB->set_field('local_playergames_levels', 'title', 'Knight & Squire', ['level' => 2]);
+        level_manager::save_ladder([
+            ['minxp' => 0, 'title' => 'Squire'],
+            ['minxp' => 2000, 'title' => 'Knight & Squire'],
+        ]);
 
         $this->for_each_striptags(function (int $striptags): void {
             $this->assertSame('Knight & Squire', level_manager::title_for_level(2), "striptags={$striptags}");
