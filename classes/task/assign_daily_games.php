@@ -33,11 +33,10 @@ use local_playergames\games\season_game_config;
  * Picks a random concept from active cartridges for each concept-based game
  * and writes a row to local_playergames_daily_assignments.
  *
- * PlayerBattle is excluded (questions are drawn dynamically from cartridges
- * during gameplay). Check-in has no concept. Quiz and guess each get a single
- * concept for the day. PlayerFill gets fill_manager::num_words() concepts instead
- * — one crossword-style puzzle needs several peer terms, not one — handled
- * separately by assign_fill() rather than through CONCEPT_GAMES below.
+ * PlayerQuiz and PlayerBattle are excluded: they draw their own questions when played. Check-in has
+ * no concept. PlayerGuess gets a single concept for the day. PlayerFill gets
+ * fill_manager::num_words() concepts instead — one crossword-style puzzle needs several peer
+ * terms, not one — handled separately by assign_fill() rather than through CONCEPT_GAMES below.
  *
  * Idempotent: if an assignment already exists for today and a given gametype,
  * it is left unchanged.
@@ -55,7 +54,7 @@ use local_playergames\games\season_game_config;
  */
 class assign_daily_games extends \core\task\scheduled_task {
     /** @var string[] Game types that each receive a single concept assignment. */
-    private const CONCEPT_GAMES = ['quiz', 'guess'];
+    private const CONCEPT_GAMES = ['guess'];
 
     /**
      * Returns the human-readable task name.
@@ -98,7 +97,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             }
 
             $pool = $this->season_cartridges($gametype, $activeids);
-            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $gametype, $minlen, $maxlen);
+            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $minlen, $maxlen);
             if ($conceptid === null) {
                 mtrace("No eligible concept found for {$gametype} — skipping.");
                 continue;
@@ -230,42 +229,34 @@ class assign_daily_games extends \core\task\scheduled_task {
     }
 
     /**
-     * Picks a random eligible concept for a given game type.
+     * Picks a random concept PlayerGuess can use.
+     *
+     * The length filter in SQL counts every character, but a guess can only ever contain letters, so each
+     * candidate is checked again in PHP: a term with a space, digit or hyphen (still within the length
+     * bounds) is never assigned.
      *
      * @param int[] $cartridgeids Active cartridge IDs.
-     * @param string $gametype Game type to pick for.
-     * @param int $minlen Minimum term length (used for 'guess').
-     * @param int $maxlen Maximum term length (used for 'guess').
+     * @param int $minlen Minimum term length.
+     * @param int $maxlen Maximum term length.
      * @return int|null Concept ID or null if none found.
      */
-    private function pick_concept(array $cartridgeids, string $gametype, int $minlen, int $maxlen): ?int {
+    private function pick_concept(array $cartridgeids, int $minlen, int $maxlen): ?int {
         global $DB;
 
         [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
         $where = "cartridgeid {$insql}";
+        $params['minlen'] = $minlen;
+        $params['maxlen'] = $maxlen;
+        $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
+        $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
 
-        if ($gametype === 'guess') {
-            $params['minlen'] = $minlen;
-            $params['maxlen'] = $maxlen;
-            $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
-            $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
-        }
-
-        if ($gametype === 'guess') {
-            // The SQL length filter above counts every character, but a guess
-            // can only ever contain letters. Re-check each candidate in PHP so
-            // a term with a space, digit or hyphen (still within the length
-            // bounds) is never assigned.
-            $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
-            $ids = [];
-            foreach ($rows as $row) {
-                $normalized = guess_manager::normalize($row->term);
-                if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
-                    $ids[] = (int) $row->id;
-                }
+        $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
+        $ids = [];
+        foreach ($rows as $row) {
+            $normalized = guess_manager::normalize($row->term);
+            if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
+                $ids[] = (int) $row->id;
             }
-        } else {
-            $ids = $DB->get_fieldset_select('local_playergames_concepts', 'id', $where, $params);
         }
 
         if (empty($ids)) {

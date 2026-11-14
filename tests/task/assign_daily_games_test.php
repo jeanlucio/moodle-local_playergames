@@ -82,7 +82,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         // An active cartridge that has not been populated with any concept yet is a
-        // real scenario (a teacher just created it) — quiz and guess must both be
+        // real scenario (a teacher just created it) — guess must be
         // skipped gracefully instead of erroring, and fill must stay unassigned too.
         $now = time();
         $DB->insert_record('local_playergames_cartridges', (object) [
@@ -95,7 +95,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments'));
     }
 
-    public function test_assigns_one_concept_per_single_concept_game(): void {
+    public function test_assigns_one_concept_to_guess_and_none_to_quiz(): void {
         global $DB;
         $this->resetAfterTest();
         $this->seed_concepts();
@@ -103,12 +103,15 @@ final class assign_daily_games_test extends \advanced_testcase {
         $this->run_task();
 
         $today = mktime(0, 0, 0);
-        foreach (['quiz', 'guess'] as $gametype) {
-            $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
-                'gamedate' => $today,
-                'gametype' => $gametype,
-            ]), "expected exactly one assignment for {$gametype}");
-        }
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today,
+            'gametype' => 'guess',
+        ]));
+        // PlayerQuiz draws its own questions, so the task has nothing to assign it.
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today,
+            'gametype' => 'quiz',
+        ]));
     }
 
     public function test_assigns_num_words_concepts_to_fill(): void {
@@ -140,8 +143,8 @@ final class assign_daily_games_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         // Only 2 eligible concepts, fewer than fill_manager::DEFAULT_NUM_WORDS (5) —
-        // quiz and guess only ever need one concept each, so they must still be
-        // assigned even though fill's own, larger pool requirement is not met.
+        // guess only ever needs one concept, so it must still be assigned even
+        // though fill's own, larger pool requirement is not met.
         $now = time();
         $cid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
             'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
@@ -161,7 +164,7 @@ final class assign_daily_games_test extends \advanced_testcase {
             'gamedate' => $today, 'gametype' => 'fill',
         ]));
         $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
-            'gamedate' => $today, 'gametype' => 'quiz',
+            'gamedate' => $today, 'gametype' => 'guess',
         ]));
     }
 
