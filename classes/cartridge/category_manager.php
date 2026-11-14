@@ -54,7 +54,7 @@ class category_manager {
      */
     public function ensure_category(int $cartridgeid, string $name): int {
         global $DB;
-        $name = trim($name);
+        $name = $this->normalise_name($name);
         if ($name === '') {
             return 0;
         }
@@ -69,6 +69,19 @@ class category_manager {
     }
 
     /**
+     * The name as it is stored: clean text cut to the size of the column.
+     *
+     * The lookup in ensure_category() must use the same form that create() stores, or a name longer than the
+     * column would never be found again and every import would add another category with it.
+     *
+     * @param string $name Name as received.
+     * @return string
+     */
+    private function normalise_name(string $name): string {
+        return trim(\core_text::substr(clean_param($name, PARAM_TEXT), 0, 100));
+    }
+
+    /**
      * Creates a new category in the cartridge.
      *
      * @param int $cartridgeid Target cartridge ID.
@@ -78,7 +91,7 @@ class category_manager {
      */
     public function create(int $cartridgeid, string $name): int {
         global $DB;
-        $name = trim(\core_text::substr(clean_param($name, PARAM_TEXT), 0, 100));
+        $name = $this->normalise_name($name);
         if ($name === '') {
             throw new \moodle_exception('error_category_empty_name', 'local_playergames');
         }
@@ -105,7 +118,7 @@ class category_manager {
      */
     public function rename(int $categoryid, int $cartridgeid, string $name): void {
         global $DB;
-        $name = trim(\core_text::substr(clean_param($name, PARAM_TEXT), 0, 100));
+        $name = $this->normalise_name($name);
         if ($name === '') {
             throw new \moodle_exception('error_category_empty_name', 'local_playergames');
         }

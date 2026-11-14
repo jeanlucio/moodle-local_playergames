@@ -78,6 +78,21 @@ final class category_manager_test extends \advanced_testcase {
         $this->manager->create($this->cartridgeid, '   ');
     }
 
+    /**
+     * Regression test: the lookup used the name as received while create() stored it cut to 100 characters,
+     * so a longer name was never found and each import added another category with the same name.
+     */
+    public function test_ensure_category_finds_a_name_longer_than_the_column(): void {
+        global $DB;
+        $long = str_repeat('Fundamentals ', 10);
+
+        $id1 = $this->manager->ensure_category($this->cartridgeid, $long);
+        $id2 = $this->manager->ensure_category($this->cartridgeid, $long);
+
+        $this->assertSame($id1, $id2);
+        $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $this->cartridgeid]));
+    }
+
     public function test_ensure_category_is_idempotent(): void {
         $id1 = $this->manager->ensure_category($this->cartridgeid, 'Science');
         $id2 = $this->manager->ensure_category($this->cartridgeid, 'Science');
