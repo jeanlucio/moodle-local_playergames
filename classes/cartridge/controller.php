@@ -1010,26 +1010,9 @@ class controller {
         global $DB;
 
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $DB->delete_records('local_playergames_concepts', ['cartridgeid' => $postcartridgeid]);
-        $DB->delete_records('local_playergames_categories', ['cartridgeid' => $postcartridgeid]);
-        $qids = $DB->get_fieldset_select(
-            'local_playergames_concept_questions',
-            'id',
-            'cartridgeid = :cid',
-            ['cid' => $postcartridgeid]
-        );
-        if (!empty($qids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal($qids, SQL_PARAMS_NAMED);
-            $DB->delete_records_select('local_playergames_concept_answers', "questionid $insql", $inparams);
-            $DB->delete_records_select(
-                'local_playergames_concept_questions',
-                "id $insql",
-                $inparams
-            );
-        }
         $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
+        (new cartridge_remover())->delete($postcartridgeid);
         if ($cartridgerow) {
-            $DB->delete_records('local_playergames_cartridges', ['id' => $postcartridgeid]);
             $event = cartridge_deleted::create([
                 'context' => $this->context,
                 'objectid' => $postcartridgeid,
