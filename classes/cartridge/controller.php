@@ -880,6 +880,7 @@ class controller {
             'categoryid' => optional_param('categoryid', 0, PARAM_INT),
             'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
+        $concept->categoryid = $this->valid_category_id((int) $concept->categoryid, $postcartridgeid);
 
         if ($concept->term === '') {
             redirect(
@@ -928,6 +929,7 @@ class controller {
             'categoryid' => optional_param('categoryid', 0, PARAM_INT),
             'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
+        $updated->categoryid = $this->valid_category_id((int) $updated->categoryid, $postcartridgeid);
 
         if ($updated->term === '') {
             redirect(

@@ -109,4 +109,111 @@ final class controller_test extends \advanced_testcase {
             'cartridgeid' => $cartridge->id,
         ]));
     }
+
+    /**
+     * Runs a controller action that ends in a redirect, with the given posted fields.
+     *
+     * @param string $action Name of the private action method.
+     * @param array $post The posted fields.
+     * @return void
+     */
+    private function run_action(string $action, array $post): void {
+        $this->setAdminUser();
+        $_POST = $post;
+        try {
+            $controller = new controller(\context_system::instance(), 'editor', 0, 0);
+            $method = new \ReflectionMethod($controller, $action);
+            $method->setAccessible(true);
+            try {
+                $method->invoke($controller);
+            } catch (\moodle_exception $e) {
+                // The action ends by redirecting, which throws under PHPUnit.
+                $this->assertSame('redirecterrordetected', $e->errorcode);
+            }
+        } finally {
+            $_POST = [];
+        }
+    }
+
+    /**
+     * Creates a concept cartridge.
+     *
+     * @param string $name Its name.
+     * @return int Cartridge id.
+     */
+    private function make_cartridge(string $name): int {
+        global $DB;
+        $now = time();
+        return (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => $name, 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+    }
+
+    /**
+     * Creates a category of a cartridge.
+     *
+     * @param int $cartridgeid The cartridge.
+     * @return int Category id.
+     */
+    private function make_category(int $cartridgeid): int {
+        global $DB;
+        return (int) $DB->insert_record('local_playergames_categories', (object) [
+            'cartridgeid' => $cartridgeid, 'name' => 'Biology', 'sortorder' => 0, 'timecreated' => time(),
+        ]);
+    }
+
+    /**
+     * Regression test: a hand-edited request could store the category of another cartridge on a concept,
+     * which then showed no category in its editor, exported another cartridge's category name and was left
+     * dangling when that category was deleted.
+     */
+    public function test_a_concept_cannot_take_the_category_of_another_cartridge(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $mine = $this->make_cartridge('Mine');
+        $other = $this->make_cartridge('Other');
+        $foreign = $this->make_category($other);
+
+        $this->run_action('action_add_concept', [
+            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $foreign,
+        ]);
+
+        $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $mine], '*', MUST_EXIST);
+        $this->assertNull($concept->categoryid);
+    }
+
+    public function test_a_concept_keeps_a_category_of_its_own_cartridge(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $mine = $this->make_cartridge('Mine');
+        $category = $this->make_category($mine);
+
+        $this->run_action('action_add_concept', [
+            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $category,
+        ]);
+
+        $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $mine], '*', MUST_EXIST);
+        $this->assertSame($category, (int) $concept->categoryid);
+    }
+
+    public function test_editing_a_concept_cannot_move_it_to_the_category_of_another_cartridge(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $mine = $this->make_cartridge('Mine');
+        $other = $this->make_cartridge('Other');
+        $own = $this->make_category($mine);
+        $foreign = $this->make_category($other);
+        $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $own,
+            'difficulty' => 3,
+        ]);
+
+        $this->run_action('action_edit_concept', [
+            'cartridgeid' => $mine, 'concept_id' => $conceptid, 'term' => 'cell', 'definition' => 'A unit.',
+            'categoryid' => $foreign,
+        ]);
+
+        $this->assertNull($DB->get_field('local_playergames_concepts', 'categoryid', ['id' => $conceptid]));
+    }
 }
