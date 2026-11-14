@@ -26,14 +26,17 @@ namespace local_playergames\local;
 
 use context;
 use context_system;
+use local_playergames\games\season_game_config;
+use local_playergames\hub\season_manager;
 use stored_file;
 
 /**
  * The questions of a shared bank may hold images and other files, written as @@PLUGINFILE@@ in their
  * text and kept in the bank's context, where a player has no access. The quiz games rewrite those
  * references to this plugin's own file areas, and this class answers them: a file is served to a
- * participant only when it belongs to a question of a category kept for reuse (see question_bank_reuse),
- * the same set the games draw from, and never from any other bank.
+ * participant only when it belongs to a ready question of the category the active season draws from, and
+ * never from any other bank: a category merely being kept for reuse is not enough, or a player could read
+ * the images of the question banks of courses they are not in.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -86,8 +89,8 @@ final class bank_file {
      * @param context $context The context in the URL.
      * @param string $filearea File area of this plugin.
      * @param array $args The rest of the URL: item id, then the path of the file.
-     * @return stored_file|null Null when the area is unknown, the question is not in a category kept for
-     *     reuse in that context, or the file does not exist.
+     * @return stored_file|null Null when the area is unknown, the question is not a ready one of the category
+     *     the active season draws from in that context, or the file does not exist.
      */
     public static function find(context $context, string $filearea, array $args): ?stored_file {
         global $DB;
@@ -108,10 +111,10 @@ final class bank_file {
                FROM {question_versions} qv
                JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
                JOIN {question_categories} qc ON qc.id = qbe.questioncategoryid
-              WHERE qv.questionid = :questionid AND qc.contextid = :contextid",
+              WHERE qv.questionid = :questionid AND qc.contextid = :contextid AND qv.status = 'ready'",
             ['questionid' => $questionid, 'contextid' => $context->id]
         ) : false;
-        if ($categoryid === false || !question_bank_reuse::is_shared((int) $categoryid)) {
+        if ($categoryid === false || !self::is_in_play((int) $categoryid)) {
             return null;
         }
 
@@ -125,5 +128,35 @@ final class bank_file {
         );
 
         return $file && !$file->is_directory() ? $file : null;
+    }
+
+    /**
+     * Whether the active season draws questions from a category, for a game that is switched on.
+     *
+     * The bank is still checked as one kept for reuse, in case the category was moved or its bank removed
+     * after the season was set up.
+     *
+     * @param int $categoryid The question category.
+     * @return bool
+     */
+    private static function is_in_play(int $categoryid): bool {
+        global $DB;
+
+        $season = season_manager::get_active();
+        if ($season === null || !question_bank_reuse::is_shared($categoryid)) {
+            return false;
+        }
+        $rows = $DB->get_records(
+            'local_playergames_season_games',
+            ['seasonid' => (int) $season->id, 'enabled' => 1, 'auxid' => $categoryid],
+            '',
+            'id, source'
+        );
+        foreach ($rows as $row) {
+            if (season_game_config::uses_secondary((string) $row->source)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -52,24 +52,11 @@ final class question_bank_reuse {
     public static function categories(): array {
         global $DB;
 
-        if ($DB->get_manager()->table_exists('qbank')) {
-            $sql = "SELECT qc.id, qc.name, qc.contextid, qb.name AS bank
-                      FROM {question_categories} qc
-                      JOIN {context} ctx ON ctx.id = qc.contextid AND ctx.contextlevel = :modlevel
-                      JOIN {course_modules} cm ON cm.id = ctx.instanceid AND cm.deletioninprogress = 0
-                      JOIN {modules} m ON m.id = cm.module AND m.name = 'qbank'
-                      JOIN {qbank} qb ON qb.id = cm.instance AND qb.type <> 'preview'
-                     WHERE qc.parent <> 0
-                  ORDER BY qb.name, qc.name";
-            $params = ['modlevel' => CONTEXT_MODULE];
-        } else {
-            $sql = "SELECT qc.id, qc.name, qc.contextid, '' AS bank
-                      FROM {question_categories} qc
-                     WHERE qc.contextid = :systemctx AND qc.parent <> 0
-                  ORDER BY qc.name";
-            $params = ['systemctx' => context_system::instance()->id];
-        }
-        $categories = $DB->get_records_sql($sql, $params);
+        [$from, $params, $bank, $order] = self::scope();
+        $categories = $DB->get_records_sql(
+            "SELECT qc.id, qc.name, qc.contextid, $bank AS bank FROM $from ORDER BY $order",
+            $params
+        );
         if ($categories === []) {
             return [];
         }
@@ -88,6 +75,32 @@ final class question_bank_reuse {
             $category->questions = isset($counts[$category->id]) ? (int) $counts[$category->id]->total : 0;
         }
         return $categories;
+    }
+
+    /**
+     * The tables, conditions and ordering that select the categories kept for reuse.
+     *
+     * Shared by the listing and by the check of a single category, so that the two cannot disagree about
+     * what is kept for reuse.
+     *
+     * @return array [FROM and WHERE clauses over the alias qc, their parameters, the SQL of the bank name,
+     *     the ORDER BY columns]
+     */
+    private static function scope(): array {
+        global $DB;
+
+        if ($DB->get_manager()->table_exists('qbank')) {
+            $from = "{question_categories} qc
+                      JOIN {context} ctx ON ctx.id = qc.contextid AND ctx.contextlevel = :modlevel
+                      JOIN {course_modules} cm ON cm.id = ctx.instanceid AND cm.deletioninprogress = 0
+                      JOIN {modules} m ON m.id = cm.module AND m.name = 'qbank'
+                      JOIN {qbank} qb ON qb.id = cm.instance AND qb.type <> 'preview'
+                     WHERE qc.parent <> 0";
+            return [$from, ['modlevel' => CONTEXT_MODULE], 'qb.name', 'qb.name, qc.name'];
+        }
+        $from = "{question_categories} qc
+                     WHERE qc.contextid = :systemctx AND qc.parent <> 0";
+        return [$from, ['systemctx' => context_system::instance()->id], "''", 'qc.name'];
     }
 
     /**
@@ -114,7 +127,14 @@ final class question_bank_reuse {
      * @return bool
      */
     public static function is_shared(int $categoryid): bool {
-        return $categoryid > 0 && isset(self::categories()[$categoryid]);
+        global $DB;
+
+        if ($categoryid <= 0) {
+            return false;
+        }
+        [$from, $params] = self::scope();
+        $params['categoryid'] = $categoryid;
+        return $DB->record_exists_sql("SELECT 1 FROM $from AND qc.id = :categoryid", $params);
     }
 
     /**
