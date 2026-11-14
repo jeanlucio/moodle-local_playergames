@@ -32,6 +32,9 @@ use local_playergames\local\question_bank_reuse;
  * shuffled session-sized slice of normalised quiz_question DTOs.
  */
 class quiz_loader {
+    /** @var float Smallest fraction taken as a full-credit answer (stored with 7 decimals). */
+    private const FULL_CREDIT = 0.9999999;
+
     /** @var string Draw from cartridge concept questions only. */
     const SOURCE_CARTRIDGES = 'cartridges';
 
@@ -303,8 +306,11 @@ class quiz_loader {
             $qid = (int) $q->id;
             $qanswers = $answermap[$qid] ?? [];
 
+            // Only an answer worth the whole grade is the right one. A question with partial credit
+            // (50% on one option, 100% on another) must not have the partial option judged as the key, and
+            // one with no full-credit option (several answers worth a share each) has no single key at all.
             $correct = array_values(
-                array_filter($qanswers, fn($a): bool => (float) $a->fraction > 0)
+                array_filter($qanswers, fn($a): bool => (float) $a->fraction >= self::FULL_CREDIT)
             );
             $wrong = array_values(
                 array_filter($qanswers, fn($a): bool => (float) $a->fraction <= 0)
@@ -356,7 +362,7 @@ class quiz_loader {
                     (int) $a->id
                 );
                 $ans->format = (string) $a->answerformat;
-                $ans->correct = (float) $a->fraction > 0;
+                $ans->correct = (float) $a->fraction >= self::FULL_CREDIT;
                 return $ans;
             }, $selected);
 

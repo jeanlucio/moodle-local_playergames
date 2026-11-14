@@ -440,4 +440,52 @@ final class quiz_loader_test extends \advanced_testcase {
         $answertexts = implode(' ', array_map(static fn($a): string => $a->text, $loaded->answers));
         $this->assertStringNotContainsString('@@PLUGINFILE@@', $answertexts);
     }
+
+    /**
+     * Regression test: with partial credit the option worth 50% could be drawn as the key, and the one
+     * worth 100% was left out of the round.
+     */
+    public function test_question_bank_key_is_the_full_credit_answer_when_there_is_partial_credit(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $category = $this->shared_category();
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
+            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
+        $this->add_extra_wrong_answer((int) $question->id);
+        $full = $DB->get_record_select(
+            'question_answers',
+            'question = ? AND fraction > 0.99',
+            [$question->id],
+            '*',
+            MUST_EXIST
+        );
+        $DB->insert_record('question_answers', (object) [
+            'question' => $question->id, 'answer' => 'Half right', 'answerformat' => FORMAT_HTML,
+            'fraction' => 0.5, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
+        ]);
+        // Put the partial option first, which is the order the loader used to take the key from.
+        $DB->set_field('question_answers', 'id', $full->id + 1000, ['id' => $full->id]);
+
+        for ($i = 0; $i < 10; $i++) {
+            $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
+            $texts = array_map(static fn($a): string => $a->text, $loaded->answers);
+            $correct = array_values(array_filter($loaded->answers, static fn($a): bool => $a->correct));
+
+            $this->assertCount(1, $correct);
+            $this->assertSame($full->answer, $correct[0]->text);
+            $this->assertNotContains('Half right', $texts);
+        }
+    }
+
+    public function test_question_bank_question_without_a_full_credit_answer_is_skipped(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $category = $this->shared_category();
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
+            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
+        $this->add_extra_wrong_answer((int) $question->id);
+        $DB->set_field_select('question_answers', 'fraction', 0.5, 'question = ? AND fraction > 0.99', [$question->id]);
+
+        $this->assertSame([], (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id));
+    }
 }
