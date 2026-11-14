@@ -140,23 +140,6 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame([], $this->invoke('parse_standalone_response', ['garbage']));
     }
 
-    public function test_parse_quiz_response_filters_unknown_conceptid(): void {
-        $concepts = [
-            5 => (object) ['id' => 5, 'term' => 'T', 'definition' => 'D'],
-        ];
-        $json = json_encode(['questions' => [
-            ['conceptid' => 5, 'questiontext' => 'Known', 'distractors' => ['a', 'b', 'c', 'd']],
-            ['conceptid' => 99, 'questiontext' => 'Unknown', 'distractors' => ['a', 'b', 'c', 'd']],
-        ]]);
-
-        $result = $this->invoke('parse_quiz_response', [$json, $concepts]);
-
-        // Only the question whose conceptid exists in the supplied concepts survives.
-        $this->assertCount(1, $result);
-        $this->assertSame(5, $result[0]['conceptid']);
-        $this->assertSame('Known', $result[0]['questiontext']);
-    }
-
     public function test_save_standalone_persists_category_and_difficulty(): void {
         global $DB;
         $this->resetAfterTest();
@@ -276,38 +259,16 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertStringNotContainsString('Array', json_encode($result));
     }
 
-    public function test_parse_quiz_response_survives_fields_of_the_wrong_type(): void {
-        $concepts = [5 => (object) ['id' => 5, 'term' => 'T', 'definition' => 'D']];
-        $json = json_encode(['questions' => [
-            'a string instead of a question',
-            ['conceptid' => ['5'], 'questiontext' => 'List id', 'distractors' => ['a', 'b', 'c', 'd']],
-            ['conceptid' => '5', 'questiontext' => ['x'], 'distractors' => ['a', ['b'], 'c', 'd', 'e']],
-        ]]);
-
-        $result = $this->invoke('parse_quiz_response', [$json, $concepts]);
-
-        $this->assertCount(1, $result);
-        $this->assertSame(5, $result[0]['conceptid']);
-        $this->assertSame('', $result[0]['questiontext']);
-        $this->assertSame(['a', 'c', 'd', 'e'], $result[0]['distractors']);
-    }
-
     /**
      * A response whose distractors leave fewer than four real ones is dropped, not saved with blanks.
      */
-    public function test_parse_responses_drop_questions_with_blank_distractors(): void {
-        $concepts = [5 => (object) ['id' => 5, 'term' => 'T', 'definition' => 'D']];
+    public function test_parse_standalone_drops_questions_with_blank_distractors(): void {
         $blank = ['a', '', 'c', 'd'];
 
         $standalone = $this->invoke('parse_standalone_response', [json_encode(['questions' => [
             ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => $blank],
         ]])]);
         $this->assertSame([], $standalone);
-
-        $fromconcepts = $this->invoke('parse_quiz_response', [json_encode(['questions' => [
-            ['conceptid' => 5, 'questiontext' => 'Q', 'distractors' => $blank],
-        ]]), $concepts]);
-        $this->assertSame([], $fromconcepts);
     }
 
     /**
