@@ -32,8 +32,9 @@ use stdClass;
  *
  * The ladder lives in local_playergames_levels and is editable by admins.
  * On a fresh table it is seeded with the default 5-tier progression, whose
- * titles are taken from the level_title_{n} lang strings at seed time. From
- * then on the stored rows win, so admin edits are preserved. Admins can also
+ * titles are the level_title_{n} lang strings, stored in English. A stored title that is still
+ * one of those English defaults is shown in the language of whoever is looking; one an admin
+ * wrote is shown as written, so admin edits are preserved. Admins can also
  * generate a longer linear ladder (fixed XP per level) via generate_linear().
  *
  * @package    local_playergames
@@ -99,7 +100,10 @@ class level_manager {
     }
 
     /**
-     * Inserts the default 5-tier ladder, translating titles at seed time.
+     * Inserts the default 5-tier ladder, with the titles in English.
+     *
+     * The first request to find the table empty seeds it, in whatever language that user reads, so the
+     * stored text has to be a fixed one; title_for_level() translates it when it is shown.
      *
      * @return void
      */
@@ -113,11 +117,70 @@ class level_manager {
             $record        = new stdClass();
             $record->level = $level;
             $record->minxp = $minxp;
-            $record->title = get_string($titlekey, 'local_playergames');
+            $record->title = self::default_title($titlekey, 'en');
             $records[] = $record;
         }
         $DB->insert_records('local_playergames_levels', $records);
         self::request_cache()->delete('ladder');
+    }
+
+    /**
+     * Returns a default level title in a language.
+     *
+     * @param string $titlekey Lang string key, level_title_{n}.
+     * @param string|null $lang Language code, or null for the current one.
+     * @return string
+     */
+    private static function default_title(string $titlekey, ?string $lang = null): string {
+        return get_string_manager()->get_string($titlekey, 'local_playergames', null, $lang);
+    }
+
+    /**
+     * Shows a stored title in the language of the viewer when it is still one of the English defaults.
+     *
+     * @param string $title The stored title.
+     * @return string
+     */
+    private static function localise_title(string $title): string {
+        foreach (self::DEFAULT_LADDER as [, $titlekey]) {
+            if ($title === self::default_title($titlekey, 'en')) {
+                return self::default_title($titlekey);
+            }
+        }
+        return $title;
+    }
+
+    /**
+     * Turns a title typed in the admin's language back into the English default it was shown from.
+     *
+     * The ladder editor shows the defaults in the admin's language; saving them untouched must not
+     * freeze that language into the rows.
+     *
+     * @param string $title The title as submitted.
+     * @return string
+     */
+    private static function unlocalise_title(string $title): string {
+        foreach (self::DEFAULT_LADDER as [, $titlekey]) {
+            if ($title === self::default_title($titlekey)) {
+                return self::default_title($titlekey, 'en');
+            }
+        }
+        return $title;
+    }
+
+    /**
+     * Returns the ladder rows as the editor shows them: the default titles in the admin's language.
+     *
+     * @return stdClass[]
+     */
+    public static function get_levels_for_display(): array {
+        $levels = [];
+        foreach (self::get_levels() as $row) {
+            $copy = clone $row;
+            $copy->title = self::localise_title((string) $row->title);
+            $levels[] = $copy;
+        }
+        return $levels;
     }
 
     /**
@@ -139,7 +202,7 @@ class level_manager {
             $record        = new stdClass();
             $record->level = $level;
             $record->minxp = $level === 1 ? 0 : (int) $row['minxp'];
-            $record->title = $row['title'];
+            $record->title = self::unlocalise_title((string) $row['title']);
             $records[] = $record;
             $level++;
         }
@@ -172,7 +235,7 @@ class level_manager {
 
         $tiers = [];
         for ($t = 1; $t <= self::TITLE_TIERS; $t++) {
-            $tiers[] = get_string('level_title_' . $t, 'local_playergames');
+            $tiers[] = self::default_title('level_title_' . $t, 'en');
         }
 
         $records = [];
@@ -250,7 +313,7 @@ class level_manager {
         if (!isset($bylevel[$level])) {
             $level = max(1, min($level, self::max_level()));
         }
-        return isset($bylevel[$level]) ? text::plain($bylevel[$level]->title) : '';
+        return isset($bylevel[$level]) ? text::plain(self::localise_title((string) $bylevel[$level]->title)) : '';
     }
 
     /**

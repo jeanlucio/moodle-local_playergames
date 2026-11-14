@@ -117,8 +117,8 @@ final class level_manager_test extends \advanced_testcase {
         $this->assertSame(100, (int) $levels[1]->minxp);
         $this->assertSame(900, (int) $levels[9]->minxp);
         // Titles are spread across the five tiers: 10 levels => 2 levels per tier.
-        $this->assertSame(get_string('level_title_1', 'local_playergames'), $levels[0]->title);
-        $this->assertSame(get_string('level_title_5', 'local_playergames'), $levels[9]->title);
+        $this->assertSame('Novice', $levels[0]->title);
+        $this->assertSame('Master', $levels[9]->title);
     }
 
     public function test_generate_linear_clamps_bounds(): void {
@@ -166,5 +166,76 @@ final class level_manager_test extends \advanced_testcase {
 
         level_manager::restore_defaults();
         $this->assertSame(5, level_manager::max_level());
+    }
+
+    /**
+     * Installs a language pack that translates the level titles, and makes it the current language.
+     *
+     * @return void
+     */
+    private function use_translated_titles(): void {
+        global $CFG;
+
+        $dir = $CFG->dataroot . '/lang/qq';
+        check_dir_exists($dir);
+        file_put_contents($dir . '/langconfig.php', "<?php\n\$string['thislanguage'] = 'Test';\n"
+            . "\$string['parentlanguage'] = '';\n\$string['decsep'] = '.';\n");
+        file_put_contents($dir . '/local_playergames.php', "<?php\n\$string['level_title_1'] = 'Titulo um';\n"
+            . "\$string['level_title_5'] = 'Titulo cinco';\n");
+        get_string_manager(true);
+        force_current_language('qq');
+    }
+
+    /**
+     * The ladder is seeded in English whatever language the first request reads, and each viewer sees the
+     * default titles in their own.
+     */
+    public function test_default_titles_are_stored_in_english_and_shown_in_the_language_of_the_viewer(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->use_translated_titles();
+
+        level_manager::get_levels();
+
+        $this->assertSame('Novice', $DB->get_field('local_playergames_levels', 'title', ['level' => 1]));
+        $this->assertSame('Titulo um', level_manager::title_for_level(1));
+        $this->assertSame('Titulo cinco', level_manager::title_for_level(5));
+        force_current_language('en');
+        $this->assertSame('Novice', level_manager::title_for_level(1));
+    }
+
+    /**
+     * A title an admin wrote is shown as written, in any language.
+     */
+    public function test_a_title_written_by_an_admin_is_not_translated(): void {
+        $this->resetAfterTest();
+        $this->use_translated_titles();
+        level_manager::save_ladder([
+            ['minxp' => 0, 'title' => 'Rookie'],
+            ['minxp' => 100, 'title' => 'Pro'],
+        ]);
+
+        $this->assertSame('Rookie', level_manager::title_for_level(1));
+        $this->assertSame('Pro', level_manager::title_for_level(2));
+    }
+
+    /**
+     * The editor shows the defaults in the admin's language, and saving them untouched keeps them default
+     * instead of freezing that language into the rows.
+     */
+    public function test_saving_the_titles_the_editor_showed_keeps_the_defaults_translatable(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->use_translated_titles();
+        level_manager::get_levels();
+
+        $shown = level_manager::get_levels_for_display();
+        $this->assertSame('Titulo um', $shown[0]->title);
+        level_manager::save_ladder(array_map(
+            fn($row): array => ['minxp' => (int) $row->minxp, 'title' => $row->title],
+            $shown
+        ));
+
+        $this->assertSame('Novice', $DB->get_field('local_playergames_levels', 'title', ['level' => 1]));
     }
 }

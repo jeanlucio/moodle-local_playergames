@@ -99,7 +99,7 @@ if (data_submitted()) {
 // minxp[]/title[] arrays stay aligned on submission.
 $rows  = [];
 $index = 0;
-foreach (level_manager::get_levels() as $row) {
+foreach (level_manager::get_levels_for_display() as $row) {
     $rows[] = [
         'index'      => $index,
         'level'      => (int) $row->level,
