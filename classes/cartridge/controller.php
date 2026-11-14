@@ -988,10 +988,16 @@ class controller {
 
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postconceptid = required_param('concept_id', PARAM_INT);
-        $DB->delete_records(
-            'local_playergames_concepts',
-            ['id' => $postconceptid, 'cartridgeid' => $postcartridgeid]
-        );
+        if ((new cartridge_remover())->delete_concept($postconceptid, $postcartridgeid)) {
+            // The concept was one of today's words: draw them again, so the game does not stay empty
+            // until midnight. The task reports on its progress, which is not for this page.
+            ob_start();
+            try {
+                (new \local_playergames\task\assign_daily_games())->execute();
+            } finally {
+                ob_end_clean();
+            }
+        }
         $DB->set_field(
             'local_playergames_cartridges',
             'timemodified',
@@ -1406,8 +1412,8 @@ class controller {
             $questionrows[] = [
                 'id' => (int) $q->id,
                 'questiontext' => text::plain($q->questiontext),
-                'correct' => $correct,
-                'distractors' => $distractors,
+                'correct' => text::plain($correct),
+                'distractors' => array_map([text::class, 'plain'], $distractors),
                 'category' => $qcatid > 0 && isset($catnamelookup[$qcatid])
                     ? $catnamelookup[$qcatid] : '',
                 'difficulty' => (int) $q->difficulty,

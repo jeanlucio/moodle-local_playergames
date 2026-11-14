@@ -58,6 +58,34 @@ final class cartridge_remover_test extends \advanced_testcase {
     }
 
     /**
+     * Creates a concept cartridge with no content.
+     *
+     * @return int Cartridge id.
+     */
+    private function new_cartridge(): int {
+        global $DB;
+        $now = time();
+        return (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Empty', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+    }
+
+    /**
+     * Adds a concept to a cartridge.
+     *
+     * @param int $cartridgeid The cartridge.
+     * @param string $term The term.
+     * @return int Concept id.
+     */
+    private function new_concept(int $cartridgeid, string $term): int {
+        global $DB;
+        return (int) $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => 'A fruit',
+        ]);
+    }
+
+    /**
      * Gives a season's game a list of cartridges.
      *
      * @param string|null $cartridgeids The JSON list, or null.
@@ -133,5 +161,59 @@ final class cartridge_remover_test extends \advanced_testcase {
             json_encode([$cartridgeid]),
             $DB->get_field('local_playergames_season_games', 'cartridgeids', ['id' => $rowid])
         );
+    }
+
+    /**
+     * Deleting a concept removes it and the assignments of any day that point at it, only in its own cartridge.
+     */
+    public function test_delete_concept_removes_the_concept_and_its_assignments(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $mine = $this->new_cartridge();
+        $other = $this->new_cartridge();
+        $concept = $this->new_concept($mine, 'apple');
+        $kept = $this->new_concept($mine, 'grape');
+        $yesterday = mktime(0, 0, 0) - DAYSECS;
+        foreach ([[$yesterday, $concept], [$yesterday, $kept]] as [$date, $id]) {
+            $DB->insert_record('local_playergames_daily_assignments', (object) [
+                'gamedate' => $date, 'gametype' => 'guess', 'conceptid' => $id,
+            ]);
+        }
+
+        $this->assertFalse((new cartridge_remover())->delete_concept($concept, $other));
+        $this->assertTrue($DB->record_exists('local_playergames_concepts', ['id' => $concept]));
+
+        $this->assertFalse((new cartridge_remover())->delete_concept($concept, $mine));
+
+        $this->assertFalse($DB->record_exists('local_playergames_concepts', ['id' => $concept]));
+        $this->assertSame(
+            [$kept],
+            array_map('intval', array_values($DB->get_fieldset_select('local_playergames_daily_assignments', 'conceptid', '1 = 1')))
+        );
+    }
+
+    /**
+     * A concept that was one of today's words takes today's set of that game with it, so it can be drawn again.
+     */
+    public function test_delete_concept_drops_todays_set_of_the_game(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->new_cartridge();
+        $first = $this->new_concept($cartridge, 'apple');
+        $second = $this->new_concept($cartridge, 'grape');
+        $today = mktime(0, 0, 0);
+        foreach ([$first, $second] as $id) {
+            $DB->insert_record('local_playergames_daily_assignments', (object) [
+                'gamedate' => $today, 'gametype' => 'fill', 'conceptid' => $id,
+            ]);
+        }
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => $today, 'gametype' => 'guess', 'conceptid' => $second,
+        ]);
+
+        $this->assertTrue((new cartridge_remover())->delete_concept($first, $cartridge));
+
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'fill']));
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'guess']));
     }
 }

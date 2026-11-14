@@ -1000,4 +1000,52 @@ final class controller_test extends \advanced_testcase {
 
         $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
     }
+
+    /**
+     * Deleting a concept that is today's PlayerGuess word draws another one, so the game is not left
+     * without a word until midnight.
+     */
+    public function test_deleting_todays_guess_word_draws_another(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->make_cartridge('Fruits');
+        $today = mktime(0, 0, 0);
+        $ids = [];
+        foreach (['apple', 'grape'] as $term) {
+            $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+            ]);
+        }
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => $today, 'gametype' => 'guess', 'conceptid' => $ids['apple'],
+        ]);
+
+        $this->dispatch(['action' => 'delete_concept', 'cartridgeid' => $cartridge, 'concept_id' => $ids['apple']]);
+
+        $this->assertFalse($DB->record_exists('local_playergames_concepts', ['id' => $ids['apple']]));
+        $this->assertSame($ids['grape'], (int) $DB->get_field(
+            'local_playergames_daily_assignments',
+            'conceptid',
+            ['gamedate' => $today, 'gametype' => 'guess'],
+            MUST_EXIST
+        ));
+    }
+
+    /**
+     * The answers of the quiz list go through the same text cleaning as the question.
+     */
+    public function test_the_quiz_list_shows_the_answers_cleaned_like_the_question(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $quiz = $this->make_quiz_cartridge('Capitals');
+        $questionid = $this->make_question($quiz);
+        $DB->set_field('local_playergames_concept_answers', 'answertext', '<b>Paris</b> & co', [
+            'questionid' => $questionid, 'iscorrect' => 1,
+        ]);
+
+        $html = $this->page('editor', $quiz)['content_html'];
+
+        $this->assertStringContainsString('Paris &amp; co', $html);
+        $this->assertStringNotContainsString('&lt;b&gt;', $html);
+    }
 }

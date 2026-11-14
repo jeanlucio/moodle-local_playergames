@@ -115,4 +115,42 @@ class cartridge_remover {
             );
         }
     }
+
+    /**
+     * Deletes one concept and the daily assignments that point at it, in one transaction.
+     *
+     * An assignment left behind names a concept that is gone: PlayerGuess answers "unavailable" to every
+     * guess of the day, and PlayerFill rebuilds each player's round. When the concept was one of today's
+     * words, the whole set of that game for today is dropped so it can be drawn again.
+     *
+     * @param int $conceptid The concept.
+     * @param int $cartridgeid The cartridge the request names; a concept of another cartridge is left alone.
+     * @return bool Whether an assignment of today was removed, so the caller draws today's words again.
+     */
+    public function delete_concept(int $conceptid, int $cartridgeid): bool {
+        global $DB;
+
+        if (!$DB->record_exists('local_playergames_concepts', ['id' => $conceptid, 'cartridgeid' => $cartridgeid])) {
+            return false;
+        }
+
+        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $transaction = $DB->start_delegated_transaction();
+
+        $gametypes = $DB->get_fieldset_select(
+            'local_playergames_daily_assignments',
+            'DISTINCT gametype',
+            'conceptid = :conceptid AND gamedate = :today',
+            ['conceptid' => $conceptid, 'today' => $today]
+        );
+        foreach ($gametypes as $gametype) {
+            $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => $today, 'gametype' => $gametype]);
+        }
+        $DB->delete_records('local_playergames_daily_assignments', ['conceptid' => $conceptid]);
+        $DB->delete_records('local_playergames_concepts', ['id' => $conceptid, 'cartridgeid' => $cartridgeid]);
+
+        $transaction->allow_commit();
+
+        return $gametypes !== [];
+    }
 }
