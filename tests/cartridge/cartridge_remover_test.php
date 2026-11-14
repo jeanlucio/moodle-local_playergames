@@ -24,16 +24,14 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see cartridge_remover}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\cartridge_remover
  */
-#[CoversClass(cartridge_remover::class)]
 final class cartridge_remover_test extends \advanced_testcase {
     /**
      * Creates a cartridge with one concept and one quiz question.

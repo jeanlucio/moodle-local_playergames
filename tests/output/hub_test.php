@@ -24,16 +24,14 @@
 
 namespace local_playergames\output;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see hub}, limited to who is offered the seasons page while there is no season.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\output\hub
  */
-#[CoversClass(hub::class)]
 final class hub_test extends \advanced_testcase {
     /**
      * Exports the hub of a user and renders it.

@@ -24,16 +24,14 @@
 
 namespace local_playergames\local;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see setting_int_range}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\setting_int_range
  */
-#[CoversClass(setting_int_range::class)]
 final class setting_int_range_test extends \advanced_testcase {
     /**
      * Loads the admin classes the setting extends.

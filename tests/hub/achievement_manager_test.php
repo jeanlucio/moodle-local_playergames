@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see achievement_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\achievement_manager
  */
-#[CoversClass(achievement_manager::class)]
 final class achievement_manager_test extends \advanced_testcase {
     /** @var int The season the users play in. */
     private int $seasonid;

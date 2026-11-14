@@ -26,7 +26,6 @@ namespace local_playergames\external;
 
 use core_external\external_api;
 use local_playergames\hub\avatar_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see set_avatar}.
@@ -34,8 +33,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\external\set_avatar
+ * @covers \local_playergames\hub\avatar_manager
  */
-#[CoversClass(set_avatar::class)]
 final class set_avatar_test extends \advanced_testcase {
     public function test_execute_equips_unlocked_avatar(): void {
         $this->resetAfterTest();

@@ -24,16 +24,14 @@
 
 namespace local_playergames\task;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see purge_old_scores}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\task\purge_old_scores
  */
-#[CoversClass(purge_old_scores::class)]
 final class purge_old_scores_test extends \advanced_testcase {
     /**
      * Inserts a closed season spanning the given dates.

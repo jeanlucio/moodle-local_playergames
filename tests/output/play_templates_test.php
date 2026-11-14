@@ -24,8 +24,6 @@
 
 namespace local_playergames\output;
 
-use PHPUnit\Framework\Attributes\CoversNothing;
-
 /**
  * The definition is plain text from the cartridge (or from the AI), so the templates must escape it
  * themselves, once: an escape done in PHP and printed raw is one edit away from live markup.
@@ -33,8 +31,8 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversNothing
  */
-#[CoversNothing]
 final class play_templates_test extends \advanced_testcase {
     /** @var string A definition with markup in it. */
     private const DEFINITION = 'Tom & Jerry <img src=x onerror=alert(1)>';

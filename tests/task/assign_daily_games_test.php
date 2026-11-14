@@ -25,7 +25,6 @@
 namespace local_playergames\task;
 
 use local_playergames\games\fill_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see assign_daily_games}.
@@ -33,8 +32,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\task\assign_daily_games
  */
-#[CoversClass(assign_daily_games::class)]
 final class assign_daily_games_test extends \advanced_testcase {
     /**
      * Creates an active concept cartridge with wordle-eligible terms — enough of them

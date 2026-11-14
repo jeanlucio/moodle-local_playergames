@@ -24,24 +24,22 @@
 
 namespace local_playergames\event;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Smoke tests asserting each event triggers and renders a description.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\event\achievement_earned
+ * @covers \local_playergames\event\cartridge_deleted
+ * @covers \local_playergames\event\cartridge_imported
+ * @covers \local_playergames\event\game_completed
+ * @covers \local_playergames\event\level_reached
+ * @covers \local_playergames\event\season_closed
+ * @covers \local_playergames\event\season_created
+ * @covers \local_playergames\event\streak_broken
+ * @covers \local_playergames\event\streak_updated
  */
-#[CoversClass(achievement_earned::class)]
-#[CoversClass(cartridge_deleted::class)]
-#[CoversClass(cartridge_imported::class)]
-#[CoversClass(game_completed::class)]
-#[CoversClass(level_reached::class)]
-#[CoversClass(season_closed::class)]
-#[CoversClass(season_created::class)]
-#[CoversClass(streak_broken::class)]
-#[CoversClass(streak_updated::class)]
 final class events_test extends \advanced_testcase {
     /**
      * Triggers an event and asserts it is captured and renders cleanly.

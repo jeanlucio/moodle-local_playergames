@@ -25,7 +25,6 @@
 namespace local_playergames\task;
 
 use local_playergames\hub\learning_xp_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see recompute_learning_xp}.
@@ -33,8 +32,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\task\recompute_learning_xp
  */
-#[CoversClass(recompute_learning_xp::class)]
 final class recompute_learning_xp_test extends \advanced_testcase {
     /**
      * Inserts a monthly bucket row directly.

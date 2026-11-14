@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Integration tests for {@see level_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\level_manager
  */
-#[CoversClass(level_manager::class)]
 final class level_manager_test extends \advanced_testcase {
     public function test_get_levels_seeds_the_default_ladder(): void {
         global $DB;

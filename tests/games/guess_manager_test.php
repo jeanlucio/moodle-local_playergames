@@ -24,16 +24,15 @@
 
 namespace local_playergames\games;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see guess_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\guess_manager
+ * @covers \local_playergames\games\guess_state
  */
-#[CoversClass(guess_manager::class)]
 final class guess_manager_test extends \advanced_testcase {
     /**
      * Creates a concept-type cartridge.

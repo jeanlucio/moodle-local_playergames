@@ -24,16 +24,14 @@
 
 namespace local_playergames\ecosystem;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see plugin_status}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\ecosystem\plugin_status
  */
-#[CoversClass(plugin_status::class)]
 final class plugin_status_test extends \advanced_testcase {
     public function test_get_installed_reports_hub_as_installed(): void {
         $status = plugin_status::get_installed();

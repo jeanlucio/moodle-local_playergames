@@ -25,7 +25,6 @@
 namespace local_playergames\hub;
 
 use local_playergames\local\preferences;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Integration tests for {@see checkin_manager}.
@@ -33,8 +32,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\checkin_manager
+ * @covers \local_playergames\hub\mission_manager
+ * @covers \local_playergames\hub\xp_manager
  */
-#[CoversClass(checkin_manager::class)]
 final class checkin_manager_test extends \advanced_testcase {
     /**
      * Inserts an active season carrying the given config snapshot.

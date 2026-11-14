@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see title_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\title_manager
  */
-#[CoversClass(title_manager::class)]
 final class title_manager_test extends \advanced_testcase {
     public function test_get_title_returns_the_configured_title(): void {
         $this->resetAfterTest();

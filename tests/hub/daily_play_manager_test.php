@@ -24,16 +24,16 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see daily_play_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\daily_play_manager
+ * @covers \local_playergames\hub\mission_manager
+ * @covers \local_playergames\observer
  */
-#[CoversClass(daily_play_manager::class)]
 final class daily_play_manager_test extends \advanced_testcase {
     /**
      * Creates an active season with the given config snapshot.

@@ -25,7 +25,6 @@
 namespace local_playergames\task;
 
 use local_playergames\hub\season_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see close_expired_seasons}.
@@ -33,8 +32,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\task\close_expired_seasons
  */
-#[CoversClass(close_expired_seasons::class)]
 final class close_expired_seasons_test extends \advanced_testcase {
     /**
      * Inserts an active season whose end date is in the past.

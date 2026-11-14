@@ -26,7 +26,6 @@ namespace local_playergames\local;
 
 use local_playergames\games\season_game_config;
 use local_playergames\hub\season_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see bank_file}.
@@ -34,8 +33,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\bank_file
  */
-#[CoversClass(bank_file::class)]
 final class bank_file_test extends \advanced_testcase {
     /**
      * Creates a category in a context, with a multiple-choice question that has a file in its text.

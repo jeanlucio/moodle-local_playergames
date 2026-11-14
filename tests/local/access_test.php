@@ -24,16 +24,14 @@
 
 namespace local_playergames\local;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see access}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\access
  */
-#[CoversClass(access::class)]
 final class access_test extends \advanced_testcase {
     public function test_is_staff_true_for_course_level_teacher(): void {
         $this->resetAfterTest();

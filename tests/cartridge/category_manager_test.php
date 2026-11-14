@@ -24,16 +24,14 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see category_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\category_manager
  */
-#[CoversClass(category_manager::class)]
 final class category_manager_test extends \advanced_testcase {
     /** @var int Cartridge id used across the test methods. */
     private int $cartridgeid;

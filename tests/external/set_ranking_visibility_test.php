@@ -25,7 +25,6 @@
 namespace local_playergames\external;
 
 use core_external\external_api;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see set_ranking_visibility}.
@@ -33,8 +32,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\external\set_ranking_visibility
+ * @covers \local_playergames\hub\xp_manager
  */
-#[CoversClass(set_ranking_visibility::class)]
 final class set_ranking_visibility_test extends \advanced_testcase {
     /**
      * Inserts an active season and returns its id.

@@ -25,7 +25,6 @@
 namespace local_playergames\games;
 
 use local_playergames\hub\served_questions;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see battle_manager}.
@@ -33,8 +32,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\battle_manager
+ * @covers \local_playergames\games\quiz_loader
+ * @covers \local_playergames\hub\served_questions
  */
-#[CoversClass(battle_manager::class)]
 final class battle_manager_test extends \advanced_testcase {
     /** @var \stdClass The active season of the test. */
     private \stdClass $season;

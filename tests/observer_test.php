@@ -27,7 +27,6 @@ namespace local_playergames;
 use local_playergames\event\game_completed;
 use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\streak_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Integration tests for {@see observer}.
@@ -35,8 +34,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\observer
  */
-#[CoversClass(observer::class)]
 final class observer_test extends \advanced_testcase {
     /**
      * Creates an active season with the given config snapshot.

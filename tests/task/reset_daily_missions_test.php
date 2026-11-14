@@ -26,7 +26,6 @@ namespace local_playergames\task;
 
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\streak_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see reset_daily_missions}.
@@ -34,8 +33,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\task\reset_daily_missions
+ * @covers \local_playergames\hub\mission_manager
+ * @covers \local_playergames\hub\activity_log
  */
-#[CoversClass(reset_daily_missions::class)]
 final class reset_daily_missions_test extends \advanced_testcase {
     public function test_execute_resets_daily_mission_and_breaks_streak(): void {
         global $DB;

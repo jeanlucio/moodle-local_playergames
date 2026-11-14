@@ -24,16 +24,14 @@
 
 namespace local_playergames\ecosystem;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see plugin_registry}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\ecosystem\plugin_registry
  */
-#[CoversClass(plugin_registry::class)]
 final class plugin_registry_test extends \advanced_testcase {
     public function test_catalog_structure(): void {
         $catalog = plugin_registry::get_catalog();

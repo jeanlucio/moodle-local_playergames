@@ -24,16 +24,14 @@
 
 namespace local_playergames\games;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see season_game_config}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\season_game_config
  */
-#[CoversClass(season_game_config::class)]
 final class season_game_config_test extends \advanced_testcase {
     /**
      * Inserts an active season.

@@ -24,7 +24,6 @@
 
 namespace local_playergames\games;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 
 /**
@@ -33,8 +32,9 @@ use stdClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\fill_manager
+ * @covers \local_playergames\games\fill_state
  */
-#[CoversClass(fill_manager::class)]
 final class fill_manager_test extends \advanced_testcase {
     /**
      * Creates a concept-type cartridge.

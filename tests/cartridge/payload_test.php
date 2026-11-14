@@ -24,16 +24,14 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for the payload field readers.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\payload
  */
-#[CoversClass(payload::class)]
 final class payload_test extends \advanced_testcase {
     public function test_text_cleans_scalars_and_treats_the_rest_as_missing(): void {
         $this->assertSame('Hello', payload::text('  <b>Hello</b> '));

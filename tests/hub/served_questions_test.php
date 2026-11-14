@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see served_questions}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\served_questions
  */
-#[CoversClass(served_questions::class)]
 final class served_questions_test extends \advanced_testcase {
     public function test_record_then_get_excluded_groups_by_source(): void {
         $this->resetAfterTest();

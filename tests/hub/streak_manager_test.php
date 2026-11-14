@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see streak_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\streak_manager
  */
-#[CoversClass(streak_manager::class)]
 final class streak_manager_test extends \advanced_testcase {
     /**
      * Overwrites a user's streak record with controlled values.

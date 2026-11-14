@@ -27,7 +27,6 @@ namespace local_playergames\local;
 
 use local_playergames\cartridge\controller;
 use local_playergames\hub\level_manager;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * A cartridge, a category or a concept with an ampersand in the name must reach the page escaped once:
@@ -36,10 +35,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\text
+ * @covers \local_playergames\cartridge\controller
+ * @covers \local_playergames\hub\level_manager
+ * @covers \local_playergames\output\cartridge
  */
-#[CoversClass(text::class)]
-#[CoversClass(controller::class)]
-#[CoversClass(level_manager::class)]
 final class text_test extends \advanced_testcase {
     /**
      * Runs a check under each value of formatstringstriptags; the formatter caches its result per container

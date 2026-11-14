@@ -24,16 +24,14 @@
 
 namespace local_playergames;
 
-use PHPUnit\Framework\Attributes\CoversNothing;
-
 /**
  * Checks that the capabilities carry the risk flags the role editor shows.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversNothing
  */
-#[CoversNothing]
 final class capabilities_test extends \advanced_testcase {
     /**
      * Regression test: the capability publishes content to every player and carried no risk flag, so the

@@ -27,7 +27,6 @@ namespace local_playergames;
 use core\hook\navigation\primary_extend;
 use core\navigation\views\primary;
 use local_playergames\local\preferences;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see hook_callbacks}.
@@ -35,8 +34,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hook_callbacks
+ * @covers \local_playergames\local\preferences
  */
-#[CoversClass(hook_callbacks::class)]
 final class hook_callbacks_test extends \advanced_testcase {
     /**
      * Runs the primary navigation hook for the current user.

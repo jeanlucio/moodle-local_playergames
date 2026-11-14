@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see learning_xp_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\learning_xp_manager
  */
-#[CoversClass(learning_xp_manager::class)]
 final class learning_xp_manager_test extends \advanced_testcase {
     /**
      * Inserts a monthly bucket row directly, bypassing record_change(), so

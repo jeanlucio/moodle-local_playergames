@@ -29,7 +29,6 @@ use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see provider}.
@@ -37,8 +36,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\privacy\provider
  */
-#[CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Seeds gamification rows for a user across several tables.

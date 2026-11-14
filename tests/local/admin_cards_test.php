@@ -27,7 +27,6 @@ namespace local_playergames\local;
 use local_playergames\hub\level_manager;
 use local_playergames\output\administration;
 use local_playergames\output\nav_header;
-use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Unit tests for {@see admin_cards}.
@@ -35,9 +34,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\admin_cards
+ * @covers \local_playergames\output\administration
+ * @covers \local_playergames\output\nav_header
  */
-#[CoversClass(admin_cards::class)]
-#[CoversClass(administration::class)]
 final class admin_cards_test extends \advanced_testcase {
     /**
      * Returns every card of a user by its key.

@@ -24,16 +24,14 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see glossary_importer}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\glossary_importer
  */
-#[CoversClass(glossary_importer::class)]
 final class glossary_importer_test extends \advanced_testcase {
     /**
      * Creates a glossary.

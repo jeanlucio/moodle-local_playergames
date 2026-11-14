@@ -24,8 +24,6 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for the pure parsing logic in {@see quiz_generator}.
  *
@@ -34,8 +32,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\quiz_generator
  */
-#[CoversClass(quiz_generator::class)]
 final class quiz_generator_test extends \advanced_testcase {
     /**
      * Invokes a protected method on the generator via reflection.

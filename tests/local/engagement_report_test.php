@@ -24,16 +24,14 @@
 
 namespace local_playergames\local;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see engagement_report}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\local\engagement_report
  */
-#[CoversClass(engagement_report::class)]
 final class engagement_report_test extends \advanced_testcase {
     public function test_get_metrics_empty_returns_zeros(): void {
         $this->resetAfterTest();

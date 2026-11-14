@@ -24,8 +24,6 @@
 
 namespace local_playergames\cartridge;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see controller}.
  *
@@ -35,8 +33,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\cartridge\controller
  */
-#[CoversClass(controller::class)]
 final class controller_test extends \advanced_testcase {
     /**
      * Posts the AI quiz preview back to the controller and runs the save action.

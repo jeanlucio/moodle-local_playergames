@@ -24,16 +24,14 @@
 
 namespace local_playergames\hub;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see avatar_manager}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\hub\avatar_manager
  */
-#[CoversClass(avatar_manager::class)]
 final class avatar_manager_test extends \advanced_testcase {
     public function test_seed_defaults_creates_17_avatars_in_four_tiers(): void {
         $this->resetAfterTest();

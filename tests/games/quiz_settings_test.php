@@ -24,16 +24,14 @@
 
 namespace local_playergames\games;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see quiz_settings}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\quiz_settings
  */
-#[CoversClass(quiz_settings::class)]
 final class quiz_settings_test extends \advanced_testcase {
     public function test_question_seconds_default_when_unset(): void {
         $this->resetAfterTest();

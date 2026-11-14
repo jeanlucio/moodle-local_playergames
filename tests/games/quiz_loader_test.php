@@ -24,16 +24,14 @@
 
 namespace local_playergames\games;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-
 /**
  * Unit tests for {@see quiz_loader} cartridge source.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_playergames\games\quiz_loader
  */
-#[CoversClass(quiz_loader::class)]
 final class quiz_loader_test extends \advanced_testcase {
     /**
      * Creates a quiz-type cartridge.
