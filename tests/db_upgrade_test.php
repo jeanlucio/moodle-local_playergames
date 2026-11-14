@@ -309,4 +309,21 @@ final class db_upgrade_test extends advanced_testcase {
         $this->assertEquals(10, get_config('local_playergames', 'avatar_tier3_level'));
         $this->assertEquals(20, get_config('local_playergames', 'avatar_tier4_level'));
     }
+
+    /**
+     * A site that already has the other achievements gets the one for 50 games.
+     *
+     * @return void
+     */
+    public function test_the_fifty_games_achievement_is_added_to_a_site_that_has_the_others(): void {
+        global $DB;
+        \local_playergames\hub\achievement_manager::sync();
+        $DB->delete_records('local_playergames_achievements', ['namestring' => 'achievement_50_games_name']);
+
+        set_config('version', 2026111401, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111401));
+
+        $this->assertTrue($DB->record_exists('local_playergames_achievements', ['namestring' => 'achievement_50_games_name']));
+        $this->assertSame(7, $DB->count_records('local_playergames_achievements'));
+    }
 }

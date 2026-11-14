@@ -35,8 +35,21 @@ use PHPUnit\Framework\Attributes\CoversClass;
  */
 #[CoversClass(achievement_manager::class)]
 final class achievement_manager_test extends \advanced_testcase {
-    /** @var int Arbitrary season id; achievements are not per-season. */
-    private const SEASON = 1;
+    /** @var int The season the users play in. */
+    private int $seasonid;
+
+    /**
+     * Opens a season that covers today.
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->resetAfterTest();
+        $today = mktime(0, 0, 0);
+        $season = season_manager::create('Current', $today - (DAYSECS * 10), $today + (DAYSECS * 10));
+        $this->seasonid = (int) $season->id;
+    }
 
     /**
      * Inserts a completed daily_scores row.
@@ -79,7 +92,7 @@ final class achievement_manager_test extends \advanced_testcase {
         achievement_manager::sync();
         $second = $DB->count_records('local_playergames_achievements');
 
-        $this->assertSame(6, $first);
+        $this->assertSame(7, $first);
         $this->assertSame($first, $second);
     }
 
@@ -90,7 +103,7 @@ final class achievement_manager_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->play((int) $user->id, mktime(0, 0, 0), 'quiz');
 
-        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', [
+        achievement_manager::check((int) $user->id, $this->seasonid, 'game_played', [
             'level' => 1,
             'streak' => 0,
             'gamedate' => mktime(0, 0, 0),
@@ -114,8 +127,8 @@ final class achievement_manager_test extends \advanced_testcase {
         $this->play((int) $user->id, mktime(0, 0, 0), 'quiz');
 
         $ctx = ['level' => 1, 'streak' => 0, 'gamedate' => mktime(0, 0, 0)];
-        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', $ctx);
-        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', $ctx);
+        achievement_manager::check((int) $user->id, $this->seasonid, 'game_played', $ctx);
+        achievement_manager::check((int) $user->id, $this->seasonid, 'game_played', $ctx);
 
         // Re-checking must not grant the same achievement twice.
         $this->assertSame(1, $this->earned_count((int) $user->id));
@@ -130,7 +143,7 @@ final class achievement_manager_test extends \advanced_testcase {
         // game and must never unlock the first-game achievement on its own.
         $this->play((int) $user->id, mktime(0, 0, 0), 'checkin');
 
-        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', [
+        achievement_manager::check((int) $user->id, $this->seasonid, 'game_played', [
             'level' => 1,
             'streak' => 0,
             'gamedate' => mktime(0, 0, 0),
@@ -145,7 +158,7 @@ final class achievement_manager_test extends \advanced_testcase {
         $this->redirectEvents();
         $user = $this->getDataGenerator()->create_user();
 
-        achievement_manager::check((int) $user->id, self::SEASON, 'level_reached', [
+        achievement_manager::check((int) $user->id, $this->seasonid, 'level_reached', [
             'level' => 5,
             'streak' => 0,
         ]);
@@ -169,7 +182,7 @@ final class achievement_manager_test extends \advanced_testcase {
             $this->play((int) $user->id, $today, $type);
         }
 
-        achievement_manager::check((int) $user->id, self::SEASON, 'game_played', [
+        achievement_manager::check((int) $user->id, $this->seasonid, 'game_played', [
             'level' => 1,
             'streak' => 0,
             'gamedate' => $today,
@@ -181,6 +194,79 @@ final class achievement_manager_test extends \advanced_testcase {
         $this->assertTrue($DB->record_exists('local_playergames_user_achievements', [
             'userid' => $user->id,
             'achievementid' => $allgames->id,
+        ]));
+    }
+
+    /**
+     * Inserts several completed rows of one user, one per day, ending on a given day.
+     *
+     * @param int $userid User id.
+     * @param int $count How many days.
+     * @param int $lastday Midnight of the last day.
+     * @return void
+     */
+    private function play_days(int $userid, int $count, int $lastday): void {
+        for ($i = 0; $i < $count; $i++) {
+            $this->play($userid, $lastday - ($i * DAYSECS), 'quiz');
+        }
+    }
+
+    /**
+     * Regression test: the count ignored the season, so 60 games in one and 40 in the next unlocked the
+     * achievement the description gives for 100 in a season.
+     */
+    public function test_games_of_other_seasons_do_not_count(): void {
+        global $DB;
+        $this->redirectEvents();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        $today = mktime(0, 0, 0);
+        $this->play_days($user, 30, $today - (DAYSECS * 400));
+        $this->play_days($user, 8, $today);
+
+        achievement_manager::check($user, $this->seasonid, 'game_played', ['gamedate' => $today]);
+
+        $fifty = $DB->get_record(
+            'local_playergames_achievements',
+            ['namestring' => 'achievement_50_games_name'],
+            '*',
+            MUST_EXIST
+        );
+        $this->assertFalse($DB->record_exists('local_playergames_user_achievements', [
+            'userid' => $user, 'achievementid' => $fifty->id,
+        ]));
+    }
+
+    public function test_fifty_games_in_the_season_grant_the_half_century_but_not_the_century(): void {
+        global $DB;
+        $this->redirectEvents();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        $today = mktime(0, 0, 0);
+        // 13 days inside the season on 4 game types: 52 completed rows.
+        foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
+            for ($i = -6; $i <= 6; $i++) {
+                $this->play($user, $today + ($i * DAYSECS), $type);
+            }
+        }
+
+        achievement_manager::check($user, $this->seasonid, 'game_played', ['gamedate' => $today]);
+
+        $fifty = $DB->get_record(
+            'local_playergames_achievements',
+            ['namestring' => 'achievement_50_games_name'],
+            '*',
+            MUST_EXIST
+        );
+        $hundred = $DB->get_record(
+            'local_playergames_achievements',
+            ['namestring' => 'achievement_100_games_name'],
+            '*',
+            MUST_EXIST
+        );
+        $this->assertTrue($DB->record_exists('local_playergames_user_achievements', [
+            'userid' => $user, 'achievementid' => $fifty->id,
+        ]));
+        $this->assertFalse($DB->record_exists('local_playergames_user_achievements', [
+            'userid' => $user, 'achievementid' => $hundred->id,
         ]));
     }
 }

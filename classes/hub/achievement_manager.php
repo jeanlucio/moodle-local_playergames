@@ -28,7 +28,7 @@ use local_playergames\event\achievement_earned;
 use stdClass;
 
 /**
- * Manages the six hardcoded V1 achievements.
+ * Manages the seven hardcoded achievements.
  *
  * Achievements are permanent (not per-season) and stored in
  * local_playergames_achievements. Once earned they never reset.
@@ -36,7 +36,7 @@ use stdClass;
  * whether a specific user has just unlocked any achievement.
  *
  * Condition types and their meanings:
- *   games_played    — total games completed across all seasons
+ *   games_played    — games completed in the season being checked
  *   level_reached   — current season level >= conditionvalue
  *   season_champion — reached MAX_LEVEL in any season
  *   streak          — current streak >= conditionvalue
@@ -59,6 +59,13 @@ class achievement_manager {
             'namestring'     => 'achievement_first_game_name',
             'descstring'     => 'achievement_first_game_desc',
             'icon'           => 'fa-gamepad',
+        ],
+        [
+            'conditiontype'  => 'games_played',
+            'conditionvalue' => 50,
+            'namestring'     => 'achievement_50_games_name',
+            'descstring'     => 'achievement_50_games_desc',
+            'icon'           => 'fa-award',
         ],
         [
             'conditiontype'  => 'games_played',
@@ -176,12 +183,22 @@ class achievement_manager {
         $value = (int) $achievement->conditionvalue;
 
         if ($type === 'games_played') {
+            $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], 'id, startdate, enddate');
+            if (!$season) {
+                return false;
+            }
             // The daily check-in writes a completed daily_scores row too, but it
             // is not a game; exclude it so it never counts toward this condition.
+            // Only the days of the season count: the descriptions say "in a season".
             $count = (int) $DB->count_records_select(
                 'local_playergames_daily_scores',
-                'userid = :uid AND completed = 1 AND gametype <> :checkin',
-                ['uid' => $userid, 'checkin' => 'checkin']
+                'userid = :uid AND completed = 1 AND gametype <> :checkin AND gamedate BETWEEN :start AND :end',
+                [
+                    'uid' => $userid,
+                    'checkin' => 'checkin',
+                    'start' => (int) $season->startdate,
+                    'end' => (int) $season->enddate,
+                ]
             );
             return $count >= $value;
         }

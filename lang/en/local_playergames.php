@@ -26,6 +26,8 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['achievement_100_games_desc'] = 'Complete 100 daily games in a season.';
 $string['achievement_100_games_name'] = 'Century Player';
+$string['achievement_50_games_desc'] = 'Complete 50 daily games in a season.';
+$string['achievement_50_games_name'] = 'Half Century';
 $string['achievement_all_games_desc'] = 'Play all four game types in a single day.';
 $string['achievement_all_games_name'] = 'All-rounder';
 $string['achievement_champion_desc'] = 'Reach the maximum level in a season.';

@@ -999,5 +999,13 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111401, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111402) {
+        // New achievement for 50 games in a season. sync() only runs when the table is empty, so a site that
+        // already has the others needs it added here.
+        \local_playergames\hub\achievement_manager::sync();
+
+        upgrade_plugin_savepoint(true, 2026111402, 'local', 'playergames');
+    }
+
     return true;
 }
