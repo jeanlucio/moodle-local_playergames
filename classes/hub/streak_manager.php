@@ -184,7 +184,7 @@ class streak_manager {
      */
     public static function max_freezes(): int {
         $max = get_config('local_playergames', 'freeze_max');
-        return ($max === false || $max === null) ? self::DEFAULT_MAX_FREEZES : (int) $max;
+        return ($max === false || $max === null) ? self::DEFAULT_MAX_FREEZES : max(0, (int) $max);
     }
 
     /**

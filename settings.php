@@ -63,12 +63,13 @@ if ($hassiteconfig) {
         0
     ));
 
-    $page2->add(new admin_setting_configtext(
+    $page2->add(new \local_playergames\local\setting_int_range(
         'local_playergames/season_duration_months',
         get_string('season_duration_months', 'local_playergames'),
         get_string('season_duration_months_desc', 'local_playergames'),
-        '6',
-        PARAM_INT
+        6,
+        1,
+        60
     ));
 
     $participantoptions = [
@@ -114,39 +115,39 @@ if ($hassiteconfig) {
     ));
 
     foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
-        $pagexp->add(new admin_setting_configtext(
+        $pagexp->add(new \local_playergames\local\setting_int_range(
             'local_playergames/xp_per_game_' . $gametype,
             get_string('settings_xp_per_game_' . $gametype, 'local_playergames'),
             get_string('settings_xp_per_game_' . $gametype . '_desc', 'local_playergames'),
-            '25',
-            PARAM_INT
+            25,
+            1
         ));
         if (in_array($gametype, \local_playergames\hub\daily_play_manager::SINGLE_ROUND_GAMES, true)) {
             continue;
         }
-        $pagexp->add(new admin_setting_configtext(
+        $pagexp->add(new \local_playergames\local\setting_int_range(
             'local_playergames/xp_games_' . $gametype,
             get_string('settings_xp_games_' . $gametype, 'local_playergames'),
             get_string('settings_xp_games_' . $gametype . '_desc', 'local_playergames'),
-            '1',
-            PARAM_INT
+            1,
+            1
         ));
     }
 
-    $pagexp->add(new admin_setting_configtext(
+    $pagexp->add(new \local_playergames\local\setting_int_range(
         'local_playergames/xp_checkin_daily',
         get_string('settings_xp_checkin_daily', 'local_playergames'),
         get_string('settings_xp_checkin_daily_desc', 'local_playergames'),
-        '5',
-        PARAM_INT
+        5,
+        1
     ));
 
-    $pagexp->add(new admin_setting_configtext(
+    $pagexp->add(new \local_playergames\local\setting_int_range(
         'local_playergames/xp_cap_checkin_season',
         get_string('settings_xp_cap_checkin_season', 'local_playergames'),
         get_string('settings_xp_cap_checkin_season_desc', 'local_playergames'),
-        '150',
-        PARAM_INT
+        150,
+        1
     ));
 
     $ADMIN->add('playergames_rules', $pagexp);
@@ -229,12 +230,12 @@ if ($hassiteconfig) {
         $streaksources
     ));
 
-    $pagestreak->add(new admin_setting_configtext(
+    $pagestreak->add(new \local_playergames\local\setting_int_range(
         'local_playergames/freeze_max',
         get_string('settings_freeze_max', 'local_playergames'),
         get_string('settings_freeze_max_desc', 'local_playergames'),
-        '3',
-        PARAM_INT
+        3,
+        0
     ));
 
     $ADMIN->add('playergames_rules', $pagestreak, 'local_playergames_learning');

@@ -122,6 +122,34 @@ final class season_manager_test extends \advanced_testcase {
         $this->assertNotEmpty($next->config_snapshot);
     }
 
+    /**
+     * Regression test: a negative length saved before the setting was validated made the next season end
+     * before it began, so the close task opened another one every run.
+     */
+    public function test_create_next_ignores_a_negative_season_length(): void {
+        $this->resetAfterTest();
+        set_config('season_duration_months', -6, 'local_playergames');
+        $start = mktime(0, 0, 0);
+        $previous = season_manager::create('Old', $start, $start + (DAYSECS * 30));
+
+        $next = season_manager::create_next($previous);
+
+        $this->assertGreaterThan((int) $next->startdate, (int) $next->enddate);
+    }
+
+    public function test_the_snapshot_never_holds_a_negative_amount_of_xp(): void {
+        $this->resetAfterTest();
+        set_config('xp_per_game_quiz', -25, 'local_playergames');
+        set_config('xp_checkin_daily', -5, 'local_playergames');
+        set_config('xp_cap_checkin_season', -150, 'local_playergames');
+
+        $snapshot = season_manager::build_snapshot();
+
+        $this->assertSame(1, $snapshot['xp_per_game_quiz']);
+        $this->assertSame(1, $snapshot['xp_checkin_daily']);
+        $this->assertSame(1, $snapshot['xp_cap_checkin_season']);
+    }
+
     public function test_get_config_snapshot_falls_back_when_empty(): void {
         $season = (object) ['config_snapshot' => null];
         $snapshot = season_manager::get_config_snapshot($season);

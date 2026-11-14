@@ -123,7 +123,7 @@ class season_manager {
     public static function build_snapshot(): array {
         $snapshot = [];
         foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
-            $pergame = (int) get_config('local_playergames', 'xp_per_game_' . $type) ?: 25;
+            $pergame = max(1, (int) get_config('local_playergames', 'xp_per_game_' . $type) ?: 25);
             $games   = in_array($type, daily_play_manager::SINGLE_ROUND_GAMES, true)
                 ? 1
                 : ((int) get_config('local_playergames', 'xp_games_' . $type) ?: 1);
@@ -133,8 +133,8 @@ class season_manager {
             // trimmed to this value so the day total lands exactly on it.
             $snapshot['xp_cap_' . $type] = $pergame * $games;
         }
-        $snapshot['xp_checkin_daily']      = (int) get_config('local_playergames', 'xp_checkin_daily') ?: 5;
-        $snapshot['xp_cap_checkin_season'] = (int) get_config('local_playergames', 'xp_cap_checkin_season') ?: 150;
+        $snapshot['xp_checkin_daily']      = max(1, (int) get_config('local_playergames', 'xp_checkin_daily') ?: 5);
+        $snapshot['xp_cap_checkin_season'] = max(1, (int) get_config('local_playergames', 'xp_cap_checkin_season') ?: 150);
         $snapshot['allowed_participants']  = get_config('local_playergames', 'allowed_participants') ?: 'students';
         return $snapshot;
     }
@@ -341,7 +341,7 @@ class season_manager {
      * @return stdClass The new season record.
      */
     public static function create_next(stdClass $previousseason): stdClass {
-        $months    = (int) get_config('local_playergames', 'season_duration_months') ?: 6;
+        $months    = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
         $startdate = $previousseason->enddate + 1;
         $enddate   = strtotime("+{$months} months", $startdate) - 1;
         $number    = self::next_season_number();

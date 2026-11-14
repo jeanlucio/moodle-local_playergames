@@ -187,7 +187,7 @@ foreach ($seasons as $season) {
     ];
 }
 
-$months      = (int) get_config('local_playergames', 'season_duration_months') ?: 6;
+$months      = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
 $defaultstart = userdate(time(), '%Y-%m-%d');
 $defaultend   = userdate(strtotime("+{$months} months"), '%Y-%m-%d');
 $nextnum      = $DB->count_records('local_playergames_seasons') + 1;
