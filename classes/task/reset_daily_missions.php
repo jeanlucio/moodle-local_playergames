@@ -56,8 +56,7 @@ class reset_daily_missions extends \core\task\scheduled_task {
      * @return void
      */
     public function execute(): void {
-        $today     = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
-        $yesterday = $today - DAYSECS;
+        $yesterday = streak_manager::midnight_yesterday();
 
         $broken = streak_manager::process_breaks();
         mtrace("Streak breaks processed: {$broken}");

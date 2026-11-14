@@ -55,7 +55,7 @@ class streak_manager {
     public static function record_activity(int $userid): void {
         global $DB;
         $today     = self::midnight_today();
-        $yesterday = $today - DAYSECS;
+        $yesterday = self::midnight_yesterday();
 
         $streak = self::get_or_create($userid);
 
@@ -96,8 +96,7 @@ class streak_manager {
      */
     public static function process_breaks(): int {
         global $DB;
-        $today     = self::midnight_today();
-        $yesterday = $today - DAYSECS;
+        $yesterday = self::midnight_yesterday();
         $broken    = 0;
 
         $records = $DB->get_records_select(
@@ -258,5 +257,20 @@ class streak_manager {
      */
     private static function midnight_today(): int {
         return mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+    }
+
+    /**
+     * Returns the Unix timestamp for midnight at the start of yesterday (server time).
+     *
+     * Counted on the calendar, not by subtracting DAYSECS: on the two days a year the clocks change, the
+     * day has 23 or 25 hours and "today minus 86400 seconds" is no longer the midnight that dates were
+     * stored with.
+     *
+     * @param int|null $now Reference time, or null for the current time.
+     * @return int
+     */
+    public static function midnight_yesterday(?int $now = null): int {
+        $now = $now ?? time();
+        return mktime(0, 0, 0, (int) date('n', $now), (int) date('j', $now) - 1, (int) date('Y', $now));
     }
 }
