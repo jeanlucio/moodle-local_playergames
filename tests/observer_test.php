@@ -192,6 +192,22 @@ final class observer_test extends \advanced_testcase {
     }
 
     /**
+     * A user who opted out of the gamification gets no learning XP kept for them.
+     */
+    public function test_playerhud_xp_changed_keeps_nothing_for_a_user_who_opted_out(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $user);
+
+        observer::playerhud_xp_changed($this->make_fake_xp_changed((int) $user->id, 80));
+
+        $this->assertSame(0, $DB->count_records('local_playergames_student_xp_monthly'));
+        $this->assertSame(0, $DB->count_records('local_playergames_student_xp_cache'));
+    }
+
+    /**
      * Deleting an account removes what the plugin kept for it, and only for that account.
      *
      * Regression test: the account stayed in the ranking with a readable name until a privacy request

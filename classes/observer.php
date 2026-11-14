@@ -31,6 +31,7 @@ use local_playergames\hub\learning_xp_manager;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\streak_manager;
 use local_playergames\hub\xp_manager;
+use local_playergames\local\preferences;
 use local_playergames\privacy\provider;
 
 /**
@@ -45,7 +46,8 @@ use local_playergames\privacy\provider;
  *   - Removes the deleted user's rows and refreshes the ranking cache.
  *
  * playerhud_xp_changed (optional integration, dormant without block_playerhud):
- *   - Mirrors the course XP delta into the learning XP pool.
+ *   - Mirrors the course XP delta into the learning XP pool, except for a user who opted out of the
+ *     gamification: nothing is kept for them while the choice stands.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -110,7 +112,7 @@ class observer {
         $userid   = (int) $event->relateduserid;
         $delta    = isset($event->other['delta']) ? (int) $event->other['delta'] : 0;
         $courseid = isset($event->other['courseid']) ? (int) $event->other['courseid'] : 0;
-        if ($userid <= 0 || $delta === 0) {
+        if ($userid <= 0 || $delta === 0 || !preferences::is_gamification_enabled($userid)) {
             return;
         }
         learning_xp_manager::record_change($userid, $delta, $courseid);
