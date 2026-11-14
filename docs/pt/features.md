@@ -71,9 +71,6 @@
 
 ## ⏳ Em Desenvolvimento / Planejado
 
-* 📦 **Phaser Compartilhado:** O `local_playergames` já empacota o Phaser 4 e o módulo carregador
-  `local_playergames/phaser`. Outras atividades Player poderão depender dele em vez de empacotar a
-  própria cópia da biblioteca.
 * 🛡️ **Polimento para Publicação:** Auditoria completa de acessibilidade (incluindo o tema Classic e
   dispositivos de toque) e cobertura de aceitação Behat mais ampla (a suíte PHPUnit e a conformidade
   com o PHPCS já estão em dia).

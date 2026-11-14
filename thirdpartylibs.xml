@@ -1,13 +1,6 @@
 <?xml version="1.0"?>
 <libraries>
   <library>
-    <location>javascript/phaser.min.js</location>
-    <name>Phaser</name>
-    <license>MIT</license>
-    <version>4.2.1</version>
-    <licenseversion></licenseversion>
-  </library>
-  <library>
     <location>pix/battle/music.mp3</location>
     <name>King's Feast (RandomMind)</name>
     <license>CC0</license>

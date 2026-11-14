@@ -14,8 +14,8 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Headless tests for the seeded random generator, run via `node --test` with no RequireJS,
- * Phaser or browser. Loads amd/src/battle/prng.js through Node's CommonJS require(), the
+ * Headless tests for the seeded random generator, run via `node --test` with no RequireJS
+ * or browser. Loads amd/src/battle/prng.js through Node's CommonJS require(), the
  * branch its UMD wrapper takes outside a `define()` environment.
  *
  * @package    local_playergames

@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Headless tests for the combat rules, run via `node --test` with no RequireJS, Phaser or
+ * Headless tests for the combat rules, run via `node --test` with no RequireJS or
  * browser.
  *
  * @package    local_playergames

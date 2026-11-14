@@ -14,8 +14,8 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Headless tests for the match-3 board rules, run via `node --test` with no RequireJS,
- * Phaser or browser.
+ * Headless tests for the match-3 board rules, run via `node --test` with no RequireJS
+ * or browser.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio

@@ -80,7 +80,6 @@ Found a bug or have a question? Open an issue on the
 
 ### 🎨 Credits
 
-* **Phaser** 4.2.1 (MIT) is bundled in `javascript/` for the Player activities that draw on a canvas (PlayerPuzzle, PlayerLand). The games of this plugin do not use it. It is declared in `thirdpartylibs.xml`.
 * **Sounds and music:** the effects and the background music are public domain (CC0), from Kenney and RandomMind on OpenGameArt. The sources are listed in `pix/readme_moodle.txt`.
 * **Images:** the board pieces were generated with Google Gemini, created for this ecosystem from original prompts. The art direction, the prompts and the review of every image are the author's, who is responsible for the content.
 
@@ -163,7 +162,6 @@ Encontrou um bug ou tem alguma dúvida? Abra uma issue no
 
 ### 🎨 Créditos
 
-* **Phaser** 4.2.1 (MIT) vem empacotado em `javascript/` para as atividades Player que desenham em canvas (PlayerPuzzle, PlayerLand). Os jogos deste plugin não o usam. Está declarado no `thirdpartylibs.xml`.
 * **Sons e música:** os efeitos e a música de fundo são de domínio público (CC0), de Kenney e RandomMind no OpenGameArt. As fontes estão em `pix/readme_moodle.txt`.
 * **Imagens:** os oponentes, cenários e peças do tabuleiro foram gerados com o Google Gemini, criados para este ecossistema a partir de prompts originais. A direção de arte, os prompts e a revisão de todas as imagens são do autor, que responde pelo conteúdo.
 

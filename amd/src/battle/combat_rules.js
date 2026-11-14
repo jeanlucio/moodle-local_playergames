@@ -17,7 +17,7 @@
  * Pure combat rules for PlayerBattle — decides what happens to HP, meters and mana, never how
  * to render it.
  *
- * Every function takes plain data and returns plain data. None touches Phaser, the DOM or
+ * Every function takes plain data and returns plain data. None touches the DOM or
  * AJAX, and none mutates the state it is given: each returns a changed copy. The two sides,
  * 'player' and 'opponent', are symmetric — the same rule runs for whoever made the match —
  * and their fields share one naming scheme, `${side}Hp`, `${side}MaxHp`, `${side}Multiplier`,

@@ -18,10 +18,10 @@
  *
  * Every function here operates on a plain `grid` — a `rows`x`cols` array of arrays, each
  * cell either a piece type (an integer from 0 to `types - 1`) or `null` for an empty cell
- * mid-cascade. Never a Phaser object, never anything with methods. Results that identify a
+ * mid-cascade. Never an object with methods. Results that identify a
  * cell are always plain `{row, col}` coordinates, never object references — battle_board.js
- * (the rendering layer) is the one place that maps a coordinate back to the Phaser image it
- * needs to animate or destroy.
+ * (the rendering layer) is the one place that maps a coordinate back to the DOM element it
+ * needs to animate or remove.
  *
  * Cell values are compared with strict equality against `null`, never truthiness: type `0`
  * is a valid, common value that is falsy in JavaScript, so `!grid[r][c]` or
@@ -34,7 +34,7 @@
  * UMD-wrapped so the same file loads as an AMD module in the browser (via RequireJS, like
  * every other file in amd/src) and as a plain CommonJS module in Node (via `require()`, no
  * RequireJS involved) — the second path is what lets tests/js/battle/board_rules.test.js run
- * this logic headless with `node --test`, with no Phaser and no browser at all.
+ * this logic headless with `node --test`, with no browser at all.
  *
  * Ported from mod_playerpuzzle/engine/board_rules, without the saved-board replay and the
  * weighted opponent move, which PlayerBattle does not use.
@@ -483,7 +483,7 @@
         /**
          * Compacts each column downward (each empty cell pulls down the nearest non-empty
          * cell above it, if any) and refills whatever stays empty at the top with a freshly
-         * rolled type. The Phaser tween/image creation stays in battle_board.js, which uses the
+         * rolled type. The animation of the pieces stays in battle_board.js, which uses the
          * arrays this returns to know what to animate.
          *
          * @param {Array} grid The board grid (mutated in place).

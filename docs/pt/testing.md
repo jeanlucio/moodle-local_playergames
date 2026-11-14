@@ -66,7 +66,7 @@ vendor/bin/phpunit --testsuite local_playergames
 ## Node — Regras do PlayerBattle
 
 As regras do tabuleiro e do combate do PlayerBattle são módulos simples (`amd/src/battle/`) que também
-carregam no Node, então são testadas sem navegador nem Phaser. O CI as roda com `node --test`.
+carregam no Node, então são testadas sem navegador. O CI as roda com `node --test`.
 
 | Arquivo de teste | Casos | O que é coberto |
 |------------------|------:|-----------------|

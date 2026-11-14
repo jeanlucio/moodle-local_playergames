@@ -65,7 +65,7 @@ vendor/bin/phpunit --testsuite local_playergames
 ## Node — PlayerBattle rules
 
 The board and combat rules of PlayerBattle are plain modules (`amd/src/battle/`) that also load in
-Node, so they are tested without a browser or Phaser. The CI runs them with `node --test`.
+Node, so they are tested without a browser. The CI runs them with `node --test`.
 
 | Test file | Cases | What is covered |
 |-----------|------:|-----------------|

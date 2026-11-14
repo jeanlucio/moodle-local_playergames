@@ -65,9 +65,6 @@
 
 ## ⏳ In Development / Planned
 
-* 📦 **Shared Phaser:** `local_playergames` already bundles Phaser 4 and the `local_playergames/phaser`
-  loader module. Other Player activities will be able to depend on it instead of bundling their own
-  copy of the library.
 * 🛡️ **Publication Polish:** Full accessibility audit (including the Classic theme and touch
   devices) and broader Behat acceptance coverage (PHPUnit suite and PHPCS compliance are already in
   place).
