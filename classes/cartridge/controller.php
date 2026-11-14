@@ -783,6 +783,18 @@ class controller {
             'concept_difficulty' => 'difficulty',
         ]);
 
+        // A cartridge with no usable concept has nothing to serve: refuse it instead of creating an empty one.
+        $usable = array_filter($rawconcepts, fn(array $row): bool => payload::text($row['term'] ?? null) !== ''
+            && payload::text($row['definition'] ?? null) !== '');
+        if ($usable === []) {
+            redirect(
+                $this->url(['tab' => 'ai']),
+                get_string('error_cartridge_no_concepts', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+
         $newcartridge = new \stdClass();
         $newcartridge->name = \core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
         $newcartridge->version = '1.0';
@@ -802,10 +814,12 @@ class controller {
         $newcartridge->uploadedby = (int) $USER->id;
         $newcartridge->author = $aiauthor !== '' ? $aiauthor : null;
         $newcartridge->active = 1;
+        $transaction = $DB->start_delegated_transaction();
         $newcartridgeid = $DB->insert_record('local_playergames_cartridges', $newcartridge);
 
         $imp = new importer();
         $imp->save_concepts($newcartridgeid, $rawconcepts);
+        $transaction->allow_commit();
 
         $event = cartridge_imported::create([
             'context' => $this->context,
@@ -882,10 +896,13 @@ class controller {
         ], $postcartridgeid);
         $concept->categoryid = $this->valid_category_id((int) $concept->categoryid, $postcartridgeid);
 
-        if ($concept->term === '') {
+        if ($concept->term === '' || $concept->definition === '') {
             redirect(
                 $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                get_string('error_concept_empty_term', 'local_playergames'),
+                get_string(
+                    $concept->term === '' ? 'error_concept_empty_term' : 'error_concept_empty_definition',
+                    'local_playergames'
+                ),
                 null,
                 \core\output\notification::NOTIFY_ERROR
             );
@@ -931,14 +948,17 @@ class controller {
         ], $postcartridgeid);
         $updated->categoryid = $this->valid_category_id((int) $updated->categoryid, $postcartridgeid);
 
-        if ($updated->term === '') {
+        if ($updated->term === '' || $updated->definition === '') {
             redirect(
                 $this->url([
                     'tab' => 'editor',
                     'cartridgeid' => $postcartridgeid,
                     'editconcept' => $postconceptid,
                 ]),
-                get_string('error_concept_empty_term', 'local_playergames'),
+                get_string(
+                    $updated->term === '' ? 'error_concept_empty_term' : 'error_concept_empty_definition',
+                    'local_playergames'
+                ),
                 null,
                 \core\output\notification::NOTIFY_ERROR
             );

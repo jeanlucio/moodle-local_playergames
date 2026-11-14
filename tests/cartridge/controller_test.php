@@ -965,4 +965,39 @@ final class controller_test extends \advanced_testcase {
         $this->expectExceptionMessage(get_string('error_cartridge_notfound', 'local_playergames'));
         controller::handle_export(999999, 'export_cartridge');
     }
+
+    /**
+     * A concept is refused without its definition, when added and when edited.
+     */
+    public function test_a_concept_needs_a_definition(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $id = $this->make_cartridge('Pack');
+        $this->dispatch(['action' => 'add_concept', 'cartridgeid' => $id, 'term' => 'cell', 'definition' => 'A unit']);
+        $conceptid = (int) $DB->get_field('local_playergames_concepts', 'id', ['cartridgeid' => $id], MUST_EXIST);
+
+        $this->dispatch(['action' => 'add_concept', 'cartridgeid' => $id, 'term' => 'nucleus', 'definition' => '']);
+        $this->dispatch([
+            'action' => 'edit_concept', 'cartridgeid' => $id, 'concept_id' => $conceptid, 'term' => 'cell', 'definition' => ' ',
+        ]);
+
+        $this->assertSame(1, $DB->count_records('local_playergames_concepts'));
+        $this->assertSame('A unit', $DB->get_field('local_playergames_concepts', 'definition', ['id' => $conceptid]));
+    }
+
+    /**
+     * An AI preview with no concept that has both a term and a definition creates no cartridge.
+     */
+    public function test_saving_an_ai_preview_without_a_usable_concept_creates_no_cartridge(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $this->dispatch([
+            'action' => 'save_ai_cartridge', 'ai_cartridge_name' => 'Empty',
+            'concept_term' => [0 => 'Nucleus', 1 => ''], 'concept_definition' => [0 => '', 1 => 'Orphan definition'],
+        ], 'ai');
+        $this->dispatch(['action' => 'save_ai_cartridge', 'ai_cartridge_name' => 'None'], 'ai');
+
+        $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
+    }
 }

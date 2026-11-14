@@ -522,4 +522,25 @@ final class importer_test extends \advanced_testcase {
             $this->refusal($this->quiz_json(['questions' => array_fill(0, importer::MAX_QUESTIONS + 1, $question)]))
         );
     }
+
+    /**
+     * A concept without a definition is not saved, whatever path brings it, as the import refuses it.
+     */
+    public function test_save_concepts_skips_a_concept_without_a_definition(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridgeid = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Pack', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => 1, 'timemodified' => 1, 'uploadedby' => 0, 'active' => 1,
+        ]);
+
+        $result = (new importer())->save_concepts($cartridgeid, [
+            ['term' => 'XP', 'definition' => 'Experience'],
+            ['term' => 'Badge', 'definition' => ' '],
+            ['term' => '', 'definition' => 'Nameless'],
+        ]);
+
+        $this->assertSame(1, $result->count);
+        $this->assertSame(['XP'], array_values($DB->get_fieldset_select('local_playergames_concepts', 'term', '1 = 1')));
+    }
 }

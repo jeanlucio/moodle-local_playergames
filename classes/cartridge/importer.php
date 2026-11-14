@@ -145,7 +145,9 @@ class importer {
             $name = payload::text($raw['category'] ?? null);
             $raw['categoryid'] = ($name !== '' && isset($catmap[$name])) ? $catmap[$name] : null;
             $concept = $this->sanitize_concept($raw, $cartridgeid);
-            if ($concept->term === '') {
+            // The same two fields validate_schema() requires: PlayerFill shows the definition as the clue, and
+            // the exported cartridge has to import again.
+            if ($concept->term === '' || $concept->definition === '') {
                 continue;
             }
             $DB->insert_record('local_playergames_concepts', $concept);
