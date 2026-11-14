@@ -528,4 +528,26 @@ final class hub_test extends \advanced_testcase {
         );
         $this->assertSame(1, \local_playergames\hub\learning_xp_manager::get_position((int) $viewer->id, 50, 1700000000));
     }
+
+    /**
+     * Both ranking tabs carry the attributes of Bootstrap 4 as well as 5, so they work on Moodle 4.5.
+     */
+    public function test_the_ranking_tabs_work_with_both_bootstrap_versions(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        $viewer = $this->player($season, 20, true);
+
+        $html = $PAGE->get_renderer('core')->render_from_template(
+            'local_playergames/hub',
+            $this->export_for($viewer, false, true, 'both')
+        );
+
+        foreach (['students', 'staff'] as $group) {
+            $this->assertStringContainsString('data-target="#pg-rank-' . $group . '"', $html);
+            $this->assertStringContainsString('data-bs-target="#pg-rank-' . $group . '"', $html);
+        }
+        $this->assertSame(2, substr_count($html, 'data-toggle="pill"'));
+        $this->assertSame(2, substr_count($html, 'data-bs-toggle="pill"'));
+    }
 }
