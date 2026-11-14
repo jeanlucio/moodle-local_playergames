@@ -373,4 +373,22 @@ final class access_test extends \advanced_testcase {
             $this->assertSame('redirecterrordetected', $e->errorcode);
         }
     }
+
+    /**
+     * An administrator takes a group out of the gamification by prohibiting viewhub for its role, and
+     * the participant rule follows, so nothing that records game data lets those users in.
+     */
+    public function test_is_participant_is_false_when_viewhub_is_prohibited(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        $this->assertTrue(access::is_participant((int) $student->id));
+
+        $roleid = (int) $this->getDataGenerator()->create_role();
+        assign_capability('local/playergames:viewhub', CAP_PROHIBIT, $roleid, \context_system::instance()->id, true);
+        role_assign($roleid, $student->id, \context_system::instance()->id);
+        accesslib_clear_all_caches_for_unit_testing();
+
+        $this->assertFalse(access::is_participant((int) $student->id));
+        $this->assertTrue(access::is_participant((int) $this->getDataGenerator()->create_user()->id));
+    }
 }

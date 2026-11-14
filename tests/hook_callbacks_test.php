@@ -260,4 +260,31 @@ final class hook_callbacks_test extends \advanced_testcase {
 
         $this->assertSame(0, $DB->count_records('local_playergames_daily_scores'));
     }
+
+    /**
+     * Regression test: the check-in ran for a user whose role the administrator had barred from the hub
+     * with the viewhub capability, so XP went on piling up for someone who could not open any game.
+     */
+    public function test_a_user_barred_by_the_viewhub_capability_is_not_checked_in(): void {
+        global $DB, $SESSION;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $now = time();
+        $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + DAYSECS, 'status' => 'active',
+            'config_snapshot' => json_encode([]), 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $roleid = (int) $this->getDataGenerator()->create_role();
+        assign_capability('local/playergames:viewhub', CAP_PROHIBIT, $roleid, \context_system::instance()->id, true);
+        role_assign($roleid, $student->id, \context_system::instance()->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->setUser($student);
+        unset($SESSION->{'playergames_checkin_' . date('Ymd')});
+
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores'));
+        $this->assertSame(0, $DB->count_records('local_playergames_player_profile'));
+    }
 }

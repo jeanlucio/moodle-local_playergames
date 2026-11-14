@@ -201,10 +201,12 @@ class access {
     /**
      * Whether the user takes part in the gamification.
      *
-     * The single rule behind every page and service that records game data: the per-user opt-out and
-     * the allowed_participants site setting (students-only excludes non-admin staff, staff-only
+     * The single rule behind every page and service that records game data: the viewhub capability
+     * (an administrator takes a group out by prohibiting it), the per-user opt-out and the
+     * allowed_participants site setting (students-only excludes non-admin staff, staff-only
      * excludes students). The Hub, the games, the daily check-in and the XP awarding all ask this,
-     * so a user the Hub turns away cannot earn XP by opening a game's URL directly.
+     * so a user the Hub turns away cannot earn XP by opening a game's URL directly, or through the
+     * check-in that runs on every page.
      *
      * @param int $userid The user to test.
      * @param bool|null $isstaff Whether the user is staff, when the caller already knows (for display only);
@@ -212,6 +214,10 @@ class access {
      * @return bool
      */
     public static function is_participant(int $userid, ?bool $isstaff = null): bool {
+        if (!has_capability('local/playergames:viewhub', context_system::instance(), $userid)) {
+            return false;
+        }
+
         if (!preferences::is_gamification_enabled($userid)) {
             return false;
         }
