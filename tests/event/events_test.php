@@ -79,7 +79,6 @@ final class events_test extends \advanced_testcase {
 
         $this->assert_well_formed(cartridge_imported::create([
             'objectid' => 1, 'context' => $context,
-            'other' => ['conceptcount' => 10],
         ]), cartridge_imported::class);
 
         $this->assert_well_formed(game_completed::create([

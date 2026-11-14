@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Event fired when a concept cartridge is imported.
+ * Event fired when a cartridge is imported or created from an import.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -25,7 +25,8 @@
 namespace local_playergames\event;
 
 /**
- * Fired by cartridge\importer::import() after persisting concepts.
+ * Fired after a cartridge, of concepts or of quiz questions, was imported from a file or a glossary, or
+ * saved from an AI preview. It carries no count: what the cartridge holds differs by type.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -54,7 +55,6 @@ class cartridge_imported extends \core\event\base {
      * @return string
      */
     public function get_description(): string {
-        return "User with id '{$this->userid}' imported concept cartridge " .
-            "with id '{$this->objectid}' containing {$this->other['conceptcount']} concept(s).";
+        return "User with id '{$this->userid}' imported the cartridge with id '{$this->objectid}'.";
     }
 }
