@@ -28,6 +28,7 @@ use core\lock\lock_config;
 use local_playergames\event\game_completed;
 use local_playergames\games\season_game_config;
 use local_playergames\local\access;
+use local_playergames\local\question_bank_reuse;
 use moodle_url;
 use stdClass;
 
@@ -252,8 +253,10 @@ class daily_play_manager {
     public static function get_games_today(int $userid, array $snapshot): array {
         global $DB;
 
-        $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
-        $hascartridge = $DB->record_exists('local_playergames_cartridges', ['active' => 1]);
+        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $activetypes = $DB->get_fieldset_sql(
+            'SELECT DISTINCT type FROM {local_playergames_cartridges} WHERE active = 1'
+        );
 
         $playedrows = $DB->get_records_select(
             'local_playergames_daily_scores',
@@ -294,7 +297,7 @@ class daily_play_manager {
             }
             $games   = self::games_per_day($snapshot, $gametype);
             $done    = ($attempts[$gametype] ?? 0) >= $games;
-            $locked  = !$hascartridge && !$done;
+            $locked  = !$done && !self::has_content($gametype, $activetypes);
             $pending = !$done && !$locked;
             $result[] = [
                 'gametype' => $gametype,
@@ -310,5 +313,33 @@ class daily_play_manager {
             ];
         }
         return $result;
+    }
+
+    /**
+     * Whether a game has something to serve, from the sources the active season gives it.
+     *
+     * PlayerGuess and PlayerFill read concept cartridges only. The quiz games read quiz cartridges,
+     * the question bank, or both, as the season says: a bank-only game needs no cartridge at all, so
+     * a site that never imported one still plays it.
+     *
+     * @param string $gametype Game type.
+     * @param string[] $activetypes Types of the active cartridges ('quiz', 'concept').
+     * @return bool
+     */
+    private static function has_content(string $gametype, array $activetypes): bool {
+        if (in_array($gametype, self::SINGLE_ROUND_GAMES, true)) {
+            return in_array('concept', $activetypes, true);
+        }
+
+        // A season with no row for the game predates per-season configuration: it reads cartridges.
+        $config = season_game_config::get_for_active_season($gametype);
+        $source = $config !== null ? $config->source : season_game_config::SOURCE_CARTRIDGE;
+
+        $fromcartridges = season_game_config::uses_cartridge($source) && in_array('quiz', $activetypes, true);
+        $frombank = $config !== null
+            && season_game_config::uses_secondary($source)
+            && question_bank_reuse::is_shared((int) $config->auxid);
+
+        return $fromcartridges || $frombank;
     }
 }

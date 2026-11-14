@@ -136,7 +136,8 @@ class quiz_loader {
     /**
      * Loads questions from cartridges in the pool.
      *
-     * When $cartridgeids is provided, only those cartridges are queried.
+     * When $cartridgeids is provided, only those cartridges are queried; an inactive one is skipped
+     * even when the season kept it, so deactivating a cartridge in the library takes it out of the games.
      * When null, all cartridges with active=1 and type='quiz' are used.
      * Fetches double the limit to account for questions with incomplete answer
      * sets, then filters and slices.
@@ -163,6 +164,7 @@ class quiz_loader {
                       FROM {local_playergames_concept_questions} cq
                       JOIN {local_playergames_cartridges} c ON c.id = cq.cartridgeid
                      WHERE c.id $insql
+                       AND c.active = 1
                        AND c.type = 'quiz'";
         } else {
             $sql = "SELECT cq.id

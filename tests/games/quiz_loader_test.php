@@ -169,6 +169,30 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->assertSame($qone, $questions[0]->sourceid);
     }
 
+    /**
+     * Regression test: the active flag was only applied when the season kept no list of cartridges, so
+     * deactivating a cartridge the season had picked did nothing for the quiz games.
+     */
+    public function test_a_cartridge_the_season_picked_is_skipped_once_deactivated(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $kept = $this->make_cartridge();
+        $deactivated = $this->make_cartridge();
+        $qkept = $this->add_question($kept);
+        $this->add_question($deactivated);
+        $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $deactivated]);
+
+        $questions = (new quiz_loader())->load_session(
+            10,
+            quiz_loader::SOURCE_CARTRIDGES,
+            0,
+            json_encode([$kept, $deactivated])
+        );
+
+        $this->assertCount(1, $questions);
+        $this->assertSame($qkept, $questions[0]->sourceid);
+    }
+
     public function test_metadata_is_carried_to_dto(): void {
         $this->resetAfterTest();
         $cartridgeid = $this->make_cartridge();
