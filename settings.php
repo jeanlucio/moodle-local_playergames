@@ -312,20 +312,24 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_word_length(
         'local_playergames/wordle_minlen',
         get_string('settings_wordle_minlen', 'local_playergames'),
         get_string('settings_wordle_minlen_desc', 'local_playergames'),
-        '4',
-        PARAM_INT
+        4,
+        'min',
+        'wordle_maxlen',
+        8
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_word_length(
         'local_playergames/wordle_maxlen',
         get_string('settings_wordle_maxlen', 'local_playergames'),
         get_string('settings_wordle_maxlen_desc', 'local_playergames'),
-        '8',
-        PARAM_INT
+        8,
+        'max',
+        'wordle_minlen',
+        4
     ));
 
     $page3->add(new admin_setting_configtext(
@@ -344,20 +348,24 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_word_length(
         'local_playergames/fill_minlen',
         get_string('settings_fill_minlen', 'local_playergames'),
         get_string('settings_fill_minlen_desc', 'local_playergames'),
-        '3',
-        PARAM_INT
+        3,
+        'min',
+        'fill_maxlen',
+        12
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_word_length(
         'local_playergames/fill_maxlen',
         get_string('settings_fill_maxlen', 'local_playergames'),
         get_string('settings_fill_maxlen_desc', 'local_playergames'),
-        '12',
-        PARAM_INT
+        12,
+        'max',
+        'fill_minlen',
+        3
     ));
 
     $conceptdayoptions = [

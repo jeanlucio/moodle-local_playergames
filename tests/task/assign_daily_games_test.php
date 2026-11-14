@@ -321,4 +321,28 @@ final class assign_daily_games_test extends \advanced_testcase {
         $this->assertSame([], $this->assigned_cartridges('guess'));
         $this->assertSame([], $this->assigned_cartridges('fill'));
     }
+
+    /**
+     * Regression test: a range with the minimum above the maximum matched no term, so Guess and Fill got
+     * no concept every day. A range that cannot work falls back to the defaults.
+     */
+    public function test_a_range_that_crosses_itself_falls_back_to_the_defaults(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->seed_concepts();
+        set_config('wordle_minlen', 10, 'local_playergames');
+        set_config('wordle_maxlen', 6, 'local_playergames');
+        set_config('fill_minlen', 13, 'local_playergames');
+        set_config('fill_maxlen', -1, 'local_playergames');
+
+        $this->run_task();
+
+        $today = mktime(0, 0, 0);
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today, 'gametype' => 'guess',
+        ]));
+        $this->assertSame(fill_manager::num_words(), $DB->count_records('local_playergames_daily_assignments', [
+            'gamedate' => $today, 'gametype' => 'fill',
+        ]));
+    }
 }

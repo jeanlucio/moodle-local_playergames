@@ -85,8 +85,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             return;
         }
 
-        $minlen = (int) get_config('local_playergames', 'wordle_minlen') ?: 4;
-        $maxlen = (int) get_config('local_playergames', 'wordle_maxlen') ?: 8;
+        [$minlen, $maxlen] = $this->length_range('wordle', 4, 8);
 
         foreach (self::CONCEPT_GAMES as $gametype) {
             $alreadyassigned = $DB->record_exists(
@@ -119,6 +118,27 @@ class assign_daily_games extends \core\task\scheduled_task {
             return;
         }
         $this->assign_fill($fillpool, $today);
+    }
+
+    /**
+     * Reads the term length range a game draws from, falling back to the defaults when it cannot work.
+     *
+     * The settings page refuses a range that crosses itself, but one saved before that, or set another
+     * way, would match no term at all and leave the game without a concept every day.
+     *
+     * @param string $prefix Setting prefix: 'wordle' or 'fill'.
+     * @param int $defaultmin Default minimum length.
+     * @param int $defaultmax Default maximum length.
+     * @return int[] [minimum, maximum]
+     */
+    private function length_range(string $prefix, int $defaultmin, int $defaultmax): array {
+        $min = (int) get_config('local_playergames', $prefix . '_minlen') ?: $defaultmin;
+        $max = (int) get_config('local_playergames', $prefix . '_maxlen') ?: $defaultmax;
+        if ($min < 1 || $max < $min) {
+            mtrace("The {$prefix} term length range {$min}-{$max} cannot match any term — using {$defaultmin}-{$defaultmax}.");
+            return [$defaultmin, $defaultmax];
+        }
+        return [$min, $max];
     }
 
     /**
@@ -175,8 +195,7 @@ class assign_daily_games extends \core\task\scheduled_task {
         }
 
         $numwords = fill_manager::num_words();
-        $minlen = (int) get_config('local_playergames', 'fill_minlen') ?: 3;
-        $maxlen = (int) get_config('local_playergames', 'fill_maxlen') ?: 12;
+        [$minlen, $maxlen] = $this->length_range('fill', 3, 12);
 
         [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
         $where = "cartridgeid {$insql}";
