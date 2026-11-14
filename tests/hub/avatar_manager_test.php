@@ -33,6 +33,24 @@ namespace local_playergames\hub;
  * @covers \local_playergames\hub\avatar_manager
  */
 final class avatar_manager_test extends \advanced_testcase {
+    /**
+     * Id of the catalog row of an emoji.
+     *
+     * The emoji is compared in PHP: a database collation such as MariaDB's utf8mb4_unicode_ci treats
+     * different emojis as equal, so a condition on the column would match another avatar's row.
+     *
+     * @param string $emoji The emoji.
+     * @return int
+     */
+    private function avatar_id(string $emoji): int {
+        foreach (avatar_manager::get_avatars() as $avatar) {
+            if ($avatar->emoji === $emoji) {
+                return (int) $avatar->id;
+            }
+        }
+        $this->fail("No avatar for {$emoji}.");
+    }
+
     public function test_seed_defaults_creates_17_avatars_in_four_tiers(): void {
         $this->resetAfterTest();
 
@@ -166,7 +184,7 @@ final class avatar_manager_test extends \advanced_testcase {
         $user = (int) $this->getDataGenerator()->create_user()->id;
         avatar_manager::get_avatars();
         // As if a Portuguese speaker had opened the hub first.
-        $DB->set_field('local_playergames_avatars', 'name', 'Raposa', ['emoji' => '🦊']);
+        $DB->set_field('local_playergames_avatars', 'name', 'Raposa', ['id' => $this->avatar_id('🦊')]);
 
         $byemoji = [];
         foreach (avatar_manager::get_collection($user) as $row) {
@@ -185,7 +203,7 @@ final class avatar_manager_test extends \advanced_testcase {
 
         $this->assertSame(
             get_string_manager()->get_string('avatar_name_fox', 'local_playergames', null, 'en'),
-            $DB->get_field('local_playergames_avatars', 'name', ['emoji' => '🦊'])
+            $DB->get_field('local_playergames_avatars', 'name', ['id' => $this->avatar_id('🦊')])
         );
     }
 }
