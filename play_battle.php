@@ -40,28 +40,34 @@ $gamedate   = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'))
 $formaction = (new moodle_url('/local/playergames/play_battle.php'))->out(false);
 $manager    = new battle_manager();
 
-// POST: the result of the battle, sent once when it ends.
+// POST: the answer to a question, one at a time, and the result of the battle, sent once when it ends.
 if (data_submitted()) {
     require_sesskey();
     header('Content-Type: application/json');
 
     $season = season_manager::get_active();
+    $postaction = optional_param('action', '', PARAM_ALPHAEXT);
     if (
         $season === null
         || season_game_config::is_disabled((int) $season->id, 'battle')
-        || optional_param('action', '', PARAM_ALPHAEXT) !== 'submit_result'
+        || !in_array($postaction, ['answer_question', 'submit_result'], true)
     ) {
         echo json_encode(['success' => false, 'xpawarded' => 0]);
         exit;
     }
 
-    $seen = json_decode(optional_param('seen', '[]', PARAM_RAW), true);
+    if ($postaction === 'answer_question') {
+        echo json_encode($manager->answer_question(
+            (int) $USER->id,
+            optional_param('key', '', PARAM_RAW_TRIMMED),
+            optional_param('choice', -1, PARAM_INT)
+        ));
+        exit;
+    }
+
     echo json_encode($manager->submit_result((int) $USER->id, $season, $context, [
-        'victory'          => optional_param('victory', 0, PARAM_BOOL),
-        'bosshpdealt'      => optional_param('bosshpdealt', 0, PARAM_INT),
-        'questionscorrect' => optional_param('questionscorrect', 0, PARAM_INT),
-        'questionstotal'   => optional_param('questionstotal', 0, PARAM_INT),
-        'seen'             => is_array($seen) ? $seen : [],
+        'victory'     => optional_param('victory', 0, PARAM_BOOL),
+        'bosshpdealt' => optional_param('bosshpdealt', 0, PARAM_INT),
     ]));
     exit;
 }
@@ -97,7 +103,7 @@ $noquestions = !$alreadyplayed && empty($questions);
 $jsstrings = [];
 foreach (
     [
-        'msg_blocked', 'msg_cell', 'msg_correct', 'msg_heal', 'msg_hit_opponent', 'msg_hit_player',
+        'answer_error', 'msg_blocked', 'msg_cell', 'msg_correct', 'msg_heal', 'msg_hit_opponent', 'msg_hit_player',
         'msg_no_match', 'msg_opponent_crit', 'msg_poison', 'msg_selected', 'msg_shuffled', 'msg_wrong',
         'opponent', 'piece_grimoire', 'piece_orb', 'piece_potion', 'piece_shield', 'piece_star', 'piece_sword',
         'player', 'save_error', 'start_error', 'summary', 'turn_opponent', 'turn_player', 'xp_earned',

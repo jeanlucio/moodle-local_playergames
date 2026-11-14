@@ -42,6 +42,9 @@ final class battle_manager_test extends \advanced_testcase {
     /** @var int Midnight of today. */
     private int $today;
 
+    /** @var array[] Questions the last start() delivered. */
+    private array $delivered = [];
+
     /**
      * Creates an active season and a player, and silences the events the plays fire.
      *
@@ -75,9 +78,10 @@ final class battle_manager_test extends \advanced_testcase {
      * Adds a cartridge question with a correct answer and four distractors.
      *
      * @param string $text Question text.
+     * @param string|null $feedback General feedback shown after the answer.
      * @return int Question id.
      */
-    private function add_question(string $text = 'Q?'): int {
+    private function add_question(string $text = 'Q?', ?string $feedback = null): int {
         global $DB;
         $now = time();
         $cartridgeid = (int) $DB->get_field('local_playergames_cartridges', 'id', ['name' => 'Battle']);
@@ -90,7 +94,7 @@ final class battle_manager_test extends \advanced_testcase {
         $qid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
             'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => $text,
             'source' => 'manual', 'difficulty' => 3, 'categoryid' => null,
-            'generalfeedback' => null, 'timecreated' => $now,
+            'generalfeedback' => $feedback, 'timecreated' => $now,
         ]);
         $DB->insert_record('local_playergames_concept_answers', (object) [
             'questionid' => $qid, 'answertext' => 'Correct', 'iscorrect' => 1, 'sortorder' => 0,
@@ -109,11 +113,38 @@ final class battle_manager_test extends \advanced_testcase {
      * @return array The questions delivered.
      */
     private function start(): array {
-        return (new battle_manager())->start_battle(
+        $this->delivered = (new battle_manager())->start_battle(
             (int) $GLOBALS['USER']->id,
             $this->today,
             \context_system::instance()
         );
+        return $this->delivered;
+    }
+
+    /**
+     * Answers a question of the open battle.
+     *
+     * @param string $key The question's key.
+     * @param int $choice Option picked.
+     * @return array The manager's verdict.
+     */
+    private function answer_key(string $key, int $choice): array {
+        return (new battle_manager())->answer_question((int) $GLOBALS['USER']->id, $key, $choice);
+    }
+
+    /**
+     * Answers the delivered questions in turn, always with the first option.
+     *
+     * @param int $times How many answers to give.
+     * @return array[] The verdicts.
+     */
+    private function answer(int $times): array {
+        $verdicts = [];
+        for ($i = 0; $i < $times; $i++) {
+            $key = $this->delivered[$i % count($this->delivered)]['key'];
+            $verdicts[] = $this->answer_key($key, 0);
+        }
+        return $verdicts;
     }
 
     /**
@@ -122,20 +153,26 @@ final class battle_manager_test extends \advanced_testcase {
      * @param bool $victory Whether the player won.
      * @param int $damage Damage dealt to the opponent.
      * @param array $extra Other result values, overriding the defaults.
+     * @param int $answers Questions answered, with the first option, before the result is sent.
+     * @param int $elapsed Seconds the battle is taken to have lasted.
      * @return array The manager's answer.
      */
-    private function finish(bool $victory, int $damage = 50, array $extra = []): array {
+    private function finish(
+        bool $victory,
+        int $damage = 50,
+        array $extra = [],
+        int $answers = 2,
+        int $elapsed = 60
+    ): array {
+        if ($this->delivered !== []) {
+            $this->answer($answers);
+        }
         return (new battle_manager())->submit_result(
             (int) $GLOBALS['USER']->id,
             $this->season,
             \context_system::instance(),
-            $extra + [
-                'victory' => $victory,
-                'bosshpdealt' => $damage,
-                'questionscorrect' => 2,
-                'questionstotal' => 3,
-                'seen' => [],
-            ]
+            $extra + ['victory' => $victory, 'bosshpdealt' => $damage],
+            time() + $elapsed
         );
     }
 
@@ -162,7 +199,11 @@ final class battle_manager_test extends \advanced_testcase {
         $this->assertEqualsCanonicalizing(["cartridge:{$first}", "cartridge:{$second}"], $keys);
         foreach ($questions as $question) {
             $this->assertCount(5, $question['answers']);
-            $this->assertCount(1, array_filter($question['answers'], static fn($a): bool => $a['correct']));
+            // The answer key and the feedback stay on the server.
+            $this->assertSame(['key', 'questiontext', 'answers'], array_keys($question));
+            foreach ($question['answers'] as $answer) {
+                $this->assertSame(['text'], array_keys($answer));
+            }
         }
     }
 
@@ -229,8 +270,7 @@ final class battle_manager_test extends \advanced_testcase {
         $row = $this->score_row($user);
         $this->assertSame(1, (int) $row->victory);
         $this->assertSame(10, (int) $row->xpawarded);
-        $this->assertSame(2, (int) $row->questionscorrect);
-        $this->assertSame(3, (int) $row->questionstotal);
+        $this->assertSame(2, (int) $row->questionstotal);
         $daily = $DB->get_record('local_playergames_daily_scores', ['userid' => $user->id, 'gametype' => 'battle']);
         $this->assertSame(1, (int) $daily->attempts);
     }
@@ -296,33 +336,48 @@ final class battle_manager_test extends \advanced_testcase {
         $this->assertSame(10, (int) $this->score_row($user)->xpawarded);
     }
 
-    public function test_reported_counters_are_kept_within_range(): void {
+    public function test_reported_damage_is_kept_within_range(): void {
         $user = $this->prepare();
         $this->add_question();
 
         $this->start();
-        $this->finish(false, -5, ['questionscorrect' => 9, 'questionstotal' => 4]);
-        $row = $this->score_row($user);
-        $this->assertSame(0, (int) $row->bosshpdealt);
-        $this->assertSame(4, (int) $row->questionscorrect);
+        $this->finish(false, -5);
+        $this->assertSame(0, (int) $this->score_row($user)->bosshpdealt);
 
         $this->start();
-        $this->finish(false, 999999999, ['questionscorrect' => -3, 'questionstotal' => 999999]);
-        $row = $this->score_row($user);
-        $this->assertSame(1000000, (int) $row->bosshpdealt);
-        $this->assertSame(0, (int) $row->questionscorrect);
-        $this->assertSame(200, (int) $row->questionstotal);
+        $this->finish(false, 999999999);
+        $this->assertSame(1000000, (int) $this->score_row($user)->bosshpdealt);
     }
 
-    public function test_only_questions_the_battle_delivered_count_as_seen(): void {
+    /**
+     * Regression test: the counts of questions answered and right were the browser's word, so a request
+     * could claim any of them. They are what the server judged now, and the claim is ignored.
+     */
+    public function test_the_question_counts_are_the_servers_not_the_reported_ones(): void {
         $user = $this->prepare();
-        $delivered = $this->add_question();
+        $this->add_question();
         $this->start();
+        $verdicts = $this->answer(3);
+        $right = count(array_filter($verdicts, static fn($v): bool => $v['correct']));
 
-        $this->finish(false, 10, ['seen' => ["cartridge:{$delivered}", 'cartridge:99999', 'questionbank:5', 'junk', 7]]);
+        $this->finish(false, 10, ['questionscorrect' => 99, 'questionstotal' => 99], 0);
+
+        $row = $this->score_row($user);
+        $this->assertSame(3, (int) $row->questionstotal);
+        $this->assertSame($right, (int) $row->questionscorrect);
+    }
+
+    public function test_only_the_questions_answered_count_as_seen(): void {
+        $user = $this->prepare();
+        $first = $this->add_question();
+        $this->add_question();
+        $this->start();
+        $this->answer_key("cartridge:{$first}", 0);
+
+        $this->finish(false, 10, ['seen' => ['cartridge:99999', 'junk']], 0);
 
         $this->assertSame(
-            ['cartridge' => [$delivered]],
+            ['cartridge' => [$first]],
             served_questions::get_excluded((int) $user->id, 'battle', $this->today)
         );
     }
@@ -335,11 +390,132 @@ final class battle_manager_test extends \advanced_testcase {
         $seen  = $this->add_question();
         $other = $this->add_question();
         $this->start();
-        $this->finish(false, 10, ['seen' => ["cartridge:{$seen}"]]);
+        $this->answer_key("cartridge:{$seen}", 0);
+        $this->finish(false, 10, [], 0);
 
         $next = $this->start();
 
         $this->assertSame(["cartridge:{$other}"], array_column($next, 'key'));
+    }
+
+    public function test_the_answer_is_judged_by_the_server(): void {
+        $this->prepare();
+        $this->add_question('Q?', 'Because.');
+        $question = $this->start()[0];
+        $right = array_search('Correct', array_column($question['answers'], 'text'), true);
+        $wrong = $right === 0 ? 1 : 0;
+
+        $hit = $this->answer_key($question['key'], (int) $right);
+        $miss = $this->answer_key($question['key'], $wrong);
+
+        $this->assertTrue($hit['success']);
+        $this->assertTrue($hit['correct']);
+        $this->assertSame((int) $right, $hit['correctindex']);
+        $this->assertStringContainsString('Because.', $hit['feedback']);
+        $this->assertFalse($miss['correct']);
+        $this->assertSame((int) $right, $miss['correctindex']);
+    }
+
+    public function test_an_answer_the_battle_does_not_expect_is_refused(): void {
+        $this->prepare();
+        $this->add_question();
+        $question = $this->start()[0];
+
+        $this->assertSame('invalid', $this->answer_key('cartridge:99999', 0)['reason']);
+        $this->assertSame('invalid', $this->answer_key($question['key'], 5)['reason']);
+        $this->assertSame('invalid', $this->answer_key($question['key'], -1)['reason']);
+    }
+
+    public function test_an_answer_without_an_open_battle_is_refused(): void {
+        $this->prepare();
+        $this->add_question();
+
+        $this->assertSame('noplay', $this->answer_key('cartridge:1', 0)['reason']);
+    }
+
+    /**
+     * A question is not asked again before every other one was, so one question cannot be used to try
+     * its options one after another.
+     */
+    public function test_a_question_is_not_answered_twice_before_the_others(): void {
+        $this->prepare();
+        $this->add_question();
+        $this->add_question();
+        $questions = $this->start();
+        [$a, $b] = array_column($questions, 'key');
+
+        $this->assertTrue($this->answer_key($a, 0)['success']);
+        $this->assertSame('repeat', $this->answer_key($a, 1)['reason']);
+        $this->assertTrue($this->answer_key($b, 0)['success']);
+        $this->assertTrue($this->answer_key($a, 1)['success']);
+    }
+
+    public function test_a_single_question_battle_can_ask_it_again(): void {
+        $this->prepare();
+        $this->add_question();
+        $key = $this->start()[0]['key'];
+
+        $this->assertTrue($this->answer_key($key, 0)['success']);
+        $this->assertTrue($this->answer_key($key, 1)['success']);
+    }
+
+    /**
+     * Regression test: the server believed any request that said "victory", so one sent right after the
+     * page was opened earned the day's XP without a battle.
+     */
+    public function test_a_victory_claimed_without_playing_is_recorded_as_a_defeat(): void {
+        global $DB;
+        $user = $this->prepare();
+        $this->add_question();
+        $this->start();
+
+        $result = $this->finish(true, 500, [], 0, 1);
+
+        $this->assertTrue($result['success']);
+        $this->assertFalse($result['victory']);
+        $this->assertSame(0, $result['xpawarded']);
+        $this->assertSame(0, (int) $this->score_row($user)->victory);
+        $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $user->id]));
+    }
+
+    public function test_a_victory_after_too_short_a_battle_is_not_believed(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        $this->start();
+
+        $result = $this->finish(true, 200, [], 5, battle_manager::MIN_VICTORY_SECONDS - 1);
+
+        $this->assertFalse($result['victory']);
+        $this->assertSame(0, (int) $this->score_row($user)->xpawarded);
+    }
+
+    public function test_a_victory_with_too_few_questions_answered_is_not_believed(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        $this->start();
+
+        $result = $this->finish(true, 200, [], battle_manager::MIN_VICTORY_ANSWERS - 1, 120);
+
+        $this->assertFalse($result['victory']);
+        $this->assertSame(0, (int) $this->score_row($user)->xpawarded);
+    }
+
+    public function test_a_victory_that_meets_the_minimums_is_believed(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        $this->start();
+
+        $result = $this->finish(
+            true,
+            200,
+            [],
+            battle_manager::MIN_VICTORY_ANSWERS,
+            battle_manager::MIN_VICTORY_SECONDS
+        );
+
+        $this->assertTrue($result['victory']);
+        $this->assertSame(10, $result['xpawarded']);
+        $this->assertSame(battle_manager::MIN_VICTORY_SECONDS, (int) $this->score_row($user)->duration);
     }
 
     /**

@@ -101,6 +101,7 @@ $string['avatar_name_superhero'] = 'Super-herói';
 $string['avatar_name_supervillain'] = 'Supervilão';
 $string['avatar_name_vampire'] = 'Vampiro';
 $string['battle_already_played'] = 'Você já jogou o PlayerBattle hoje. Volte amanhã!';
+$string['battle_answer_error'] = 'Não foi possível conferir a resposta. Escolha uma alternativa novamente.';
 $string['battle_back_to_hub'] = 'Voltar ao Hub';
 $string['battle_board_label'] = 'Tabuleiro. As setas movem entre as peças, Enter seleciona uma e, em seguida, uma seta a troca com a vizinha.';
 $string['battle_continue'] = 'Continuar';

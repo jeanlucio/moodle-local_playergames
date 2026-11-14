@@ -77,7 +77,6 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
     let lastKey = null;
     let messages = [];
     const stats = {total: 0, correct: 0, damage: 0};
-    const seen = new Set();
 
     const pieceName = type => strings[`piece_${PIECE_KEYS[type]}`];
     const sideName = side => strings[side];
@@ -153,6 +152,31 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
     };
 
     /**
+     * Asks the server whether the option the player picked is the right one. The server owns the
+     * answer key, so the page never holds it.
+     *
+     * @param {string} key The question's key.
+     * @param {number} choice Zero-based option picked.
+     * @returns {Promise<object>} {correct, correctindex, feedback}.
+     */
+    const judge = async(key, choice) => {
+        const response = await fetch(config.posturl, {
+            method: 'POST',
+            body: new URLSearchParams({
+                sesskey: config.sesskey,
+                action: 'answer_question',
+                key,
+                choice: String(choice),
+            }),
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error('The server did not take the answer.');
+        }
+        return data;
+    };
+
+    /**
      * Resolves a question for a side and applies what it costs or gains.
      *
      * @param {string} side Who faced the question.
@@ -161,9 +185,8 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
         let correct = true;
         if (side === 'player') {
             const question = nextQuestion();
-            correct = await ui.askQuestion(question);
+            correct = await ui.askQuestion(question, judge, strings.answer_error);
             board.focus();
-            seen.add(question.key);
             stats.total++;
             if (correct) {
                 stats.correct++;
@@ -344,16 +367,15 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
                     action: 'submit_result',
                     victory: victory ? '1' : '0',
                     bosshpdealt: String(Math.round(stats.damage)),
-                    questionscorrect: String(stats.correct),
-                    questionstotal: String(stats.total),
-                    seen: JSON.stringify(Array.from(seen)),
                 }),
             });
             const data = await response.json();
             if (!data.success) {
                 throw new Error('The server did not accept the result.');
             }
-            ui.setSaved(victory ? format(strings.xp_earned, data.xpawarded) : '', data.remaining > 0 || !victory);
+            // The server records the victory only when the battle looks played, whatever was claimed.
+            const won = victory && data.victory;
+            ui.setSaved(won ? format(strings.xp_earned, data.xpawarded) : '', data.remaining > 0 || !won);
         } catch (error) {
             window.console.error(error);
             ui.setSaveError(strings.save_error, () => save(victory));

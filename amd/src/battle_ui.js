@@ -165,10 +165,15 @@ export const createUi = root => {
         /**
          * Shows a question and waits for the answer and for the player to continue.
          *
-         * @param {object} question {questiontext, feedback, answers: {text, correct}[]}.
+         * The page does not know which option is right: the server judges the choice and says so.
+         *
+         * @param {object} question {key, questiontext, answers: {text}[]}.
+         * @param {function(string, number): Promise<object>} judge Asks the server about a choice, and
+         *     resolves with {correct, correctindex, feedback}.
+         * @param {string} errorMessage What to say when the server could not be asked.
          * @returns {Promise<boolean>} Whether the answer was right.
          */
-        askQuestion(question) {
+        askQuestion(question, judge, errorMessage) {
             return new Promise(resolve => {
                 const feedback = questionDialog.querySelector('[data-field="feedback"]');
                 const next = questionDialog.querySelector('[data-action="continue"]');
@@ -194,18 +199,36 @@ export const createUi = root => {
                     return button;
                 });
 
-                const choose = chosen => {
+                const choose = async chosen => {
                     if (answered) {
                         return;
                     }
                     answered = true;
-                    buttons.forEach((button, index) => {
+                    buttons.forEach(button => {
                         button.disabled = true;
-                        button.classList.toggle('is-correct', question.answers[index].correct);
-                        button.classList.toggle('is-wrong', index === chosen && !question.answers[index].correct);
                     });
-                    if (question.feedback) {
-                        feedback.innerHTML = question.feedback;
+                    let verdict;
+                    try {
+                        verdict = await judge(question.key, chosen);
+                    } catch (error) {
+                        window.console.error(error);
+                        // The answer was not taken: let the player pick again.
+                        answered = false;
+                        buttons.forEach(button => {
+                            button.disabled = false;
+                        });
+                        feedback.textContent = errorMessage;
+                        feedback.hidden = false;
+                        return;
+                    }
+                    buttons.forEach((button, index) => {
+                        button.classList.toggle('is-correct', index === verdict.correctindex);
+                        button.classList.toggle('is-wrong', index === chosen && !verdict.correct);
+                    });
+                    feedback.textContent = '';
+                    feedback.hidden = true;
+                    if (verdict.feedback) {
+                        feedback.innerHTML = verdict.feedback;
                         feedback.hidden = false;
                     }
                     next.hidden = false;
@@ -214,7 +237,7 @@ export const createUi = root => {
                         questionDialog.hidden = true;
                         questionDialog.onkeydown = null;
                         setInert(false);
-                        resolve(question.answers[chosen].correct);
+                        resolve(verdict.correct);
                     };
                 };
                 buttons.forEach((button, index) => button.addEventListener('click', () => choose(index)));

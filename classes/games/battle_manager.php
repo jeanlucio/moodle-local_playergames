@@ -31,10 +31,13 @@ use local_playergames\hub\served_questions;
 /**
  * Starts a battle and records how it ended.
  *
- * Like the other hub games, the board is played in the browser and the server only enforces the
- * daily quota. What it adds is a started battle per submission: loading the page opens one, and
- * the result is accepted once, for the questions that page delivered, so a request made without
- * playing, or sent twice, earns nothing.
+ * The board is played in the browser, and its moves cannot be replayed here. What the server does
+ * check is the part it can: the questions are judged here, so the answer key never reaches the
+ * browser and the counts of questions answered and right are the server's own. Loading the page
+ * opens a battle, the result is accepted once for it, and a victory is believed only when the battle
+ * lasted a plausible time and asked a few questions: a request made without playing, or sent twice,
+ * earns nothing. Someone who plays the whole battle with a script that answers questions and
+ * waits is not stopped by this, only the direct request is.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -44,8 +47,14 @@ class battle_manager {
     /** @var int Questions loaded for a battle. The mana orb keeps asking from them, repeating when they run out. */
     public const QUESTIONS_PER_BATTLE = 10;
 
-    /** @var int Upper bound for the answered-questions counter a client can report. */
+    /** @var int Most questions one battle may answer; a battle asks 5 to 9, so this is far beyond play. */
     private const MAX_QUESTIONS_ANSWERED = 200;
+
+    /** @var int Seconds a battle must have lasted for its victory to be believed (a real one takes minutes). */
+    public const MIN_VICTORY_SECONDS = 15;
+
+    /** @var int Questions a battle must have answered for its victory to be believed (a real one asks 5 to 9). */
+    public const MIN_VICTORY_ANSWERS = 2;
 
     /** @var int Upper bound for the damage dealt a client can report. */
     private const MAX_DAMAGE_DEALT = 1000000;
@@ -56,8 +65,9 @@ class battle_manager {
      * @param int $userid The player.
      * @param int $gamedate Midnight timestamp of the day.
      * @param \context $context Context the question text is filtered in.
-     * @return array[] Questions, each {key, questiontext, feedback, answers: {text, correct}[]}. Empty when
-     *                 the season has no questions to offer, in which case no battle is opened.
+     * @return array[] Questions, each {key, questiontext, answers: {text}[]}; which answer is right and the
+     *                 feedback stay here, to be given by answer_question(). Empty when the season has no
+     *                 questions to offer, in which case no battle is opened.
      */
     public function start_battle(int $userid, int $gamedate, \context $context): array {
         $season = season_manager::get_active();
@@ -88,11 +98,26 @@ class battle_manager {
         );
 
         $questions = [];
-        $keys      = [];
+        $judging   = [];
         foreach ($loaded as $question) {
-            $key         = "{$question->source}:{$question->sourceid}";
-            $keys[]      = $key;
-            $questions[] = $this->format_question($question, $key, $context);
+            $key       = "{$question->source}:{$question->sourceid}";
+            $formatted = $this->format_question($question, $key, $context);
+            $correct   = array_search(true, array_column($formatted['answers'], 'correct'), true);
+
+            $judging[$key] = [
+                'correct'  => $correct === false ? -1 : (int) $correct,
+                'options'  => count($formatted['answers']),
+                'feedback' => $formatted['feedback'],
+                'count'    => 0,
+            ];
+            $questions[] = [
+                'key'          => $key,
+                'questiontext' => $formatted['questiontext'],
+                'answers'      => array_map(
+                    static fn(array $answer): array => ['text' => $answer['text']],
+                    $formatted['answers']
+                ),
+            ];
         }
 
         if (empty($questions)) {
@@ -103,9 +128,57 @@ class battle_manager {
         self::run_cache()->set($userid, [
             'gamedate' => $gamedate,
             'started'  => time(),
-            'keys'     => $keys,
+            'judging'  => $judging,
+            'answered' => 0,
+            'correct'  => 0,
         ]);
         return $questions;
+    }
+
+    /**
+     * Judges the player's answer to one of the battle's questions.
+     *
+     * The questions come around again when the battle asks more than it loaded, but a question is not
+     * asked a second time before every other one has been asked, so a battle cannot be used to try the
+     * options of a single question one after another.
+     *
+     * @param int $userid The player.
+     * @param string $key The question's "source:sourceid" key, as it was delivered.
+     * @param int $choice Zero-based option the player picked.
+     * @return array {success, reason?, correct, correctindex, feedback}. success is false, with a reason
+     *               ('noplay', 'invalid', 'repeat' or 'limit'), when the answer is not one the battle expects.
+     */
+    public function answer_question(int $userid, string $key, int $choice): array {
+        $run = self::run_cache()->get($userid);
+        if (!is_array($run)) {
+            return ['success' => false, 'reason' => 'noplay'];
+        }
+        if (!isset($run['judging'][$key]) || $choice < 0 || $choice >= (int) $run['judging'][$key]['options']) {
+            return ['success' => false, 'reason' => 'invalid'];
+        }
+        if ((int) $run['answered'] >= self::MAX_QUESTIONS_ANSWERED) {
+            return ['success' => false, 'reason' => 'limit'];
+        }
+        $rounds = array_column($run['judging'], 'count');
+        if ((int) $run['judging'][$key]['count'] > min($rounds)) {
+            return ['success' => false, 'reason' => 'repeat'];
+        }
+
+        $question = $run['judging'][$key];
+        $correct  = $choice === (int) $question['correct'];
+        $run['judging'][$key]['count']++;
+        $run['answered']++;
+        if ($correct) {
+            $run['correct']++;
+        }
+        self::run_cache()->set($userid, $run);
+
+        return [
+            'success'      => true,
+            'correct'      => $correct,
+            'correctindex' => (int) $question['correct'],
+            'feedback'     => (string) $question['feedback'],
+        ];
     }
 
     /**
@@ -115,15 +188,26 @@ class battle_manager {
      * play and earns the XP the season grants; past the day's quota it is still saved, with no XP.
      * The day keeps the best result: a victory over a defeat, then the most damage dealt.
      *
+     * Only the victory and the damage are the browser's word. The questions answered and right, and the
+     * duration, are what the server saw, and a victory claimed for a battle too short or with too few
+     * questions answered is recorded as a defeat.
+     *
      * @param int $userid The player.
      * @param \stdClass $season The active season.
      * @param \context $context Context of the event the play fires.
-     * @param array $result Reported result: victory (bool), bosshpdealt (int), questionscorrect (int),
-     *                      questionstotal (int) and seen (string[] of "source:sourceid" shown).
+     * @param array $result Reported result: victory (bool) and bosshpdealt (int).
+     * @param int|null $now Reference time; defaults to the current time.
      * @return array {success: bool, victory: bool, xpawarded: int, remaining: int}. success is false
-     *               when the user has no battle open, and then nothing was recorded.
+     *               when the user has no battle open, and then nothing was recorded. victory is the
+     *               outcome that was recorded, which can differ from the one claimed.
      */
-    public function submit_result(int $userid, \stdClass $season, \context $context, array $result): array {
+    public function submit_result(
+        int $userid,
+        \stdClass $season,
+        \context $context,
+        array $result,
+        ?int $now = null
+    ): array {
         $run = self::run_cache()->get($userid);
         if (!is_array($run)) {
             return ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0];
@@ -131,11 +215,15 @@ class battle_manager {
         // One result per battle: a repeated request finds nothing open.
         self::run_cache()->delete($userid);
 
+        $now      = $now ?? time();
         $gamedate = (int) $run['gamedate'];
-        $victory  = !empty($result['victory']);
-        $total    = max(0, min((int) ($result['questionstotal'] ?? 0), self::MAX_QUESTIONS_ANSWERED));
-        $correct  = max(0, min((int) ($result['questionscorrect'] ?? 0), $total));
+        $total    = (int) $run['answered'];
+        $correct  = (int) $run['correct'];
+        $duration = max(0, $now - (int) $run['started']);
         $damage   = max(0, min((int) ($result['bosshpdealt'] ?? 0), self::MAX_DAMAGE_DEALT));
+        $victory  = !empty($result['victory'])
+            && $duration >= self::MIN_VICTORY_SECONDS
+            && $total >= self::MIN_VICTORY_ANSWERS;
 
         $xpawarded = 0;
         if ($victory) {
@@ -150,12 +238,12 @@ class battle_manager {
             'questionstotal'   => $total,
             'xpawarded'        => $xpawarded,
             // Measured here: the browser's own clock proves nothing.
-            'duration'         => max(0, time() - (int) $run['started']),
+            'duration'         => $duration,
         ]);
 
-        // The questions shown count as seen whether or not the battle was won: a defeat does not
+        // The questions answered count as seen whether or not the battle was won: a defeat does not
         // spend the play, so the next try should bring new ones.
-        $this->record_seen($userid, $gamedate, (array) ($result['seen'] ?? []), (array) $run['keys']);
+        $this->record_seen($userid, $gamedate, (array) $run['judging']);
 
         $snapshot = season_manager::get_config_snapshot($season);
         return [
@@ -205,22 +293,19 @@ class battle_manager {
     }
 
     /**
-     * Marks the questions the player was shown as seen today.
-     *
-     * Only questions this battle delivered are accepted, so the report cannot name others.
+     * Marks the questions the player answered as seen today.
      *
      * @param int $userid The player.
      * @param int $gamedate Midnight timestamp of the day.
-     * @param array $seen Reported "source:sourceid" strings.
-     * @param string[] $delivered The keys the battle delivered.
+     * @param array $judging The battle's questions by "source:sourceid" key, each with how often it was answered.
      */
-    private function record_seen(int $userid, int $gamedate, array $seen, array $delivered): void {
+    private function record_seen(int $userid, int $gamedate, array $judging): void {
         $items = [];
-        foreach ($seen as $key) {
-            if (!is_string($key) || !in_array($key, $delivered, true)) {
+        foreach ($judging as $key => $question) {
+            if ((int) $question['count'] === 0) {
                 continue;
             }
-            [$source, $sourceid] = explode(':', $key, 2);
+            [$source, $sourceid] = explode(':', (string) $key, 2);
             $items[$key] = ['source' => $source, 'sourceid' => (int) $sourceid];
         }
         served_questions::record($userid, 'battle', $gamedate, array_values($items));

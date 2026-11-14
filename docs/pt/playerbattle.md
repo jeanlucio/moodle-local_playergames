@@ -50,8 +50,15 @@ dia contam vêm das configurações de XP dos jogos com que a temporada foi cria
 - As questões mostradas contam como vistas no dia, também numa derrota, então a próxima tentativa traz
   questões novas. Quando todas já foram vistas, elas se repetem em vez de travar o jogador.
 
-Um resultado é aceito uma vez para cada batalha que a página abriu, então um resultado enviado sem jogar,
-ou enviado duas vezes, não rende nada.
+Um resultado é aceito uma vez para cada batalha que a página abriu, então um resultado enviado duas vezes
+não rende nada.
+
+O tabuleiro é jogado no navegador e o servidor não consegue reproduzi-lo, então confere o que pode. As
+questões são julgadas no servidor: a página nunca recebe qual alternativa é a certa, e as contagens de
+questões respondidas e certas são as do servidor. Uma vitória só é registrada como vitória se a batalha
+durou pelo menos 15 segundos e respondeu pelo menos 2 questões; senão é registrada como derrota. Isso
+barra um resultado enviado sem jogar. Não barra quem joga até o fim com um script que responde às
+questões e espera.
 
 ## Conteúdo e configurações
 

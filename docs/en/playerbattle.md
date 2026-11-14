@@ -49,8 +49,14 @@ day count come from the Game XP settings the season was created with.
 - The questions shown count as seen for the day, in a defeat too, so the next try brings new ones. When
   every question has been seen, they repeat rather than leaving the player stuck.
 
-A result is accepted once for each battle the page opened, so a result sent without playing, or sent
-twice, earns nothing.
+A result is accepted once for each battle the page opened, so a result sent twice earns nothing.
+
+The board is played in the browser and the server cannot replay it, so it checks what it can. The
+questions are judged on the server: the page never receives which option is right, and the counts of
+questions answered and right are the server's own. A victory is recorded as such only if the battle
+lasted at least 15 seconds and answered at least 2 questions; otherwise it is recorded as a defeat. This
+stops a result sent without playing. It does not stop someone who plays through with a script that
+answers questions and waits.
 
 ## Content and settings
 

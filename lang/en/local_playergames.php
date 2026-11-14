@@ -101,6 +101,7 @@ $string['avatar_name_superhero'] = 'Superhero';
 $string['avatar_name_supervillain'] = 'Supervillain';
 $string['avatar_name_vampire'] = 'Vampire';
 $string['battle_already_played'] = 'You have already played PlayerBattle today. Come back tomorrow!';
+$string['battle_answer_error'] = 'The answer could not be checked. Pick an option again.';
 $string['battle_back_to_hub'] = 'Back to Hub';
 $string['battle_board_label'] = 'Game board. Arrow keys move between pieces, Enter selects one, and then an arrow key swaps it with its neighbour.';
 $string['battle_continue'] = 'Continue';
