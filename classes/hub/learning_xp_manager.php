@@ -44,6 +44,9 @@ class learning_xp_manager {
     /** @var string Cache key for the learning ranking list (single, season-agnostic list). */
     public const RANKING_CACHE_KEY = 'learning_students';
 
+    /** @var int Users handled per slice by recompute_all(). */
+    public const RECOMPUTE_BATCH = 1000;
+
     /**
      * Whether the learning XP pool should be visible under the current site
      * configuration.
@@ -258,9 +261,10 @@ class learning_xp_manager {
      * Heavy GROUP BY/SUM work — intended to run only from the nightly
      * recompute_learning_xp scheduled task, never on a web request.
      *
+     * @param int $batch Users handled per slice.
      * @return void
      */
-    public static function recompute_all(): void {
+    public static function recompute_all(int $batch = self::RECOMPUTE_BATCH): void {
         global $DB;
 
         $cutoff = self::oldest_period_in_window(time());
@@ -272,35 +276,90 @@ class learning_xp_manager {
             );
         }
 
-        $sums = $DB->get_records_sql(
-            'SELECT userid, SUM(xp) AS total
-               FROM {local_playergames_student_xp_monthly}
-           GROUP BY userid'
+        $now  = time();
+        $last = 0;
+        do {
+            // One slice of users at a time, so neither the sums nor the cache rows of the whole site are
+            // held in memory together.
+            $sums = $DB->get_records_sql(
+                'SELECT userid, SUM(xp) AS total
+                   FROM {local_playergames_student_xp_monthly}
+                  WHERE userid > :last
+               GROUP BY userid
+               ORDER BY userid',
+                ['last' => $last],
+                0,
+                $batch
+            );
+            if ($sums === []) {
+                break;
+            }
+            $last = (int) array_key_last($sums);
+            self::apply_sums($sums, $now);
+        } while (count($sums) === $batch);
+
+        self::zero_users_without_buckets($now);
+    }
+
+    /**
+     * Writes the windowed XP of a slice of users into the cache, creating the rows that are missing.
+     *
+     * @param \stdClass[] $sums Rows with userid and total, keyed by userid.
+     * @param int $now Time stamp of the recompute.
+     * @return void
+     */
+    private static function apply_sums(array $sums, int $now): void {
+        global $DB;
+
+        $existing = $DB->get_records_list(
+            'local_playergames_student_xp_cache',
+            'userid',
+            array_keys($sums),
+            '',
+            'userid, id, windowedxp, timemodified'
         );
 
-        $existing = $DB->get_records('local_playergames_student_xp_cache', null, '', 'userid, id, windowedxp, timemodified');
-
-        $now = time();
-        foreach ($existing as $userid => $cache) {
-            $newvalue = isset($sums[$userid]) ? max(0, (int) $sums[$userid]->total) : 0;
-            if ($newvalue !== (int) $cache->windowedxp) {
-                $cache->windowedxp   = $newvalue;
+        $new = [];
+        foreach ($sums as $userid => $sum) {
+            $value = max(0, (int) $sum->total);
+            if (!isset($existing[$userid])) {
+                $new[] = (object) [
+                    'userid'        => $userid,
+                    'windowedxp'    => $value,
+                    'showinranking' => 0,
+                    'timecreated'   => $now,
+                    'timemodified'  => $now,
+                ];
+                continue;
+            }
+            $cache = $existing[$userid];
+            if ($value !== (int) $cache->windowedxp) {
+                $cache->windowedxp   = $value;
                 $cache->timemodified = $now;
                 $DB->update_record('local_playergames_student_xp_cache', $cache);
             }
         }
-
-        foreach ($sums as $userid => $sum) {
-            if (isset($existing[$userid])) {
-                continue;
-            }
-            $DB->insert_record('local_playergames_student_xp_cache', (object) [
-                'userid'        => $userid,
-                'windowedxp'    => max(0, (int) $sum->total),
-                'showinranking' => 0,
-                'timecreated'   => $now,
-                'timemodified'  => $now,
-            ]);
+        if ($new !== []) {
+            $DB->insert_records('local_playergames_student_xp_cache', $new);
         }
+    }
+
+    /**
+     * Sets to zero the windowed XP of users whose buckets all aged out and were pruned.
+     *
+     * @param int $now Time stamp of the recompute.
+     * @return void
+     */
+    private static function zero_users_without_buckets(int $now): void {
+        global $DB;
+
+        $select = 'windowedxp <> 0 AND NOT EXISTS (
+                       SELECT 1 FROM {local_playergames_student_xp_monthly} m
+                        WHERE m.userid = {local_playergames_student_xp_cache}.userid)';
+        $transaction = $DB->start_delegated_transaction();
+        // The time stamp first: it uses the same condition, which the second statement would clear.
+        $DB->set_field_select('local_playergames_student_xp_cache', 'timemodified', $now, $select);
+        $DB->set_field_select('local_playergames_student_xp_cache', 'windowedxp', 0, $select);
+        $transaction->allow_commit();
     }
 }

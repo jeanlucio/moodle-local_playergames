@@ -199,6 +199,44 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->assertSame(15, learning_xp_manager::get_windowedxp($user));
     }
 
+    /**
+     * The sums are handled in slices of users, so a site with many of them never holds every row at once.
+     */
+    public function test_recompute_all_handles_every_user_across_slices(): void {
+        $this->resetAfterTest();
+        $users = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $users[$i] = (int) $this->getDataGenerator()->create_user()->id;
+            $this->insert_bucket($users[$i], learning_xp_manager::period_for(time()), $i * 10);
+        }
+        // One user already has a cache row with a stale value.
+        learning_xp_manager::get_or_create_cache($users[2]);
+
+        learning_xp_manager::recompute_all(2);
+
+        foreach ($users as $i => $userid) {
+            $this->assertSame($i * 10, learning_xp_manager::get_windowedxp($userid));
+        }
+    }
+
+    public function test_recompute_all_zeroes_a_user_whose_buckets_all_aged_out(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('learningxp_window_months', 3, 'local_playergames');
+        $old = (int) $this->getDataGenerator()->create_user()->id;
+        $active = (int) $this->getDataGenerator()->create_user()->id;
+        $this->insert_bucket($old, learning_xp_manager::period_for(time()), 30);
+        $this->insert_bucket($active, learning_xp_manager::period_for(time()), 20);
+        learning_xp_manager::recompute_all();
+        $this->assertSame(30, learning_xp_manager::get_windowedxp($old));
+        $DB->set_field('local_playergames_student_xp_monthly', 'period', '200001', ['userid' => $old]);
+
+        learning_xp_manager::recompute_all();
+
+        $this->assertSame(0, learning_xp_manager::get_windowedxp($old));
+        $this->assertSame(20, learning_xp_manager::get_windowedxp($active));
+    }
+
     public function test_recompute_all_floors_negative_sum_at_zero(): void {
         $this->resetAfterTest();
         $user = (int) $this->getDataGenerator()->create_user()->id;
