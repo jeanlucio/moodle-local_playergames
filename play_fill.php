@@ -109,7 +109,7 @@ if (!$noconcept && !$alreadyplayed) {
             'tiles'        => array_values($tiles),
             'resolved'     => $word['resolved'],
             'exhausted'    => $word['exhausted'],
-            'revealword'   => ($word['resolved'] || $revealed) ? s($word['originalterm']) : '',
+            'revealword'   => ($word['resolved'] || $revealed) ? $word['originalterm'] : '',
             'canguess'     => !$word['resolved'] && !$word['exhausted'] && !$revealed,
             'attemptsused' => $word['attemptsused'],
         ];
