@@ -99,7 +99,7 @@ class avatar_manager {
         foreach (self::DEFAULT_AVATARS as $emoji => [$namekey, $tier]) {
             $record            = new stdClass();
             $record->emoji     = $emoji;
-            $record->name      = get_string($namekey, 'local_playergames');
+            $record->name      = get_string_manager()->get_string($namekey, 'local_playergames', null, 'en');
             $record->tier      = $tier;
             $record->sortorder = $sortorder++;
             $records[] = $record;
@@ -219,6 +219,21 @@ class avatar_manager {
     }
 
     /**
+     * The name of an avatar in the language of whoever is looking.
+     *
+     * The catalog is seeded by the first request that finds it empty, in that user's language, and no screen
+     * edits the names afterwards, so the stored text is a fallback only: a default avatar is named through
+     * its language string every time it is shown.
+     *
+     * @param stdClass $avatar A row of the catalog.
+     * @return string
+     */
+    private static function display_name(stdClass $avatar): string {
+        $default = self::DEFAULT_AVATARS[$avatar->emoji] ?? null;
+        return $default === null ? (string) $avatar->name : get_string($default[0], 'local_playergames');
+    }
+
+    /**
      * Returns the catalog annotated for a user. Read-only (no row creation).
      *
      * Each entry: emoji, name, tier, requiredlevel, and the unlocked/equipped
@@ -239,7 +254,7 @@ class avatar_manager {
             $required     = self::tier_threshold((int) $avatar->tier);
             $collection[] = [
                 'emoji'         => $avatar->emoji,
-                'name'          => $avatar->name,
+                'name'          => self::display_name($avatar),
                 'tier'          => (int) $avatar->tier,
                 'requiredlevel' => $required,
                 'unlocked'      => $bestlevel >= $required,

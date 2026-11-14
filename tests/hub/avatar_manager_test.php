@@ -157,4 +157,37 @@ final class avatar_manager_test extends \advanced_testcase {
         // Tier 4 dragon: still locked at level 3 (needs 4).
         $this->assertFalse($byemoji['🐉']['unlocked']);
     }
+
+    /**
+     * Regression test: the names were stored in the language of the first user to open the hub and shown
+     * as stored to everyone.
+     */
+    public function test_names_follow_the_language_of_the_viewer_not_the_one_that_seeded_the_catalog(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+        avatar_manager::get_avatars();
+        // As if a Portuguese speaker had opened the hub first.
+        $DB->set_field('local_playergames_avatars', 'name', 'Raposa', ['emoji' => '🦊']);
+
+        $byemoji = [];
+        foreach (avatar_manager::get_collection($user) as $row) {
+            $byemoji[$row['emoji']] = $row['name'];
+        }
+
+        $this->assertSame(get_string('avatar_name_fox', 'local_playergames'), $byemoji['🦊']);
+    }
+
+    public function test_the_catalog_is_seeded_in_english_whatever_the_language_of_the_request(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $DB->delete_records('local_playergames_avatars');
+
+        avatar_manager::seed_defaults();
+
+        $this->assertSame(
+            get_string_manager()->get_string('avatar_name_fox', 'local_playergames', null, 'en'),
+            $DB->get_field('local_playergames_avatars', 'name', ['emoji' => '🦊'])
+        );
+    }
 }
