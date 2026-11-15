@@ -253,4 +253,30 @@ final class engagement_report_test extends \advanced_testcase {
         (new \completion_completion(['course' => $course->id, 'userid' => $student->id]))->mark_complete();
         $this->assertSame(100.0, (new engagement_report())->get_metrics([(int) $course->id], 30)['completion_rate']);
     }
+
+    /**
+     * The average grade is that of the active students: a teacher's, a suspended enrolment's and a former
+     * student's course grades are left out, as in the other two metrics.
+     */
+    public function test_the_average_grade_counts_only_active_students(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $first = $generator->create_user();
+        $second = $generator->create_user();
+        $teacher = $generator->create_user();
+        $suspended = $generator->create_user();
+        $generator->enrol_user($first->id, $course->id, 'student');
+        $generator->enrol_user($second->id, $course->id, 'student');
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $generator->enrol_user($suspended->id, $course->id, 'student', 'manual', 0, 0, ENROL_USER_SUSPENDED);
+        $item = \grade_item::fetch_course_item($course->id);
+        foreach ([[$first, 80], [$second, 60], [$teacher, 100], [$suspended, 10]] as [$user, $grade]) {
+            $item->update_final_grade($user->id, $grade);
+        }
+
+        $metrics = (new engagement_report())->get_metrics([(int) $course->id], 30);
+
+        $this->assertSame(70.0, $metrics['grade_avg']);
+    }
 }

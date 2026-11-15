@@ -211,24 +211,33 @@ class engagement_report {
         }
         $completionrate = $totalusers > 0 ? round($completed / $totalusers * 100, 1) : 0.0;
 
-        // Average course-level grade expressed as a percentage.
+        // Average course-level grade of those students, expressed as a percentage. The sum and the count are
+        // taken slice by slice and divided at the end: an average of the slices' averages would be wrong.
+        $gradesum = 0.0;
+        $gradecount = 0;
         [$ingrade, $gradeparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'gr');
-        $gradeavgraw = $DB->get_field_sql(
-            "SELECT AVG(gg.finalgrade / gi.grademax * 100)
-               FROM {grade_items} gi
-               JOIN {grade_grades} gg ON gg.itemid = gi.id
-              WHERE gi.itemtype = 'course'
-                AND gi.courseid $ingrade
-                AND gg.finalgrade IS NOT NULL
-                AND gi.grademax > 0",
-            $gradeparams
-        );
+        foreach (array_chunk($studentids, self::USER_CHUNK) as $slice) {
+            [$inusers, $userparams] = $DB->get_in_or_equal($slice, SQL_PARAMS_NAMED, 'gru');
+            $row = $DB->get_record_sql(
+                "SELECT SUM(gg.finalgrade / gi.grademax * 100) AS total, COUNT(gg.id) AS amount
+                   FROM {grade_items} gi
+                   JOIN {grade_grades} gg ON gg.itemid = gi.id
+                  WHERE gi.itemtype = 'course'
+                    AND gi.courseid $ingrade
+                    AND gg.finalgrade IS NOT NULL
+                    AND gi.grademax > 0
+                    AND gg.userid $inusers",
+                $gradeparams + $userparams
+            );
+            $gradesum += (float) $row->total;
+            $gradecount += (int) $row->amount;
+        }
 
         return [
             'course_count'    => count($courseids),
             'events_per_user' => $eventsperuser,
             'completion_rate' => $completionrate,
-            'grade_avg'       => $gradeavgraw !== false ? round((float) $gradeavgraw, 1) : 0.0,
+            'grade_avg'       => $gradecount > 0 ? round($gradesum / $gradecount, 1) : 0.0,
         ];
     }
 
