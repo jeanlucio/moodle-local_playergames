@@ -236,4 +236,29 @@ final class cartridge_remover_test extends \advanced_testcase {
         $this->assertTrue((new cartridge_remover())->delete($withword));
         $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments'));
     }
+
+    /**
+     * Switching a cartridge off takes today's words out of the games but keeps its concepts and the history.
+     */
+    public function test_release_todays_words_keeps_the_concepts_and_the_earlier_days(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->new_cartridge();
+        $other = $this->new_cartridge();
+        $concept = $this->new_concept($cartridge, 'apple');
+        $kept = $this->new_concept($other, 'grape');
+        $today = mktime(0, 0, 0);
+        foreach ([[$today, $concept], [$today - DAYSECS, $concept], [$today, $kept]] as [$date, $id]) {
+            $DB->insert_record('local_playergames_daily_assignments', (object) [
+                'gamedate' => $date, 'gametype' => 'fill', 'conceptid' => $id,
+            ]);
+        }
+
+        $this->assertTrue((new cartridge_remover())->release_todays_words($cartridge));
+
+        $this->assertTrue($DB->record_exists('local_playergames_concepts', ['id' => $concept]));
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', ['gamedate' => $today - DAYSECS]));
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments', ['gamedate' => $today]));
+        $this->assertFalse((new cartridge_remover())->release_todays_words($other));
+    }
 }

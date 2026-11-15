@@ -1092,4 +1092,41 @@ final class controller_test extends \advanced_testcase {
 
         $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $id]));
     }
+
+    /**
+     * Switching off the cartridge that gave today's PlayerGuess word draws another from the others, and
+     * switching it on again leaves the words as they are.
+     */
+    public function test_deactivating_the_cartridge_of_todays_guess_word_draws_another(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $first = $this->make_cartridge('First');
+        $second = $this->make_cartridge('Second');
+        $ids = [];
+        foreach (['apple' => $first, 'grape' => $second] as $term => $cartridge) {
+            $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+            ]);
+        }
+        $today = mktime(0, 0, 0);
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => $today, 'gametype' => 'guess', 'conceptid' => $ids['apple'],
+        ]);
+        $assigned = fn(): int => (int) $DB->get_field(
+            'local_playergames_daily_assignments',
+            'conceptid',
+            ['gamedate' => $today, 'gametype' => 'guess'],
+            MUST_EXIST
+        );
+
+        $this->dispatch(['action' => 'toggle_active', 'cartridgeid' => $first]);
+
+        $this->assertSame(0, (int) $DB->get_field('local_playergames_cartridges', 'active', ['id' => $first]));
+        $this->assertSame($ids['grape'], $assigned());
+
+        $this->dispatch(['action' => 'toggle_active', 'cartridgeid' => $first]);
+
+        $this->assertSame(1, (int) $DB->get_field('local_playergames_cartridges', 'active', ['id' => $first]));
+        $this->assertSame($ids['grape'], $assigned());
+    }
 }

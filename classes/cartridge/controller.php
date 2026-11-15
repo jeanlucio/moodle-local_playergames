@@ -1019,6 +1019,9 @@ class controller {
         $cartridgerow->active = $cartridgerow->active ? 0 : 1;
         $cartridgerow->timemodified = time();
         $DB->update_record('local_playergames_cartridges', $cartridgerow);
+        if (!$cartridgerow->active && (new cartridge_remover())->release_todays_words($postcartridgeid)) {
+            $this->draw_todays_words();
+        }
         redirect($this->url(), '', null, \core\output\notification::NOTIFY_SUCCESS);
     }
 

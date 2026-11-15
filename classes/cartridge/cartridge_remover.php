@@ -86,9 +86,10 @@ class cartridge_remover {
      * words, the whole set of that game for today is dropped so it can be drawn again.
      *
      * @param int[] $conceptids The concepts that are going away.
+     * @param bool $todayonly Leave the assignments of earlier days, for concepts that stay.
      * @return bool Whether an assignment of today was removed.
      */
-    private function drop_assignments(array $conceptids): bool {
+    private function drop_assignments(array $conceptids, bool $todayonly = false): bool {
         global $DB;
 
         if ($conceptids === []) {
@@ -106,7 +107,9 @@ class cartridge_remover {
         foreach ($gametypes as $gametype) {
             $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => $today, 'gametype' => $gametype]);
         }
-        $DB->delete_records_select('local_playergames_daily_assignments', "conceptid $insql", $inparams);
+        if (!$todayonly) {
+            $DB->delete_records_select('local_playergames_daily_assignments', "conceptid $insql", $inparams);
+        }
 
         return $gametypes !== [];
     }
@@ -146,6 +149,30 @@ class cartridge_remover {
                 ['id' => $row->id]
             );
         }
+    }
+
+    /**
+     * Takes the cartridge's words out of today's games, for a cartridge that was switched off.
+     *
+     * The games read the word of the day straight from the concept, so a cartridge taken out of the library
+     * would go on serving it until midnight.
+     *
+     * @param int $cartridgeid The cartridge.
+     * @return bool Whether an assignment of today was removed, so the caller draws today's words again.
+     */
+    public function release_todays_words(int $cartridgeid): bool {
+        global $DB;
+
+        $transaction = $DB->start_delegated_transaction();
+        $removedtoday = $this->drop_assignments($DB->get_fieldset_select(
+            'local_playergames_concepts',
+            'id',
+            'cartridgeid = :cid',
+            ['cid' => $cartridgeid]
+        ), true);
+        $transaction->allow_commit();
+
+        return $removedtoday;
     }
 
     /**
