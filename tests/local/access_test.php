@@ -391,4 +391,16 @@ final class access_test extends \advanced_testcase {
         $this->assertFalse(access::is_participant((int) $student->id));
         $this->assertTrue(access::is_participant((int) $this->getDataGenerator()->create_user()->id));
     }
+
+    /**
+     * A caller that already left the users who opted out out of its query can skip the preference read.
+     */
+    public function test_is_participant_can_leave_the_optout_to_the_caller(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        set_user_preference('local_playergames_gamification', 0, $student);
+
+        $this->assertFalse(access::is_participant((int) $student->id));
+        $this->assertTrue(access::is_participant((int) $student->id, false, false));
+    }
 }

@@ -211,14 +211,16 @@ class access {
      * @param int $userid The user to test.
      * @param bool|null $isstaff Whether the user is staff, when the caller already knows (for display only);
      *     null looks it up with is_staff().
+     * @param bool $checkoptout Whether to read the user's opt-out. A caller that already left the users who
+     *     opted out out of its query passes false, and saves one preference read per user.
      * @return bool
      */
-    public static function is_participant(int $userid, ?bool $isstaff = null): bool {
+    public static function is_participant(int $userid, ?bool $isstaff = null, bool $checkoptout = true): bool {
         if (!has_capability('local/playergames:viewhub', context_system::instance(), $userid)) {
             return false;
         }
 
-        if (!preferences::is_gamification_enabled($userid)) {
+        if ($checkoptout && !preferences::is_gamification_enabled($userid)) {
             return false;
         }
 

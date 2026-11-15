@@ -61,6 +61,9 @@ class hub implements renderable, templatable {
     /** @var int Maximum ranking rows fetched from DB. */
     private const RANKING_LIMIT = 50;
 
+    /** @var int Pages of RANKING_LIMIT rows read while looking for users who still take part. */
+    private const RANKING_MAX_PAGES = 4;
+
     /** @var int Current user ID. */
     private int $userid;
 
@@ -386,13 +389,14 @@ class hub implements renderable, templatable {
 
             // The query cannot tell who still takes part: a role that lost viewhub, or a change of the
             // allowed_participants setting, leaves the flag of the profile on. The rule the hub itself
-            // applies is asked here, with the staff lookup already in hand.
+            // applies is asked here, with the staff lookup already in hand and the opt-out already in the query.
             $records = $this->take_participants(
                 $sql,
                 $params,
                 fn(\stdClass $r): bool => access::is_participant(
                     (int) $r->userid,
-                    in_array((int) $r->userid, $staffids, true)
+                    in_array((int) $r->userid, $staffids, true),
+                    false
                 )
             );
             $ranking = [];
@@ -491,7 +495,8 @@ class hub implements renderable, templatable {
      * Reads a ranking query in pages and keeps the rows the test accepts, until the list is full.
      *
      * Rows are taken in the order of the query, so the users who no longer take part are skipped without
-     * leaving the list short while there are others behind them.
+     * leaving the list short while there are others behind them. The reading stops after a few pages: the
+     * rule costs a capability check per user, and a top full of users who lost access is not worth more.
      *
      * @param string $sql The ranking query, ordered.
      * @param array $params Its parameters.
@@ -503,7 +508,7 @@ class hub implements renderable, templatable {
 
         $kept   = [];
         $offset = 0;
-        while (count($kept) < self::RANKING_LIMIT) {
+        for ($page = 0; $page < self::RANKING_MAX_PAGES && count($kept) < self::RANKING_LIMIT; $page++) {
             $records = $DB->get_records_sql($sql, $params, $offset, self::RANKING_LIMIT);
             foreach ($records as $record) {
                 if ($keep($record)) {
