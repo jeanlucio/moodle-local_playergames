@@ -205,11 +205,15 @@ class achievement_manager {
 
         if ($type === 'level_reached') {
             $level = isset($context['level']) ? (int) $context['level'] : 0;
-            return $level >= $value;
+            // The ladder can be edited and a short one never reaches the level the achievement names, so the
+            // target is capped at the top of the ladder. A ladder of a single level has nothing to reach.
+            $max = level_manager::max_level();
+            return $max > 1 && $level >= min($value, $max);
         }
 
         if ($type === 'season_champion') {
-            return isset($context['level']) && (int) $context['level'] >= level_manager::max_level();
+            $max = level_manager::max_level();
+            return $max > 1 && isset($context['level']) && (int) $context['level'] >= $max;
         }
 
         if ($type === 'streak') {

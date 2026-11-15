@@ -267,4 +267,61 @@ final class achievement_manager_test extends \advanced_testcase {
             'userid' => $user, 'achievementid' => $hundred->id,
         ]));
     }
+
+    /**
+     * Names of the level achievements the user earned.
+     *
+     * @param int $userid User id.
+     * @return string[]
+     */
+    private function earned_level_names(int $userid): array {
+        global $DB;
+
+        $names = $DB->get_fieldset_sql(
+            "SELECT a.namestring
+               FROM {local_playergames_user_achievements} ua
+               JOIN {local_playergames_achievements} a ON a.id = ua.achievementid
+              WHERE ua.userid = :userid AND a.namestring IN (:level5, :champion)",
+            ['userid' => $userid, 'level5' => 'achievement_level5_name', 'champion' => 'achievement_champion_name']
+        );
+        sort($names);
+        return $names;
+    }
+
+    /**
+     * On a ladder shorter than five levels the top level counts as "level 5" and as the champion's.
+     */
+    public function test_the_level_achievements_follow_a_short_ladder(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        level_manager::save_ladder([
+            ['minxp' => 0, 'title' => 'A'],
+            ['minxp' => 100, 'title' => 'B'],
+            ['minxp' => 200, 'title' => 'C'],
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+
+        achievement_manager::check((int) $user->id, $this->seasonid, 'level_reached', ['level' => 2]);
+        $this->assertSame([], $this->earned_level_names((int) $user->id));
+
+        achievement_manager::check((int) $user->id, $this->seasonid, 'level_reached', ['level' => 3]);
+        $this->assertSame(
+            ['achievement_champion_name', 'achievement_level5_name'],
+            $this->earned_level_names((int) $user->id)
+        );
+    }
+
+    /**
+     * With a single level there is nothing to reach, so the level achievements are never granted.
+     */
+    public function test_a_ladder_of_one_level_grants_no_level_achievement(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        level_manager::save_ladder([['minxp' => 0, 'title' => 'Only']]);
+        $user = $this->getDataGenerator()->create_user();
+
+        achievement_manager::check((int) $user->id, $this->seasonid, 'level_reached', ['level' => 1]);
+
+        $this->assertSame([], $this->earned_level_names((int) $user->id));
+    }
 }
