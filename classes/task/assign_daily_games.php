@@ -66,6 +66,22 @@ class assign_daily_games extends \core\task\scheduled_task {
     }
 
     /**
+     * Draws today's words from a web request, for the games that lost theirs, without the task's report.
+     *
+     * Safe to call at any time: a game that still has its words for today is left as it is.
+     *
+     * @return void
+     */
+    public static function draw_now(): void {
+        ob_start();
+        try {
+            (new self())->execute();
+        } finally {
+            ob_end_clean();
+        }
+    }
+
+    /**
      * Assigns a concept to each concept-based game for today.
      *
      * @return void

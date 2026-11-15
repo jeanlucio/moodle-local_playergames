@@ -965,7 +965,11 @@ class controller {
         }
 
         $updated->id = $existingconcept->id;
+        $termchanged = $updated->term !== $existingconcept->term;
         $DB->update_record('local_playergames_concepts', $updated);
+        if ($termchanged && (new cartridge_remover())->release_todays_word((int) $existingconcept->id)) {
+            $this->draw_todays_words();
+        }
         $DB->set_field(
             'local_playergames_cartridges',
             'timemodified',
@@ -1033,12 +1037,7 @@ class controller {
      * @return void
      */
     private function draw_todays_words(): void {
-        ob_start();
-        try {
-            (new \local_playergames\task\assign_daily_games())->execute();
-        } finally {
-            ob_end_clean();
-        }
+        \local_playergames\task\assign_daily_games::draw_now();
     }
 
     /**

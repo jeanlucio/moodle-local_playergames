@@ -188,7 +188,12 @@ final class guess_manager_test extends \advanced_testcase {
         $this->assertSame(['success' => false, 'reason' => 'finished'], $replay);
         // The loss pays nothing, and the page still finds the round over when it loads the state.
         $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $user->id]));
-        $state = guess_state::load((int) $user->id, $today, (int) guess_manager::get_daily_concept($today)->id);
+        $state = guess_state::load(
+            (int) $user->id,
+            $today,
+            (int) guess_manager::get_daily_concept($today)->id,
+            (string) guess_manager::get_daily_concept($today)->term
+        );
         $this->assertTrue($state['finished']);
         $this->assertFalse($state['won']);
     }

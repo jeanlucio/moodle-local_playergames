@@ -176,6 +176,24 @@ class cartridge_remover {
     }
 
     /**
+     * Takes one concept out of today's games, for a concept whose term was changed.
+     *
+     * Guesses already made, and the puzzle already built, are against the old word.
+     *
+     * @param int $conceptid The concept.
+     * @return bool Whether an assignment of today was removed, so the caller draws today's words again.
+     */
+    public function release_todays_word(int $conceptid): bool {
+        global $DB;
+
+        $transaction = $DB->start_delegated_transaction();
+        $removedtoday = $this->drop_assignments([$conceptid], true);
+        $transaction->allow_commit();
+
+        return $removedtoday;
+    }
+
+    /**
      * Deletes one concept and the daily assignments that point at it, in one transaction.
      *
      * @param int $conceptid The concept.

@@ -49,12 +49,14 @@ class fill_state {
      */
     public static function load(int $userid, int $gamedate, array $concepts): array {
         $conceptids = array_map(fn($c) => (int) $c->id, $concepts);
+        $terms = array_map(fn($c) => (string) $c->term, $concepts);
 
         $state = round_store::fetch($userid, self::GAMETYPE, $gamedate);
         if (
             $state === null
             || (int) ($state['gamedate'] ?? 0) !== $gamedate
             || ($state['conceptids'] ?? []) !== $conceptids
+            || ($state['terms'] ?? $terms) !== $terms
         ) {
             $puzzle = fill_manager::build_puzzle($concepts);
             $words = [];
@@ -69,6 +71,7 @@ class fill_state {
             $state = [
                 'gamedate'      => $gamedate,
                 'conceptids'    => $conceptids,
+                'terms'         => $terms,
                 'words'         => $words,
                 'revealedslots' => [],
                 'finished'      => false,

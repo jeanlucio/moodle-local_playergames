@@ -144,6 +144,12 @@ if (data_submitted()) {
         }
     }
 
+    // Today's words were drawn from the cartridges the season kept until now: draw them again if one of them
+    // came from a cartridge it no longer keeps for that game.
+    if ($season->status === season_manager::STATUS_ACTIVE && season_game_config::release_todays_words_outside($seasonid)) {
+        \local_playergames\task\assign_daily_games::draw_now();
+    }
+
     redirect(
         $pageurl,
         get_string('season_game_saved_ok', 'local_playergames'),

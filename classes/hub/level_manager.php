@@ -212,6 +212,32 @@ class level_manager {
         $DB->insert_records('local_playergames_levels', $records);
         $transaction->allow_commit();
         self::request_cache()->delete('ladder');
+        self::refresh_stored_levels();
+    }
+
+    /**
+     * Rewrites the level kept in every player profile to match the ladder as it is now.
+     *
+     * The profile keeps the level it had when the XP was last earned, and the rankings print that column, so
+     * a ladder edited in the meantime would show the old levels until each player earned more XP.
+     *
+     * @return void
+     */
+    private static function refresh_stored_levels(): void {
+        global $DB;
+
+        // One update per level of the ladder, which an admin keeps in the tens: far fewer than the profiles.
+        $levels = array_values($DB->get_records('local_playergames_levels', null, 'minxp ASC'));
+        foreach ($levels as $position => $row) {
+            $select = 'xp >= :minxp AND level <> :level';
+            $params = ['minxp' => (int) $row->minxp, 'level' => (int) $row->level];
+            if (isset($levels[$position + 1])) {
+                $select .= ' AND xp < :nextxp';
+                $params['nextxp'] = (int) $levels[$position + 1]->minxp;
+            }
+            $DB->set_field_select('local_playergames_player_profile', 'level', (int) $row->level, $select, $params);
+        }
+        \cache::make('local_playergames', 'ranking')->purge();
     }
 
     /**
@@ -255,6 +281,7 @@ class level_manager {
         $DB->insert_records('local_playergames_levels', $records);
         $transaction->allow_commit();
         self::request_cache()->delete('ladder');
+        self::refresh_stored_levels();
     }
 
     /**
@@ -267,6 +294,7 @@ class level_manager {
         $DB->delete_records('local_playergames_levels');
         self::seed_defaults();
         self::request_cache()->delete('ladder');
+        self::refresh_stored_levels();
     }
 
     /**

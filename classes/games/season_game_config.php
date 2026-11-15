@@ -109,6 +109,45 @@ class season_game_config {
     }
 
     /**
+     * Drops today's words of the concept games that came from a cartridge the season no longer keeps for them.
+     *
+     * The word of the day is drawn at midnight from the cartridges the season keeps for the game, so narrowing
+     * the list during the day would leave the old word being served until the next midnight.
+     *
+     * @param int $seasonid Season id.
+     * @return bool Whether the words of a game were dropped, so the caller draws them again.
+     */
+    public static function release_todays_words_outside(int $seasonid): bool {
+        global $DB;
+
+        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $dropped = false;
+        foreach (['guess', 'fill'] as $gametype) {
+            $config = $DB->get_record('local_playergames_season_games', ['seasonid' => $seasonid, 'gametype' => $gametype]);
+            $kept = $config && $config->cartridgeids !== null ? json_decode((string) $config->cartridgeids, true) : null;
+            if (!is_array($kept) || $kept === []) {
+                continue;
+            }
+
+            [$insql, $params] = $DB->get_in_or_equal(array_map('intval', $kept), SQL_PARAMS_NAMED, 'kept', false);
+            $params += ['today' => $today, 'gametype' => $gametype];
+            $outside = $DB->record_exists_sql(
+                "SELECT 1
+                   FROM {local_playergames_daily_assignments} a
+                   JOIN {local_playergames_concepts} c ON c.id = a.conceptid
+                  WHERE a.gamedate = :today AND a.gametype = :gametype AND c.cartridgeid $insql",
+                $params
+            );
+            if ($outside) {
+                $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => $today, 'gametype' => $gametype]);
+                $dropped = true;
+            }
+        }
+
+        return $dropped;
+    }
+
+    /**
      * Whether the admin switched a game off for a season.
      *
      * get_for_active_season() returns null both for a game that was switched off and for a season

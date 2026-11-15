@@ -97,7 +97,7 @@ $targetlength = 0;
 $rowsjson     = '[]';
 
 if (!$noconcept && !$alreadyplayed) {
-    $state = guess_state::load((int) $USER->id, $gamedate, (int) $concept->id);
+    $state = guess_state::load((int) $USER->id, $gamedate, (int) $concept->id, (string) $concept->term);
     $revealed = !empty($state['finished']) && empty($state['won']);
     if ($revealed) {
         // Not pre-escaped: get_string() interpolates it raw and the whole

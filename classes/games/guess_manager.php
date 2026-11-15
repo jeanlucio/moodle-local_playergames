@@ -79,7 +79,7 @@ class guess_manager {
 
         $lock = round_store::lock($userid, 'guess');
         try {
-            $state = guess_state::load($userid, $gamedate, (int) $concept->id);
+            $state = guess_state::load($userid, $gamedate, (int) $concept->id, (string) $concept->term);
             if (!empty($state['finished'])) {
                 return ['success' => false, 'reason' => 'finished'];
             }

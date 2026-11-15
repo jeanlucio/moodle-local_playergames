@@ -29,8 +29,9 @@ namespace local_playergames\games;
  * user and day (see {@see round_store}), so it survives a logout or a switch of browser: a lost round
  * stays lost for the day instead of starting again with the term already revealed.
  *
- * The state is discarded and rebuilt whenever the stored gamedate or conceptid no longer matches
- * today's assignment, so a stale round (or a re-assigned concept) never leaks into a new play.
+ * The state is discarded and rebuilt whenever the stored gamedate, conceptid or term no longer matches
+ * today's assignment, so a stale round (a re-assigned concept, or one whose term was edited since the
+ * rows were guessed) never leaks into a new play.
  *
  * @package    local_playergames
  */
@@ -44,18 +45,21 @@ class guess_state {
      * @param int $userid User id.
      * @param int $gamedate Midnight timestamp of the day.
      * @param int $conceptid Concept id assigned to today's play.
+     * @param string $term The concept's term now, which the rows kept were guessed against.
      * @return array
      */
-    public static function load(int $userid, int $gamedate, int $conceptid): array {
+    public static function load(int $userid, int $gamedate, int $conceptid, string $term): array {
         $state = round_store::fetch($userid, self::GAMETYPE, $gamedate);
         if (
             $state === null
             || (int) ($state['gamedate'] ?? 0) !== $gamedate
             || (int) ($state['conceptid'] ?? 0) !== $conceptid
+            || ($state['term'] ?? $term) !== $term
         ) {
             $state = [
                 'gamedate'  => $gamedate,
                 'conceptid' => $conceptid,
+                'term'      => $term,
                 'rows'      => [],
                 'finished'  => false,
                 'won'       => false,
