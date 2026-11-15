@@ -36,6 +36,51 @@ body.path-local-playergames .visually-hidden {
     border: 0;
 }
 
+/* Bootstrap 4 (Moodle 4.5) gives a badge on a coloured background no text colour of its own, so the text came
+   out dark on the dark blue and green. */
+body.path-local-playergames .badge.bg-primary,
+body.path-local-playergames .badge.bg-danger {
+    color: var(--bs-white, #fff);
+}
+
+/* The green of the badges is the plugin's own: a theme can make its success colour as light as a mid green,
+   where white text falls to 3:1, and a badge cannot pick its text colour from the background. */
+body.path-local-playergames .badge.pg-badge-success {
+    background-color: #15803d;
+    color: var(--bs-white, #fff);
+}
+
+/* The green of the "right answer" text, dark enough on white whatever the theme makes of text-success. */
+body.path-local-playergames .pg-text-correct {
+    color: var(--bs-success-text-emphasis, #14532d);
+}
+
+/* Radios and checkboxes of the pages of this plugin reach the 24px minimum size of a target, which Bootstrap
+   4 (Moodle 4.5) leaves at 16px. */
+body.path-local-playergames .form-check-input:not([role="switch"]) {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* The label is a target as well, and the 23px that its text leaves is under the same minimum. */
+body.path-local-playergames .form-check-label {
+    display: inline-block;
+    min-height: 1.5rem;
+}
+
+/* Boost's secondary colour is a light grey, so a badge on it needs dark text to be readable. */
+body.path-local-playergames .badge.bg-secondary {
+    color: var(--bs-dark, #000);
+}
+
+/* The grid rows of the pages below have gutters wider than the padding of the page on a phone, which made
+   the page scroll sideways by a few pixels; the overflow is only the empty gutter, so it is clipped. */
+body.path-local-playergames .pg-hub,
+body.path-local-playergames .pg-achievements,
+body.path-local-playergames .local-playergames-engagement-meter {
+    overflow-x: clip;
+}
+
 /* Boost colours every link inside an alert with the alert's dark text colour, which beat the white of a
    button there and left it at a 3.1:1 contrast. */
 body.path-local-playergames .alert .btn-primary {
@@ -344,8 +389,8 @@ body.path-local-playergames .pg-play-quiz-wrap {
 
 body.path-local-playergames .pg-play-guess-wrap {
     max-width: 480px;
-    --pg-guess-correct: #16a34a;
-    --pg-guess-present: #d97706;
+    --pg-guess-correct: #15803d;
+    --pg-guess-present: #b45309;
     --pg-guess-absent: #6b7280;
 }
 
@@ -379,6 +424,29 @@ body.path-local-playergames .pg-guess-tile-filled {
     border-color: var(--bs-secondary-color, #6c757d);
 }
 
+body.path-local-playergames .pg-guess-tile {
+    position: relative;
+}
+
+/* A mark besides the colour, for players who cannot tell the colours apart; the empty alternative text keeps
+   a screen reader from reading it twice, as the tile already says it. */
+body.path-local-playergames .pg-guess-tile-correct::after,
+body.path-local-playergames .pg-guess-tile-present::after {
+    position: absolute;
+    top: 0.1rem;
+    inset-inline-end: 0.25rem;
+    font-size: 0.6rem;
+    line-height: 1;
+}
+
+body.path-local-playergames .pg-guess-tile-correct::after {
+    content: "✓" / "";
+}
+
+body.path-local-playergames .pg-guess-tile-present::after {
+    content: "●" / "";
+}
+
 body.path-local-playergames .pg-guess-tile-correct {
     background-color: var(--pg-guess-correct);
     border-color: var(--pg-guess-correct);
@@ -403,17 +471,23 @@ body.path-local-playergames .pg-guess-keyboard {
     align-items: center;
     gap: 0.4rem;
     margin-top: 1.5rem;
+    width: 100%;
 }
 
 body.path-local-playergames .pg-guess-kbrow {
     display: flex;
+    justify-content: center;
     gap: 0.3rem;
+    width: 100%;
 }
 
+/* The keys share the row, up to a comfortable width, so a ten-key row fits a 320px screen. */
 body.path-local-playergames .pg-guess-key {
-    min-width: 2.25rem;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 2.75rem;
     height: 3rem;
-    padding-inline: 0.4rem;
+    padding-inline: 0.2rem;
     border: 0;
     border-radius: 0.25rem;
     background-color: var(--bs-secondary-bg, #e9ecef);
@@ -423,8 +497,9 @@ body.path-local-playergames .pg-guess-key {
 }
 
 body.path-local-playergames .pg-guess-key-wide {
-    min-width: 3.5rem;
-    font-size: 0.8rem;
+    flex: 1.6 1 0;
+    max-width: 4.5rem;
+    font-size: 0.7rem;
 }
 
 body.path-local-playergames .pg-guess-key-correct {

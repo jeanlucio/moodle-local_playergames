@@ -81,7 +81,7 @@ final class dashboard_test extends \advanced_testcase {
         foreach ($this->export()['cards'] as $card) {
             $installed = (bool) ($status[$card['component']]['installed'] ?? false);
             $this->assertSame($installed, $card['isinstalled'], $card['component']);
-            $this->assertSame($installed ? 'bg-success' : 'bg-secondary', $card['statusbadge']);
+            $this->assertSame($installed ? 'pg-badge-success' : 'bg-secondary', $card['statusbadge']);
             $this->assertSame($installed ? $bycomponent[$card['component']]['color'] : '#94a3b8', $card['color']);
             $this->assertSame($card['version'] !== '', $card['hasversion']);
             $this->assertNotSame('', $card['description']);

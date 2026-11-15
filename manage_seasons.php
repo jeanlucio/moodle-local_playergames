@@ -152,7 +152,7 @@ foreach ($seasons as $season) {
         ['seasonid' => $season->id]
     );
     if ($season->status === season_manager::STATUS_ACTIVE) {
-        $statusbadge = 'bg-success text-white';
+        $statusbadge = 'pg-badge-success';
     } else if ($season->status === season_manager::STATUS_UPCOMING) {
         $statusbadge = 'bg-warning text-dark';
     } else {

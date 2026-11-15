@@ -111,7 +111,7 @@ class dashboard implements renderable, templatable {
                     $installed ? 'dashboard_plugin_installed' : 'dashboard_plugin_notinstalled',
                     'local_playergames'
                 ),
-                'statusbadge'       => $installed ? 'bg-success' : 'bg-secondary',
+                'statusbadge'       => $installed ? 'pg-badge-success' : 'bg-secondary',
                 'version'           => $status['version'],
                 'hasversion'        => $status['version'] !== '',
                 'description'       => get_string('plugin_desc_' . $component, 'local_playergames'),

@@ -72,8 +72,8 @@
                 <i class="fa fa-arrow-left me-1" aria-hidden="true"></i>
                 {{#str}}cartridge_back_to_library, local_playergames{{/str}}
             </a>
-            <h4 class="mb-0">{{editor_cartridge_name}}</h4>
-            <span class="badge pg-cart-badge-quiz">
+            <h2 class="h4 mb-0">{{editor_cartridge_name}}</h2>
+            <span class="badge pg-badge-success">
                 {{#str}}cartridge_type_quiz, local_playergames{{/str}}
             </span>
         </div>
@@ -103,7 +103,7 @@
                     <thead>
                         <tr>
                             <th scope="col">{{#str}}category_name, local_playergames{{/str}}</th>
-                            <th scope="col"></th>
+                            <th scope="col">{{#str}}actions, core{{/str}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -216,7 +216,7 @@
                                value="{{form_questiontext}}" class="form-control" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="pg-q-correct" class="form-label fw-semibold text-success">
+                        <label for="pg-q-correct" class="form-label fw-semibold pg-text-correct">
                             {{#str}}quiz_editor_correct, local_playergames{{/str}}
                         </label>
                         <input type="text" id="pg-q-correct" name="correct"
@@ -310,7 +310,7 @@
                     <th scope="col">{{#str}}quiz_editor_distractors, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}concept_category, local_playergames{{/str}}</th>
                     <th scope="col">{{#str}}concept_difficulty, local_playergames{{/str}}</th>
-                    <th scope="col"></th>
+                    <th scope="col">{{#str}}actions, core{{/str}}</th>
                 </tr>
             </thead>
             <tbody>
@@ -318,7 +318,7 @@
                 <tr>
                     <td>{{id}}</td>
                     <td>{{questiontext}}</td>
-                    <td class="text-success fw-semibold">{{correct}}</td>
+                    <td class="pg-text-correct fw-semibold">{{correct}}</td>
                     <td class="text-muted small">
                         {{#distractors}}{{.}}<br>{{/distractors}}
                     </td>
