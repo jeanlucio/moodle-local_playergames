@@ -632,4 +632,21 @@ final class hub_test extends \advanced_testcase {
         $this->assertSame([], $students['staffranking']);
         $this->assertSame([(int) $student->id], array_column($students['studentranking'], 'userid'));
     }
+
+    /**
+     * A ranking nobody joined says so, with the way in, instead of an empty card.
+     */
+    public function test_an_empty_ranking_explains_itself(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        $viewer = $this->player($season, 20, false);
+
+        $data = $this->export_for($viewer);
+        $html = $PAGE->get_renderer('core')->render_from_template('local_playergames/hub', $data);
+
+        $this->assertSame([], $data['studentranking']);
+        $this->assertStringContainsString(get_string('hub_ranking_empty', 'local_playergames'), $html);
+        $this->assertStringContainsString('data-ranking-join', $html);
+    }
 }

@@ -418,6 +418,7 @@ $string['hub_rank_level'] = 'Nível';
 $string['hub_rank_player'] = 'Estudante';
 $string['hub_rank_pos'] = '#';
 $string['hub_rank_xp'] = 'XP';
+$string['hub_ranking_empty'] = 'Ninguém entrou no ranking ainda. Ative “Aparecer no ranking” no seu perfil para ser o primeiro.';
 $string['hub_ranking_section'] = 'Ranking';
 $string['hub_ranking_tab_staff'] = 'Equipe docente';
 $string['hub_ranking_tab_students'] = 'Estudantes';

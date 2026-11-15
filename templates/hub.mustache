@@ -120,6 +120,7 @@
         "str_freezes": "Freezes",
         "str_xp_next": "XP to next level",
         "str_showinranking": "Appear in ranking",
+        "str_ranking_empty": "Nobody has joined the ranking yet.",
         "str_ranking_stu": "Students",
         "str_ranking_sta": "Staff",
         "str_rank_pos": "#",
@@ -574,6 +575,16 @@
                         </div>
                     </div>
                     {{/hasstaffranking}}
+                    {{^hasstudentranking}}{{^hasstaffranking}}
+                    <div class="alert alert-secondary m-3">
+                        <i class="fa fa-user-slash me-2" aria-hidden="true"></i>{{str_ranking_empty}}
+                        {{^showinranking}}
+                        <button type="button" class="btn btn-sm btn-primary ms-2" data-ranking-join>
+                            {{str_join}}
+                        </button>
+                        {{/showinranking}}
+                    </div>
+                    {{/hasstaffranking}}{{/hasstudentranking}}
                     {{/showbothtabs}}
                 </div>
             </div>

@@ -333,6 +333,7 @@ class hub implements renderable, templatable {
             'str_show_less'      => get_string('hub_show_less', 'local_playergames'),
             'str_invite'         => get_string('hub_invite_noprofile', 'local_playergames'),
             'str_join'           => get_string('hub_join_ranking', 'local_playergames'),
+            'str_ranking_empty'  => get_string('hub_ranking_empty', 'local_playergames'),
         ];
     }
 
