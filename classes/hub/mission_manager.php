@@ -311,10 +311,10 @@ class mission_manager {
      * The total is stored while it is below the target, so the hub shows how far the player is and not 0 until
      * the day it is reached.
      *
-     * @param int $userid
-     * @param int $seasonid
-     * @param stdClass $mission
-     * @param stdClass $progress With currentvalue set to the total now.
+     * @param int $userid The player.
+     * @param int $seasonid The season the progress belongs to.
+     * @param stdClass $mission The mission, with its target.
+     * @param stdClass $progress The player's progress row, with currentvalue set to the total now.
      * @return void
      */
     private static function advance_or_complete(int $userid, int $seasonid, stdClass $mission, stdClass $progress): void {
