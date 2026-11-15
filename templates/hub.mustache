@@ -184,9 +184,9 @@
             {{! Profile card }}
             <div class="card pg-hub-profile-card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h2 class="h5 mb-0">
                         <i class="fa fa-user-circle me-2" aria-hidden="true"></i>{{str_profile}}
-                    </h5>
+                    </h2>
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
@@ -205,7 +205,7 @@
                         <div class="d-flex justify-content-between">
                             <small>{{str_xp_next}}: {{xp_next}}</small>
                         </div>
-                        <div class="progress" role="progressbar"
+                        <div class="progress" role="progressbar" aria-label="{{str_xp_next}}"
                             aria-valuenow="{{progress_pct}}" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar bg-primary" style="width: {{progress_pct}}%"></div>
                         </div>
@@ -291,9 +291,9 @@
             {{#hasmissions}}
             <div class="card pg-hub-missions-card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h2 class="h5 mb-0">
                         <i class="fa fa-star me-2" aria-hidden="true"></i>{{str_missions}}
-                    </h5>
+                    </h2>
                 </div>
                 <div class="list-group list-group-flush">
                     {{#missions}}
@@ -318,7 +318,7 @@
                                 <small class="text-muted">{{desc}}</small>
                                 {{^completed}}
                                 <div class="progress pg-hub-mission-progress mt-1"
-                                    role="progressbar"
+                                    role="progressbar" aria-label="{{name}}"
                                     aria-valuenow="{{progress_pct}}"
                                     aria-valuemin="0" aria-valuemax="100">
                                     <div class="progress-bar bg-warning" style="width: {{progress_pct}}%"></div>
@@ -346,9 +346,9 @@
             {{#rankingenabled}}
             <div class="card pg-hub-ranking-card mb-4">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0">
+                    <h2 class="h5 mb-0">
                         <i class="fa fa-ranking-star me-2" aria-hidden="true"></i>{{str_ranking}}
-                    </h5>
+                    </h2>
                     {{#showbothtabs}}
                     <ul class="nav nav-pills" id="pg-rank-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -594,9 +594,9 @@
             {{#learningxprankingenabled}}
             <div class="card pg-hub-learning-ranking-card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h2 class="h5 mb-0">
                         <i class="fa fa-graduation-cap me-2" aria-hidden="true"></i>{{str_learningxp_ranking}}
-                    </h5>
+                    </h2>
                 </div>
                 <div class="card-body p-0">
                     {{#haslearningranking}}
@@ -664,9 +664,9 @@
             {{! Today's games }}
             <div class="card pg-hub-games-card">
                 <div class="card-header">
-                    <h5 class="mb-0">
+                    <h2 class="h5 mb-0">
                         <i class="fa fa-gamepad me-2" aria-hidden="true"></i>{{str_games}}
-                    </h5>
+                    </h2>
                 </div>
                 <div class="card-body">
                     <div class="row row-cols-2 row-cols-md-4 g-3">
@@ -687,7 +687,7 @@
                                 <div class="fw-semibold small">{{name}}</div>
                                 <div class="mt-1">
                                     {{#done}}
-                                    <span class="badge bg-success">
+                                    <span class="badge pg-badge-success">
                                         <i class="fa fa-check me-1" aria-hidden="true"></i>{{str_done}}
                                     </span>
                                     {{/done}}

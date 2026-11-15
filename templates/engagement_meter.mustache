@@ -75,7 +75,7 @@
     {{! Group headings with course counts }}
     <div class="row mb-3">
         <div class="col-md-6">
-            <span class="badge bg-success fs-6">
+            <span class="badge pg-badge-success fs-6">
                 {{#str}} engmeter_with_player, local_playergames {{/str}}
             </span>
             <small class="text-muted ms-2">{{with_count}}</small>
@@ -94,9 +94,9 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title h6">
+                    <h2 class="card-title h6">
                         {{#str}} engmeter_chart_events, local_playergames {{/str}}
-                    </h3>
+                    </h2>
                     <div class="engmeter-chart-wrap">
                         {{{chart_events}}}
                     </div>
@@ -107,9 +107,9 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title h6">
+                    <h2 class="card-title h6">
                         {{#str}} engmeter_chart_completion, local_playergames {{/str}}
-                    </h3>
+                    </h2>
                     <div class="engmeter-chart-wrap">
                         {{{chart_completion}}}
                     </div>
@@ -120,9 +120,9 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title h6">
+                    <h2 class="card-title h6">
                         {{#str}} engmeter_chart_grade, local_playergames {{/str}}
-                    </h3>
+                    </h2>
                     <div class="engmeter-chart-wrap">
                         {{{chart_grade}}}
                     </div>
@@ -147,8 +147,8 @@
                 {{#summary}}
                 <tr>
                     <td>{{metric}}</td>
-                    <td class="text-success fw-bold">{{with_value}}</td>
-                    <td class="text-secondary">{{without_value}}</td>
+                    <td class="pg-text-correct fw-bold">{{with_value}}</td>
+                    <td>{{without_value}}</td>
                     <td>{{delta}}</td>
                 </tr>
                 {{/summary}}

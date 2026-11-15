@@ -51,7 +51,7 @@
                         "color": "#4f46e5",
                         "isinstalled": true,
                         "statuslabel": "Installed",
-                        "statusbadge": "bg-success",
+                        "statusbadge": "pg-badge-success",
                         "version": "0.1.6",
                         "hasversion": true,
                         "description": "AI and gamification hub.",
@@ -72,7 +72,7 @@
                 "color": "#4f46e5",
                 "isinstalled": true,
                 "statuslabel": "Installed",
-                "statusbadge": "bg-success",
+                "statusbadge": "pg-badge-success",
                 "version": "0.1.6",
                 "hasversion": true,
                 "description": "AI and gamification hub.",
@@ -101,7 +101,7 @@
         <div class="pg-eco-groups">
             {{#groups}}
             <section class="pg-eco-group pg-eco-group-{{key}}" aria-label="{{label}}">
-                <h3 class="pg-eco-group-title">{{label}}</h3>
+                <h2 class="pg-eco-group-title">{{label}}</h2>
                 <div class="pg-eco-group-cards">
                     {{#cards}}
                     <div class="pg-eco-card{{^isinstalled}} pg-eco-card-missing{{/isinstalled}}"
