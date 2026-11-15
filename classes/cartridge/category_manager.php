@@ -82,6 +82,26 @@ class category_manager {
     }
 
     /**
+     * Whether another category of the cartridge already has the name.
+     *
+     * Compared the way ensure_category() looks a name up, so the two agree on what is the same category.
+     *
+     * @param int $cartridgeid The cartridge.
+     * @param string $name Normalised name.
+     * @param int $exceptid Category to leave out of the comparison, the one being renamed.
+     * @return bool
+     */
+    private function name_taken(int $cartridgeid, string $name, int $exceptid = 0): bool {
+        global $DB;
+
+        return $DB->record_exists_select(
+            'local_playergames_categories',
+            'cartridgeid = :cartridgeid AND name = :name AND id <> :exceptid',
+            ['cartridgeid' => $cartridgeid, 'name' => $name, 'exceptid' => $exceptid]
+        );
+    }
+
+    /**
      * Creates a new category in the cartridge.
      *
      * @param int $cartridgeid Target cartridge ID.
@@ -94,6 +114,9 @@ class category_manager {
         $name = $this->normalise_name($name);
         if ($name === '') {
             throw new \moodle_exception('error_category_empty_name', 'local_playergames');
+        }
+        if ($this->name_taken($cartridgeid, $name)) {
+            throw new \moodle_exception('error_category_duplicate', 'local_playergames');
         }
         $maxorder = (int) $DB->get_field_sql(
             'SELECT COALESCE(MAX(sortorder), -1) FROM {local_playergames_categories}
@@ -114,7 +137,7 @@ class category_manager {
      * @param int $categoryid Category ID.
      * @param int $cartridgeid Owning cartridge ID (for ownership check).
      * @param string $name New name.
-     * @throws \moodle_exception If the name is empty or the category is not found.
+     * @throws \moodle_exception If the name is empty or taken by another category, or the category is not found.
      */
     public function rename(int $categoryid, int $cartridgeid, string $name): void {
         global $DB;
@@ -128,6 +151,9 @@ class category_manager {
         );
         if (!$record) {
             throw new \moodle_exception('error_category_notfound', 'local_playergames');
+        }
+        if ($this->name_taken($cartridgeid, $name, $categoryid)) {
+            throw new \moodle_exception('error_category_duplicate', 'local_playergames');
         }
         $record->name = $name;
         $DB->update_record('local_playergames_categories', $record);

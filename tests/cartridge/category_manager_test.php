@@ -175,4 +175,35 @@ final class category_manager_test extends \advanced_testcase {
         $this->assertTrue($DB->record_exists('local_playergames_categories', ['id' => $catid]));
         $this->assertEquals($catid, $DB->get_field('local_playergames_concepts', 'categoryid', ['id' => $conceptid]));
     }
+
+    /**
+     * A name is taken once per cartridge, whether the category is created or renamed.
+     */
+    public function test_a_category_name_cannot_be_used_twice_in_a_cartridge(): void {
+        global $DB;
+        $first = $this->manager->create($this->cartridgeid, 'Biology');
+        $second = $this->manager->create($this->cartridgeid, 'Chemistry');
+
+        $attempts = [
+            fn() => $this->manager->create($this->cartridgeid, '  Biology '),
+            fn() => $this->manager->rename($second, $this->cartridgeid, 'Biology'),
+        ];
+        foreach ($attempts as $attempt) {
+            try {
+                $attempt();
+                $this->fail('A repeated name was accepted.');
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_category_duplicate', $e->errorcode);
+            }
+        }
+
+        $this->assertSame(2, $DB->count_records('local_playergames_categories', ['cartridgeid' => $this->cartridgeid]));
+        // Keeping its own name is not a repetition, and another cartridge may use the same name.
+        $this->manager->rename($first, $this->cartridgeid, 'Biology');
+        $other = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Other', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => 1, 'timemodified' => 1, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        $this->assertGreaterThan(0, $this->manager->create($other, 'Biology'));
+    }
 }
