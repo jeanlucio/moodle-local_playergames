@@ -362,10 +362,17 @@ final class access_test extends \advanced_testcase {
 
         $this->setUser($teacher);
         try {
-            access::require_participant();
+            access::require_participant(true);
             $this->fail('A teacher was let into a students-only hub.');
         } catch (\moodle_exception $e) {
             $this->assertSame('hub_access_restricted', $e->errorcode);
+        }
+        // A page does not answer with an error page: it sends the user somewhere that opens for them.
+        try {
+            access::require_participant();
+            $this->fail('A teacher was let into a students-only hub.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('redirecterrordetected', $e->errorcode);
         }
 
         $student = $this->getDataGenerator()->create_user();
@@ -435,5 +442,23 @@ final class access_test extends \advanced_testcase {
 
         $this->assertFalse(access::is_participant((int) $student->id));
         $this->assertTrue(access::is_participant((int) $student->id, false, false));
+    }
+
+    /**
+     * Staff go to the dashboard, everyone else to their own page, and nobody back to the hub that turned them away.
+     */
+    public function test_a_user_turned_away_is_sent_somewhere_that_opens_for_them(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $student = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        $this->assertSame(
+            '/local/playergames/dashboard.php',
+            access::turned_away_url((int) $teacher->id)->out_as_local_url(false)
+        );
+        $this->assertSame('/my/', access::turned_away_url((int) $student->id)->out_as_local_url(false));
     }
 }

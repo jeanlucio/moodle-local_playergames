@@ -246,14 +246,30 @@ class access {
     }
 
     /**
+     * Where a page sends a user the participant rules turned away.
+     *
+     * Staff the setting turns away from the hub have the dashboard; anyone else goes to their own page. Never
+     * the hub itself, which would send them straight back to the check that turned them away.
+     *
+     * @param int $userid The user.
+     * @return \moodle_url
+     */
+    public static function turned_away_url(int $userid): \moodle_url {
+        return self::is_staff($userid)
+            ? new \moodle_url('/local/playergames/dashboard.php')
+            : new \moodle_url('/my/');
+    }
+
+    /**
      * Stops the request unless the current user takes part in the gamification.
      *
      * Call it right after require_login() and require_capability() on every entry point that shows
-     * or records game data, before any POST handling. A page sends a user who turned the gamification
-     * off back to their dashboard with a notice; a service (which cannot redirect) gets an exception.
+     * or records game data, before any POST handling. A page sends a user the participant rules turn away
+     * (the gamification turned off, or a group the site does not allow) somewhere that opens for them
+     * with a notice; a service or a file (which cannot redirect) gets an exception.
      *
-     * @param bool $service True when called from a web service or AJAX handler, to throw instead of redirect.
-     * @throws \moodle_exception When the user does not take part.
+     * @param bool $service True when called from a web service, AJAX handler or file, to throw instead of redirect.
+     * @throws \moodle_exception When the user does not take part and the caller cannot redirect.
      */
     public static function require_participant(bool $service = false): void {
         global $USER;
@@ -271,7 +287,15 @@ class access {
         }
 
         if (!self::is_participant((int) $USER->id)) {
-            throw new \moodle_exception('hub_access_restricted', 'local_playergames');
+            if ($service) {
+                throw new \moodle_exception('hub_access_restricted', 'local_playergames');
+            }
+            redirect(
+                self::turned_away_url((int) $USER->id),
+                get_string('hub_access_restricted', 'local_playergames'),
+                null,
+                \core\output\notification::NOTIFY_INFO
+            );
         }
     }
 }

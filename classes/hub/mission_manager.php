@@ -175,18 +175,18 @@ class mission_manager {
         if ($trigger === 'streak_updated' && isset($context['streak']) && isset($missions['streak'])) {
             $mission  = $missions['streak'];
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed && (int) $context['streak'] >= (int) $mission->targetvalue) {
+            if (!$progress->completed) {
                 $progress->currentvalue = (int) $context['streak'];
-                self::complete_mission($userid, $seasonid, $mission, $progress);
+                self::advance_or_complete($userid, $seasonid, $mission, $progress);
             }
         }
 
         if ($trigger === 'xp_earned' && isset($context['total_xp']) && isset($missions['cumulative'])) {
             $mission  = $missions['cumulative'];
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed && (int) $context['total_xp'] >= (int) $mission->targetvalue) {
+            if (!$progress->completed) {
                 $progress->currentvalue = (int) $context['total_xp'];
-                self::complete_mission($userid, $seasonid, $mission, $progress);
+                self::advance_or_complete($userid, $seasonid, $mission, $progress);
             }
         }
 
@@ -303,6 +303,27 @@ class mission_manager {
         $record->timecompleted = null;
         $record->id = $DB->insert_record('local_playergames_mission_progress', $record);
         return $record;
+    }
+
+    /**
+     * Saves the progress of a mission measured by a total (a streak, the XP of the season), or completes it.
+     *
+     * The total is stored while it is below the target, so the hub shows how far the player is and not 0 until
+     * the day it is reached.
+     *
+     * @param int $userid
+     * @param int $seasonid
+     * @param stdClass $mission
+     * @param stdClass $progress With currentvalue set to the total now.
+     * @return void
+     */
+    private static function advance_or_complete(int $userid, int $seasonid, stdClass $mission, stdClass $progress): void {
+        global $DB;
+        if ((int) $progress->currentvalue >= (int) $mission->targetvalue) {
+            self::complete_mission($userid, $seasonid, $mission, $progress);
+            return;
+        }
+        $DB->update_record('local_playergames_mission_progress', $progress);
     }
 
     /**

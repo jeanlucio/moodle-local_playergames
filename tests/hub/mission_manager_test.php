@@ -219,4 +219,53 @@ final class mission_manager_test extends \advanced_testcase {
             'missionid' => $missionid,
         ]));
     }
+
+    /**
+     * Reads the saved progress of a mission of a type for a user.
+     *
+     * @param int $userid User id.
+     * @param int $seasonid Season id.
+     * @param string $type Mission type.
+     * @return \stdClass|null
+     */
+    private function progress_of(int $userid, int $seasonid, string $type): ?\stdClass {
+        global $DB;
+
+        $missionid = $DB->get_field('local_playergames_missions', 'id', ['type' => $type], MUST_EXIST);
+        $row = $DB->get_record('local_playergames_mission_progress', [
+            'userid' => $userid, 'missionid' => $missionid, 'seasonid' => $seasonid,
+        ]);
+        return $row ?: null;
+    }
+
+    /**
+     * The missions measured by a total show how far the player is, instead of staying at zero until done.
+     *
+     * Regression test: the streak and XP missions only wrote their progress on the day the target was reached,
+     * so the hub showed "0/100" to a player with 60 XP.
+     */
+    public function test_totals_are_saved_below_the_target(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season();
+        mission_manager::sync();
+
+        mission_manager::update((int) $user->id, $seasonid, 'xp_earned', ['total_xp' => 60]);
+        mission_manager::update((int) $user->id, $seasonid, 'streak_updated', ['streak' => 3]);
+
+        $xp = $this->progress_of((int) $user->id, $seasonid, 'cumulative');
+        $streak = $this->progress_of((int) $user->id, $seasonid, 'streak');
+        $this->assertSame(60, (int) $xp->currentvalue);
+        $this->assertSame(0, (int) $xp->completed);
+        $this->assertSame(3, (int) $streak->currentvalue);
+
+        // A streak that broke and started again shows the new, shorter one.
+        mission_manager::update((int) $user->id, $seasonid, 'streak_updated', ['streak' => 1]);
+        $this->assertSame(1, (int) $this->progress_of((int) $user->id, $seasonid, 'streak')->currentvalue);
+        $this->assertSame(0, $this->xp((int) $user->id, $seasonid));
+
+        mission_manager::update((int) $user->id, $seasonid, 'xp_earned', ['total_xp' => 120]);
+        $this->assertSame(1, (int) $this->progress_of((int) $user->id, $seasonid, 'cumulative')->completed);
+    }
 }

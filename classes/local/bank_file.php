@@ -72,7 +72,7 @@ final class bank_file {
     public static function serve(context $context, string $filearea, array $args, bool $forcedownload, array $options): bool {
         require_login();
         require_capability('local/playergames:viewhub', context_system::instance());
-        access::require_participant();
+        access::require_participant(true);
 
         $file = self::find($context, $filearea, $args);
         if ($file === null) {
