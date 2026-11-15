@@ -208,4 +208,49 @@ final class engagement_report_test extends \advanced_testcase {
 
         $this->assertEqualsCanonicalizing([(int) $first->id, (int) $second->id], $ids);
     }
+
+    /**
+     * The metrics are per active student: teachers, suspended and expired enrolments are not counted,
+     * and neither are their events or their completions.
+     *
+     * Regression test: the divisor was every enrolment and the events were those of any user, so the
+     * label "per enrolled student" described something else.
+     */
+    public function test_only_active_students_are_counted(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+        $CFG->enablecompletion = true;
+        set_config('enabled_stores', 'logstore_standard', 'tool_log');
+        set_config('buffersize', 0, 'logstore_standard');
+        get_log_manager(true);
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1]);
+        $student = $generator->create_user();
+        $teacher = $generator->create_user();
+        $suspended = $generator->create_user();
+        $expired = $generator->create_user();
+        $generator->enrol_user($student->id, $course->id, 'student');
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $generator->enrol_user($suspended->id, $course->id, 'student', 'manual', 0, 0, ENROL_USER_SUSPENDED);
+        $generator->enrol_user($expired->id, $course->id, 'student', 'manual', time() - (2 * DAYSECS), time() - DAYSECS);
+        foreach ([$student, $teacher, $suspended, $expired] as $user) {
+            $this->setUser($user);
+            \core\event\course_viewed::create(['context' => \context_course::instance($course->id)])->trigger();
+        }
+        foreach ([$teacher, $suspended] as $user) {
+            (new \completion_completion(['course' => $course->id, 'userid' => $user->id]))->mark_complete();
+        }
+        get_log_manager()->dispose();
+
+        $metrics = (new engagement_report())->get_metrics([(int) $course->id], 30);
+
+        // One student, one event of theirs, and nobody of them completed the course.
+        $this->assertSame(1.0, $metrics['events_per_user']);
+        $this->assertSame(0.0, $metrics['completion_rate']);
+
+        (new \completion_completion(['course' => $course->id, 'userid' => $student->id]))->mark_complete();
+        $this->assertSame(100.0, (new engagement_report())->get_metrics([(int) $course->id], 30)['completion_rate']);
+    }
 }

@@ -28,6 +28,9 @@ namespace local_playergames\local;
  * Computes engagement metrics comparing courses with and without Player plugins.
  */
 class engagement_report {
+    /** @var int Students per query when they are listed as parameters, well below what a database takes. */
+    private const USER_CHUNK = 1000;
+
     /** @var string[] Plugin module names that identify a "Player course". */
     private const PLAYER_MODULES = ['playerwords', 'playerraid', 'playerpuzzle', 'playergroup'];
 
@@ -102,6 +105,49 @@ class engagement_report {
     }
 
     /**
+     * Returns the distinct students of the courses: a role of the gradebook roles in the course and an
+     * enrolment that is active now, in an enabled enrolment method.
+     *
+     * @param int[] $courseids The courses.
+     * @return int[] User ids.
+     */
+    private function get_student_ids(array $courseids): array {
+        global $CFG, $DB;
+
+        $roleids = array_filter(array_map('intval', explode(',', (string) ($CFG->gradebookroles ?? ''))));
+        if ($courseids === [] || $roleids === []) {
+            return [];
+        }
+
+        [$incourses, $params] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'sc');
+        [$inroles, $roleparams] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'sr');
+        $params += $roleparams;
+        $params['now'] = time();
+        $params['active'] = ENROL_USER_ACTIVE;
+        $params['enabled'] = ENROL_INSTANCE_ENABLED;
+        $params['contextlevel'] = CONTEXT_COURSE;
+
+        $ids = $DB->get_fieldset_sql(
+            "SELECT DISTINCT ue.userid
+               FROM {user_enrolments} ue
+               JOIN {enrol} e ON e.id = ue.enrolid
+               JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :contextlevel
+               JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = ue.userid
+               JOIN {user} u ON u.id = ue.userid
+              WHERE e.courseid $incourses
+                AND ra.roleid $inroles
+                AND ue.status = :active
+                AND e.status = :enabled
+                AND (ue.timestart = 0 OR ue.timestart <= :now)
+                AND (ue.timeend = 0 OR ue.timeend > :now2)
+                AND u.deleted = 0
+                AND u.suspended = 0",
+            $params + ['now2' => $params['now']]
+        );
+        return array_map('intval', $ids);
+    }
+
+    /**
      * Calculates engagement metrics for a given set of courses over a time window.
      *
      * @param int[] $courseids List of course IDs to analyse.
@@ -122,8 +168,13 @@ class engagement_report {
 
         $since = time() - ($days * DAYSECS);
 
-        // Total log events in these courses during the selected period, from whichever log store the
-        // site reads reports from.
+        // The metrics are per enrolled student: the users with a student role in the course and an active
+        // enrolment. Teachers, managers and suspended or expired enrolments belong to no side of the ratios.
+        $studentids = $this->get_student_ids($courseids);
+        $totalusers = count($studentids);
+
+        // Log events of those students in these courses during the selected period, from whichever log
+        // store the site reads reports from.
         $totalevents = 0;
         $reader      = self::get_log_reader();
         if ($reader !== null) {
@@ -131,34 +182,33 @@ class engagement_report {
             $evparams['evsince'] = $since;
             // The log's course column covers the course page and everything inside it. Filtering by the
             // course context would keep only the course page and drop the activities' own events.
-            $totalevents = (int) $reader->get_events_select_count(
-                "courseid $inevents AND timecreated > :evsince",
-                $evparams
-            );
+            // The students go in slices: a site can have more of them than one query takes as parameters.
+            foreach (array_chunk($studentids, self::USER_CHUNK) as $slice) {
+                [$inusers, $userparams] = $DB->get_in_or_equal($slice, SQL_PARAMS_NAMED, 'evu');
+                $totalevents += (int) $reader->get_events_select_count(
+                    "courseid $inevents AND timecreated > :evsince AND userid $inusers",
+                    $evparams + $userparams
+                );
+            }
         }
-
-        // Total distinct enrolled users across these courses.
-        [$inusers, $userparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'eu');
-        $totalusers = (int) $DB->get_field_sql(
-            "SELECT COUNT(DISTINCT ue.userid)
-               FROM {user_enrolments} ue
-               JOIN {enrol} e ON e.id = ue.enrolid
-              WHERE e.courseid $inusers",
-            $userparams
-        );
 
         $eventsperuser = $totalusers > 0 ? round($totalevents / $totalusers, 1) : 0.0;
 
-        // Users who completed at least one course in the group. Counting users, not completions,
-        // keeps the rate comparable with the distinct enrolled users it is divided by.
+        // Students who completed at least one course in the group. Counting users, not completions,
+        // keeps the rate comparable with the distinct students it is divided by.
+        $completed = 0;
         [$incomp, $compparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cc');
-        $completed = (int) $DB->get_field_sql(
-            "SELECT COUNT(DISTINCT cc.userid)
-               FROM {course_completions} cc
-              WHERE cc.course $incomp
-                AND cc.timecompleted IS NOT NULL",
-            $compparams
-        );
+        foreach (array_chunk($studentids, self::USER_CHUNK) as $slice) {
+            [$inusers, $userparams] = $DB->get_in_or_equal($slice, SQL_PARAMS_NAMED, 'ccu');
+            $completed += (int) $DB->get_field_sql(
+                "SELECT COUNT(DISTINCT cc.userid)
+                   FROM {course_completions} cc
+                  WHERE cc.course $incomp
+                    AND cc.timecompleted IS NOT NULL
+                    AND cc.userid $inusers",
+                $compparams + $userparams
+            );
+        }
         $completionrate = $totalusers > 0 ? round($completed / $totalusers * 100, 1) : 0.0;
 
         // Average course-level grade expressed as a percentage.
