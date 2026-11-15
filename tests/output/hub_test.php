@@ -245,7 +245,11 @@ final class hub_test extends \advanced_testcase {
         $this->make_teacher($teacher);
         $student = $this->player($season, 50, true);
 
+        // The setting the hub is given is the one the rule behind the lists reads.
+        set_config('allowed_participants', 'staff', 'local_playergames');
         $staffonly = $this->export_for($teacher, true, false, 'staff');
+        set_config('allowed_participants', 'both', 'local_playergames');
+        \cache::make('local_playergames', 'ranking')->purge();
         $both = $this->export_for($teacher, true, false, 'both');
         $admin = $this->export_for($student, false, true, 'both');
 
@@ -549,5 +553,83 @@ final class hub_test extends \advanced_testcase {
         }
         $this->assertSame(2, substr_count($html, 'data-toggle="pill"'));
         $this->assertSame(2, substr_count($html, 'data-bs-toggle="pill"'));
+    }
+
+    /**
+     * Bars users from the hub with the viewhub capability, the way an administrator takes a group out.
+     *
+     * @param \stdClass[] $users The users.
+     * @return void
+     */
+    private function bar_from_the_hub(array $users): void {
+        $roleid = (int) $this->getDataGenerator()->create_role();
+        assign_capability('local/playergames:viewhub', CAP_PROHIBIT, $roleid, \context_system::instance()->id, true);
+        foreach ($users as $user) {
+            role_assign($roleid, $user->id, \context_system::instance()->id);
+        }
+        accesslib_clear_all_caches_for_unit_testing();
+    }
+
+    /**
+     * A user the administrator barred from the hub afterwards is no longer listed, and the list does not
+     * end up short while there are others behind.
+     */
+    public function test_the_rankings_leave_out_users_barred_by_the_viewhub_capability(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        set_config('showlearningxp', 1, 'local_playergames');
+        set_config('learningxpranking', 1, 'local_playergames');
+        $users = [];
+        $profiles = [];
+        $caches = [];
+        for ($i = 0; $i < 54; $i++) {
+            $users[] = $user = $this->getDataGenerator()->create_user();
+            $profiles[] = (object) [
+                'userid' => $user->id, 'seasonid' => $season->id, 'xp' => 1000 - $i, 'level' => 1,
+                'showinranking' => 1, 'timecreated' => 1700000000, 'timemodified' => 1700000000,
+            ];
+            $caches[] = (object) [
+                'userid' => $user->id, 'windowedxp' => 1000 - $i, 'showinranking' => 1,
+                'timecreated' => 1700000000, 'timemodified' => 1700000000,
+            ];
+        }
+        $DB->insert_records('local_playergames_player_profile', $profiles);
+        $DB->insert_records('local_playergames_student_xp_cache', $caches);
+        // The best three lose access: the fifty listed must still be the fifty best who may play.
+        $barred = array_slice($users, 0, 3);
+        $this->bar_from_the_hub($barred);
+
+        $data = $this->export_for($users[53]);
+
+        foreach (['studentranking', 'learningranking'] as $list) {
+            $ids = array_column($data[$list], 'userid');
+            $this->assertCount(50, $ids, $list);
+            $this->assertEmpty(array_intersect($ids, array_map(fn($user) => (int) $user->id, $barred)), $list);
+            $this->assertSame((int) $users[3]->id, $ids[0], $list);
+            $this->assertSame(1, $data[$list][0]['pos'], $list);
+        }
+    }
+
+    /**
+     * A change of the allowed participants takes the group that is no longer allowed off the list.
+     */
+    public function test_the_rankings_follow_a_change_of_the_allowed_participants(): void {
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        $teacher = $this->player($season, 40, true);
+        $this->make_teacher($teacher);
+        $student = $this->player($season, 50, true);
+        $admin = $this->player($season, 5, false);
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $both = $this->export_for($admin, false, true, 'both');
+        $this->assertSame([(int) $teacher->id], array_column($both['staffranking'], 'userid'));
+
+        set_config('allowed_participants', 'students', 'local_playergames');
+        \cache::make('local_playergames', 'ranking')->purge();
+        $students = $this->export_for($admin, false, true, 'students');
+
+        $this->assertSame([], $students['staffranking']);
+        $this->assertSame([(int) $student->id], array_column($students['studentranking'], 'userid'));
     }
 }

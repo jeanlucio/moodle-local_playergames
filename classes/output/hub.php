@@ -384,7 +384,17 @@ class hub implements renderable, templatable {
                        {$filter}
                   ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
 
-            $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
+            // The query cannot tell who still takes part: a role that lost viewhub, or a change of the
+            // allowed_participants setting, leaves the flag of the profile on. The rule the hub itself
+            // applies is asked here, with the staff lookup already in hand.
+            $records = $this->take_participants(
+                $sql,
+                $params,
+                fn(\stdClass $r): bool => access::is_participant(
+                    (int) $r->userid,
+                    in_array((int) $r->userid, $staffids, true)
+                )
+            );
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
@@ -444,7 +454,13 @@ class hub implements renderable, templatable {
                        AND {$optoutsql}
                   ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
 
-            $records = $DB->get_records_sql($sql, $optoutparams, 0, self::RANKING_LIMIT);
+            // The learning XP is not tied to the staff or student split, so only the capability is asked.
+            $context = \context_system::instance();
+            $records = $this->take_participants(
+                $sql,
+                $optoutparams,
+                fn(\stdClass $r): bool => has_capability('local/playergames:viewhub', $context, (int) $r->userid)
+            );
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
@@ -469,6 +485,40 @@ class hub implements renderable, templatable {
         unset($row);
 
         return $ranking;
+    }
+
+    /**
+     * Reads a ranking query in pages and keeps the rows the test accepts, until the list is full.
+     *
+     * Rows are taken in the order of the query, so the users who no longer take part are skipped without
+     * leaving the list short while there are others behind them.
+     *
+     * @param string $sql The ranking query, ordered.
+     * @param array $params Its parameters.
+     * @param callable $keep Receives a row, returns whether it belongs on the list.
+     * @return \stdClass[] At most RANKING_LIMIT rows.
+     */
+    private function take_participants(string $sql, array $params, callable $keep): array {
+        global $DB;
+
+        $kept   = [];
+        $offset = 0;
+        while (count($kept) < self::RANKING_LIMIT) {
+            $records = $DB->get_records_sql($sql, $params, $offset, self::RANKING_LIMIT);
+            foreach ($records as $record) {
+                if ($keep($record)) {
+                    $kept[] = $record;
+                }
+                if (count($kept) >= self::RANKING_LIMIT) {
+                    break;
+                }
+            }
+            if (count($records) < self::RANKING_LIMIT) {
+                break;
+            }
+            $offset += self::RANKING_LIMIT;
+        }
+        return $kept;
     }
 
     /**
