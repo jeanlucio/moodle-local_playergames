@@ -327,4 +327,169 @@ final class lifecycle_test extends \advanced_testcase {
         $this->assertTrue($this->hub_offers('guess'));
         $this->assert_consistent();
     }
+
+    /**
+     * Closes the active season and opens another, the way the nightly task does.
+     *
+     * @param \stdClass $closing The season to close.
+     * @return \stdClass The season that follows.
+     */
+    private function roll_over(\stdClass $closing): \stdClass {
+        season_manager::close((int) $closing->id);
+        $next = season_manager::create('Season 2', time() - 1, time() + (30 * DAYSECS));
+        season_manager::activate((int) $next->id);
+        return $next;
+    }
+
+    /**
+     * A quiz play started in a season does not pay, or count, in the one that replaced it.
+     *
+     * The play keeps the season it started in; an answer sent after the season rolled over is refused instead of
+     * crediting XP to a season the player never played.
+     */
+    public function test_a_quiz_play_does_not_cross_into_the_next_season(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        set_config('quiz_question_seconds', 0, 'local_playergames');
+        $season = $this->open_season();
+        $player = $this->getDataGenerator()->create_user();
+        $this->setUser($player);
+        $questions = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $question = new games\quiz_question();
+            $question->source = 'cartridge';
+            $question->sourceid = 100 + $i;
+            $question->questiontext = "Question {$i}?";
+            for ($j = 0; $j < 5; $j++) {
+                $answer = new games\quiz_answer();
+                $answer->text = "Q{$i} option {$j}";
+                $answer->correct = $j === 0;
+                $question->answers[] = $answer;
+            }
+            $questions[] = $question;
+        }
+        $context = \context_system::instance();
+        games\quiz_play::start(mktime(0, 0, 0), (int) $season->id, $questions, $context);
+
+        $next = $this->roll_over($season);
+        $verdict = games\quiz_play::answer((int) $player->id, 0, 0, $next, $context);
+
+        $this->assertFalse($verdict['success']);
+        $this->assertSame('noplay', $verdict['reason']);
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $player->id]));
+        $this->assertSame(0, $DB->count_records('local_playergames_player_profile', ['seasonid' => $next->id]));
+    }
+
+    /**
+     * What belongs to the player and not to a season survives the rollover; what belongs to a season starts over.
+     */
+    public function test_a_rollover_resets_the_season_and_keeps_the_player(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $season = $this->open_season();
+        $player = $this->getDataGenerator()->create_user();
+        $now = time();
+        $profile = xp_manager::get_or_create_profile((int) $player->id, (int) $season->id);
+        $DB->update_record('local_playergames_player_profile', (object) [
+            'id' => $profile->id, 'xp' => 2500, 'level' => 2, 'showinranking' => 1, 'timemodified' => $now,
+        ]);
+        hub\avatar_manager::record_level((int) $player->id, 3);
+        hub\streak_manager::record_activity((int) $player->id);
+
+        $next = $this->roll_over($season);
+
+        $fresh = xp_manager::get_or_create_profile((int) $player->id, (int) $next->id);
+        $this->assertSame(0, (int) $fresh->xp);
+        $this->assertSame(0, (int) $fresh->showinranking, 'The new season starts hidden, as every profile does.');
+        $this->assertSame(3, (int) hub\avatar_manager::get_state((int) $player->id)->bestlevel);
+        $this->assertSame(1, (int) hub\streak_manager::get_or_create((int) $player->id)->currentstreak);
+        $this->assertSame(2500, (int) $DB->get_field('local_playergames_player_profile', 'xp', ['id' => $profile->id]));
+        $this->assert_consistent();
+    }
+
+    /**
+     * With no season open, nothing that records game data writes: not the check-in on every page, not an answer.
+     */
+    public function test_nothing_is_recorded_while_no_season_is_open(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $season = $this->open_season();
+        $player = $this->getDataGenerator()->create_user();
+        $this->setUser($player);
+        season_manager::close((int) $season->id);
+
+        hub\checkin_manager::record((int) $player->id);
+        $day = mktime(0, 0, 0);
+
+        $this->assertNull(season_manager::get_active());
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_scores'));
+        $this->assertSame(0, $DB->count_records('local_playergames_activity_log'));
+        $this->assertSame(['success' => false, 'reason' => 'unavailable'], games\guess_manager::submit_guess(
+            (int) $player->id,
+            'planet',
+            $day,
+            $season,
+            \context_system::instance()
+        ));
+    }
+
+    /**
+     * Fills one row of a table of the plugin that is keyed by a user, with whatever its columns need.
+     *
+     * @param string $table Table name without the prefix.
+     * @param int $userid The user.
+     * @return void
+     */
+    private function insert_row_for(string $table, int $userid): void {
+        global $DB;
+
+        $row = [];
+        foreach ($DB->get_columns($table) as $name => $column) {
+            if ($name === 'id') {
+                continue;
+            }
+            if ($name === 'userid') {
+                $row[$name] = $userid;
+            } else if (in_array($column->meta_type, ['I', 'N', 'F'], true)) {
+                $row[$name] = 1;
+            } else {
+                $row[$name] = 'x';
+            }
+        }
+        $DB->insert_record($table, (object) $row, false);
+    }
+
+    /**
+     * Deleting a user leaves nothing of theirs in any table of the plugin, including tables added later.
+     *
+     * The tables are found by their userid column, not from a list the privacy provider also keeps, so a new
+     * table nobody declared there is caught here instead of keeping the rows of deleted accounts.
+     */
+    public function test_deleting_a_user_leaves_no_row_in_any_table_with_a_userid(): void {
+        global $DB;
+        // The events are left to run: it is the plugin's observer of the deletion that is being tested.
+        $this->resetAfterTest();
+        $gone = $this->getDataGenerator()->create_user();
+        $stays = $this->getDataGenerator()->create_user();
+
+        $tables = [];
+        foreach ($DB->get_tables(false) as $table) {
+            if (str_starts_with($table, 'local_playergames_') && isset($DB->get_columns($table)['userid'])) {
+                $tables[] = $table;
+                $this->insert_row_for($table, (int) $gone->id);
+                $this->insert_row_for($table, (int) $stays->id);
+            }
+        }
+        $this->assertGreaterThan(10, count($tables), 'The scan found too few tables to be trusted.');
+
+        delete_user($gone);
+
+        foreach ($tables as $table) {
+            $this->assertSame(0, $DB->count_records($table, ['userid' => $gone->id]), "{$table} keeps rows of a deleted user.");
+            $this->assertSame(1, $DB->count_records($table, ['userid' => $stays->id]), "{$table} lost rows of another user.");
+        }
+    }
 }
