@@ -98,7 +98,9 @@ class learning_xp_manager {
         if ($months <= 0) {
             return '';
         }
-        return date('Ym', strtotime("-{$months} months", $timestamp));
+        // Counted from the first of the month: "-1 month" from 31 March would be 31 February, which is 3 March,
+        // and the window would lose a month it still owns.
+        return date('Ym', mktime(0, 0, 0, (int) date('n', $timestamp) - $months, 1, (int) date('Y', $timestamp)));
     }
 
     /**

@@ -189,7 +189,7 @@ foreach ($seasons as $season) {
 
 $months      = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
 $defaultstart = userdate(time(), '%Y-%m-%d');
-$defaultend   = userdate(strtotime("+{$months} months"), '%Y-%m-%d');
+$defaultend   = userdate(\local_playergames\hub\season_manager::add_months(time(), $months), '%Y-%m-%d');
 $nextnum      = $DB->count_records('local_playergames_seasons') + 1;
 $defaultname  = get_string('defaultseasonname', 'local_playergames');
 $defaultname  = preg_replace('/\d+$/', (string) $nextnum, $defaultname) ?? $defaultname;

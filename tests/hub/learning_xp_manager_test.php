@@ -358,4 +358,27 @@ final class learning_xp_manager_test extends \advanced_testcase {
         ]));
         $this->assertSame(1, (int) $DB->get_field('local_playergames_student_xp_cache', 'showinranking', ['id' => $cache->id]));
     }
+
+    /**
+     * The oldest month of the window is counted from the first of the month, so a day that does not exist
+     * N months back does not push the cut-off a month forward.
+     */
+    public function test_the_window_cutoff_does_not_overflow_at_the_end_of_a_month(): void {
+        $this->resetAfterTest();
+        $this->setTimezone('Europe/Lisbon', 'Europe/Lisbon');
+
+        $cases = [
+            [1, mktime(12, 0, 0, 3, 31, 2026), '202602'],
+            [3, mktime(12, 0, 0, 5, 31, 2026), '202602'],
+            [6, mktime(12, 0, 0, 8, 31, 2026), '202602'],
+            [12, mktime(12, 0, 0, 2, 29, 2028), '202702'],
+            [12, mktime(12, 0, 0, 1, 15, 2026), '202501'],
+        ];
+        foreach ($cases as [$months, $now, $expected]) {
+            set_config('learningxp_window_months', $months, 'local_playergames');
+            $this->assertSame($expected, learning_xp_manager::oldest_period_in_window($now), date('c', $now) . " - {$months}");
+        }
+        set_config('learningxp_window_months', 0, 'local_playergames');
+        $this->assertSame('', learning_xp_manager::oldest_period_in_window(time()));
+    }
 }

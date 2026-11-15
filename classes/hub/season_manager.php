@@ -332,6 +332,26 @@ class season_manager {
     }
 
     /**
+     * Adds calendar months to a timestamp, keeping the time of day and stopping at the end of a short month.
+     *
+     * "+1 month" from 31 January lands on 3 March, because 31 February does not exist; here it lands on 28 or
+     * 29 February.
+     *
+     * @param int $timestamp The start.
+     * @param int $months Months to add.
+     * @return int
+     */
+    public static function add_months(int $timestamp, int $months): int {
+        $month = (int) date('n', $timestamp) + $months;
+        $year = (int) date('Y', $timestamp);
+        $lastday = (int) date('t', mktime(0, 0, 0, $month, 1, $year));
+        $day = min((int) date('j', $timestamp), $lastday);
+        $hour = (int) date('G', $timestamp);
+
+        return mktime($hour, (int) date('i', $timestamp), (int) date('s', $timestamp), $month, $day, $year);
+    }
+
+    /**
      * Creates the next season inheriting the config_snapshot of the previous season.
      *
      * The new season starts the day after the previous season ended and lasts
@@ -343,7 +363,7 @@ class season_manager {
     public static function create_next(stdClass $previousseason): stdClass {
         $months    = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
         $startdate = $previousseason->enddate + 1;
-        $enddate   = strtotime("+{$months} months", $startdate) - 1;
+        $enddate   = self::add_months($startdate, $months) - 1;
         $number    = self::next_season_number();
         $name      = get_string('defaultseasonname', 'local_playergames');
         $name      = preg_replace('/\d+$/', (string) $number, $name);

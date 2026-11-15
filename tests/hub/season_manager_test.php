@@ -334,4 +334,23 @@ final class season_manager_test extends \advanced_testcase {
 
         $this->assertSame([], $expired);
     }
+
+    /**
+     * Adding months stops at the end of a short month instead of spilling into the next one.
+     */
+    public function test_add_months_stops_at_the_end_of_a_short_month(): void {
+        $this->resetAfterTest();
+        $this->setTimezone('Europe/Lisbon', 'Europe/Lisbon');
+
+        $cases = [
+            [mktime(10, 30, 15, 1, 31, 2026), 1, mktime(10, 30, 15, 2, 28, 2026)],
+            [mktime(0, 0, 0, 1, 31, 2028), 1, mktime(0, 0, 0, 2, 29, 2028)],
+            [mktime(0, 0, 0, 8, 31, 2026), 6, mktime(0, 0, 0, 2, 28, 2027)],
+            [mktime(0, 0, 0, 3, 15, 2026), 6, mktime(0, 0, 0, 9, 15, 2026)],
+            [mktime(0, 0, 0, 11, 30, 2026), 3, mktime(0, 0, 0, 2, 28, 2027)],
+        ];
+        foreach ($cases as [$start, $months, $expected]) {
+            $this->assertSame($expected, season_manager::add_months($start, $months), date('c', $start) . " + {$months}");
+        }
+    }
 }
