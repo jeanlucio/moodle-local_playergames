@@ -277,4 +277,54 @@ final class lifecycle_test extends \advanced_testcase {
         $this->assertCount(1, $state['rows']);
         $this->assert_consistent();
     }
+
+    /**
+     * Whether the hub offers a game of the day as playable.
+     *
+     * @param string $gametype The game.
+     * @return bool
+     */
+    private function hub_offers(string $gametype): bool {
+        $season = season_manager::get_active();
+        foreach (hub\daily_play_manager::get_games_today(0, season_manager::get_config_snapshot($season)) as $game) {
+            if ($game['gametype'] === $gametype) {
+                return $game['pending'];
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The hub does not offer PlayerGuess or PlayerFill on a day they have no word to play.
+     *
+     * Regression test: the check was "some concept cartridge is active", so a season that keeps only a
+     * cartridge that is off, or a pool with nothing eligible, still showed a game that answers "unavailable".
+     */
+    public function test_the_hub_offers_the_word_games_only_when_they_have_words_today(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('wordle_minlen', 4, 'local_playergames');
+        set_config('wordle_maxlen', 12, 'local_playergames');
+        $season = $this->open_season();
+        $off = $this->cartridge_with('Off', ['apple']);
+        $on = $this->cartridge_with('On', ['grape', 'lemon', 'mango', 'peach', 'melon', 'berry', 'olive']);
+        $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $off['cartridge']]);
+        $DB->set_field(
+            'local_playergames_season_games',
+            'cartridgeids',
+            json_encode([$off['cartridge']]),
+            ['seasonid' => $season->id, 'gametype' => 'guess']
+        );
+
+        \local_playergames\task\assign_daily_games::draw_now();
+
+        $this->assertFalse($this->hub_offers('guess'), 'PlayerGuess is offered with no word.');
+        $this->assertTrue($this->hub_offers('fill'));
+
+        $DB->set_field('local_playergames_season_games', 'cartridgeids', null, ['seasonid' => $season->id, 'gametype' => 'guess']);
+        \local_playergames\task\assign_daily_games::draw_now();
+
+        $this->assertTrue($this->hub_offers('guess'));
+        $this->assert_consistent();
+    }
 }

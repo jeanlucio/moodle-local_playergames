@@ -26,6 +26,8 @@ namespace local_playergames\hub;
 
 use core\lock\lock_config;
 use local_playergames\event\game_completed;
+use local_playergames\games\fill_manager;
+use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
 use local_playergames\local\access;
 use local_playergames\local\question_bank_reuse;
@@ -328,7 +330,12 @@ class daily_play_manager {
      */
     private static function has_content(string $gametype, array $activetypes): bool {
         if (in_array($gametype, self::SINGLE_ROUND_GAMES, true)) {
-            return in_array('concept', $activetypes, true);
+            // These games play the words the daily task drew, from the cartridges the season keeps for them:
+            // an active concept cartridge is not enough when none of those words exists today.
+            $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+            return $gametype === 'guess'
+                ? guess_manager::get_daily_concept($today) !== null
+                : count(fill_manager::get_daily_concepts($today)) >= 2;
         }
 
         // A season with no row for the game predates per-season configuration: it reads cartridges.

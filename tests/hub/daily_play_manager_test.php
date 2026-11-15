@@ -66,10 +66,21 @@ final class daily_play_manager_test extends \advanced_testcase {
     private function add_cartridge(string $type, int $active = 1): void {
         global $DB;
         $now = time();
-        $DB->insert_record('local_playergames_cartridges', (object) [
+        $id = $DB->insert_record('local_playergames_cartridges', (object) [
             'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => $type,
             'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => $active,
         ]);
+        if ($type === 'concept') {
+            // PlayerGuess and PlayerFill play the words the daily task drew from the cartridge.
+            foreach (['apple', 'grape', 'lemon', 'mango', 'peach', 'melon', 'berry'] as $term) {
+                $DB->insert_record('local_playergames_concepts', (object) [
+                    'cartridgeid' => $id, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+                ]);
+            }
+            if ($active) {
+                \local_playergames\task\assign_daily_games::draw_now();
+            }
+        }
     }
 
     /**
