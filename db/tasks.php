@@ -62,6 +62,15 @@ $tasks = [
         'dayofweek'  => '0',
     ],
     [
+        'classname'  => '\local_playergames\task\refresh_staff_ids',
+        'blocking'   => 0,
+        'minute'     => '*/10',
+        'hour'       => '*',
+        'day'        => '*',
+        'month'      => '*',
+        'dayofweek'  => '*',
+    ],
+    [
         'classname'  => '\local_playergames\task\recompute_learning_xp',
         'blocking'   => 0,
         'minute'     => 'R',

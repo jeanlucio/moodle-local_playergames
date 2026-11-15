@@ -169,12 +169,45 @@ final class access_test extends \advanced_testcase {
         $before = access::get_staff_ids();
         $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
         $cached = access::get_staff_ids();
-        \cache_helper::purge_by_definition('local_playergames', 'staffids');
+        \cache_helper::purge_by_definition('local_playergames', 'staffset');
         $fresh = access::get_staff_ids();
 
         $this->assertNotContains((int) $teacher->id, $before);
         $this->assertSame($before, $cached);
         $this->assertContains((int) $teacher->id, $fresh);
+    }
+
+    /**
+     * The staff set is kept by the scheduled task, and a request does not work it out again while the copy is
+     * recent, however many roles changed since.
+     */
+    public function test_the_staff_set_is_refreshed_by_the_task_and_not_by_requests(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $before = access::get_staff_ids();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+
+        $this->assertSame($before, access::get_staff_ids());
+
+        ob_start();
+        (new \local_playergames\task\refresh_staff_ids())->execute();
+        ob_end_clean();
+
+        $this->assertContains((int) $teacher->id, access::get_staff_ids());
+    }
+
+    /**
+     * Without the task running, a copy older than an hour is not trusted any more.
+     */
+    public function test_an_old_staff_set_is_worked_out_again(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course  = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        \cache::make('local_playergames', 'staffset')->set('set', ['ids' => [], 'time' => time() - (2 * HOURSECS)]);
+
+        $this->assertContains((int) $teacher->id, access::get_staff_ids());
     }
 
     public function test_teaches_any_is_true_for_a_teacher_and_false_for_a_student(): void {

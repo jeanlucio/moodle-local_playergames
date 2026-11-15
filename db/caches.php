@@ -30,6 +30,11 @@ $definitions = [
         'ttl'       => 60,
         'simplekeys' => true,
     ],
+    // The staff set takes a query per teacher to work out, so a scheduled task keeps it and no request waits for it.
+    'staffset' => [
+        'mode'      => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+    ],
     'staffids' => [
         'mode'      => cache_store::MODE_APPLICATION,
         'ttl'       => 300,

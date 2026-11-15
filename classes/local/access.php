@@ -39,6 +39,9 @@ use context_system;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class access {
+    /** @var int Seconds after which a request works the staff set out again, if the task has not. */
+    private const STAFF_SET_MAX_AGE = HOURSECS;
+
     /**
      * Whether the user can update at least one course (teaches).
      *
@@ -123,19 +126,30 @@ class access {
      * course only) and on roles assigned at category level, none of which a join on role_capabilities
      * reproduces. So the query only narrows the users to those holding a role that is allowed one of the
      * capabilities anywhere, and each of them goes through is_staff(), the single definition of staff.
-     * The set is cached for a few minutes because that check costs a few queries per candidate.
+     *
+     * That check costs about eight queries per candidate, so a request never waits for it when a copy
+     * exists: the refresh_staff_ids task keeps the copy, and only a site that has none yet, or whose copy
+     * is older than an hour because cron is not running, works it out on the spot.
      *
      * @return int[]
      */
     public static function get_staff_ids(): array {
-        $cache = \cache::make('local_playergames', 'staffids');
-        $ids = $cache->get('ids');
-        if (is_array($ids)) {
-            return $ids;
+        $kept = \cache::make('local_playergames', 'staffset')->get('set');
+        if (is_array($kept) && time() - (int) $kept['time'] < self::STAFF_SET_MAX_AGE) {
+            return $kept['ids'];
         }
 
+        return self::refresh_staff_ids();
+    }
+
+    /**
+     * Works out the staff set and keeps it for get_staff_ids().
+     *
+     * @return int[]
+     */
+    public static function refresh_staff_ids(): array {
         $ids = self::compute_staff_ids();
-        $cache->set('ids', $ids);
+        \cache::make('local_playergames', 'staffset')->set('set', ['ids' => $ids, 'time' => time()]);
         return $ids;
     }
 
