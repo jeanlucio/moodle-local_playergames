@@ -175,4 +175,29 @@ final class purge_old_scores_test extends \advanced_testcase {
 
         $this->assertSame(get_string('task_purge_old_scores', 'local_playergames'), (new purge_old_scores())->get_name());
     }
+
+    /**
+     * The words of earlier days are dropped, even when there is no season old enough to purge.
+     *
+     * Regression test: nothing ever removed them, so the table grew by the words of every day.
+     */
+    public function test_purges_the_words_of_earlier_days_and_keeps_todays(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $today = mktime(0, 0, 0);
+        foreach ([$today - (2 * DAYSECS), $today - DAYSECS, $today] as $date) {
+            $DB->insert_record('local_playergames_daily_assignments', (object) [
+                'gamedate' => $date, 'gametype' => 'guess', 'conceptid' => 1,
+            ]);
+        }
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        $this->assertSame(
+            [$today],
+            array_map('intval', array_values($DB->get_fieldset_select('local_playergames_daily_assignments', 'gamedate', '1 = 1')))
+        );
+    }
 }
