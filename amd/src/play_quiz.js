@@ -30,6 +30,7 @@
 
 import Modal from 'core/modal';
 import Notification from 'core/notification';
+import {getString} from 'core/str';
 
 let currentIndex = 0;
 let attemptNumber = 1;
@@ -171,18 +172,56 @@ const lockAnswers = () => {
 };
 
 /**
+ * Puts a mark in front of an option, so the verdict is not carried by its colour alone.
+ *
+ * @param {HTMLElement} button The option.
+ * @param {string} icon Font Awesome icon class.
+ */
+const markAnswer = (button, icon) => {
+    const mark = document.createElement('i');
+    mark.className = `fa ${icon} me-2`;
+    mark.setAttribute('aria-hidden', 'true');
+    button.prepend(mark);
+};
+
+/**
+ * Tells a screen reader how the answer was judged, since the options are only disabled and recoloured.
+ *
+ * @param {boolean} correct Whether the player answered right.
+ * @param {HTMLElement|undefined} right The option that is right.
+ */
+const announceVerdict = async(correct, right) => {
+    const liveEl = document.getElementById('pg-quiz-live');
+    if (!liveEl) {
+        return;
+    }
+    liveEl.textContent = correct
+        ? await getString('quiz_feedback_right', 'local_playergames')
+        : await getString('quiz_feedback_wrong', 'local_playergames', right ? right.textContent.trim() : '');
+};
+
+/**
  * Highlights the option the server named as correct and shows the feedback it sent.
  *
  * @param {Object} result The server's verdict.
+ * @param {number} choice The option the player picked, or -1 when the time ran out.
  */
-const revealResult = (result) => {
+const revealResult = (result, choice) => {
     const question = questions[currentIndex];
     const buttons = Array.from(question.querySelectorAll('.pg-quiz-answer'));
     const right = buttons.find(b => parseInt(b.dataset.choice, 10) === result.correctindex);
     if (right) {
         right.classList.remove('btn-outline-primary');
         right.classList.add('btn-success');
+        markAnswer(right, 'fa-check');
     }
+    const picked = buttons.find(b => parseInt(b.dataset.choice, 10) === choice);
+    if (picked && picked !== right) {
+        picked.classList.remove('btn-outline-primary');
+        picked.classList.add('btn-danger');
+        markAnswer(picked, 'fa-xmark');
+    }
+    announceVerdict(Boolean(result.correct), right);
     const feedback = question.querySelector('.pg-quiz-feedback');
     const text = question.querySelector('.pg-quiz-feedback-text');
     if (feedback && text && result.feedback) {
@@ -225,10 +264,11 @@ const showEndActions = () => {
  * Applies the server's verdict on an answer: ends the play or offers to continue.
  *
  * @param {Object} result The server's verdict.
+ * @param {number} choice The option the player picked, or -1 when the time ran out.
  */
-const applyResult = (result) => {
+const applyResult = (result, choice) => {
     attemptNumber = result.attempt;
-    revealResult(result);
+    revealResult(result, choice);
 
     if (!result.finished) {
         showContinue();
@@ -265,7 +305,7 @@ const submitChoice = async(choice) => {
     try {
         const result = await post({action: 'answer', question: currentIndex, choice});
         if (result.success) {
-            applyResult(result);
+            applyResult(result, choice);
         } else {
             // The play is no longer one the server accepts answers for (ended elsewhere, expired).
             window.location.reload();

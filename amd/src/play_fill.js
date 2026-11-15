@@ -28,6 +28,7 @@
  */
 
 import Modal from 'core/modal';
+import {getString} from 'core/str';
 
 let container = null;
 let rowsEl = null;
@@ -184,6 +185,16 @@ const submitGuess = async(conceptid, guess) => {
     won = data.won;
     data.words.forEach(applyWordUpdate);
     submitting = false;
+
+    // A guess that did not solve the word changes nothing on screen but the tiles of the words it cleared, so
+    // say how it went; the message is also what a screen reader announces.
+    const guessed = data.words.find(word => word.conceptid === conceptid);
+    if (guessed && guessed.resolved) {
+        showMessage(await getString('fill_word_announce_solved', 'local_playergames'));
+    } else if (guessed && !guessed.exhausted) {
+        const left = Math.max(0, (parseInt(container.dataset.maxAttempts, 10) || 0) - guessed.attemptsused);
+        showMessage(await getString('fill_wrong_guess', 'local_playergames', left));
+    }
 
     if (finished) {
         showEndActions();

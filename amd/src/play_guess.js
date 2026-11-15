@@ -28,7 +28,7 @@
  */
 
 import Modal from 'core/modal';
-import {getString} from 'core/str';
+import {getString, getStrings} from 'core/str';
 
 const LETTER_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const FEEDBACK_RANK = {absent: 0, present: 1, correct: 2};
@@ -43,7 +43,20 @@ let currentGuess = [];
 let finished = false;
 let submitting = false;
 let endKind = '';
+let liveEl = null;
 const keyStatus = {};
+const stateText = {};
+
+/**
+ * Loads the words that say what each colour means, so the result of a letter is also given as text.
+ */
+const loadStateStrings = async() => {
+    const states = ['correct', 'present', 'absent'];
+    const strings = await getStrings(states.map(state => ({key: `guess_state_${state}`, component: 'local_playergames'})));
+    states.forEach((state, index) => {
+        stateText[state] = strings[index];
+    });
+};
 
 /**
  * Builds the empty board: maxAttempts rows of targetLength tiles each.
@@ -95,6 +108,11 @@ const applyFeedback = (rowIndex, guess, feedback) => {
         tile.textContent = guess[index];
         tile.classList.remove('pg-guess-tile-filled');
         tile.classList.add(`pg-guess-tile-${feedback[index]}`);
+        // The colour is not the only carrier of the result: a screen reader reads it after the letter.
+        const state = document.createElement('span');
+        state.className = 'visually-hidden';
+        state.textContent = `, ${stateText[feedback[index]]}`;
+        tile.appendChild(state);
 
         const letter = guess[index];
         const current = keyStatus[letter];
@@ -104,6 +122,7 @@ const applyFeedback = (rowIndex, guess, feedback) => {
             if (key) {
                 key.classList.remove('pg-guess-key-absent', 'pg-guess-key-present', 'pg-guess-key-correct');
                 key.classList.add(`pg-guess-key-${feedback[index]}`);
+                key.setAttribute('aria-label', `${letter}, ${stateText[feedback[index]]}`);
             }
         }
     });
@@ -122,6 +141,20 @@ const replayRows = (savedRows) => {
         applyFeedback(currentRowIndex, guess, row.feedback);
         currentRowIndex++;
     });
+};
+
+/**
+ * Tells a screen reader how the row just played was scored.
+ *
+ * @param {string[]} guess Letters submitted for the row.
+ * @param {string[]} feedback One of 'correct'|'present'|'absent' per letter.
+ */
+const announceRow = async(guess, feedback) => {
+    if (!liveEl) {
+        return;
+    }
+    const summary = guess.map((letter, index) => `${letter} ${stateText[feedback[index]]}`).join('; ');
+    liveEl.textContent = await getString('guess_row_result', 'local_playergames', summary);
 };
 
 /**
@@ -208,6 +241,7 @@ const submitGuess = async() => {
         return;
     }
 
+    announceRow(currentGuess, data.feedback);
     applyFeedback(currentRowIndex, currentGuess, data.feedback);
     currentRowIndex++;
     currentGuess = [];
@@ -271,19 +305,21 @@ export default {
      * Initialises the board, replays any rows already played today and wires
      * the physical and on-screen keyboard interactions.
      */
-    init: () => {
+    init: async() => {
         container = document.getElementById('pg-guess-container');
         if (!container) {
             return;
         }
         board = document.getElementById('pg-guess-board');
         messageEl = document.getElementById('pg-guess-message');
+        liveEl = document.getElementById('pg-guess-live');
         targetLength = parseInt(container.dataset.targetLength, 10) || 0;
         maxAttempts = parseInt(container.dataset.maxAttempts, 10) || 0;
         if (targetLength <= 0 || maxAttempts <= 0) {
             return;
         }
 
+        await loadStateStrings();
         buildBoard();
 
         let savedRows = [];
