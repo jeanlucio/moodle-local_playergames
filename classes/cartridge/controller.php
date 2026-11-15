@@ -989,14 +989,7 @@ class controller {
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $postconceptid = required_param('concept_id', PARAM_INT);
         if ((new cartridge_remover())->delete_concept($postconceptid, $postcartridgeid)) {
-            // The concept was one of today's words: draw them again, so the game does not stay empty
-            // until midnight. The task reports on its progress, which is not for this page.
-            ob_start();
-            try {
-                (new \local_playergames\task\assign_daily_games())->execute();
-            } finally {
-                ob_end_clean();
-            }
+            $this->draw_todays_words();
         }
         $DB->set_field(
             'local_playergames_cartridges',
@@ -1030,6 +1023,22 @@ class controller {
     }
 
     /**
+     * Draws today's words again after some of them were removed, so the games do not stay empty until midnight.
+     *
+     * The daily task reports on its progress, which is not for this page.
+     *
+     * @return void
+     */
+    private function draw_todays_words(): void {
+        ob_start();
+        try {
+            (new \local_playergames\task\assign_daily_games())->execute();
+        } finally {
+            ob_end_clean();
+        }
+    }
+
+    /**
      * Handles the delete_cartridge POST action.
      */
     private function action_delete_cartridge(): void {
@@ -1037,7 +1046,9 @@ class controller {
 
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
-        (new cartridge_remover())->delete($postcartridgeid);
+        if ((new cartridge_remover())->delete($postcartridgeid)) {
+            $this->draw_todays_words();
+        }
         if ($cartridgerow) {
             $event = cartridge_deleted::create([
                 'context' => $this->context,

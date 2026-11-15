@@ -340,4 +340,22 @@ final class learning_xp_manager_test extends \advanced_testcase {
 
         $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
     }
+
+    /**
+     * Showing or hiding the name in the learning ranking leaves the tie-break time as it was.
+     */
+    public function test_changing_the_learning_visibility_keeps_the_tie_break(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $cache = learning_xp_manager::get_or_create_cache((int) $user->id);
+        $DB->set_field('local_playergames_student_xp_cache', 'timemodified', 1700000000, ['id' => $cache->id]);
+
+        learning_xp_manager::set_ranking_visibility((int) $user->id, true);
+
+        $this->assertSame(1700000000, (int) $DB->get_field('local_playergames_student_xp_cache', 'timemodified', [
+            'id' => $cache->id,
+        ]));
+        $this->assertSame(1, (int) $DB->get_field('local_playergames_student_xp_cache', 'showinranking', ['id' => $cache->id]));
+    }
 }

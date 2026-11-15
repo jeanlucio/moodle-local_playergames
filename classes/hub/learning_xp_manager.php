@@ -198,8 +198,8 @@ class learning_xp_manager {
     public static function set_ranking_visibility(int $userid, bool $show): void {
         global $DB;
         $cacherow = self::get_or_create_cache($userid);
+        // The timemodified column is left alone, as in xp_manager::set_ranking_visibility(): it breaks ties.
         $cacherow->showinranking = $show ? 1 : 0;
-        $cacherow->timemodified  = time();
         $DB->update_record('local_playergames_student_xp_cache', $cacherow);
 
         self::invalidate_ranking_cache();

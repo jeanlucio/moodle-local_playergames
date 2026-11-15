@@ -216,4 +216,24 @@ final class cartridge_remover_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'fill']));
         $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'guess']));
     }
+
+    /**
+     * Deleting a cartridge reports whether it took one of today's words, as deleting one concept does.
+     */
+    public function test_delete_reports_whether_a_word_of_today_went_with_it(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $withword = $this->new_cartridge();
+        $without = $this->new_cartridge();
+        $conceptid = $this->new_concept($withword, 'apple');
+        $this->new_concept($without, 'grape');
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => mktime(0, 0, 0), 'gametype' => 'guess', 'conceptid' => $conceptid,
+        ]);
+
+        $this->assertFalse((new cartridge_remover())->delete($without));
+        $this->assertSame(1, $DB->count_records('local_playergames_daily_assignments'));
+        $this->assertTrue((new cartridge_remover())->delete($withword));
+        $this->assertSame(0, $DB->count_records('local_playergames_daily_assignments'));
+    }
 }

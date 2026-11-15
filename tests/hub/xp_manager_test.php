@@ -361,4 +361,37 @@ final class xp_manager_test extends \advanced_testcase {
 
         $this->assertSame(1, xp_manager::get_season_position($me, $seasonid, 100, $t, [], false));
     }
+
+    /**
+     * Showing or hiding the name does not move the player behind others who have the same XP.
+     *
+     * Regression test: the flag stamped timemodified, which breaks the ties, so whoever switched the
+     * visibility on last fell behind everyone tied with them, even if they got to the XP first.
+     */
+    public function test_changing_the_visibility_keeps_the_tie_break(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $now = time();
+        $seasonid = (int) $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'S', 'startdate' => $now - DAYSECS, 'enddate' => $now + DAYSECS, 'status' => 'active',
+            'config_snapshot' => json_encode([]), 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $early = $this->getDataGenerator()->create_user();
+        $late = $this->getDataGenerator()->create_user();
+        foreach ([[$early, 1700000000], [$late, 1700000100]] as [$user, $time]) {
+            $profile = xp_manager::get_or_create_profile((int) $user->id, $seasonid);
+            $DB->update_record('local_playergames_player_profile', (object) [
+                'id' => $profile->id, 'xp' => 50, 'timemodified' => $time,
+            ]);
+        }
+
+        xp_manager::set_ranking_visibility((int) $late->id, $seasonid, true);
+        xp_manager::set_ranking_visibility((int) $early->id, $seasonid, true);
+
+        $this->assertSame(1700000000, (int) $DB->get_field('local_playergames_player_profile', 'timemodified', [
+            'userid' => $early->id,
+        ]));
+        $this->assertSame(1, xp_manager::get_season_position((int) $early->id, $seasonid, 50, 1700000000, [], false));
+        $this->assertSame(2, xp_manager::get_season_position((int) $late->id, $seasonid, 50, 1700000100, [], false));
+    }
 }

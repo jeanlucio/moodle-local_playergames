@@ -304,8 +304,9 @@ class xp_manager {
     public static function set_ranking_visibility(int $userid, int $seasonid, bool $show): void {
         global $DB;
         $profile = self::get_or_create_profile($userid, $seasonid);
+        // The timemodified column is left alone: it breaks the ties of the ranking, and it stands for when the XP was
+        // reached, which showing or hiding the name does not change.
         $profile->showinranking = $show ? 1 : 0;
-        $profile->timemodified  = time();
         $DB->update_record('local_playergames_player_profile', $profile);
         self::invalidate_ranking_cache($seasonid);
     }

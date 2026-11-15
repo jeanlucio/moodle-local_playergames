@@ -1048,4 +1048,48 @@ final class controller_test extends \advanced_testcase {
         $this->assertStringContainsString('Paris &amp; co', $html);
         $this->assertStringNotContainsString('&lt;b&gt;', $html);
     }
+
+    /**
+     * Deleting the cartridge that gave today's PlayerGuess word draws another one from the others.
+     */
+    public function test_deleting_the_cartridge_of_todays_guess_word_draws_another(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $doomed = $this->make_cartridge('Doomed');
+        $kept = $this->make_cartridge('Kept');
+        $ids = [];
+        foreach (['apple' => $doomed, 'grape' => $kept] as $term => $cartridge) {
+            $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+            ]);
+        }
+        $today = mktime(0, 0, 0);
+        $DB->insert_record('local_playergames_daily_assignments', (object) [
+            'gamedate' => $today, 'gametype' => 'guess', 'conceptid' => $ids['apple'],
+        ]);
+
+        $this->dispatch(['action' => 'delete_cartridge', 'cartridgeid' => $doomed]);
+
+        $this->assertFalse($DB->record_exists('local_playergames_cartridges', ['id' => $doomed]));
+        $this->assertSame($ids['grape'], (int) $DB->get_field(
+            'local_playergames_daily_assignments',
+            'conceptid',
+            ['gamedate' => $today, 'gametype' => 'guess'],
+            MUST_EXIST
+        ));
+    }
+
+    /**
+     * Adding a category with a name the cartridge already has is refused.
+     */
+    public function test_a_category_name_is_not_added_twice(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $id = $this->make_cartridge('Pack');
+
+        $this->dispatch(['action' => 'add_category', 'cartridgeid' => $id, 'category_name' => 'Biology']);
+        $this->dispatch(['action' => 'add_category', 'cartridgeid' => $id, 'category_name' => 'Biology']);
+
+        $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $id]));
+    }
 }
