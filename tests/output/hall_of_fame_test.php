@@ -69,8 +69,11 @@ final class hall_of_fame_test extends \advanced_testcase {
     public function test_it_marks_the_row_of_the_viewer_and_names_the_groups_only_when_both_exist(): void {
         global $PAGE;
         $this->resetAfterTest();
+        global $CFG;
         $student = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Lovelace']);
         $teacher = $this->getDataGenerator()->create_user();
+        // An administrator sees the two rankings, so both seasons show.
+        $CFG->siteadmins = (string) $student->id;
         $seasonid = $this->add_ranked_result($student, 'Season A & B');
         $this->add_ranked_result($teacher, 'Season C', 1);
         $renderer = $PAGE->get_renderer('core');
@@ -105,5 +108,88 @@ final class hall_of_fame_test extends \advanced_testcase {
         $this->assertStringContainsString('Ada Lovelace', $html);
         $this->assertStringContainsString('<th scope="col"', $html);
         $this->assertStringContainsString(get_string('hall_intro', 'local_playergames'), $html);
+    }
+
+    /**
+     * Shows the hall to a user of a given kind.
+     *
+     * @param int $viewerid The viewer.
+     * @return array The template data.
+     */
+    private function hall_for(int $viewerid): array {
+        global $PAGE;
+        return (new hall_of_fame($viewerid))->export_for_template($PAGE->get_renderer('core'));
+    }
+
+    /**
+     * Regression test: the hub never shows the staff ranking to a student, and the hall did.
+     */
+    public function test_a_student_does_not_see_the_staff_ranking_in_the_hall(): void {
+        $this->resetAfterTest();
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $student = $this->getDataGenerator()->create_user();
+        $teacher = $this->getDataGenerator()->create_user(['firstname' => 'Grace', 'lastname' => 'Hopper']);
+        $course = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        \local_playergames\local\access::refresh_staff_ids();
+        $this->add_ranked_result($student, 'Season A');
+        $this->add_ranked_result($teacher, 'Season B', 1);
+
+        $seenbystudent = $this->hall_for((int) $student->id);
+        $seenbyteacher = $this->hall_for((int) $teacher->id);
+
+        // The season with only the staff result has nothing a student may see.
+        $this->assertSame(['Season A'], array_column($seenbystudent['seasons'], 'name'));
+        $this->assertFalse($seenbystudent['seasons'][0]['hasstaff']);
+        // With 'both', the staff sees the two rankings.
+        $this->assertSame(['Season B', 'Season A'], array_column($seenbyteacher['seasons'], 'name'));
+    }
+
+    public function test_staff_sees_only_the_staff_ranking_when_the_students_take_part_alone(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        $teacher = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        \local_playergames\local\access::refresh_staff_ids();
+        $this->add_ranked_result($student, 'Season A');
+        $this->add_ranked_result($teacher, 'Season B', 1);
+
+        $data = $this->hall_for((int) $teacher->id);
+
+        $this->assertSame(['Season B'], array_column($data['seasons'], 'name'));
+        $this->assertTrue($data['seasons'][0]['hasstaff']);
+    }
+
+    /**
+     * Regression test: with the ranking turned off the hub shows no ranking, and the hall still listed names.
+     */
+    public function test_the_hall_is_empty_and_says_why_when_the_ranking_is_off(): void {
+        $this->resetAfterTest();
+        $student = $this->getDataGenerator()->create_user();
+        $this->add_ranked_result($student, 'Season A');
+        set_config('enable_ranking', 0, 'local_playergames');
+
+        $data = $this->hall_for((int) $student->id);
+
+        $this->assertFalse($data['hasseasons']);
+        $this->assertTrue($data['rankingoff']);
+    }
+
+    public function test_the_hall_link_leaves_the_navigation_when_the_ranking_is_off(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setUser($this->getDataGenerator()->create_user());
+        $keys = fn(): array => array_column(
+            (new nav_header('hub'))->export_for_template($PAGE->get_renderer('core'))['items'],
+            'key'
+        );
+
+        $this->assertContains('hall', $keys());
+
+        set_config('enable_ranking', 0, 'local_playergames');
+        $this->assertNotContains('hall', $keys());
     }
 }

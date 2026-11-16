@@ -59,9 +59,25 @@ class plugin_registry {
     /**
      * Returns the catalog of ecosystem plugins.
      *
+     * Each entry is the one of catalog_entries() plus 'displayname', the short name in the language
+     * of the user, read from the plugin_name_<component> strings.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function get_catalog(): array {
+        return array_map(
+            fn(array $entry): array => $entry + [
+                'displayname' => get_string('plugin_name_' . $entry['component'], 'local_playergames'),
+            ],
+            self::catalog_entries()
+        );
+    }
+
+    /**
+     * Returns the catalog entries, without the display name.
+     *
      * Each entry contains:
      *   - component    Moodle frankenstyle component name.
-     *   - displayname  Short human-readable name.
      *   - abbr         2–4 char abbreviation for the card badge.
      *   - color        Hex accent colour used when the plugin is installed.
      *   - group        One of self::GROUPS.
@@ -69,12 +85,11 @@ class plugin_registry {
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function get_catalog(): array {
+    private static function catalog_entries(): array {
         return [
             // Core hub.
             [
                 'component'   => 'local_playergames',
-                'displayname' => 'PlayerGames',
                 'abbr'        => 'PG',
                 'color'       => '#4f46e5',
                 'icon'        => 'fa-gamepad',
@@ -85,7 +100,6 @@ class plugin_registry {
             // Player activities.
             [
                 'component'   => 'mod_playergroup',
-                'displayname' => 'PlayerGroup',
                 'abbr'        => 'GRP',
                 'color'       => '#7c3aed',
                 'icon'        => 'fa-users',
@@ -94,7 +108,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_playerwords',
-                'displayname' => 'PlayerWords',
                 'abbr'        => 'PW',
                 'color'       => '#16a34a',
                 'icon'        => 'fa-font',
@@ -106,7 +119,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_playerpuzzle',
-                'displayname' => 'PlayerPuzzle',
                 'abbr'        => 'PPz',
                 'color'       => '#dc2626',
                 'icon'        => 'fa-puzzle-piece',
@@ -117,7 +129,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_playerraid',
-                'displayname' => 'PlayerRaid',
                 'abbr'        => 'RAID',
                 'color'       => '#ea580c',
                 'icon'        => 'fa-dragon',
@@ -128,7 +139,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_playerland',
-                'displayname' => 'PlayerLand',
                 'abbr'        => 'LAND',
                 'color'       => '#ca8a04',
                 'icon'        => 'fa-mountain',
@@ -141,7 +151,6 @@ class plugin_registry {
             // Interface / HUD.
             [
                 'component'   => 'block_playerhud',
-                'displayname' => 'Player HUD',
                 'abbr'        => 'HUD',
                 'color'       => '#0891b2',
                 'icon'        => 'fa-gauge',
@@ -154,7 +163,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'filter_playerhud',
-                'displayname' => 'HUD Filter',
                 'abbr'        => 'FIL',
                 'color'       => '#0e7490',
                 'icon'        => 'fa-filter',
@@ -166,7 +174,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'availability_playerhud',
-                'displayname' => 'HUD Availability',
                 'abbr'        => 'AVL',
                 'color'       => '#0d9488',
                 'icon'        => 'fa-lock',
@@ -179,7 +186,6 @@ class plugin_registry {
             // Plugins that integrate with the ecosystem.
             [
                 'component'   => 'report_unlocker',
-                'displayname' => 'Report Unlocker',
                 'abbr'        => 'UNL',
                 'color'       => '#2563eb',
                 'icon'        => 'fa-unlock',
@@ -192,7 +198,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'local_studiolms',
-                'displayname' => 'StudioLMS',
                 'abbr'        => 'STU',
                 'color'       => '#9333ea',
                 'icon'        => 'fa-wand-magic-sparkles',
@@ -205,7 +210,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'tiny_studiolms',
-                'displayname' => 'StudioLMS (Tiny)',
                 'abbr'        => 'TIN',
                 'color'       => '#a855f7',
                 'icon'        => 'fa-pen-nib',
@@ -216,7 +220,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'local_latepenalty',
-                'displayname' => 'Late Penalty',
                 'abbr'        => 'LATE',
                 'color'       => '#b91c1c',
                 'icon'        => 'fa-clock',
@@ -227,7 +230,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'local_virtuallab',
-                'displayname' => 'Virtual Lab',
                 'abbr'        => 'LAB',
                 'color'       => '#0284c7',
                 'icon'        => 'fa-flask',
@@ -240,7 +242,6 @@ class plugin_registry {
             // Standalone plugins (no ecosystem code links yet).
             [
                 'component'   => 'block_teacher_checklist',
-                'displayname' => 'Teacher Checklist',
                 'abbr'        => 'CHK',
                 'color'       => '#059669',
                 'icon'        => 'fa-list-check',
@@ -249,7 +250,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'local_resourcestats',
-                'displayname' => 'Resource Stats',
                 'abbr'        => 'RST',
                 'color'       => '#475569',
                 'icon'        => 'fa-chart-column',
@@ -258,7 +258,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'local_pluginsview',
-                'displayname' => 'Plugins View',
                 'abbr'        => 'PV',
                 'color'       => '#64748b',
                 'icon'        => 'fa-plug',
@@ -267,7 +266,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_quickpoll',
-                'displayname' => 'Quick Poll',
                 'abbr'        => 'QP',
                 'color'       => '#db2777',
                 'icon'        => 'fa-square-poll-vertical',
@@ -276,7 +274,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'mod_reflect',
-                'displayname' => 'Reflect',
                 'abbr'        => 'REF',
                 'color'       => '#7c2d12',
                 'icon'        => 'fa-book',
@@ -285,7 +282,6 @@ class plugin_registry {
             ],
             [
                 'component'   => 'theme_lore',
-                'displayname' => 'Lore Theme',
                 'abbr'        => 'LORE',
                 'color'       => '#334155',
                 'icon'        => 'fa-palette',

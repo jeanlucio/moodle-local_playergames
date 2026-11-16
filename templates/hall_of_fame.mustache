@@ -26,6 +26,8 @@
         "str_pagetitle": "Hall of fame",
         "str_intro": "The top 10 of each closed season.",
         "str_empty": "No season has closed with a visible ranking yet.",
+        "str_rankingoff": "The ranking is turned off on this site.",
+        "rankingoff": false,
         "str_students": "Students",
         "str_staff": "Staff",
         "str_rank_pos": "#",
@@ -52,9 +54,13 @@
     <h2>{{str_pagetitle}}</h2>
     <p>{{str_intro}}</p>
 
-    {{^hasseasons}}
+    {{#rankingoff}}
+    <p>{{str_rankingoff}}</p>
+    {{/rankingoff}}
+
+    {{^rankingoff}}{{^hasseasons}}
     <p>{{str_empty}}</p>
-    {{/hasseasons}}
+    {{/hasseasons}}{{/rankingoff}}
 
     {{#seasons}}
     <section class="card mb-4">

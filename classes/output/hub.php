@@ -129,26 +129,12 @@ class hub implements renderable, templatable {
         $checkinmax   = $checkindaily > 0 ? intdiv($checkincap, $checkindaily) : 0;
         $checkindone  = checkin_manager::count_this_season($this->userid, $season, $checkinmax);
 
-        // Ranking is on by default; an admin can disable it so players only see
-        // their own score. Treat an unset value (never saved) as enabled.
-        $rankingsetting = get_config('local_playergames', 'enable_ranking');
-        $rankingenabled = ($rankingsetting === false) ? true : (bool) $rankingsetting;
+        $rankingenabled = access::ranking_enabled();
+        $visible        = access::visible_ranking_groups($this->isstaff, $this->isadmin, $this->allowed);
 
-        $showbothtabs     = $rankingenabled
-            && ($this->isadmin || ($this->allowed === 'both' && $this->isstaff));
-        $studentranking   = [];
-        $staffranking     = [];
-
-        if ($rankingenabled) {
-            if ($showbothtabs) {
-                $studentranking = $this->get_ranking($season->id, $staffids, false);
-                $staffranking   = $this->get_ranking($season->id, $staffids, true);
-            } else if ($this->isstaff) {
-                $staffranking = $this->get_ranking($season->id, $staffids, true);
-            } else {
-                $studentranking = $this->get_ranking($season->id, $staffids, false);
-            }
-        }
+        $showbothtabs     = $visible['students'] && $visible['staff'];
+        $studentranking   = $visible['students'] ? $this->get_ranking($season->id, $staffids, false) : [];
+        $staffranking     = $visible['staff'] ? $this->get_ranking($season->id, $staffids, true) : [];
 
         $selfinstudents = $this->find_self_rank($studentranking);
         $selfinstaff    = $this->find_self_rank($staffranking);

@@ -127,6 +127,7 @@ $templatedata = [
     'str_revealed_msg'    => get_string('guess_failed_msg', 'local_playergames', $revealedterm),
     'str_definition_label' => get_string('guess_definition_label', 'local_playergames'),
     'str_enter'           => get_string('guess_enter', 'local_playergames'),
+    'str_keyboard'        => get_string('guess_keyboard_label', 'local_playergames'),
     'str_backspace'       => get_string('guess_backspace', 'local_playergames'),
     'str_invalid'         => get_string('guess_invalid', 'local_playergames'),
     'str_result_title'    => get_string('guess_result_title', 'local_playergames'),

@@ -77,7 +77,9 @@ class nav_header implements renderable, templatable {
                 'dashboard_card_achievements',
                 '/local/playergames/achievements.php'
             );
-            $items[] = $this->item('hall', 'fa-crown', 'nav_hall', '/local/playergames/halloffame.php');
+            if (access::ranking_enabled()) {
+                $items[] = $this->item('hall', 'fa-crown', 'nav_hall', '/local/playergames/halloffame.php');
+            }
             $items[] = $this->item(
                 'history',
                 'fa-clock-rotate-left',

@@ -67,4 +67,19 @@ final class play_templates_test extends \advanced_testcase {
         $this->assertStringNotContainsString('<img src=x', $html);
         $this->assertStringNotContainsString('&amp;amp;', $html);
     }
+
+    /**
+     * Regression test: the keyboard group took the label of its own Enter key.
+     */
+    public function test_the_guess_keyboard_group_is_not_named_after_the_enter_key(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('local_playergames/play_guess', [
+            'str_enter' => 'Submit', 'str_keyboard' => 'Game keyboard',
+        ]);
+
+        $this->assertStringContainsString('role="group" aria-label="Game keyboard"', $html);
+        $this->assertSame(1, substr_count($html, 'aria-label="Submit"'));
+    }
 }

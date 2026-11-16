@@ -72,4 +72,30 @@ final class plugin_registry_test extends \advanced_testcase {
         $components = array_column(plugin_registry::get_catalog(), 'component');
         $this->assertSame($components, array_values(array_unique($components)));
     }
+
+    /**
+     * Regression test: the names of the plugins were English literals shown in every language.
+     */
+    public function test_every_plugin_has_a_name_in_each_language_file(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        foreach (['en', 'pt_br'] as $lang) {
+            $string = [];
+            include($CFG->dirroot . '/local/playergames/lang/' . $lang . '/local_playergames.php');
+            foreach (array_column(plugin_registry::get_catalog(), 'component') as $component) {
+                $this->assertArrayHasKey('plugin_name_' . $component, $string, "{$lang}: no name for {$component}.");
+                $this->assertNotSame('', $string['plugin_name_' . $component]);
+            }
+        }
+    }
+
+    public function test_the_display_name_is_the_string_of_the_plugin(): void {
+        $this->resetAfterTest();
+
+        $names = array_column(plugin_registry::get_catalog(), 'displayname', 'component');
+
+        $this->assertSame(get_string('plugin_name_local_latepenalty', 'local_playergames'), $names['local_latepenalty']);
+        $this->assertSame(get_string('plugin_name_local_playergames', 'local_playergames'), $names['local_playergames']);
+    }
 }

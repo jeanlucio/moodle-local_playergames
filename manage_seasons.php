@@ -47,7 +47,8 @@ if (!data_submitted() && $seasonid > 0) {
     $target = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
     if ($action === 'delete' && $target->status !== season_manager::STATUS_ACTIVE) {
         $message = get_string('season_delete_confirm', 'local_playergames', (object) [
-            'name' => \local_playergames\local\text::plain($target->name),
+            // The confirmation prints its message as HTML, so the plain text is escaped.
+            'name' => s(\local_playergames\local\text::plain($target->name)),
             'players' => season_summary::count_players($seasonid),
         ]);
         echo $OUTPUT->header();
@@ -229,7 +230,7 @@ if ($editing) {
     $templatedata['formseasonid']    = (int) $editing->id;
     $templatedata['editing']         = true;
     $templatedata['lockdates']       = $editing->status === season_manager::STATUS_CLOSED;
-    $templatedata['defaultname']     = \local_playergames\local\text::plain($editing->name);
+    $templatedata['defaultname']     = (string) $editing->name;
     $templatedata['defaultstart']    = userdate((int) $editing->startdate, '%Y-%m-%d');
     $templatedata['defaultend']      = userdate((int) $editing->enddate, '%Y-%m-%d');
 }

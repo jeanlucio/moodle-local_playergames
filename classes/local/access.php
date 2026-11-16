@@ -213,6 +213,41 @@ class access {
     }
 
     /**
+     * Whether the rankings are shown at all.
+     *
+     * An admin can turn them off so players only see their own score. A value that was never saved
+     * counts as on, as the setting is on by default.
+     *
+     * @return bool
+     */
+    public static function ranking_enabled(): bool {
+        $setting = get_config('local_playergames', 'enable_ranking');
+        return $setting === false ? true : (bool) $setting;
+    }
+
+    /**
+     * Which rankings a viewer may see: the one of the students, the one of the staff, or both.
+     *
+     * The single rule of the hub and of the hall of fame. An admin sees both; staff sees both when the
+     * participants setting is 'both' and only the staff one otherwise; everyone else sees the students'
+     * one. A ranking that is off shows nothing to anyone.
+     *
+     * @param bool $isstaff Whether the viewer is staff (see is_staff()).
+     * @param bool $isadmin Whether the viewer has moodle/site:config.
+     * @param string $allowed Value of the allowed_participants setting.
+     * @return bool[] Whether the 'students' and the 'staff' rankings may be seen.
+     */
+    public static function visible_ranking_groups(bool $isstaff, bool $isadmin, string $allowed): array {
+        if (!self::ranking_enabled()) {
+            return ['students' => false, 'staff' => false];
+        }
+        if ($isadmin || ($allowed === 'both' && $isstaff)) {
+            return ['students' => true, 'staff' => true];
+        }
+        return ['students' => !$isstaff, 'staff' => $isstaff];
+    }
+
+    /**
      * Whether the user takes part in the gamification.
      *
      * The single rule behind every page and service that records game data: the viewhub capability

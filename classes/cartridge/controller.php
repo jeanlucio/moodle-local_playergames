@@ -798,12 +798,36 @@ class controller {
     }
 
     /**
+     * Reads the name of a cartridge about to be created, sending the user back when it is blank.
+     *
+     * A field that only holds spaces, or tags that the text cleaning removes, passes the browser's own
+     * required check, and a cartridge saved that way could not be imported again by the importer,
+     * which refuses a name that is empty after trimming.
+     *
+     * @param string $param Name of the request parameter.
+     * @param array $backparams Parameters of the page to return to when the name is blank.
+     * @return string The cleaned name, at most 255 characters.
+     */
+    private function read_cartridge_name(string $param, array $backparams): string {
+        $name = payload::text(required_param($param, PARAM_TEXT));
+        if ($name === '') {
+            redirect(
+                $this->url($backparams),
+                get_string('error_cartridge_missing_field', 'local_playergames', 'name'),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+        return \core_text::substr($name, 0, 255);
+    }
+
+    /**
      * Handles the save_ai_cartridge POST action.
      */
     private function action_save_ai_cartridge(): void {
         global $DB, $USER;
 
-        $cartridgename = required_param('ai_cartridge_name', PARAM_TEXT);
+        $cartridgename = $this->read_cartridge_name('ai_cartridge_name', ['tab' => 'ai']);
         $cartridgelang = optional_param('ai_language', '', PARAM_TEXT);
         $rawconcepts = $this->read_rows([
             'concept_term'       => 'term',
@@ -825,7 +849,7 @@ class controller {
         }
 
         $newcartridge = new \stdClass();
-        $newcartridge->name = \core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
+        $newcartridge->name = $cartridgename;
         $newcartridge->version = '1.0';
         $newcartridge->language = \core_text::substr(
             clean_param($cartridgelang, PARAM_TEXT),
@@ -870,7 +894,7 @@ class controller {
     private function action_create_cartridge(): void {
         global $DB, $USER;
 
-        $cartridgename = required_param('cartridge_name', PARAM_TEXT);
+        $cartridgename = $this->read_cartridge_name('cartridge_name', ['tab' => 'create']);
         $cartridgelang = optional_param('cartridge_language', '', PARAM_TEXT);
         $cartridgetype = optional_param('cartridge_type', 'concept', PARAM_ALPHA);
         $cartridgetype = in_array($cartridgetype, ['concept', 'quiz'], true) ? $cartridgetype : 'concept';
@@ -881,7 +905,7 @@ class controller {
         );
 
         $newcartridge = new \stdClass();
-        $newcartridge->name = \core_text::substr(clean_param($cartridgename, PARAM_TEXT), 0, 255);
+        $newcartridge->name = $cartridgename;
         $newcartridge->version = '1.0';
         $newcartridge->language = \core_text::substr(
             clean_param($cartridgelang, PARAM_TEXT),
@@ -1229,7 +1253,7 @@ class controller {
     private function action_save_ai_quiz_cartridge(): void {
         global $DB, $USER;
 
-        $cartridgename  = required_param('ai_cartridge_name', PARAM_TEXT);
+        $cartridgename  = $this->read_cartridge_name('ai_cartridge_name', ['tab' => 'ai', 'ai_subtab' => 'quiz']);
         $cartridgelang  = optional_param('ai_language', '', PARAM_TEXT);
         $aiauthor       = optional_param('ai_author', '', PARAM_TEXT);
         $rawquestions   = $this->read_rows([
@@ -1280,11 +1304,7 @@ class controller {
         }
 
         $newcartridge               = new \stdClass();
-        $newcartridge->name         = \core_text::substr(
-            clean_param($cartridgename, PARAM_TEXT),
-            0,
-            255
-        );
+        $newcartridge->name         = $cartridgename;
         $newcartridge->version      = '1.0';
         $newcartridge->language     = \core_text::substr(
             clean_param($cartridgelang, PARAM_TEXT),

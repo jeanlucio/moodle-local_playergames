@@ -1182,4 +1182,36 @@ final class controller_test extends \advanced_testcase {
 
         $this->assertStringContainsString('\core\antivirus\manager::scan_file(', $source);
     }
+
+    /**
+     * Regression test: a name that was only spaces, or only tags the text cleaning removes, passed the
+     * browser's required check and created a cartridge the importer would not take back.
+     */
+    public function test_a_cartridge_cannot_be_created_with_a_blank_name(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $row = ['concept_term' => [0 => 'Cell'], 'concept_definition' => [0 => 'Unit of life']];
+        $question = [
+            'question_text' => [0 => 'Question?'], 'question_correct' => [0 => 'Right'],
+            'question_distractor_0' => [0 => 'One'], 'question_distractor_1' => [0 => 'Two'],
+            'question_distractor_2' => [0 => 'Three'], 'question_distractor_3' => [0 => 'Four'],
+        ];
+
+        foreach (['   ', '<b></b>'] as $blank) {
+            $this->dispatch(['action' => 'create_cartridge', 'cartridge_name' => $blank]);
+            $this->dispatch(['action' => 'save_ai_cartridge', 'ai_cartridge_name' => $blank] + $row, 'ai');
+            $this->save_ai_quiz(['ai_cartridge_name' => $blank] + $question);
+        }
+
+        $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
+    }
+
+    public function test_the_name_of_a_new_cartridge_is_stored_trimmed(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $this->dispatch(['action' => 'create_cartridge', 'cartridge_name' => '  Biology  ']);
+
+        $this->assertTrue($DB->record_exists('local_playergames_cartridges', ['name' => 'Biology']));
+    }
 }

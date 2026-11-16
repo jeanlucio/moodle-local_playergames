@@ -461,4 +461,34 @@ final class access_test extends \advanced_testcase {
         );
         $this->assertSame('/my/', access::turned_away_url((int) $student->id)->out_as_local_url(false));
     }
+
+    public function test_the_rankings_a_viewer_may_see_follow_the_role_and_the_participants_setting(): void {
+        $this->resetAfterTest();
+
+        // Each case is the viewer flags and the setting, then whether the students and the staff rankings show.
+        $cases = [
+            'student' => [[false, false, 'students'], [true, false]],
+            'student with both' => [[false, false, 'both'], [true, false]],
+            'staff on students only' => [[true, false, 'students'], [false, true]],
+            'staff with both' => [[true, false, 'both'], [true, true]],
+            'admin' => [[false, true, 'students'], [true, true]],
+        ];
+        foreach ($cases as $label => [$args, $expected]) {
+            $groups = access::visible_ranking_groups(...$args);
+            $this->assertSame($expected, [$groups['students'], $groups['staff']], $label);
+        }
+    }
+
+    public function test_no_ranking_is_visible_when_the_ranking_is_off(): void {
+        $this->resetAfterTest();
+        $this->assertTrue(access::ranking_enabled());
+
+        set_config('enable_ranking', 0, 'local_playergames');
+
+        $this->assertFalse(access::ranking_enabled());
+        $this->assertSame(
+            ['students' => false, 'staff' => false],
+            access::visible_ranking_groups(true, true, 'both')
+        );
+    }
 }

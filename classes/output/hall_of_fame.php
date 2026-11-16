@@ -24,7 +24,9 @@
 
 namespace local_playergames\output;
 
+use context_system;
 use local_playergames\hub\season_summary;
+use local_playergames\local\access;
 use local_playergames\local\text;
 use renderable;
 use renderer_base;
@@ -57,10 +59,18 @@ class hall_of_fame implements renderable, templatable {
      * @return array
      */
     public function export_for_template(renderer_base $output): array {
+        // The hall shows the rankings the hub shows to this viewer, and none when the ranking is off.
+        $visible = access::visible_ranking_groups(
+            access::is_staff($this->viewerid),
+            has_capability('moodle/site:config', context_system::instance(), $this->viewerid),
+            get_config('local_playergames', 'allowed_participants') ?: 'students'
+        );
+
+        $hall = $visible['students'] || $visible['staff'] ? season_summary::get_hall() : [];
         $seasons = [];
-        foreach (season_summary::get_hall() as $season) {
-            $students = $this->export_rows($season['students']);
-            $staff    = $this->export_rows($season['staff']);
+        foreach ($hall as $season) {
+            $students = $visible['students'] ? $this->export_rows($season['students']) : [];
+            $staff    = $visible['staff'] ? $this->export_rows($season['staff']) : [];
             if (empty($students) && empty($staff)) {
                 continue;
             }
@@ -77,6 +87,8 @@ class hall_of_fame implements renderable, templatable {
         return [
             'str_intro'        => get_string('hall_intro', 'local_playergames'),
             'str_empty'        => get_string('hall_empty', 'local_playergames'),
+            'str_rankingoff'   => get_string('hall_ranking_off', 'local_playergames'),
+            'rankingoff'       => !access::ranking_enabled(),
             'str_students'     => get_string('hall_group_students', 'local_playergames'),
             'str_staff'        => get_string('hall_group_staff', 'local_playergames'),
             'str_rank_pos'     => get_string('hub_rank_pos', 'local_playergames'),
