@@ -619,8 +619,12 @@ class controller {
             );
         }
 
-        $jsonstring = file_get_contents($_FILES['jsonfile']['tmp_name']);
         try {
+            $jsonstring = $this->read_upload(
+                $_FILES['jsonfile']['tmp_name'],
+                (string) $_FILES['jsonfile']['name'],
+                (int) $_FILES['jsonfile']['size']
+            );
             $imp = new importer();
             $result = $imp->import($jsonstring, (int) $USER->id);
             $event = cartridge_imported::create([
@@ -645,6 +649,31 @@ class controller {
                 \core\output\notification::NOTIFY_ERROR
             );
         }
+    }
+
+    /**
+     * Reads an uploaded cartridge after the two checks the core upload path makes and a bare $_FILES does not.
+     *
+     * The repository upload behind the file picker applies the maximum size of the site and scans each file
+     * with the antivirus the administrator configured; this page takes the file straight from PHP, so it asks
+     * for both itself, before the whole file goes into memory.
+     *
+     * @param string $path Where PHP put the uploaded file.
+     * @param string $name The name the browser sent.
+     * @param int $size The size PHP reports.
+     * @return string The content of the file.
+     * @throws \moodle_exception When the file is over the size the site accepts, or the antivirus refuses it.
+     */
+    protected function read_upload(string $path, string $name, int $size): string {
+        global $CFG;
+
+        $limit = get_max_upload_file_size((int) $CFG->maxbytes);
+        if ($limit > 0 && $size > $limit) {
+            throw new \moodle_exception('error_cartridge_toolarge', 'local_playergames', '', display_size($limit));
+        }
+        \core\antivirus\manager::scan_file($path, clean_filename($name), true);
+
+        return (string) file_get_contents($path);
     }
 
     /**

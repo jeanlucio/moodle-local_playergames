@@ -302,6 +302,7 @@ $string['error_cartridge_no_questions'] = 'The cartridge contains no questions.'
 $string['error_cartridge_nofile'] = 'No file was uploaded.';
 $string['error_cartridge_notfound'] = 'Cartridge not found.';
 $string['error_cartridge_tooconcepts'] = 'The cartridge exceeds the maximum number of concepts ({$a}).';
+$string['error_cartridge_toolarge'] = 'The file is larger than the {$a} this site accepts for uploads.';
 $string['error_cartridge_tooquestions'] = 'The cartridge exceeds the maximum number of questions ({$a}).';
 $string['error_category_duplicate'] = 'A category with this name already exists in this cartridge.';
 $string['error_category_empty_name'] = 'Category name cannot be empty.';

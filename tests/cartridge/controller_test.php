@@ -1129,4 +1129,57 @@ final class controller_test extends \advanced_testcase {
         $this->assertSame(1, (int) $DB->get_field('local_playergames_cartridges', 'active', ['id' => $first]));
         $this->assertSame($ids['grape'], $assigned());
     }
+
+    /**
+     * Reads an uploaded cartridge through the check the controller makes of the file.
+     *
+     * @param string $content What the file holds.
+     * @return string What the controller read.
+     */
+    private function read_upload(string $content): string {
+        $path = make_request_directory() . '/cartridge.json';
+        file_put_contents($path, $content);
+        $controller = new controller(\context_system::instance(), 'import', 0, 0);
+        $method = new \ReflectionMethod($controller, 'read_upload');
+        return $method->invoke($controller, $path, 'cartridge.json', strlen($content));
+    }
+
+    /**
+     * An upload is read as it is when the site accepts its size.
+     */
+    public function test_an_upload_within_the_size_limit_is_read(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->maxbytes = 10240;
+
+        $this->assertSame('{"name":"x"}', $this->read_upload('{"name":"x"}'));
+    }
+
+    /**
+     * An upload over the maximum size of the site is refused before it is read.
+     *
+     * Regression test: the file went straight from PHP into memory, whatever the site allowed.
+     */
+    public function test_an_upload_over_the_size_limit_is_refused(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $CFG->maxbytes = 1024;
+
+        try {
+            $this->read_upload(str_repeat('x', 2048));
+            $this->fail('A file over the limit was read.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_cartridge_toolarge', $e->errorcode);
+        }
+    }
+
+    /**
+     * The upload goes through the antivirus of the site, as a file from the file picker does.
+     */
+    public function test_the_upload_is_scanned_by_the_antivirus_of_the_site(): void {
+        global $CFG;
+        $source = file_get_contents($CFG->dirroot . '/local/playergames/classes/cartridge/controller.php');
+
+        $this->assertStringContainsString('\core\antivirus\manager::scan_file(', $source);
+    }
 }

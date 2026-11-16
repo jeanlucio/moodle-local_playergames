@@ -302,6 +302,7 @@ $string['error_cartridge_no_questions'] = 'O cartucho não contém perguntas.';
 $string['error_cartridge_nofile'] = 'Nenhum arquivo foi enviado.';
 $string['error_cartridge_notfound'] = 'Cartucho não encontrado.';
 $string['error_cartridge_tooconcepts'] = 'O cartucho excede o número máximo de conceitos ({$a}).';
+$string['error_cartridge_toolarge'] = 'O arquivo é maior que os {$a} que este site aceita em envios.';
 $string['error_cartridge_tooquestions'] = 'O cartucho excede o número máximo de perguntas ({$a}).';
 $string['error_category_duplicate'] = 'Já existe uma categoria com este nome neste cartucho.';
 $string['error_category_empty_name'] = 'O nome da categoria não pode estar vazio.';
