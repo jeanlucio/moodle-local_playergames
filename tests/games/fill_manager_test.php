@@ -260,7 +260,7 @@ final class fill_manager_test extends \advanced_testcase {
             'timecreated' => $now, 'timemodified' => $now,
         ]);
         $DB->insert_record('local_playergames_season_games', (object) [
-            'seasonid' => $seasonid, 'gametype' => 'fill', 'enabled' => 1, 'source' => 'cartridge', 'auxid' => 0,
+            'seasonid' => $seasonid, 'gametype' => 'fill', 'enabled' => 1,
         ]);
         $cartridgeid = $this->make_cartridge();
         $ids = [$this->add_concept($cartridgeid, 'gato'), $this->add_concept($cartridgeid, 'rede')];

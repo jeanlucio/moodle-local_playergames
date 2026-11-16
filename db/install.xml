@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/playergames/db" VERSION="20261117" COMMENT="XMLDB file for Moodle local/playergames"
+<XMLDB PATH="local/playergames/db" VERSION="20261118" COMMENT="XMLDB file for Moodle local/playergames"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -356,9 +356,7 @@
         <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="gametype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
-        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="cartridge" SEQUENCE="false"/>
         <FIELD NAME="cartridgeids" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="auxid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

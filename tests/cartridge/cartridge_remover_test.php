@@ -95,8 +95,8 @@ final class cartridge_remover_test extends \advanced_testcase {
     private function season_game(?string $cartridgeids, string $gametype = 'quiz'): int {
         global $DB;
         return (int) $DB->insert_record('local_playergames_season_games', (object) [
-            'seasonid' => 1, 'gametype' => $gametype, 'enabled' => 1, 'source' => 'cartridge',
-            'cartridgeids' => $cartridgeids, 'auxid' => 0,
+            'seasonid' => 1, 'gametype' => $gametype, 'enabled' => 1,
+            'cartridgeids' => $cartridgeids,
         ]);
     }
 

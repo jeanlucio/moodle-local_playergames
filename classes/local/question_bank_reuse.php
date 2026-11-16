@@ -30,11 +30,10 @@ use context_system;
 /**
  * The question bank categories Moodle keeps for reuse across the site.
  *
- * The games are site-wide and have no course, so a category chosen for one is made available to every
- * player. Only a category Moodle itself keeps for sharing may be chosen: a shared question bank on
- * Moodle 5 (an instance of the question bank activity, apart from the internal preview one), or a
- * category of the system context on Moodle 4.5. A category that belongs to a course or to a quiz is
- * private to it and is never offered, whoever asks for it.
+ * What is copied into a cartridge is site-wide and reaches every player. Only a category Moodle itself
+ * keeps for sharing may be chosen: a shared question bank on Moodle 5 (an instance of the question bank
+ * activity, apart from the internal preview one), or a category of the system context on Moodle 4.5. A
+ * category that belongs to a course or to a quiz is private to it and is never offered, whoever asks for it.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -118,23 +117,6 @@ final class question_bank_reuse {
                 $userid
             )
         );
-    }
-
-    /**
-     * Whether a category is kept for reuse, whoever is asking.
-     *
-     * @param int $categoryid The category id.
-     * @return bool
-     */
-    public static function is_shared(int $categoryid): bool {
-        global $DB;
-
-        if ($categoryid <= 0) {
-            return false;
-        }
-        [$from, $params] = self::scope();
-        $params['categoryid'] = $categoryid;
-        return $DB->record_exists_sql("SELECT 1 FROM $from AND qc.id = :categoryid", $params);
     }
 
     /**

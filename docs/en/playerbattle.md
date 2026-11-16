@@ -2,7 +2,7 @@
 
 PlayerBattle is the daily match-3 mini-game. The player fights an opponent on an 8×8 board:
 lining up pieces hurts the opponent, and the **Orb** brings a question — a right answer lands a critical
-hit. The questions come from the same sources as PlayerQuiz.
+hit. The questions come from the same cartridges as PlayerQuiz.
 
 ## The board
 
@@ -33,7 +33,7 @@ turns and asks 5 to 9 questions.
 - The opponent has no questions: when its own mana fills, it lands a critical hit by itself.
 - Ten questions are drawn for each battle and asked in a shuffled order. If they run out, the order is
   drawn again, never starting with the question just asked.
-- Cartridge text is shown as plain text; text from the Question Bank goes through the Moodle filters. The
+- Cartridge text is shown as plain text. The
   feedback of a question, when it has one, is shown after the answer.
 
 ## XP and daily plays
@@ -60,13 +60,13 @@ answers questions and waits.
 
 ## Content and settings
 
-PlayerBattle asks **quiz-type cartridges** and, optionally, a **Moodle Question Bank** category kept for
-reuse (multiple-choice questions; see [How PlayerQuiz Works](#playerquiz)), as chosen for the season in the *Season games* card of the [Administration](#administration)
-tab.
+PlayerBattle asks **quiz-type cartridges**, including the ones imported from a **Moodle Question Bank**
+(see [How PlayerQuiz Works](#playerquiz)), as chosen for the season in the *Season games* card of the
+[Administration](#administration) tab.
 
 | Where | Setting |
 |---|---|
-| *Season games* | Whether PlayerBattle runs in the season and where its questions come from. |
+| *Season games* | Whether PlayerBattle runs in the season and which cartridges its questions come from. |
 | *Rules → Game XP* | XP per PlayerBattle game and how many plays a day give XP. |
 
 ## Playing it

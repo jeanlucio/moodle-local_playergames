@@ -84,75 +84,6 @@ final class daily_play_manager_test extends \advanced_testcase {
     }
 
     /**
-     * Sets how the active season feeds a game.
-     *
-     * @param \stdClass $season The season.
-     * @param string $gametype Game type.
-     * @param string $source Source constant value.
-     * @param int $auxid Question bank category id.
-     * @return void
-     */
-    private function set_source(\stdClass $season, string $gametype, string $source, int $auxid = 0): void {
-        global $DB;
-        $DB->insert_record('local_playergames_season_games', (object) [
-            'seasonid' => $season->id, 'gametype' => $gametype, 'enabled' => 1,
-            'source' => $source, 'cartridgeids' => null, 'auxid' => $auxid,
-        ]);
-    }
-
-    /**
-     * A shared question bank category, on every Moodle version.
-     *
-     * @return int Category id.
-     */
-    private function shared_category(): int {
-        global $DB;
-        $generator = $this->getDataGenerator();
-        if ($DB->get_manager()->table_exists('qbank')) {
-            $course = $generator->create_course();
-            $bank = $generator->create_module('qbank', ['course' => $course->id]);
-            $context = \context_module::instance($bank->cmid);
-        } else {
-            $context = \context_system::instance();
-        }
-        $category = $generator->get_plugin_generator('core_question')
-            ->create_question_category(['contextid' => $context->id]);
-        return (int) $category->id;
-    }
-
-    /**
-     * Regression test: one global "is there an active cartridge" decided every game, so a site that
-     * reads only the question bank saw Quiz and Battle locked in the hub while the pages worked.
-     */
-    public function test_a_bank_only_game_is_open_without_any_cartridge(): void {
-        $this->resetAfterTest();
-        $user     = $this->getDataGenerator()->create_user();
-        $snapshot = [];
-        $season   = $this->make_season($snapshot);
-        $category = $this->shared_category();
-        $this->set_source($season, 'quiz', 'questionbank', $category);
-        $this->set_source($season, 'battle', 'questionbank', $category);
-
-        $games = array_column(daily_play_manager::get_games_today((int) $user->id, $snapshot), null, 'gametype');
-
-        $this->assertTrue($games['quiz']['pending']);
-        $this->assertTrue($games['battle']['pending']);
-        $this->assertTrue($games['guess']['locked']);
-        $this->assertTrue($games['fill']['locked']);
-    }
-
-    public function test_a_bank_source_without_a_shared_category_stays_locked(): void {
-        $this->resetAfterTest();
-        $user     = $this->getDataGenerator()->create_user();
-        $season   = $this->make_season([]);
-        $this->set_source($season, 'quiz', 'questionbank', 0);
-
-        $games = array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
-
-        $this->assertTrue($games['quiz']['locked']);
-    }
-
-    /**
      * Each family of cartridges opens its own games: a quiz cartridge does not feed Guess and Fill.
      */
     public function test_cartridges_open_only_the_games_that_read_their_family(): void {
@@ -362,7 +293,7 @@ final class daily_play_manager_test extends \advanced_testcase {
         $season   = $this->make_season($snapshot);
         $DB->insert_record('local_playergames_season_games', (object) [
             'seasonid' => $season->id, 'gametype' => 'quiz', 'enabled' => 0,
-            'source' => 'cartridge', 'cartridgeids' => null, 'auxid' => 0,
+            'cartridgeids' => null,
         ]);
 
         $result = daily_play_manager::register_play(

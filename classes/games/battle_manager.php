@@ -76,26 +76,12 @@ class battle_manager {
             return [];
         }
 
-        // A season with no row for the game predates per-season config: fall back to the cartridges.
-        $config = season_game_config::get_for_active_season('battle');
-        if ($config !== null) {
-            $sources      = $config->source;
-            $categoryid   = (int) $config->auxid;
-            $cartridgeids = $config->cartridgeids;
-        } else {
-            $sources      = season_game_config::SOURCE_CARTRIDGE;
-            $categoryid   = 0;
-            $cartridgeids = null;
-        }
+        // A season with no row for the game predates per-season config: it draws from all the cartridges.
+        $config       = season_game_config::get_for_active_season('battle');
+        $cartridgeids = $config !== null ? $config->cartridgeids : null;
 
         $exclude = served_questions::get_excluded($userid, 'battle', $gamedate);
-        $loaded  = (new quiz_loader())->load_session(
-            self::QUESTIONS_PER_BATTLE,
-            $sources,
-            $categoryid,
-            $cartridgeids,
-            $exclude
-        );
+        $loaded  = (new quiz_loader())->load_session(self::QUESTIONS_PER_BATTLE, $cartridgeids, $exclude);
 
         $questions = [];
         $judging   = [];
@@ -314,31 +300,26 @@ class battle_manager {
     /**
      * Turns a loaded question into the structure the browser receives.
      *
-     * Cartridge text is plain and is escaped; question bank text is HTML and goes through the filters.
+     * Cartridge text is plain: it is escaped, and the feedback goes through the plain text format.
      *
      * @param quiz_question $question The loaded question.
      * @param string $key Its "source:sourceid" key.
-     * @param \context $context Context the text is filtered in.
+     * @param \context $context Context the feedback is filtered in.
      * @return array {key, questiontext, feedback, answers: {text, correct}[]}
      */
     private function format_question(quiz_question $question, string $key, \context $context): array {
-        $isbank = $question->source === 'questionbank';
-        $format = static fn(string $text, int $textformat): string => $isbank
-            ? format_text($text, $textformat, ['context' => $context])
-            : s($text);
-
         $answers = [];
         foreach ($question->answers as $answer) {
-            $answers[] = ['text' => $format($answer->text, $answer->format), 'correct' => $answer->correct];
+            $answers[] = ['text' => s($answer->text), 'correct' => $answer->correct];
         }
 
         $feedback = (string) ($question->generalfeedback ?? '');
         return [
             'key'          => $key,
-            'questiontext' => $format($question->questiontext, $question->questiontextformat),
+            'questiontext' => s($question->questiontext),
             'feedback'     => $feedback === ''
                 ? ''
-                : format_text($feedback, $question->generalfeedbackformat, ['context' => $context]),
+                : format_text($feedback, FORMAT_PLAIN, ['context' => $context]),
             'answers'      => $answers,
         ];
     }

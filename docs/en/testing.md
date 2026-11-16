@@ -28,7 +28,7 @@ PostgreSQL & MariaDB).
 | `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |
 | `observer_test.php` | 5 | `game_completed` drives streak/mission/achievement; records streak even without a season; mirrors `block_playerhud` XP changes into Learning XP |
 | `hook_callbacks_test.php` | 5 | Primary navigation link: the hub for a student, none after opting out, the dashboard for a teacher who opted out, none for a guest, and the staff lookup skipped (counted in queries) when gamification is on |
-| `games/quiz_loader_test.php` | 13 | Cartridge source: completeness filter, session size, active-only, id filter, metadata, random draw, fresh-question exclusion and pool reuse; question bank source reads only a category kept for reuse |
+| `games/quiz_loader_test.php` | 12 | Completeness filter, session size, active-only, id filter, metadata, random draw, fresh-question exclusion and pool reuse |
 | `games/quiz_settings_test.php` | 8 | Timer, max-attempts and cooldown configuration and their interaction |
 | `games/guess_manager_test.php` | 7 | Daily concept resolution, term normalisation, Wordle-style letter feedback (including duplicate letters), guess validation |
 | `games/fill_manager_test.php` | 10 | Word count/max-attempts config clamping, shared letter→slot assignment (including disjoint terms), tile reveal state, cross-reveal cascade, per-day term ordering and filtering, POST response payload reveal rules |
@@ -47,7 +47,8 @@ PostgreSQL & MariaDB).
 | `local/access_test.php` | 16 | Staff detection (site admin, course-editing capability), bulk staff-id resolution, hub visibility rules; where each role lands |
 | `local/admin_cards_test.php` | 8 | Administration tab: cards and groups by permission (administrator, manager, student), the tab in the navigation, the state of each card, a season name escaped once, and the documentation link opening in a new tab |
 | `local/game_page_test.php` | 2 | The notice of the game pages when no season is active, and that it never says the game was already played |
-| `local/question_bank_reuse_test.php` | 4 | Which question bank categories are kept for reuse (shared banks on Moodle 5.x, system context on 4.5), question counts, what a user may choose, and the check of a given category |
+| `local/question_bank_reuse_test.php` | 3 | Which question bank categories are kept for reuse (shared banks on Moodle 5.x, system context on 4.5), question counts, what a user may choose |
+| `cartridge/question_bank_importer_test.php` | 9 | Copy into a new active quiz cartridge, category name, left out questions with a medium (counted), unusable questions, latest ready version only, nothing to import, private categories and users who may not use them refused, text flattened keeping case and entities |
 | `cartridge/glossary_importer_test.php` | 4 | Global glossaries listed with their approved entries, import into a concept cartridge, refusal of a course glossary and of an empty one |
 | `local/text_test.php` | 4 | Plain-text names: text as typed, the level title, cartridge pages escaping names once, and edit forms filling inputs with the stored text |
 | `local/engagement_report_test.php` | 4 | Empty metrics, course counting, player-course detection, scope split |

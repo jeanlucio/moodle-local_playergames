@@ -235,8 +235,8 @@ final class assign_daily_games_test extends \advanced_testcase {
         ]);
         foreach (['guess', 'fill'] as $gametype) {
             $DB->insert_record('local_playergames_season_games', (object) [
-                'seasonid' => $seasonid, 'gametype' => $gametype, 'enabled' => 1, 'source' => 'cartridge',
-                'cartridgeids' => $kept === null ? null : json_encode($kept), 'auxid' => 0,
+                'seasonid' => $seasonid, 'gametype' => $gametype, 'enabled' => 1,
+                'cartridgeids' => $kept === null ? null : json_encode($kept),
             ]);
         }
     }

@@ -99,18 +99,6 @@ final class question_bank_reuse_test extends \advanced_testcase {
         $this->assertNotContains((int) $private->id, $ids);
     }
 
-    public function test_is_shared_is_true_only_for_a_category_kept_for_reuse(): void {
-        $this->resetAfterTest();
-        $shared  = $this->shared_category();
-        $private = $this->private_category();
-
-        $this->assertTrue(question_bank_reuse::is_shared((int) $shared->id));
-        $this->assertFalse(question_bank_reuse::is_shared((int) $private->id));
-        $this->assertFalse(question_bank_reuse::is_shared(0));
-        $this->assertFalse(question_bank_reuse::is_shared(-3));
-        $this->assertFalse(question_bank_reuse::is_shared(999999));
-    }
-
     public function test_the_count_is_of_multiple_choice_questions_only(): void {
         $this->resetAfterTest();
         $shared = $this->shared_category();

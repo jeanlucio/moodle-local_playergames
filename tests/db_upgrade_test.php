@@ -131,4 +131,34 @@ final class db_upgrade_test extends advanced_testcase {
         $this->assertSame(1, (int) $DB->get_field('local_playergames_season_summary', 'isstaff', ['userid' => $teacher->id]));
         $this->assertSame(0, (int) $DB->get_field('local_playergames_season_summary', 'isstaff', ['userid' => $student->id]));
     }
+
+    /**
+     * A site that still has the question bank source columns loses them, and a second run is harmless.
+     *
+     * @return void
+     */
+    public function test_upgrade_drops_the_question_bank_source_columns(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/upgradelib.php');
+        require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table('local_playergames_season_games');
+        $source = new \xmldb_field('source', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'cartridge', 'enabled');
+        $aux = new \xmldb_field('auxid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'cartridgeids');
+        $dbman->add_field($table, $source);
+        $dbman->add_field($table, $aux);
+        $this->assertTrue($dbman->field_exists($table, $source));
+
+        set_config('version', 2026111602, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111602));
+
+        $this->assertFalse($dbman->field_exists($table, $source));
+        $this->assertFalse($dbman->field_exists($table, $aux));
+        set_config('version', 2026111602, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111602));
+    }
 }

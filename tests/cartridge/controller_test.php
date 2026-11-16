@@ -805,7 +805,7 @@ final class controller_test extends \advanced_testcase {
         $this->assertStringContainsString('Cell biology', $data['content_html']);
         $this->assertStringContainsString('Capitals', $data['content_html']);
         $this->assertStringContainsString('action=export_cartridge', $data['content_html']);
-        $this->assertCount(5, $data['tabs']);
+        $this->assertCount(6, $data['tabs']);
     }
 
     /**
@@ -1213,5 +1213,72 @@ final class controller_test extends \advanced_testcase {
         $this->dispatch(['action' => 'create_cartridge', 'cartridge_name' => '  Biology  ']);
 
         $this->assertTrue($DB->record_exists('local_playergames_cartridges', ['name' => 'Biology']));
+    }
+
+    /**
+     * Creates a category kept for reuse with one importable question, on every Moodle version.
+     *
+     * @return int Category id.
+     */
+    private function bank_category_with_a_question(): int {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        if ($DB->get_manager()->table_exists('qbank')) {
+            $course = $generator->create_course();
+            $bank = $generator->create_module('qbank', ['course' => $course->id]);
+            $context = \context_module::instance($bank->cmid);
+        } else {
+            $context = \context_system::instance();
+        }
+        $qgen = $generator->get_plugin_generator('core_question');
+        $category = $qgen->create_question_category(['contextid' => $context->id]);
+        $question = $qgen->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
+        $DB->insert_record('question_answers', (object) [
+            'question' => $question->id, 'answer' => 'Another wrong', 'answerformat' => FORMAT_HTML,
+            'fraction' => 0, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
+        ]);
+        return (int) $category->id;
+    }
+
+    public function test_importing_a_question_bank_category_creates_a_quiz_cartridge_and_logs_the_event(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $sink = $this->redirectEvents();
+        $categoryid = $this->bank_category_with_a_question();
+
+        $code = $this->dispatch(['action' => 'import_questionbank', 'categoryid' => $categoryid], 'questionbank');
+
+        $this->assertSame('redirecterrordetected', $code);
+        $cartridge = $DB->get_record('local_playergames_cartridges', ['type' => 'quiz'], '*', MUST_EXIST);
+        $this->assertSame(1, $DB->count_records('local_playergames_concept_questions', ['cartridgeid' => $cartridge->id]));
+        $events = array_filter(
+            $sink->get_events(),
+            fn($event): bool => $event instanceof \local_playergames\event\cartridge_imported
+        );
+        $this->assertCount(1, $events);
+    }
+
+    public function test_importing_an_unavailable_category_creates_nothing(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $code = $this->dispatch(['action' => 'import_questionbank', 'categoryid' => 999999], 'questionbank');
+
+        $this->assertSame('redirecterrordetected', $code);
+        $this->assertSame(0, $DB->count_records('local_playergames_cartridges'));
+    }
+
+    public function test_the_question_bank_tab_lists_the_categories_the_user_may_import(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $categoryid = $this->bank_category_with_a_question();
+        $this->setAdminUser();
+        $PAGE->set_url('/local/playergames/cartridge.php');
+        $output = $PAGE->get_renderer('core');
+
+        $data = (new controller(\context_system::instance(), 'questionbank', 0, 0))->get_renderable($output);
+
+        $this->assertStringContainsString('value="' . $categoryid . '"', $data['content_html']);
+        $this->assertStringContainsString('name="action" value="import_questionbank"', $data['content_html']);
     }
 }

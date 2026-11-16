@@ -2,7 +2,7 @@
 
 O PlayerBattle é o minijogo diário de combinar peças (match-3). O jogador enfrenta um oponente num
 tabuleiro 8×8: alinhar peças fere o oponente, e o **Orbe** traz uma questão — acertar causa um golpe
-crítico. As questões vêm das mesmas fontes do PlayerQuiz.
+crítico. As questões vêm dos mesmos cartuchos do PlayerQuiz.
 
 ## O tabuleiro
 
@@ -33,7 +33,7 @@ chuta entre cinco opções vence cerca de uma vez em cinco. Uma batalha dura uns
 - O oponente não tem questões: quando a mana dele enche, ele dá um golpe crítico sozinho.
 - Dez questões são sorteadas para cada batalha e feitas em ordem embaralhada. Se acabarem, a ordem é
   sorteada de novo, sem começar pela questão que acabou de ser feita.
-- O texto de cartucho é mostrado como texto simples; o do Banco de Questões passa pelos filtros do Moodle.
+- O texto de cartucho é mostrado como texto simples.
   O feedback da questão, quando ela tem um, aparece depois da resposta.
 
 ## XP e jogadas por dia
@@ -62,13 +62,13 @@ questões e espera.
 
 ## Conteúdo e configurações
 
-O PlayerBattle pergunta **cartuchos do tipo quiz** e, opcionalmente, uma categoria do **Banco de Questões do
-Moodle** mantida para reuso (questões de múltipla escolha; ver [Como o PlayerQuiz Funciona](#playerquiz)), conforme escolhido para a temporada no card *Jogos da temporada* da aba
-[Administração](#administration).
+O PlayerBattle pergunta **cartuchos do tipo quiz**, inclusive os importados de um **Banco de Questões do
+Moodle** (ver [Como o PlayerQuiz Funciona](#playerquiz)), conforme escolhido para a temporada no card
+*Jogos da temporada* da aba [Administração](#administration).
 
 | Onde | Configuração |
 |---|---|
-| *Jogos da temporada* | Se o PlayerBattle roda na temporada e de onde vêm as questões dele. |
+| *Jogos da temporada* | Se o PlayerBattle roda na temporada e de quais cartuchos vêm as questões dele. |
 | *Regras → XP dos jogos* | XP por jogo do PlayerBattle e quantas jogadas por dia rendem XP. |
 
 ## Jogando

@@ -25,7 +25,7 @@
 namespace local_playergames\games;
 
 /**
- * Unit tests for {@see quiz_loader} cartridge source.
+ * Unit tests for {@see quiz_loader}.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -88,7 +88,7 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->add_question($cartridgeid);
         $this->add_question($cartridgeid);
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         $this->assertCount(2, $questions);
         foreach ($questions as $q) {
@@ -100,26 +100,13 @@ final class quiz_loader_test extends \advanced_testcase {
         }
     }
 
-    public function test_season_config_singular_cartridge_source_loads_questions(): void {
-        $this->resetAfterTest();
-        $cartridgeid = $this->make_cartridge();
-        $this->add_question($cartridgeid);
-        $this->add_question($cartridgeid);
-
-        // Season config saves the cartridge-only source as the singular
-        // 'cartridge'; the loader must treat it like its own 'cartridges'.
-        $questions = (new quiz_loader())->load_session(10, season_game_config::SOURCE_CARTRIDGE);
-
-        $this->assertCount(2, $questions);
-    }
-
     public function test_skips_questions_with_too_few_distractors(): void {
         $this->resetAfterTest();
         $cartridgeid = $this->make_cartridge();
         $this->add_question($cartridgeid, 4);
         $this->add_question($cartridgeid, 2);
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         // The two-distractor question cannot fill five slots and is dropped.
         $this->assertCount(1, $questions);
@@ -132,7 +119,7 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->add_question($cartridgeid);
         $this->add_question($cartridgeid);
 
-        $questions = (new quiz_loader())->load_session(2, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(2);
 
         $this->assertCount(2, $questions);
     }
@@ -144,7 +131,7 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->add_question($active);
         $this->add_question($inactive);
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         $this->assertCount(1, $questions);
     }
@@ -158,8 +145,6 @@ final class quiz_loader_test extends \advanced_testcase {
 
         $questions = (new quiz_loader())->load_session(
             10,
-            quiz_loader::SOURCE_CARTRIDGES,
-            0,
             json_encode([$one])
         );
 
@@ -182,8 +167,6 @@ final class quiz_loader_test extends \advanced_testcase {
 
         $questions = (new quiz_loader())->load_session(
             10,
-            quiz_loader::SOURCE_CARTRIDGES,
-            0,
             json_encode([$kept, $deactivated])
         );
 
@@ -197,7 +180,7 @@ final class quiz_loader_test extends \advanced_testcase {
         // The loader copies categoryid through; 77 is an opaque passthrough value here.
         $this->add_question($cartridgeid, 4, 5, 77);
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         $this->assertCount(1, $questions);
         $this->assertSame(5, $questions[0]->difficulty);
@@ -209,11 +192,10 @@ final class quiz_loader_test extends \advanced_testcase {
         $cartridgeid = $this->make_cartridge();
         $this->add_question($cartridgeid, 4, 3, null, 'Light becomes sugar.');
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         $this->assertCount(1, $questions);
         $this->assertSame('Light becomes sugar.', $questions[0]->generalfeedback);
-        $this->assertSame(FORMAT_PLAIN, $questions[0]->generalfeedbackformat);
     }
 
     public function test_general_feedback_absent_stays_null(): void {
@@ -221,7 +203,7 @@ final class quiz_loader_test extends \advanced_testcase {
         $cartridgeid = $this->make_cartridge();
         $this->add_question($cartridgeid);
 
-        $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_CARTRIDGES);
+        $questions = (new quiz_loader())->load_session(10);
 
         $this->assertCount(1, $questions);
         $this->assertNull($questions[0]->generalfeedback);
@@ -239,7 +221,7 @@ final class quiz_loader_test extends \advanced_testcase {
         $loader = new quiz_loader();
         $seen = [];
         for ($call = 0; $call < 30; $call++) {
-            foreach ($loader->load_session(5, quiz_loader::SOURCE_CARTRIDGES) as $q) {
+            foreach ($loader->load_session(5) as $q) {
                 $seen[$q->sourceid] = true;
             }
         }
@@ -257,8 +239,6 @@ final class quiz_loader_test extends \advanced_testcase {
 
         $questions = (new quiz_loader())->load_session(
             10,
-            quiz_loader::SOURCE_CARTRIDGES,
-            0,
             null,
             ['cartridge' => [$skipone, $skiptwo]]
         );
@@ -277,213 +257,10 @@ final class quiz_loader_test extends \advanced_testcase {
         // returning an empty session and blocking the play.
         $questions = (new quiz_loader())->load_session(
             10,
-            quiz_loader::SOURCE_CARTRIDGES,
-            0,
             null,
             ['cartridge' => [$one, $two]]
         );
 
         $this->assertCount(2, $questions);
-    }
-
-    /**
-     * Creates a multiple-choice question with one right answer and four wrong ones in a category.
-     *
-     * @param int $categoryid The category.
-     * @return void
-     */
-    private function add_bank_question(int $categoryid): void {
-        global $DB;
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
-            ->create_question('multichoice', 'one_of_four', ['category' => $categoryid]);
-        $DB->insert_record('question_answers', (object) [
-            'question' => $question->id, 'answer' => 'Another wrong', 'answerformat' => FORMAT_HTML,
-            'fraction' => 0, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
-        ]);
-    }
-
-    /**
-     * Regression test: the question bank source reads only a category kept for reuse.
-     *
-     * A category id that belongs to a course or a quiz, or no category at all, used to be read as it was
-     * given (or as the system context), which published a private bank to every player or read nothing.
-     */
-    public function test_question_bank_source_reads_only_a_category_kept_for_reuse(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $generator = $this->getDataGenerator();
-        $course = $generator->create_course();
-        if ($DB->get_manager()->table_exists('qbank')) {
-            $bank = $generator->create_module('qbank', ['course' => $course->id]);
-            $sharedcontext = \context_module::instance($bank->cmid);
-        } else {
-            $sharedcontext = \context_system::instance();
-        }
-        $qgen = $generator->get_plugin_generator('core_question');
-        $shared = $qgen->create_question_category(['contextid' => $sharedcontext->id]);
-        $quiz = $generator->create_module('quiz', ['course' => $course->id]);
-        $private = $qgen->create_question_category(['contextid' => \context_module::instance($quiz->cmid)->id]);
-        $this->add_bank_question((int) $shared->id);
-        $this->add_bank_question((int) $private->id);
-
-        $loader = new quiz_loader();
-        $source = quiz_loader::SOURCE_QUESTIONBANK;
-
-        $this->assertCount(1, $loader->load_session(10, $source, (int) $shared->id));
-        $this->assertSame([], $loader->load_session(10, $source, (int) $private->id));
-        $this->assertSame([], $loader->load_session(10, $source, 0));
-    }
-
-    /**
-     * Gives a question the wrong answer the loader needs to have four of.
-     *
-     * @param int $questionid The question (one version of it).
-     * @return void
-     */
-    private function add_extra_wrong_answer(int $questionid): void {
-        global $DB;
-        $DB->insert_record('question_answers', (object) [
-            'question' => $questionid, 'answer' => 'Another wrong', 'answerformat' => FORMAT_HTML,
-            'fraction' => 0, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
-        ]);
-    }
-
-    /**
-     * A category kept for reuse, on every Moodle version.
-     *
-     * @return \stdClass The category.
-     */
-    private function shared_category(): \stdClass {
-        global $DB;
-        $generator = $this->getDataGenerator();
-        if ($DB->get_manager()->table_exists('qbank')) {
-            $course = $generator->create_course();
-            $bank = $generator->create_module('qbank', ['course' => $course->id]);
-            $context = \context_module::instance($bank->cmid);
-        } else {
-            $context = \context_system::instance();
-        }
-        return $generator->get_plugin_generator('core_question')->create_question_category(['contextid' => $context->id]);
-    }
-
-    /**
-     * Regression test: editing a question leaves the earlier versions ready, and the loader drew from all
-     * of them, so a player could be given (and judged by) the statement or key the teacher had corrected.
-     */
-    public function test_question_bank_source_draws_only_the_latest_version_of_a_question(): void {
-        $this->resetAfterTest();
-        $qgen = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $category = $this->shared_category();
-        $first = $qgen->create_question('multichoice', 'one_of_four', [
-            'category' => $category->id, 'questiontext' => ['text' => 'Old statement', 'format' => FORMAT_HTML],
-        ]);
-        $second = $qgen->update_question($first, 'one_of_four', [
-            'category' => $category->id,
-            'questiontext' => ['text' => 'Corrected statement', 'format' => FORMAT_HTML],
-        ]);
-        $this->add_extra_wrong_answer((int) $first->id);
-        $this->add_extra_wrong_answer((int) $second->id);
-
-        for ($i = 0; $i < 10; $i++) {
-            $questions = (new quiz_loader())->load_session(10, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id);
-            $this->assertCount(1, $questions);
-            $this->assertSame((int) $second->id, $questions[0]->sourceid);
-        }
-    }
-
-    /**
-     * Regression test: the text format of the question was never read and the text was always shown as
-     * HTML, so Markdown or plain text questions appeared with their raw markup.
-     */
-    public function test_question_bank_questions_keep_the_text_format_of_the_stem_and_the_answers(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $category = $this->shared_category();
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
-            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
-        $this->add_extra_wrong_answer((int) $question->id);
-        $DB->set_field('question', 'questiontextformat', FORMAT_MARKDOWN, ['id' => $question->id]);
-        $DB->set_field('question_answers', 'answerformat', FORMAT_PLAIN, ['question' => $question->id]);
-
-        $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
-
-        $this->assertSame(FORMAT_MARKDOWN, $loaded->questiontextformat);
-        foreach ($loaded->answers as $answer) {
-            $this->assertSame(FORMAT_PLAIN, $answer->format);
-        }
-    }
-
-    /**
-     * Regression test: a file embedded in a question reached the browser as the literal @@PLUGINFILE@@
-     * marker, a broken image that no pluginfile callback could serve.
-     */
-    public function test_question_bank_files_point_at_the_plugin_file_areas(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $category = $this->shared_category();
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
-            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
-        $this->add_extra_wrong_answer((int) $question->id);
-        $DB->set_field('question', 'questiontext', '<img src="@@PLUGINFILE@@/chart.png" alt="">', ['id' => $question->id]);
-        $DB->set_field('question', 'generalfeedback', '<img src="@@PLUGINFILE@@/key.png" alt="">', ['id' => $question->id]);
-        $answerid = (int) $DB->get_field('question_answers', 'id', ['question' => $question->id], IGNORE_MULTIPLE);
-        $DB->set_field('question_answers', 'answer', '<img src="@@PLUGINFILE@@/a.png" alt="">', ['id' => $answerid]);
-
-        $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
-
-        $base = "/pluginfile.php/{$category->contextid}/local_playergames";
-        $this->assertStringContainsString("{$base}/qbquestiontext/{$question->id}/chart.png", $loaded->questiontext);
-        $this->assertStringContainsString("{$base}/qbfeedback/{$question->id}/key.png", $loaded->generalfeedback);
-        $this->assertStringNotContainsString('@@PLUGINFILE@@', $loaded->questiontext);
-        $answertexts = implode(' ', array_map(static fn($a): string => $a->text, $loaded->answers));
-        $this->assertStringNotContainsString('@@PLUGINFILE@@', $answertexts);
-    }
-
-    /**
-     * Regression test: with partial credit the option worth 50% could be drawn as the key, and the one
-     * worth 100% was left out of the round.
-     */
-    public function test_question_bank_key_is_the_full_credit_answer_when_there_is_partial_credit(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $category = $this->shared_category();
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
-            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
-        $this->add_extra_wrong_answer((int) $question->id);
-        $full = $DB->get_record_select(
-            'question_answers',
-            'question = ? AND fraction > 0.99',
-            [$question->id],
-            '*',
-            MUST_EXIST
-        );
-        $DB->insert_record('question_answers', (object) [
-            'question' => $question->id, 'answer' => 'Half right', 'answerformat' => FORMAT_HTML,
-            'fraction' => 0.5, 'feedback' => '', 'feedbackformat' => FORMAT_HTML,
-        ]);
-        // Put the partial option first, which is the order the loader used to take the key from.
-        $DB->set_field('question_answers', 'id', $full->id + 1000, ['id' => $full->id]);
-
-        for ($i = 0; $i < 10; $i++) {
-            $loaded = (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id)[0];
-            $texts = array_map(static fn($a): string => $a->text, $loaded->answers);
-            $correct = array_values(array_filter($loaded->answers, static fn($a): bool => $a->correct));
-
-            $this->assertCount(1, $correct);
-            $this->assertSame($full->answer, $correct[0]->text);
-            $this->assertNotContains('Half right', $texts);
-        }
-    }
-
-    public function test_question_bank_question_without_a_full_credit_answer_is_skipped(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $category = $this->shared_category();
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')
-            ->create_question('multichoice', 'one_of_four', ['category' => $category->id]);
-        $this->add_extra_wrong_answer((int) $question->id);
-        $DB->set_field_select('question_answers', 'fraction', 0.5, 'question = ? AND fraction > 0.99', [$question->id]);
-
-        $this->assertSame([], (new quiz_loader())->load_session(1, quiz_loader::SOURCE_QUESTIONBANK, (int) $category->id));
     }
 }

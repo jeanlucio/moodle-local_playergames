@@ -1,17 +1,21 @@
 # 🧠 How PlayerQuiz Works
 
 PlayerQuiz is the first daily mini-game. It draws multiple-choice questions from the active
-cartridges (and, optionally, the Moodle Question Bank) and shows them **one at a time**.
+cartridges and shows them **one at a time**.
 
-## Question Bank source
+## Questions from the Moodle Question Bank
 
-In the *Season games* card the administrator chooses, for PlayerQuiz and PlayerBattle, whether the
-questions come from cartridges only, from the question bank only, or from both. The question bank
-is limited to what Moodle keeps **for reuse**: question banks created to share questions across
-courses (Moodle 5.x) or categories in the system context (Moodle 4.5). A course's own bank is never
-offered, so questions that belong to one course are not exposed to the whole site. The list only
-shows categories the person configuring may use, and the choice is checked again on saving. Only
-multiple-choice questions that are ready to use are drawn.
+The *Import from question bank* tab of the cartridge page copies the multiple-choice questions of a
+category into a new quiz cartridge, which the games then use like any other. The category is limited to
+what Moodle keeps **for reuse**: question banks created to share questions across courses (Moodle 5.x) or
+categories in the system context (Moodle 4.5). A course's own bank is never offered, so questions that
+belong to one course are not exposed to the whole site. The list only shows categories the person
+importing may use, and the choice is checked again on import.
+
+Only the latest ready version of each question is copied, as plain text, and a question needs one answer
+worth the full grade and at least four wrong ones. Questions with an image, sound or video are left out,
+and the result says how many. The cartridge is a copy: to refresh it after the bank changes, import the
+category again and deactivate the old cartridge.
 
 ## The play loop
 

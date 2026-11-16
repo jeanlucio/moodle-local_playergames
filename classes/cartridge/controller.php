@@ -139,6 +139,8 @@ class controller {
             $this->action_import_json();
         } else if ($postaction === 'import_glossary') {
             $this->action_import_glossary();
+        } else if ($postaction === 'import_questionbank') {
+            $this->action_import_questionbank();
         } else if ($postaction === 'generate_ai') {
             $this->action_generate_ai();
         } else if ($postaction === 'save_ai_cartridge') {
@@ -215,6 +217,8 @@ class controller {
             $contenthtml = $this->render_tab_import($output, $baseurl);
         } else if ($this->tab === 'glossary') {
             $contenthtml = $this->render_tab_glossary($output, $baseurl);
+        } else if ($this->tab === 'questionbank') {
+            $contenthtml = $this->render_tab_questionbank($output, $baseurl);
         } else if ($this->tab === 'ai') {
             $contenthtml = $this->render_tab_ai($output, $baseurl);
         } else if ($this->tab === 'create' || $this->tab === 'editor') {
@@ -368,6 +372,31 @@ class controller {
             'sesskey' => sesskey(),
             'glossaries' => $options,
             'hasglossaries' => $options !== [],
+        ]);
+    }
+
+    /**
+     * Renders the tab that copies a question bank category into a quiz cartridge.
+     *
+     * @param \renderer_base $output The active renderer.
+     * @param string $baseurl Base page URL string.
+     * @return string Rendered HTML.
+     */
+    private function render_tab_questionbank(\renderer_base $output, string $baseurl): string {
+        global $USER;
+
+        $options = [];
+        foreach ((new question_bank_importer())->categories((int) $USER->id) as $category) {
+            $options[] = [
+                'id' => (int) $category->id,
+                'label' => get_string('cartridge_qbank_option', 'local_playergames', $category),
+            ];
+        }
+        return $output->render_from_template('local_playergames/cartridge_tab_questionbank', [
+            'action_url' => (new \moodle_url($baseurl))->out(false),
+            'sesskey' => sesskey(),
+            'categories' => $options,
+            'hascategories' => $options !== [],
         ]);
     }
 
@@ -704,6 +733,39 @@ class controller {
                 \core\output\notification::NOTIFY_ERROR
             );
         }
+    }
+
+    /**
+     * Handles the import_questionbank POST action.
+     */
+    private function action_import_questionbank(): void {
+        global $USER;
+
+        $categoryid = required_param('categoryid', PARAM_INT);
+        try {
+            $result = (new question_bank_importer())->import($categoryid, (int) $USER->id);
+        } catch (\moodle_exception $e) {
+            redirect(
+                $this->url(['tab' => 'questionbank']),
+                $e->getMessage(),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+        $event = cartridge_imported::create([
+            'context' => $this->context,
+            'objectid' => $result->cartridgeid,
+        ]);
+        $event->trigger();
+        $notice = get_string('cartridge_qbank_success', 'local_playergames', $result);
+        redirect(
+            $this->url(['cartridgeid' => $result->cartridgeid]),
+            $notice,
+            null,
+            $result->images > 0 || $result->unusable > 0 || $result->beyond > 0
+                ? \core\output\notification::NOTIFY_WARNING
+                : \core\output\notification::NOTIFY_SUCCESS
+        );
     }
 
     /**

@@ -34,7 +34,7 @@ use moodle_url;
  * Follows the PlayerHUD manage_layout pattern: heading + server-side nav tabs + content_html.
  */
 class cartridge implements renderable, templatable {
-    /** @var string Active tab slug: 'library', 'import', 'glossary', 'ai', or 'create'. */
+    /** @var string Active tab slug: 'library', 'import', 'glossary', 'questionbank', 'ai', or 'create'. */
     private string $tab;
 
     /** @var string Pre-rendered HTML for the active tab content area. */
@@ -89,6 +89,12 @@ class cartridge implements renderable, templatable {
                 'url' => (new moodle_url($baseurl, ['tab' => 'glossary']))->out(false),
                 'text' => get_string('cartridge_tab_glossary', 'local_playergames'),
                 'icon' => '<i class="fa fa-book" aria-hidden="true"></i>',
+            ],
+            [
+                'active' => $this->tab === 'questionbank',
+                'url' => (new moodle_url($baseurl, ['tab' => 'questionbank']))->out(false),
+                'text' => get_string('cartridge_tab_questionbank', 'local_playergames'),
+                'icon' => '<i class="fa fa-database" aria-hidden="true"></i>',
             ],
             [
                 'active' => $this->tab === 'import',

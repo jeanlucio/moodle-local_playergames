@@ -301,22 +301,17 @@ class quiz_play {
     /**
      * Turns a loaded question into what the play keeps: the display text and the right option.
      *
-     * Cartridge text is plain and is escaped; question bank text is HTML and goes through the filters.
+     * Cartridge text is plain: it is escaped, and the feedback goes through the plain text format.
      *
      * @param quiz_question $question The loaded question.
      * @param \context $context Context the text is filtered in.
      * @return array
      */
     private static function describe(quiz_question $question, \context $context): array {
-        $isbank = $question->source === 'questionbank';
-        $format = static fn(string $text, int $textformat): string => $isbank
-            ? format_text($text, $textformat, ['context' => $context])
-            : s($text);
-
         $answers = [];
         $correct = -1;
         foreach ($question->answers as $j => $answer) {
-            $answers[] = $format($answer->text, $answer->format);
+            $answers[] = s($answer->text);
             if ($answer->correct && $correct < 0) {
                 $correct = (int) $j;
             }
@@ -327,12 +322,12 @@ class quiz_play {
             'key'          => "{$question->source}:{$question->sourceid}",
             'source'       => $question->source,
             'sourceid'     => (int) $question->sourceid,
-            'questiontext' => $format($question->questiontext, $question->questiontextformat),
+            'questiontext' => s($question->questiontext),
             'answers'      => $answers,
             'correct'      => $correct,
             'feedback'     => $feedbackraw === ''
                 ? ''
-                : format_text($feedbackraw, $question->generalfeedbackformat, ['context' => $context]),
+                : format_text($feedbackraw, FORMAT_PLAIN, ['context' => $context]),
         ];
     }
 

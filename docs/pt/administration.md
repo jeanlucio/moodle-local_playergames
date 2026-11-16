@@ -14,7 +14,7 @@ o destino dele.
 |---|---|---|---|
 | **Começar** | Cartuchos | Os pacotes de questões e conceitos de onde os jogos tiram o conteúdo. Importe um arquivo, gere com IA ou crie à mão. | Gerenciar cartuchos |
 | | Temporadas | O período em que os estudantes acumulam XP e disputam o ranking. Crie, edite, ative, encerre e exclua as temporadas. | Administrador do site |
-| | Jogos da temporada | Quais jogos rodam na temporada e de onde vêm as questões de cada um (PlayerGuess e PlayerFill usam sempre cartuchos de conceitos). | Administrador do site |
+| | Jogos da temporada | Quais jogos rodam na temporada e de quais cartuchos vêm as questões ou palavras de cada um (o PlayerQuiz e o PlayerBattle usam cartuchos de quiz; o PlayerGuess e o PlayerFill, cartuchos de conceitos). | Administrador do site |
 | **Regras** | Participação e temporadas | Quem joga (estudantes, corpo docente ou ambos), se as temporadas se renovam sozinhas e quanto duram. | Administrador do site |
 | | XP dos jogos | Quanto XP cada jogo dá e quantas vezes por dia ele rende XP. | Administrador do site |
 | | Regras dos jogos | Tempo por questão, tentativas e as demais regras de cada jogo. | Administrador do site |
@@ -63,5 +63,5 @@ leva à página de temporadas.
 
 1. Crie um cartucho (**Cartuchos**): os jogos precisam de algo para perguntar.
 2. Crie uma temporada e ative-a (**Temporadas**).
-3. Escolha os jogos que a temporada roda e as fontes deles (**Jogos da temporada**).
+3. Escolha os jogos que a temporada roda e os cartuchos deles (**Jogos da temporada**).
 4. Revise as regras (**Regras**): os padrões funcionam, mas o XP, os níveis e quem joga são seus para definir.

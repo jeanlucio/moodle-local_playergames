@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Quiz question loader — aggregates cartridge and question-bank sources.
+ * Quiz question loader — draws the questions of the quiz cartridges.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -24,65 +24,21 @@
 
 namespace local_playergames\games;
 
-use local_playergames\local\bank_file;
-use local_playergames\local\question_bank_reuse;
-
 /**
- * Loads quiz questions from one or both configured sources and returns a
- * shuffled session-sized slice of normalised quiz_question DTOs.
+ * Loads quiz questions from the quiz cartridges and returns a shuffled session-sized slice of
+ * normalised quiz_question DTOs.
  */
 class quiz_loader {
-    /** @var float Smallest fraction taken as a full-credit answer (stored with 7 decimals). */
-    private const FULL_CREDIT = 0.9999999;
-
-    /** @var string Draw from cartridge concept questions only. */
-    const SOURCE_CARTRIDGES = 'cartridges';
-
-    /** @var string Draw from the Moodle question bank only. */
-    const SOURCE_QUESTIONBANK = 'questionbank';
-
-    /** @var string Draw from both sources and merge. */
-    const SOURCE_BOTH = 'both';
-
     /**
      * Returns a shuffled set of quiz questions for one game session.
      *
      * @param int $sessionsize Number of questions to return.
-     * @param string $sources One of the SOURCE_* constants.
-     * @param int $qbankcategoryid Question bank category id; one that is not kept for reuse, or 0, yields nothing.
      * @param string|null $cartridgeids JSON-encoded array of cartridge IDs; null = all active quiz cartridges.
      * @param array $exclude Map of source => int[] of sourceids to skip (already seen today).
      * @return quiz_question[]
      */
-    public function load_session(
-        int $sessionsize,
-        string $sources,
-        int $qbankcategoryid = 0,
-        ?string $cartridgeids = null,
-        array $exclude = []
-    ): array {
-        // The per-season config (season_game_config) stores the cartridge-only
-        // source as 'cartridge', while this loader uses 'cartridges'. Normalise
-        // so both vocabularies match.
-        if ($sources === season_game_config::SOURCE_CARTRIDGE) {
-            $sources = self::SOURCE_CARTRIDGES;
-        }
-
-        $pool = [];
-
-        if ($sources === self::SOURCE_CARTRIDGES || $sources === self::SOURCE_BOTH) {
-            $pool = array_merge(
-                $pool,
-                $this->load_from_cartridges($sessionsize, $cartridgeids, $exclude['cartridge'] ?? [])
-            );
-        }
-
-        if ($sources === self::SOURCE_QUESTIONBANK || $sources === self::SOURCE_BOTH) {
-            $pool = array_merge(
-                $pool,
-                $this->load_from_questionbank($sessionsize, $qbankcategoryid, $exclude['questionbank'] ?? [])
-            );
-        }
+    public function load_session(int $sessionsize, ?string $cartridgeids = null, array $exclude = []): array {
+        $pool = $this->load_from_cartridges($sessionsize, $cartridgeids, $exclude['cartridge'] ?? []);
 
         shuffle($pool);
         return array_slice($pool, 0, $sessionsize);
@@ -230,139 +186,6 @@ class quiz_loader {
                 $ans = new quiz_answer();
                 $ans->text = $a->answertext;
                 $ans->correct = (bool) $a->iscorrect;
-                return $ans;
-            }, $selected);
-
-            $result[] = $dto;
-        }
-
-        shuffle($result);
-        return array_slice($result, 0, $limit);
-    }
-
-    /**
-     * Loads questions from the Moodle question bank.
-     *
-     * Only multiple-choice questions of a category kept for reuse are drawn (see question_bank_reuse): the
-     * games are site-wide, so a category that belongs to a course or to a quiz is never read, and neither is
-     * a missing one. Questions with fewer than 4 wrong answers are skipped.
-     *
-     * @param int $limit Maximum number of questions to return.
-     * @param int $categoryid Question bank category id.
-     * @param int[] $excludeids Question ids already seen today.
-     * @return quiz_question[]
-     */
-    private function load_from_questionbank(int $limit, int $categoryid, array $excludeids = []): array {
-        global $DB;
-
-        if (!question_bank_reuse::is_shared($categoryid)) {
-            return [];
-        }
-
-        // Editing a question adds a version and leaves the earlier ones ready, so only the latest ready
-        // version of each question may be drawn, the way the core quiz picks it: an older one still carries
-        // the statement or the answer key the teacher has corrected.
-        $sql = "SELECT q.id
-                  FROM {question} q
-                  JOIN {question_versions} qv ON qv.questionid = q.id
-                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                 WHERE qbe.questioncategoryid = :catid
-                   AND q.qtype = 'multichoice'
-                   AND qv.status = 'ready'
-                   AND qv.version = (SELECT MAX(lv.version)
-                                       FROM {question_versions} lv
-                                      WHERE lv.questionbankentryid = qbe.id
-                                        AND lv.status = 'ready')";
-        $params = ['catid' => $categoryid];
-        $contextid = (int) $DB->get_field('question_categories', 'contextid', ['id' => $categoryid]);
-
-        $rows = $this->fetch_random_rows(
-            $sql,
-            $params,
-            'question',
-            'id, questiontext, questiontextformat, generalfeedback, generalfeedbackformat',
-            $limit,
-            $excludeids
-        );
-        if (empty($rows)) {
-            return [];
-        }
-
-        $questionids = array_keys($rows);
-        [$insql, $inparams] = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED);
-        $answers = $DB->get_records_select(
-            'question_answers',
-            "question $insql",
-            $inparams
-        );
-
-        $answermap = [];
-        foreach ($answers as $a) {
-            $answermap[(int) $a->question][] = $a;
-        }
-
-        $result = [];
-        foreach ($rows as $q) {
-            $qid = (int) $q->id;
-            $qanswers = $answermap[$qid] ?? [];
-
-            // Only an answer worth the whole grade is the right one. A question with partial credit
-            // (50% on one option, 100% on another) must not have the partial option judged as the key, and
-            // one with no full-credit option (several answers worth a share each) has no single key at all.
-            $correct = array_values(
-                array_filter($qanswers, fn($a): bool => (float) $a->fraction >= self::FULL_CREDIT)
-            );
-            $wrong = array_values(
-                array_filter($qanswers, fn($a): bool => (float) $a->fraction <= 0)
-            );
-
-            if (empty($correct) || count($wrong) < 4) {
-                continue;
-            }
-
-            shuffle($wrong);
-            $selected = array_merge([$correct[0]], array_slice($wrong, 0, 4));
-            shuffle($selected);
-
-            $dto = new quiz_question();
-            $dto->source = 'questionbank';
-            $dto->sourceid = $qid;
-            // The files of a question sit in its bank's context and are referred to as @@PLUGINFILE@@:
-            // point them at the plugin's own file callback (see bank_file).
-            $dto->questiontext = file_rewrite_pluginfile_urls(
-                (string) $q->questiontext,
-                'pluginfile.php',
-                $contextid,
-                'local_playergames',
-                bank_file::AREA_QUESTION,
-                $qid
-            );
-            $dto->questiontextformat = (string) $q->questiontextformat;
-            $dto->generalfeedback = $q->generalfeedback !== null
-                ? file_rewrite_pluginfile_urls(
-                    (string) $q->generalfeedback,
-                    'pluginfile.php',
-                    $contextid,
-                    'local_playergames',
-                    bank_file::AREA_FEEDBACK,
-                    $qid
-                )
-                : null;
-            $dto->generalfeedbackformat = isset($q->generalfeedbackformat)
-                ? (string) $q->generalfeedbackformat
-                : FORMAT_HTML;
-            $dto->answers = array_map(function ($a) use ($contextid): quiz_answer {
-                $ans = new quiz_answer();
-                $ans->text = file_rewrite_pluginfile_urls(
-                    (string) $a->answer,
-                    'pluginfile.php',
-                    $contextid,
-                    'local_playergames',
-                    bank_file::AREA_ANSWER,
-                    (int) $a->id
-                );
-                $ans->format = (string) $a->answerformat;
-                $ans->correct = (float) $a->fraction >= self::FULL_CREDIT;
                 return $ans;
             }, $selected);
 

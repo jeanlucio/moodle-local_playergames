@@ -59,21 +59,8 @@ final class season_game_config_test extends \advanced_testcase {
     private function add_game(int $seasonid, string $gametype, int $enabled = 1): void {
         global $DB;
         $DB->insert_record('local_playergames_season_games', (object) [
-            'seasonid' => $seasonid, 'gametype' => $gametype, 'enabled' => $enabled,
-            'source' => season_game_config::SOURCE_CARTRIDGE, 'cartridgeids' => null, 'auxid' => 0,
+            'seasonid' => $seasonid, 'gametype' => $gametype, 'enabled' => $enabled, 'cartridgeids' => null,
         ]);
-    }
-
-    public function test_uses_cartridge(): void {
-        $this->assertTrue(season_game_config::uses_cartridge(season_game_config::SOURCE_CARTRIDGE));
-        $this->assertTrue(season_game_config::uses_cartridge(season_game_config::SOURCE_BOTH));
-        $this->assertFalse(season_game_config::uses_cartridge(season_game_config::SOURCE_QUESTIONBANK));
-    }
-
-    public function test_uses_secondary(): void {
-        $this->assertFalse(season_game_config::uses_secondary(season_game_config::SOURCE_CARTRIDGE));
-        $this->assertTrue(season_game_config::uses_secondary(season_game_config::SOURCE_BOTH));
-        $this->assertTrue(season_game_config::uses_secondary(season_game_config::SOURCE_QUESTIONBANK));
     }
 
     public function test_get_for_active_season_without_season(): void {
@@ -110,7 +97,7 @@ final class season_game_config_test extends \advanced_testcase {
         $this->assertArrayHasKey('guess', $all);
     }
 
-    public function test_seed_defaults_creates_enabled_cartridge_rows(): void {
+    public function test_seed_defaults_creates_enabled_rows_over_all_the_cartridges(): void {
         $this->resetAfterTest();
         $seasonid = $this->make_active_season();
 
@@ -121,7 +108,7 @@ final class season_game_config_test extends \advanced_testcase {
         foreach (season_game_config::GAMETYPES as $gametype) {
             $this->assertArrayHasKey($gametype, $all);
             $this->assertSame(1, (int) $all[$gametype]->enabled);
-            $this->assertSame(season_game_config::SOURCE_CARTRIDGE, $all[$gametype]->source);
+            $this->assertNull($all[$gametype]->cartridgeids);
         }
     }
 

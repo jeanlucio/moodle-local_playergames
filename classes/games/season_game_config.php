@@ -30,22 +30,13 @@ use local_playergames\hub\season_manager;
  * Reads per-season game configuration from local_playergames_season_games.
  */
 class season_game_config {
-    /** @var string Source: cartridge only. */
-    const SOURCE_CARTRIDGE = 'cartridge';
-
-    /** @var string Source: Moodle question bank only (quiz/battle). */
-    const SOURCE_QUESTIONBANK = 'questionbank';
-
-    /** @var string Source: both cartridge and the question bank (quiz/battle). */
-    const SOURCE_BOTH = 'both';
-
     /** @var string[] Game type keys configurable per season. */
     const GAMETYPES = ['quiz', 'battle', 'guess', 'fill'];
 
     /**
      * Seeds default game configuration rows for a season.
      *
-     * Each game starts enabled, drawing from cartridges only. Game types that
+     * Each game starts enabled, drawing from all its cartridges. Game types that
      * already have a row for this season are left untouched, so the method is
      * safe to call on existing seasons (e.g. from an upgrade step).
      *
@@ -71,9 +62,7 @@ class season_game_config {
                 'seasonid'     => $seasonid,
                 'gametype'     => $gametype,
                 'enabled'      => 1,
-                'source'       => self::SOURCE_CARTRIDGE,
                 'cartridgeids' => null,
-                'auxid'        => 0,
             ];
         }
 
@@ -183,27 +172,7 @@ class season_game_config {
             'local_playergames_season_games',
             ['seasonid' => $seasonid],
             '',
-            'gametype, id, enabled, source, cartridgeids, auxid'
+            'gametype, id, enabled, cartridgeids'
         );
-    }
-
-    /**
-     * Whether a given source value includes the cartridge source.
-     *
-     * @param string $source Source constant value.
-     * @return bool
-     */
-    public static function uses_cartridge(string $source): bool {
-        return $source === self::SOURCE_CARTRIDGE || $source === self::SOURCE_BOTH;
-    }
-
-    /**
-     * Whether a given source value includes the question bank as a source.
-     *
-     * @param string $source Source constant value.
-     * @return bool
-     */
-    public static function uses_secondary(string $source): bool {
-        return $source !== self::SOURCE_CARTRIDGE;
     }
 }

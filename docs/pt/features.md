@@ -36,8 +36,9 @@
   simultaneamente.
   * **Todos os jogos:** criação manual (editor inline), upload de JSON ou geração com IA (ver
     [Cadeia de Provedores de IA](#ai-provider-chain)).
-  * **PlayerQuiz e PlayerBattle:** aceitam também um **Banco de Questões do Moodle** mantido para reuso
-    por todo o site (apenas questões de múltipla escolha) — ver [Como o PlayerQuiz Funciona](#playerquiz).
+  * **PlayerQuiz e PlayerBattle:** cartuchos de quiz também podem ser criados a partir de um **Banco de
+    Questões do Moodle** mantido para reuso por todo o site (apenas questões de múltipla escolha,
+    copiadas como texto simples) — ver [Como o PlayerQuiz Funciona](#playerquiz).
   * **PlayerGuess e PlayerFill:** usam sempre cartuchos de conceitos, que também podem ser criados a
     partir de um **glossário global** do site.
 * 🧠 **PlayerQuiz:** Minijogo diário de múltipla escolha usando conceitos do cartucho ativo — ver

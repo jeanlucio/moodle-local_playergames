@@ -84,5 +84,18 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111602, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111603) {
+        // The question bank is no longer a source the games read: its questions are imported into a cartridge.
+        $table = new xmldb_table('local_playergames_season_games');
+        foreach (['source', 'auxid'] as $name) {
+            $field = new xmldb_field($name);
+            if ($dbman->field_exists($table, $field)) {
+                $dbman->drop_field($table, $field);
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026111603, 'local', 'playergames');
+    }
+
     return true;
 }

@@ -25,8 +25,12 @@ Os cartuchos de conteúdo são arquivos JSON que alimentam os minijogos. Um cart
   ser uma única palavra alfabética (sem espaços, dígitos ou hífens) — ver
   [Como o PlayerGuess Funciona](#playerguess)
 - Cartuchos do tipo quiz: cada questão aceita um `generalfeedback` opcional, exibido ao jogador
-  após responder; o PlayerQuiz e o PlayerBattle também podem sortear duma categoria do **Banco de
-  Questões do Moodle** mantida para reuso por todo o site, além dos cartuchos ou em conjunto com eles
+  após responder
+- Cartuchos de quiz podem ser criados a partir de um **Banco de Questões do Moodle** (aba *Importar do
+  banco de questões* da página de cartuchos): as questões de múltipla escolha de uma categoria mantida
+  para reuso por todo o site são copiadas como texto simples, até o limite do importador. Questões com
+  imagem, som ou vídeo ficam de fora, e o cartucho é uma cópia: mudanças feitas depois no banco não
+  chegam a ele
 - Cartuchos de conceitos podem ser criados a partir de um **glossário global** (aba *Glossário* da
   página de cartuchos): as entradas aprovadas viram conceitos, até o limite do importador. Glossários de
   um único curso não são oferecidos — só os que o Moodle marca como globais

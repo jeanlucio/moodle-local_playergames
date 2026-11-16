@@ -37,7 +37,6 @@ use navigation_node;
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers ::local_playergames_extend_navigation_user_settings
- * @covers ::local_playergames_pluginfile
  */
 final class lib_test extends \advanced_testcase {
     /**
@@ -104,22 +103,5 @@ final class lib_test extends \advanced_testcase {
         accesslib_clear_all_caches_for_unit_testing();
 
         $this->assertFalse($this->preferences_entry($user));
-    }
-
-    /**
-     * The file callback answers "not found" when the bank serves nothing for the URL.
-     */
-    public function test_pluginfile_answers_false_when_there_is_nothing_to_serve(): void {
-        $this->resetAfterTest();
-        $this->setUser($this->getDataGenerator()->create_user());
-
-        $this->assertFalse(local_playergames_pluginfile(
-            null,
-            null,
-            context_system::instance(),
-            'questiontext',
-            [999999, 'chart.png'],
-            false
-        ));
     }
 }

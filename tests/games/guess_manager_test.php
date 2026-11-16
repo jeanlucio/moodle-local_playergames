@@ -151,7 +151,7 @@ final class guess_manager_test extends \advanced_testcase {
             'timecreated' => $now, 'timemodified' => $now,
         ]);
         $DB->insert_record('local_playergames_season_games', (object) [
-            'seasonid' => $seasonid, 'gametype' => 'guess', 'enabled' => 1, 'source' => 'cartridge', 'auxid' => 0,
+            'seasonid' => $seasonid, 'gametype' => 'guess', 'enabled' => 1,
         ]);
         $conceptid = $this->add_concept($this->make_cartridge(), $term);
         $DB->insert_record('local_playergames_daily_assignments', (object) [

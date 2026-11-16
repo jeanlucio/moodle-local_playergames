@@ -33,8 +33,9 @@
   simultaneously.
   * **All games:** manual creation (inline editor), JSON upload, or AI generation (see
     [AI Provider Chain](#ai-provider-chain)).
-  * **PlayerQuiz and PlayerBattle:** also accept a **Moodle Question Bank** kept for reuse by the
-    whole site (multiple-choice questions only) — see [How PlayerQuiz Works](#playerquiz).
+  * **PlayerQuiz and PlayerBattle:** quiz cartridges can also be created from a **Moodle Question
+    Bank** kept for reuse by the whole site (multiple-choice questions only, copied as plain text) —
+    see [How PlayerQuiz Works](#playerquiz).
   * **PlayerGuess and PlayerFill:** always use concept cartridges, which can also be created from a
     **global glossary** of the site.
 * 🧠 **PlayerQuiz:** Daily multiple-choice mini-game using concepts from the active cartridge —

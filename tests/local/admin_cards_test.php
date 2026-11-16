@@ -170,7 +170,7 @@ final class admin_cards_test extends \advanced_testcase {
         global $DB;
         foreach (['quiz', 'guess'] as $game) {
             $DB->insert_record('local_playergames_season_games', (object) [
-                'seasonid' => $id, 'gametype' => $game, 'enabled' => 1, 'source' => 'cartridge', 'auxid' => 0,
+                'seasonid' => $id, 'gametype' => $game, 'enabled' => 1,
             ]);
         }
         $cards = $this->cards_of($userid);

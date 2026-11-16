@@ -30,7 +30,6 @@ use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
 use local_playergames\local\access;
-use local_playergames\local\question_bank_reuse;
 use moodle_url;
 use stdClass;
 
@@ -318,11 +317,10 @@ class daily_play_manager {
     }
 
     /**
-     * Whether a game has something to serve, from the sources the active season gives it.
+     * Whether a game has something to serve.
      *
-     * PlayerGuess and PlayerFill read concept cartridges only. The quiz games read quiz cartridges,
-     * the question bank, or both, as the season says: a bank-only game needs no cartridge at all, so
-     * a site that never imported one still plays it.
+     * PlayerGuess and PlayerFill play the words the daily task drew from concept cartridges. The quiz games
+     * read quiz cartridges: the ones imported from a question bank are cartridges too.
      *
      * @param string $gametype Game type.
      * @param string[] $activetypes Types of the active cartridges ('quiz', 'concept').
@@ -338,15 +336,6 @@ class daily_play_manager {
                 : count(fill_manager::get_daily_concepts($today)) >= 2;
         }
 
-        // A season with no row for the game predates per-season configuration: it reads cartridges.
-        $config = season_game_config::get_for_active_season($gametype);
-        $source = $config !== null ? $config->source : season_game_config::SOURCE_CARTRIDGE;
-
-        $fromcartridges = season_game_config::uses_cartridge($source) && in_array('quiz', $activetypes, true);
-        $frombank = $config !== null
-            && season_game_config::uses_secondary($source)
-            && question_bank_reuse::is_shared((int) $config->auxid);
-
-        return $fromcartridges || $frombank;
+        return in_array('quiz', $activetypes, true);
     }
 }

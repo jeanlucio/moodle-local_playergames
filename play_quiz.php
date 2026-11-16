@@ -132,20 +132,12 @@ if (!$alreadyplayed && !$cooldownactive) {
     }
 
     if ($play === null && !$cooldownactive) {
-        // A season with no row for the game predates per-season config: fall back to the cartridges.
-        $gameconfig = season_game_config::get_for_active_season('quiz');
-        if ($gameconfig !== null) {
-            $sources      = $gameconfig->source;
-            $categoryid   = (int) $gameconfig->auxid;
-            $cartridgeids = $gameconfig->cartridgeids;
-        } else {
-            $sources      = season_game_config::SOURCE_CARTRIDGE;
-            $categoryid   = 0;
-            $cartridgeids = null;
-        }
+        // A season with no row for the game predates per-season config: it draws from all the cartridges.
+        $gameconfig   = season_game_config::get_for_active_season('quiz');
+        $cartridgeids = $gameconfig !== null ? $gameconfig->cartridgeids : null;
 
         $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
-        $loaded  = (new quiz_loader())->load_session($sessionsize, $sources, $categoryid, $cartridgeids, $exclude);
+        $loaded  = (new quiz_loader())->load_session($sessionsize, $cartridgeids, $exclude);
         if (!empty($loaded)) {
             $play = quiz_play::start($gamedate, (int) $activeseason->id, $loaded, $context);
         }

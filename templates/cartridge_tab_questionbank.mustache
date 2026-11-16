@@ -1,0 +1,76 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/cartridge_tab_questionbank
+
+    Question bank tab: copy a shared question bank category into a new quiz cartridge.
+
+    Example context (json):
+    {
+        "action_url": "/local/playergames/cartridge.php",
+        "sesskey": "abc123",
+        "hascategories": true,
+        "categories": [
+            {"id": 7, "label": "Biology bank / Cells (42 questions)"}
+        ]
+    }
+}}
+<div class="pg-tab-questionbank">
+
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+            <i class="fa fa-database me-2" aria-hidden="true"></i>
+            {{#str}}cartridge_qbank_heading, local_playergames{{/str}}
+        </div>
+        <div class="card-body">
+            <p>{{#str}}cartridge_qbank_intro, local_playergames{{/str}}</p>
+            {{#hascategories}}
+            <div class="alert alert-info" role="note">
+                <i class="fa fa-info-circle me-2" aria-hidden="true"></i>
+                {{#str}}cartridge_qbank_notice, local_playergames{{/str}}
+            </div>
+            <form method="post" action="{{action_url}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="import_questionbank">
+                <input type="hidden" name="tab" value="questionbank">
+                <div class="mb-3">
+                    <label for="pg-qbank-select" class="form-label">
+                        {{#str}}cartridge_qbank_select, local_playergames{{/str}}
+                    </label>
+                    <select id="pg-qbank-select" name="categoryid" class="form-select" required>
+                        <option value="">{{#str}}cartridge_qbank_choose, local_playergames{{/str}}</option>
+                        {{#categories}}
+                        <option value="{{id}}">{{label}}</option>
+                        {{/categories}}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-database me-1" aria-hidden="true"></i>
+                    {{#str}}cartridge_qbank_submit, local_playergames{{/str}}
+                </button>
+            </form>
+            {{/hascategories}}
+            {{^hascategories}}
+            <div class="alert alert-warning mb-0" role="alert">
+                <i class="fa fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                {{#str}}cartridge_qbank_none, local_playergames{{/str}}
+            </div>
+            {{/hascategories}}
+        </div>
+    </div>
+
+</div>{{! .pg-tab-questionbank }}

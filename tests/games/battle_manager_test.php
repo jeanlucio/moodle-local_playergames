@@ -531,7 +531,7 @@ final class battle_manager_test extends \advanced_testcase {
         $this->add_question();
         $DB->insert_record('local_playergames_season_games', (object) [
             'seasonid' => $this->season->id, 'gametype' => 'battle', 'enabled' => 0,
-            'source' => 'cartridge', 'cartridgeids' => null, 'auxid' => 0,
+            'cartridgeids' => null,
         ]);
 
         $this->assertSame([], $this->start());
