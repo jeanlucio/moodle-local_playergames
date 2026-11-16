@@ -98,4 +98,31 @@ final class plugin_registry_test extends \advanced_testcase {
         $this->assertSame(get_string('plugin_name_local_latepenalty', 'local_playergames'), $names['local_latepenalty']);
         $this->assertSame(get_string('plugin_name_local_playergames', 'local_playergames'), $names['local_playergames']);
     }
+
+    /**
+     * Regression test: the activities that call the HUD, and the hub that mirrors its XP, were missing from the map.
+     * Each relation here was found by reading the code of the source plugin, not its documentation.
+     */
+    public function test_the_relations_found_in_the_code_are_in_the_map(): void {
+        $this->resetAfterTest();
+        $relations = [];
+        foreach (plugin_registry::get_catalog() as $entry) {
+            foreach ($entry['relations'] as $relation) {
+                $relations[] = $entry['component'] . '>' . $relation['target'] . ':' . $relation['type'];
+            }
+        }
+
+        $expected = [
+            'mod_playerpuzzle>block_playerhud:' . plugin_registry::REL_ASSOC,
+            'mod_playercross>block_playerhud:' . plugin_registry::REL_ASSOC,
+            'mod_playerwords>block_playerhud:' . plugin_registry::REL_ASSOC,
+            'local_playergames>block_playerhud:' . plugin_registry::REL_ASSOC,
+            'local_studiolms>filter_studiolms:' . plugin_registry::REL_ASSOC,
+            'tiny_studiolms>filter_studiolms:' . plugin_registry::REL_ASSOC,
+            'block_playergames>local_playergames:' . plugin_registry::REL_REQUIRES,
+        ];
+        foreach ($expected as $relation) {
+            $this->assertContains($relation, $relations);
+        }
+    }
 }

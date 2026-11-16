@@ -96,6 +96,12 @@ class plugin_registry {
                 'group'       => 'core',
                 'relations'   => [
                     ['target' => 'local_aihub', 'type' => self::REL_AI],
+                    // Mirrors the course XP of the HUD into the learning XP pool.
+                    ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
+                    // The engagement meter recognises the courses that use them.
+                    ['target' => 'mod_playergroup', 'type' => self::REL_ASSOC],
+                    ['target' => 'mod_playerwords', 'type' => self::REL_ASSOC],
+                    ['target' => 'mod_playerpuzzle', 'type' => self::REL_ASSOC],
                 ],
             ],
 
@@ -146,6 +152,7 @@ class plugin_registry {
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_aihub', 'type' => self::REL_AI],
+                    ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
                 ],
             ],
             [
@@ -156,6 +163,7 @@ class plugin_registry {
                 'group'       => 'activity',
                 'relations'   => [
                     ['target' => 'local_aihub', 'type' => self::REL_AI],
+                    ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
                 ],
             ],
 
@@ -217,6 +225,7 @@ class plugin_registry {
                     ['target' => 'local_aihub', 'type' => self::REL_AI],
                     ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
                     ['target' => 'tiny_studiolms', 'type' => self::REL_ASSOC],
+                    ['target' => 'filter_studiolms', 'type' => self::REL_ASSOC],
                 ],
             ],
             [
@@ -227,6 +236,7 @@ class plugin_registry {
                 'group'       => 'integration',
                 'relations'   => [
                     ['target' => 'local_aihub', 'type' => self::REL_AI],
+                    ['target' => 'filter_studiolms', 'type' => self::REL_ASSOC],
                 ],
             ],
             [
@@ -235,9 +245,7 @@ class plugin_registry {
                 'color'       => '#c026d3',
                 'icon'        => 'fa-puzzle-piece',
                 'group'       => 'integration',
-                'relations'   => [
-                    ['target' => 'tiny_studiolms', 'type' => self::REL_ASSOC],
-                ],
+                'relations'   => [],
             ],
             [
                 'component'   => 'local_latepenalty',
@@ -245,9 +253,7 @@ class plugin_registry {
                 'color'       => '#b91c1c',
                 'icon'        => 'fa-clock',
                 'group'       => 'integration',
-                'relations'   => [
-                    ['target' => 'mod_playergroup', 'type' => self::REL_ASSOC],
-                ],
+                'relations'   => [],
             ],
             [
                 'component'   => 'local_virtuallab',
