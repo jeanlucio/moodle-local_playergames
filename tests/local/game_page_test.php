@@ -68,4 +68,35 @@ final class game_page_test extends \advanced_testcase {
         $this->assertStringContainsString(get_string('game_disabled', 'local_playergames'), $html);
         $this->assertStringContainsString('/local/playergames/hub.php', $html);
     }
+
+    /**
+     * Every game answers the same way when it cannot be played: no season, or the game switched off.
+     *
+     * Regression test: the two word games took a game that was switched off for one without terms and told the
+     * player to configure a cartridge.
+     */
+    public function test_a_game_that_cannot_be_played_gets_the_same_notice_in_every_page(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = \local_playergames\hub\season_manager::create('Season', time() - DAYSECS, time() + DAYSECS);
+        \local_playergames\hub\season_manager::activate((int) $season->id);
+
+        $this->assertStringContainsString(
+            get_string('hub_no_season', 'local_playergames'),
+            game_page::blocked_html(null, 'guess')
+        );
+        foreach (['quiz', 'guess', 'fill', 'battle'] as $game) {
+            $this->assertNull(game_page::blocked_html($season, $game), $game);
+        }
+
+        $DB->set_field('local_playergames_season_games', 'enabled', 0, ['seasonid' => $season->id, 'gametype' => 'guess']);
+        $DB->set_field('local_playergames_season_games', 'enabled', 0, ['seasonid' => $season->id, 'gametype' => 'fill']);
+
+        foreach (['guess', 'fill'] as $game) {
+            $html = game_page::blocked_html($season, $game);
+            $this->assertStringContainsString(get_string('game_disabled', 'local_playergames'), $html, $game);
+            $this->assertStringNotContainsString(get_string('guess_no_concept', 'local_playergames'), $html);
+        }
+        $this->assertNull(game_page::blocked_html($season, 'quiz'));
+    }
 }

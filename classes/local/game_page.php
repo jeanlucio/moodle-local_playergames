@@ -25,7 +25,9 @@
 namespace local_playergames\local;
 
 use core\output\notification;
+use local_playergames\games\season_game_config;
 use moodle_url;
+use stdClass;
 
 /**
  * What every game page shows when there is no active season to play in.
@@ -60,5 +62,26 @@ final class game_page {
 
         return $OUTPUT->notification(get_string('game_disabled', 'local_playergames'), notification::NOTIFY_INFO, false)
             . $OUTPUT->continue_button(new moodle_url('/local/playergames/hub.php'));
+    }
+
+    /**
+     * The notice a game page shows in place of the game when it cannot be played in the season, if any.
+     *
+     * One answer for all four games, so that a game the administrator switched off does not fall into the
+     * "no terms, configure a cartridge" notice of the two word games, which cannot tell a game that is off
+     * from a season with nothing to play.
+     *
+     * @param stdClass|null $season The active season, or null when there is none.
+     * @param string $gametype The game: quiz, guess, fill or battle.
+     * @return string|null HTML of the notice, or null when the game can go on.
+     */
+    public static function blocked_html(?stdClass $season, string $gametype): ?string {
+        if ($season === null) {
+            return self::no_season_html();
+        }
+        if (season_game_config::is_disabled((int) $season->id, $gametype)) {
+            return self::disabled_html();
+        }
+        return null;
     }
 }

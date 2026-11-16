@@ -79,9 +79,10 @@ $PAGE->set_title(get_string('fill_pagetitle', 'local_playergames'));
 $PAGE->set_heading(get_string('fill_pagetitle', 'local_playergames'));
 
 $activeseason = season_manager::get_active();
-if ($activeseason === null) {
+$blocked = game_page::blocked_html($activeseason, 'fill');
+if ($blocked !== null) {
     echo $OUTPUT->header();
-    echo game_page::no_season_html();
+    echo $blocked;
     echo $OUTPUT->footer();
     exit;
 }
