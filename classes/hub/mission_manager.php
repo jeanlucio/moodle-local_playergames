@@ -254,27 +254,20 @@ class mission_manager {
         if (!$missionid) {
             return;
         }
-        $checkedinuserids = $DB->get_fieldset_select(
-            'local_playergames_daily_scores',
-            'userid',
-            "gametype = 'checkin' AND gamedate = :yesterday",
-            ['yesterday' => $yesterday]
+        // Whoever has no check-in of yesterday loses the streak. Asked of the database as a subquery: a list of
+        // the ids of everybody who did check in would grow with the site.
+        $DB->set_field_select(
+            'local_playergames_mission_progress',
+            'currentvalue',
+            0,
+            "missionid = :mid AND seasonid = :sid AND currentvalue > 0
+                AND NOT EXISTS (SELECT 1
+                                  FROM {local_playergames_daily_scores} ds
+                                 WHERE ds.userid = {local_playergames_mission_progress}.userid
+                                   AND ds.gametype = 'checkin'
+                                   AND ds.gamedate = :yesterday)",
+            ['mid' => $missionid, 'sid' => $seasonid, 'yesterday' => $yesterday]
         );
-        if (empty($checkedinuserids)) {
-            $DB->set_field_select(
-                'local_playergames_mission_progress',
-                'currentvalue',
-                0,
-                'missionid = :mid AND seasonid = :sid AND currentvalue > 0',
-                ['mid' => $missionid, 'sid' => $seasonid]
-            );
-            return;
-        }
-        [$notinsql, $params] = $DB->get_in_or_equal($checkedinuserids, SQL_PARAMS_NAMED, 'uid', false);
-        $params['mid'] = $missionid;
-        $params['sid'] = $seasonid;
-        $where = "missionid = :mid AND seasonid = :sid AND currentvalue > 0 AND userid {$notinsql}";
-        $DB->set_field_select('local_playergames_mission_progress', 'currentvalue', 0, $where, $params);
     }
 
     /**

@@ -268,4 +268,37 @@ final class mission_manager_test extends \advanced_testcase {
         mission_manager::update((int) $user->id, $seasonid, 'xp_earned', ['total_xp' => 120]);
         $this->assertSame(1, (int) $this->progress_of((int) $user->id, $seasonid, 'cumulative')->completed);
     }
+
+    /**
+     * With no check-in at all yesterday every streak is reset, in that season only.
+     */
+    public function test_reset_missed_checkin_streaks_resets_everyone_when_nobody_checked_in(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $seasonid = $this->make_season();
+        $otherseason = $this->make_season();
+        mission_manager::sync();
+        $missionid = (int) $DB->get_field('local_playergames_missions', 'id', ['type' => 'checkin_streak']);
+        $user = $this->getDataGenerator()->create_user();
+        foreach ([$seasonid, $otherseason] as $id) {
+            $DB->insert_record('local_playergames_mission_progress', (object) [
+                'userid' => $user->id, 'missionid' => $missionid, 'seasonid' => $id, 'currentvalue' => 4,
+                'completed' => 0, 'timecompleted' => null,
+            ]);
+        }
+        // A check-in of the day before yesterday does not keep a streak alive.
+        $DB->insert_record('local_playergames_daily_scores', (object) [
+            'userid' => $user->id, 'gamedate' => mktime(0, 0, 0) - (2 * DAYSECS), 'gametype' => 'checkin',
+            'completed' => 1, 'xpawarded' => 0, 'attempts' => 1, 'timeplayed' => time(),
+        ]);
+
+        mission_manager::reset_missed_checkin_streaks($seasonid, mktime(0, 0, 0) - DAYSECS);
+
+        $value = fn(int $id): int => (int) $DB->get_field('local_playergames_mission_progress', 'currentvalue', [
+            'userid' => $user->id, 'missionid' => $missionid, 'seasonid' => $id,
+        ]);
+        $this->assertSame(0, $value($seasonid));
+        $this->assertSame(4, $value($otherseason));
+    }
 }
