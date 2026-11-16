@@ -288,4 +288,116 @@ final class season_summary_test extends \advanced_testcase {
 
         $this->assertSame(0, $DB->count_records('local_playergames_season_summary'));
     }
+
+    public function test_the_result_says_whether_the_user_was_ranked_with_the_staff(): void {
+        $this->resetAfterTest();
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $seasonid = $this->make_season();
+        $student = $this->make_user('student');
+        $teacher = $this->make_user('editingteacher');
+        access::refresh_staff_ids();
+        $this->make_profile($student, $seasonid, 50, true);
+        $this->make_profile($teacher, $seasonid, 40, true);
+
+        season_summary::build($seasonid);
+
+        $this->assertSame(0, (int) $this->summary_of($student, $seasonid)->isstaff);
+        $this->assertSame(1, (int) $this->summary_of($teacher, $seasonid)->isstaff);
+    }
+
+    public function test_set_showinhall_changes_only_the_ranked_result_of_the_user(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season();
+        $ranked = $this->make_user('student');
+        $unranked = $this->make_user('student');
+        $other = $this->make_user('student');
+        $this->make_profile($ranked, $seasonid, 90, true);
+        $this->make_profile($unranked, $seasonid, 80, false);
+        $this->make_profile($other, $seasonid, 70, true);
+        season_summary::build($seasonid);
+
+        $this->assertTrue(season_summary::set_showinhall($ranked, $seasonid, false));
+        $this->assertSame(0, (int) $this->summary_of($ranked, $seasonid)->showinhall);
+        $this->assertSame(1, (int) $this->summary_of($other, $seasonid)->showinhall);
+
+        // Who was not in the ranking cannot be put in the hall by switching it on.
+        $this->assertFalse(season_summary::set_showinhall($unranked, $seasonid, true));
+        $this->assertSame(0, (int) $this->summary_of($unranked, $seasonid)->showinhall);
+
+        $this->assertTrue(season_summary::set_showinhall($ranked, $seasonid, true));
+        $this->assertSame(1, (int) $this->summary_of($ranked, $seasonid)->showinhall);
+    }
+
+    public function test_the_hall_lists_the_first_places_of_each_group_and_leaves_out_the_hidden(): void {
+        $this->resetAfterTest();
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $seasonid = $this->make_season();
+        $first = $this->make_user('student');
+        $hidden = $this->make_user('student');
+        $third = $this->make_user('student');
+        $teacher = $this->make_user('editingteacher');
+        access::refresh_staff_ids();
+        $this->make_profile($first, $seasonid, 300, true);
+        $this->make_profile($hidden, $seasonid, 200, true);
+        $this->make_profile($third, $seasonid, 100, true);
+        $this->make_profile($teacher, $seasonid, 20, true);
+        season_summary::build($seasonid);
+        season_summary::set_showinhall($hidden, $seasonid, false);
+
+        $hall = season_summary::get_hall();
+
+        $this->assertCount(1, $hall);
+        $this->assertSame($seasonid, $hall[0]['id']);
+        // The hidden name leaves a gap: the second place was taken.
+        $this->assertSame([1, 3], array_map(fn($r): int => $r->position, $hall[0]['students']));
+        $this->assertSame([$first, $third], array_map(fn($r): int => $r->userid, $hall[0]['students']));
+        $this->assertSame([$teacher], array_map(fn($r): int => $r->userid, $hall[0]['staff']));
+    }
+
+    public function test_the_hall_leaves_out_opted_out_deleted_and_suspended_users_and_places_past_the_limit(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $seasonid = $this->make_season();
+        $optedout = $this->make_user('student');
+        $deleted = $this->make_user('student');
+        $suspended = $this->make_user('student');
+        $kept = $this->make_user('student');
+        $late = $this->make_user('student');
+        foreach ([$optedout => 500, $deleted => 400, $suspended => 300, $kept => 200, $late => 100] as $userid => $xp) {
+            $this->make_profile($userid, $seasonid, $xp, true);
+        }
+        season_summary::build($seasonid);
+        set_user_preference(preferences::PREF_GAMIFICATION, '0', $optedout);
+        $DB->set_field('user', 'deleted', 1, ['id' => $deleted]);
+        $DB->set_field('user', 'suspended', 1, ['id' => $suspended]);
+
+        $hall = season_summary::get_hall(4);
+
+        // The fifth place is past the limit; the other three names are not shown.
+        $this->assertSame([$kept], array_map(fn($r): int => $r->userid, $hall[0]['students']));
+        $this->assertSame([$kept, $late], array_map(
+            fn($r): int => $r->userid,
+            season_summary::get_hall(5)[0]['students']
+        ));
+    }
+
+    public function test_the_hall_has_no_season_when_nobody_was_ranked_and_keeps_only_the_latest_seasons(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->assertSame([], season_summary::get_hall());
+
+        $user = $this->make_user('student');
+        $seasons = [];
+        for ($i = 0; $i < 3; $i++) {
+            $seasonid = $this->make_season();
+            $DB->set_field('local_playergames_seasons', 'enddate', time() - (DAYSECS * (10 - $i)), ['id' => $seasonid]);
+            $this->make_profile($user, $seasonid, 10, true);
+            season_summary::build($seasonid);
+            $seasons[] = $seasonid;
+        }
+
+        $hall = season_summary::get_hall(10, 2);
+
+        $this->assertSame([$seasons[2], $seasons[1]], array_map(fn($h): int => $h['id'], $hall));
+    }
 }

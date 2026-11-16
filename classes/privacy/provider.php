@@ -192,6 +192,7 @@ class provider implements
             'missionsdone' => 'privacy:metadata:local_playergames_season_summary:missionsdone',
             'finalrank'    => 'privacy:metadata:local_playergames_season_summary:finalrank',
             'rankedof'     => 'privacy:metadata:local_playergames_season_summary:rankedof',
+            'isstaff'      => 'privacy:metadata:local_playergames_season_summary:isstaff',
             'showinhall'   => 'privacy:metadata:local_playergames_season_summary:showinhall',
             'timecreated'  => 'privacy:metadata:local_playergames_season_summary:timecreated',
         ], 'privacy:metadata:local_playergames_season_summary');

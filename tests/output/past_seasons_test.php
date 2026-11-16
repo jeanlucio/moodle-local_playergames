@@ -108,4 +108,40 @@ final class past_seasons_test extends \advanced_testcase {
         $this->assertStringContainsString('<th scope="row">Season A</th>', $html);
         $this->assertStringContainsString(get_string('past_seasons_heading', 'local_playergames'), $html);
     }
+
+    public function test_the_switch_offers_to_hide_a_visible_name_and_to_show_a_hidden_one(): void {
+        global $DB, $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->add_result((int) $user->id, 'Season A', 2);
+        $renderer = $PAGE->get_renderer('core');
+
+        $DB->set_field('local_playergames_season_summary', 'showinhall', 1, ['userid' => $user->id]);
+        $visible = (new past_seasons((int) $user->id))->export_for_template($renderer)['seasons'][0];
+        $this->assertSame(0, $visible['hallnext']);
+        $this->assertSame(get_string('past_seasons_hall_hide', 'local_playergames'), $visible['halltext']);
+        $this->assertStringContainsString('Season A', $visible['halllabel']);
+
+        $DB->set_field('local_playergames_season_summary', 'showinhall', 0, ['userid' => $user->id]);
+        $hidden = (new past_seasons((int) $user->id))->export_for_template($renderer)['seasons'][0];
+        $this->assertSame(1, $hidden['hallnext']);
+        $this->assertSame(get_string('past_seasons_hall_show', 'local_playergames'), $hidden['halltext']);
+    }
+
+    public function test_only_a_ranked_season_gets_the_switch_in_the_markup(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->add_result((int) $user->id, 'Ranked season', 1);
+        $this->add_result((int) $user->id, 'Unranked season', null);
+        $output = $PAGE->get_renderer('core');
+
+        $html = $output->render_from_template(
+            'local_playergames/past_seasons',
+            (new past_seasons((int) $user->id))->export_for_template($output)
+        );
+
+        $this->assertSame(1, substr_count($html, 'name="action" value="hall"'));
+        $this->assertStringContainsString('name="sesskey"', $html);
+    }
 }

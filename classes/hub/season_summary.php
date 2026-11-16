@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\local\access;
+use local_playergames\local\preferences;
 use local_playergames\task\build_season_summary;
 
 /**
@@ -129,6 +130,7 @@ class season_summary {
                 'missionsdone' => (int) ($missions[$userid] ?? 0),
                 'finalrank'    => $finalrank,
                 'rankedof'     => null,
+                'isstaff'      => $group === 'staff' ? 1 : 0,
                 'showinhall'   => $ranked ? 1 : 0,
                 'timecreated'  => $now,
             ];
@@ -186,5 +188,98 @@ class season_summary {
            ORDER BY n.enddate DESC, s.id DESC",
             ['userid' => $userid]
         ));
+    }
+
+    /**
+     * Lets a user show or hide the name in the hall of fame for one season.
+     *
+     * Only a result that was ranked can be shown, so a user who was not in the ranking cannot be put in
+     * the hall by switching it on.
+     *
+     * @param int $userid The user whose result changes.
+     * @param int $seasonid The season.
+     * @param bool $show True to show the name.
+     * @return bool Whether the user has a ranked result in that season.
+     */
+    public static function set_showinhall(int $userid, int $seasonid, bool $show): bool {
+        global $DB;
+
+        $select = 'userid = :userid AND seasonid = :seasonid AND finalrank IS NOT NULL';
+        $params = ['userid' => $userid, 'seasonid' => $seasonid];
+        if (!$DB->record_exists_select('local_playergames_season_summary', $select, $params)) {
+            return false;
+        }
+        $DB->set_field_select('local_playergames_season_summary', 'showinhall', $show ? 1 : 0, $select, $params);
+        return true;
+    }
+
+    /**
+     * Returns the people of the hall of fame, season by season, most recent season first.
+     *
+     * The first places of each group (students and staff) of the latest closed seasons, leaving out the
+     * names their owners hid, the users who opted out of the gamification and the accounts deleted or
+     * suspended since. A hidden name leaves a gap in the positions, as the place was really taken.
+     *
+     * @param int $places Positions listed for each group.
+     * @param int $seasons Latest seasons listed.
+     * @return array[] Each with id, name and the rows of the 'students' and 'staff' groups; a row has
+     *     userid, name, xp, level and position.
+     */
+    public static function get_hall(int $places = 10, int $seasons = 12): array {
+        global $DB;
+
+        $closed = $DB->get_records_sql(
+            "SELECT n.id, n.name
+               FROM {local_playergames_seasons} n
+              WHERE EXISTS (SELECT 1
+                              FROM {local_playergames_season_summary} s
+                             WHERE s.seasonid = n.id AND s.finalrank IS NOT NULL)
+           ORDER BY n.enddate DESC, n.id DESC",
+            [],
+            0,
+            $seasons
+        );
+        if (empty($closed)) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal(array_keys($closed), SQL_PARAMS_NAMED, 'season');
+        [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('s');
+        $params = array_merge($params, $optoutparams, ['places' => $places]);
+
+        $rows = $DB->get_records_sql(
+            "SELECT s.id, s.seasonid, s.userid, s.xp, s.level, s.finalrank, s.isstaff,
+                    u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename
+               FROM {local_playergames_season_summary} s
+               JOIN {user} u ON u.id = s.userid AND u.deleted = 0 AND u.suspended = 0
+              WHERE s.seasonid {$insql}
+                AND s.showinhall = 1
+                AND s.finalrank <= :places
+                AND {$optoutsql}
+           ORDER BY s.finalrank ASC, s.id ASC",
+            $params
+        );
+
+        $hall = [];
+        foreach ($closed as $season) {
+            $hall[(int) $season->id] = [
+                'id'       => (int) $season->id,
+                'name'     => $season->name,
+                'students' => [],
+                'staff'    => [],
+            ];
+        }
+        foreach ($rows as $row) {
+            $group = (int) $row->isstaff === 1 ? 'staff' : 'students';
+            $hall[(int) $row->seasonid][$group][] = (object) [
+                'userid'   => (int) $row->userid,
+                'name'     => fullname($row),
+                'xp'       => (int) $row->xp,
+                'level'    => (int) $row->level,
+                'position' => (int) $row->finalrank,
+            ];
+        }
+
+        return array_values($hall);
     }
 }

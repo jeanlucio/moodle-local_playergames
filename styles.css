@@ -1329,3 +1329,16 @@ body.path-local-playergames .badge.pg-admin-card-state {
     white-space: normal;
     text-align: start;
 }
+
+/* Both group tables of a season line their columns up with each other. */
+.path-local-playergames .pg-hall .pg-hall-table {
+    table-layout: fixed;
+}
+
+.path-local-playergames .pg-hall .pg-hall-col-pos {
+    width: 4rem;
+}
+
+.path-local-playergames .pg-hall .pg-hall-col-num {
+    width: 6rem;
+}

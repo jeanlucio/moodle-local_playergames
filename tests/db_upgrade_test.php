@@ -88,4 +88,47 @@ final class db_upgrade_test extends advanced_testcase {
         set_config('version', 2026111501, 'local_playergames');
         $this->assertTrue(xmldb_local_playergames_upgrade(2026111501));
     }
+
+    /**
+     * A result saved before the staff column existed is marked as staff when its user is staff today.
+     *
+     * @return void
+     */
+    public function test_upgrade_adds_the_staff_column_and_marks_the_staff_results(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/upgradelib.php');
+        require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+
+        $teacher = $this->getDataGenerator()->create_user();
+        $student = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        \local_playergames\local\access::refresh_staff_ids();
+        $seasonid = (int) $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'S', 'startdate' => 1, 'enddate' => 2, 'status' => 'closed',
+            'config_snapshot' => json_encode([]), 'timecreated' => 1, 'timemodified' => 1,
+        ]);
+        foreach ([$teacher, $student] as $user) {
+            $DB->insert_record('local_playergames_season_summary', (object) [
+                'userid' => $user->id, 'seasonid' => $seasonid, 'xp' => 5, 'level' => 1, 'missionsdone' => 0,
+                'showinhall' => 0, 'timecreated' => 1,
+            ]);
+        }
+        $dbman = $DB->get_manager();
+        $table = new \xmldb_table('local_playergames_season_summary');
+        $field = new \xmldb_field('isstaff', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'rankedof');
+        $dbman->drop_field($table, $field);
+        $this->assertFalse($dbman->field_exists($table, $field));
+
+        set_config('version', 2026111601, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111601));
+
+        $this->assertTrue($dbman->field_exists($table, $field));
+        $this->assertSame(1, (int) $DB->get_field('local_playergames_season_summary', 'isstaff', ['userid' => $teacher->id]));
+        $this->assertSame(0, (int) $DB->get_field('local_playergames_season_summary', 'isstaff', ['userid' => $student->id]));
+    }
 }

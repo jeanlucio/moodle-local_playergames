@@ -68,5 +68,21 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111601, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026111602) {
+        // The staff and the students are ranked apart, and a position alone does not say which one it is.
+        $table = new xmldb_table('local_playergames_season_summary');
+        $field = new xmldb_field('isstaff', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'rankedof');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+            // A result saved before the column existed was ranked with the staff when its user is staff today.
+            foreach (array_chunk(\local_playergames\local\access::get_staff_ids(), 500) as $staffids) {
+                [$insql, $params] = $DB->get_in_or_equal($staffids, SQL_PARAMS_NAMED);
+                $DB->set_field_select('local_playergames_season_summary', 'isstaff', 1, "userid {$insql}", $params);
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026111602, 'local', 'playergames');
+    }
+
     return true;
 }

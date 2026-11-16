@@ -34,6 +34,22 @@ require_capability('local/playergames:viewhub', $context);
 
 $page = optional_param('page', 0, PARAM_INT);
 
+if (data_submitted() && optional_param('action', '', PARAM_ALPHA) === 'hall') {
+    require_sesskey();
+    // The switch only ever changes the result of the user who sends it.
+    \local_playergames\hub\season_summary::set_showinhall(
+        (int) $USER->id,
+        required_param('seasonid', PARAM_INT),
+        optional_param('show', 0, PARAM_BOOL)
+    );
+    redirect(
+        new moodle_url('/local/playergames/history.php'),
+        get_string('past_seasons_hall_saved', 'local_playergames'),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
+}
+
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/playergames/history.php', ['page' => $page]));
 $PAGE->set_title(get_string('history_pagetitle', 'local_playergames'));

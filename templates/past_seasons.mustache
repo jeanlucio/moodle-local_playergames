@@ -29,6 +29,9 @@
         "str_col_level": "Final level",
         "str_col_missions": "Missions",
         "str_col_rank": "Position",
+        "str_col_hall": "Hall of fame",
+        "actionurl": "https://example.com/local/playergames/history.php",
+        "sesskey": "abc123",
         "hasseasons": true,
         "seasons": [
             {
@@ -36,8 +39,13 @@
                 "level": 7,
                 "xp": 1450,
                 "missions": 12,
+                "seasonid": 1,
                 "ranked": true,
-                "rank": "3 of 120"
+                "rank": "3 of 120",
+                "hallstatus": "Visible",
+                "hallnext": 0,
+                "halltext": "Hide my name",
+                "halllabel": "Hide my name from the hall of fame, Season 1"
             }
         ]
     }
@@ -54,6 +62,7 @@
                     <th scope="col">{{str_col_level}}</th>
                     <th scope="col">{{str_col_missions}}</th>
                     <th scope="col">{{str_col_rank}}</th>
+                    <th scope="col">{{str_col_hall}}</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,6 +73,20 @@
                     <td>{{level}}</td>
                     <td>{{missions}}</td>
                     <td>{{rank}}</td>
+                    <td>
+                        {{#ranked}}
+                        <form method="post" action="{{actionurl}}" class="d-flex align-items-center flex-wrap pg-hall-switch">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="action" value="hall">
+                            <input type="hidden" name="seasonid" value="{{seasonid}}">
+                            <input type="hidden" name="show" value="{{hallnext}}">
+                            <span class="me-2">{{hallstatus}}</span>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="{{halllabel}}">
+                                {{halltext}}
+                            </button>
+                        </form>
+                        {{/ranked}}
+                    </td>
                 </tr>
                 {{/seasons}}
             </tbody>

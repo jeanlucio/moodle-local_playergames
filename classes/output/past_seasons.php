@@ -26,6 +26,7 @@ namespace local_playergames\output;
 
 use local_playergames\hub\season_summary;
 use local_playergames\local\text;
+use moodle_url;
 use renderable;
 use renderer_base;
 use templatable;
@@ -60,18 +61,35 @@ class past_seasons implements renderable, templatable {
         $seasons = [];
         foreach (season_summary::get_for_user($this->userid) as $row) {
             $ranked = $row->finalrank !== null;
+            $visible = (int) $row->showinhall === 1;
+            $name = text::plain($row->seasonname);
             $seasons[] = [
-                'name'     => text::plain($row->seasonname),
-                'level'    => (int) $row->level,
-                'xp'       => (int) $row->xp,
-                'missions' => (int) $row->missionsdone,
-                'ranked'   => $ranked,
-                'rank'     => $ranked
+                'seasonid'    => (int) $row->seasonid,
+                'name'        => $name,
+                'level'       => (int) $row->level,
+                'xp'          => (int) $row->xp,
+                'missions'    => (int) $row->missionsdone,
+                'ranked'      => $ranked,
+                'rank'        => $ranked
                     ? get_string('past_seasons_rank', 'local_playergames', (object) [
                         'rank'  => (int) $row->finalrank,
                         'total' => (int) $row->rankedof,
                     ])
                     : get_string('past_seasons_notranked', 'local_playergames'),
+                'hallstatus'  => get_string(
+                    $visible ? 'past_seasons_hall_visible' : 'past_seasons_hall_hidden',
+                    'local_playergames'
+                ),
+                'hallnext'    => $visible ? 0 : 1,
+                'halltext'    => get_string(
+                    $visible ? 'past_seasons_hall_hide' : 'past_seasons_hall_show',
+                    'local_playergames'
+                ),
+                'halllabel'   => get_string(
+                    $visible ? 'past_seasons_hall_hide_label' : 'past_seasons_hall_show_label',
+                    'local_playergames',
+                    $name
+                ),
             ];
         }
 
@@ -82,6 +100,9 @@ class past_seasons implements renderable, templatable {
             'str_col_level'    => get_string('past_seasons_col_level', 'local_playergames'),
             'str_col_missions' => get_string('past_seasons_col_missions', 'local_playergames'),
             'str_col_rank'     => get_string('past_seasons_col_rank', 'local_playergames'),
+            'str_col_hall'     => get_string('past_seasons_col_hall', 'local_playergames'),
+            'actionurl'        => (new moodle_url('/local/playergames/history.php'))->out(false),
+            'sesskey'          => sesskey(),
             'seasons'          => $seasons,
             'hasseasons'       => !empty($seasons),
         ];
