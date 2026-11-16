@@ -31,7 +31,7 @@ namespace local_playergames\ecosystem;
  * types, declared once on the source side (the plugin whose code references
  * the other):
  *   - requires  Hard Moodle dependency ($plugin->dependencies).
- *   - ai        Optional AI dependency: pulls from the PlayerGames AI hub when
+ *   - ai        Optional AI dependency: pulls from the AI hub (local_aihub) when
  *               installed, otherwise falls back to Moodle core_ai.
  *   - assoc     Conditional functional integration ("when X is installed, do Y").
  *   - planned   A relation that is intended but not yet implemented in code.
@@ -44,7 +44,7 @@ class plugin_registry {
     /** @var string Hard Moodle dependency. */
     public const REL_REQUIRES = 'requires';
 
-    /** @var string Optional AI dependency on the PlayerGames hub (fallback core_ai). */
+    /** @var string Optional AI dependency on the AI hub, local_aihub (fallback core_ai). */
     public const REL_AI = 'ai';
 
     /** @var string Conditional functional integration. */
@@ -94,7 +94,28 @@ class plugin_registry {
                 'color'       => '#4f46e5',
                 'icon'        => 'fa-gamepad',
                 'group'       => 'core',
+                'relations'   => [
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
+                ],
+            ],
+
+            [
+                'component'   => 'local_aihub',
+                'abbr'        => 'AI',
+                'color'       => '#0f766e',
+                'icon'        => 'fa-robot',
+                'group'       => 'core',
                 'relations'   => [],
+            ],
+            [
+                'component'   => 'block_playergames',
+                'abbr'        => 'PGB',
+                'color'       => '#6366f1',
+                'icon'        => 'fa-trophy',
+                'group'       => 'interface',
+                'relations'   => [
+                    ['target' => 'local_playergames', 'type' => self::REL_REQUIRES],
+                ],
             ],
 
             // Player activities.
@@ -113,8 +134,18 @@ class plugin_registry {
                 'icon'        => 'fa-font',
                 'group'       => 'activity',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                     ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
+                ],
+            ],
+            [
+                'component'   => 'mod_playercross',
+                'abbr'        => 'PCr',
+                'color'       => '#0369a1',
+                'icon'        => 'fa-table-cells',
+                'group'       => 'activity',
+                'relations'   => [
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                 ],
             ],
             [
@@ -124,27 +155,7 @@ class plugin_registry {
                 'icon'        => 'fa-puzzle-piece',
                 'group'       => 'activity',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
-                ],
-            ],
-            [
-                'component'   => 'mod_playerraid',
-                'abbr'        => 'RAID',
-                'color'       => '#ea580c',
-                'icon'        => 'fa-dragon',
-                'group'       => 'activity',
-                'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_PLANNED],
-                ],
-            ],
-            [
-                'component'   => 'mod_playerland',
-                'abbr'        => 'LAND',
-                'color'       => '#ca8a04',
-                'icon'        => 'fa-mountain',
-                'group'       => 'activity',
-                'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_PLANNED],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                 ],
             ],
 
@@ -156,7 +167,7 @@ class plugin_registry {
                 'icon'        => 'fa-gauge',
                 'group'       => 'interface',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                     ['target' => 'mod_playergroup', 'type' => self::REL_ASSOC],
                     ['target' => 'local_latepenalty', 'type' => self::REL_ASSOC],
                 ],
@@ -191,7 +202,7 @@ class plugin_registry {
                 'icon'        => 'fa-unlock',
                 'group'       => 'integration',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                     ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
                     ['target' => 'availability_playerhud', 'type' => self::REL_ASSOC],
                 ],
@@ -203,7 +214,7 @@ class plugin_registry {
                 'icon'        => 'fa-wand-magic-sparkles',
                 'group'       => 'integration',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
                     ['target' => 'block_playerhud', 'type' => self::REL_ASSOC],
                     ['target' => 'tiny_studiolms', 'type' => self::REL_ASSOC],
                 ],
@@ -215,7 +226,17 @@ class plugin_registry {
                 'icon'        => 'fa-pen-nib',
                 'group'       => 'integration',
                 'relations'   => [
-                    ['target' => 'local_playergames', 'type' => self::REL_AI],
+                    ['target' => 'local_aihub', 'type' => self::REL_AI],
+                ],
+            ],
+            [
+                'component'   => 'filter_studiolms',
+                'abbr'        => 'FSL',
+                'color'       => '#c026d3',
+                'icon'        => 'fa-puzzle-piece',
+                'group'       => 'integration',
+                'relations'   => [
+                    ['target' => 'tiny_studiolms', 'type' => self::REL_ASSOC],
                 ],
             ],
             [
@@ -253,38 +274,6 @@ class plugin_registry {
                 'abbr'        => 'RST',
                 'color'       => '#475569',
                 'icon'        => 'fa-chart-column',
-                'group'       => 'standalone',
-                'relations'   => [],
-            ],
-            [
-                'component'   => 'local_pluginsview',
-                'abbr'        => 'PV',
-                'color'       => '#64748b',
-                'icon'        => 'fa-plug',
-                'group'       => 'standalone',
-                'relations'   => [],
-            ],
-            [
-                'component'   => 'mod_quickpoll',
-                'abbr'        => 'QP',
-                'color'       => '#db2777',
-                'icon'        => 'fa-square-poll-vertical',
-                'group'       => 'standalone',
-                'relations'   => [],
-            ],
-            [
-                'component'   => 'mod_reflect',
-                'abbr'        => 'REF',
-                'color'       => '#7c2d12',
-                'icon'        => 'fa-book',
-                'group'       => 'standalone',
-                'relations'   => [],
-            ],
-            [
-                'component'   => 'theme_lore',
-                'abbr'        => 'LORE',
-                'color'       => '#334155',
-                'icon'        => 'fa-palette',
                 'group'       => 'standalone',
                 'relations'   => [],
             ],

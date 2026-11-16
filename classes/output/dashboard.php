@@ -216,8 +216,19 @@ class dashboard implements renderable, templatable {
      * @return array
      */
     private function build_legend(): array {
+        // A relation type no plugin of the map uses has nothing to explain.
+        $used = [];
+        foreach (plugin_registry::get_catalog() as $def) {
+            foreach ($def['relations'] as $relation) {
+                $used[$relation['type']] = true;
+            }
+        }
+
         $legend = [];
         foreach (self::EDGE_TYPES as $type) {
+            if (!isset($used[$type])) {
+                continue;
+            }
             $legend[] = [
                 'cssclass' => 'pg-edge-' . $type,
                 'label'    => get_string('dashboard_edge_' . $type, 'local_playergames'),

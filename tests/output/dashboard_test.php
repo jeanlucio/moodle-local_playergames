@@ -120,9 +120,9 @@ final class dashboard_test extends \advanced_testcase {
     }
 
     /**
-     * The legend names the four kinds of relation, in order, with the class the script paints them with.
+     * The legend names the kinds of relation the map uses, in order, with the class the script paints them with.
      */
-    public function test_the_legend_lists_the_four_relation_types(): void {
+    public function test_the_legend_lists_the_relation_types_the_map_uses(): void {
         $this->resetAfterTest();
 
         $legend = $this->export()['legend'];
@@ -132,7 +132,6 @@ final class dashboard_test extends \advanced_testcase {
                 'pg-edge-' . plugin_registry::REL_REQUIRES,
                 'pg-edge-' . plugin_registry::REL_AI,
                 'pg-edge-' . plugin_registry::REL_ASSOC,
-                'pg-edge-' . plugin_registry::REL_PLANNED,
             ],
             array_column($legend, 'cssclass')
         );
