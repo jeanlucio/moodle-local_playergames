@@ -124,6 +124,25 @@ class achievement_manager {
     }
 
     /**
+     * Returns the achievement definitions, adding the ones the code has and the table does not.
+     *
+     * One count tells whether any is missing, so the check costs a query and not one per definition, and an
+     * achievement added to the code reaches a site that already has the others without an upgrade step.
+     *
+     * @return \stdClass[] The rows of local_playergames_achievements.
+     */
+    public static function get_definitions(): array {
+        global $DB;
+
+        $definitions = $DB->get_records('local_playergames_achievements');
+        if (count($definitions) < count(self::ACHIEVEMENTS)) {
+            self::sync();
+            $definitions = $DB->get_records('local_playergames_achievements');
+        }
+        return $definitions;
+    }
+
+    /**
      * Checks and grants any newly earned achievements for a user.
      *
      * Should be called after significant events: game completed, XP awarded,
@@ -137,11 +156,7 @@ class achievement_manager {
      */
     public static function check(int $userid, int $seasonid, string $trigger, array $context = []): void {
         global $DB;
-        $achievements  = $DB->get_records('local_playergames_achievements');
-        if (empty($achievements)) {
-            self::sync();
-            $achievements = $DB->get_records('local_playergames_achievements');
-        }
+        $achievements  = self::get_definitions();
 
         $earnedids = $DB->get_fieldset_select(
             'local_playergames_user_achievements',

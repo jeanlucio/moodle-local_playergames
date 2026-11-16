@@ -62,9 +62,7 @@ class achievements implements renderable, templatable {
     public function export_for_template(renderer_base $output): array {
         global $DB;
 
-        achievement_manager::sync();
-
-        $allachieves = $DB->get_records('local_playergames_achievements');
+        $allachieves = achievement_manager::get_definitions();
         $earnedrows  = $DB->get_records(
             'local_playergames_user_achievements',
             ['userid' => $this->userid],

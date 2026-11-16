@@ -324,4 +324,22 @@ final class achievement_manager_test extends \advanced_testcase {
 
         $this->assertSame([], $this->earned_level_names((int) $user->id));
     }
+
+    /**
+     * An achievement the code has and the table does not is added when the definitions are read, so a site that
+     * already has the others needs no upgrade step to get it.
+     */
+    public function test_get_definitions_adds_an_achievement_missing_from_the_table(): void {
+        global $DB;
+        $this->resetAfterTest();
+        achievement_manager::sync();
+        $total = $DB->count_records('local_playergames_achievements');
+        $DB->delete_records('local_playergames_achievements', ['namestring' => 'achievement_50_games_name']);
+        $this->assertSame($total - 1, $DB->count_records('local_playergames_achievements'));
+
+        $definitions = achievement_manager::get_definitions();
+
+        $this->assertCount($total, $definitions);
+        $this->assertTrue($DB->record_exists('local_playergames_achievements', ['namestring' => 'achievement_50_games_name']));
+    }
 }
