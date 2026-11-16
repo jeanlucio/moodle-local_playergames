@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\hub\season_manager;
+use local_playergames\hub\season_summary;
 
 require_login();
 $context = context_system::instance();
@@ -47,7 +48,7 @@ if (!data_submitted() && $seasonid > 0) {
     if ($action === 'delete' && $target->status !== season_manager::STATUS_ACTIVE) {
         $message = get_string('season_delete_confirm', 'local_playergames', (object) [
             'name' => \local_playergames\local\text::plain($target->name),
-            'players' => $DB->count_records('local_playergames_player_profile', ['seasonid' => $seasonid]),
+            'players' => season_summary::count_players($seasonid),
         ]);
         echo $OUTPUT->header();
         echo $OUTPUT->confirm(
@@ -147,10 +148,7 @@ if (data_submitted()) {
 $seasons    = $DB->get_records('local_playergames_seasons', null, 'timecreated DESC');
 $seasondata = [];
 foreach ($seasons as $season) {
-    $playercount = $DB->count_records(
-        'local_playergames_player_profile',
-        ['seasonid' => $season->id]
-    );
+    $playercount = season_summary::count_players((int) $season->id);
     if ($season->status === season_manager::STATUS_ACTIVE) {
         $statusbadge = 'pg-badge-success';
     } else if ($season->status === season_manager::STATUS_UPCOMING) {

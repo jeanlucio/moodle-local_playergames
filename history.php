@@ -49,6 +49,10 @@ echo $output->render_from_template(
     (new \local_playergames\output\nav_header('history'))->export_for_template($output)
 );
 echo $output->render_from_template(
+    'local_playergames/past_seasons',
+    (new \local_playergames\output\past_seasons($USER->id))->export_for_template($output)
+);
+echo $output->render_from_template(
     'local_playergames/activity_log',
     $logdata->export_for_template($output)
 );

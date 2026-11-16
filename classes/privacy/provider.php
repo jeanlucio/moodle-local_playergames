@@ -60,6 +60,7 @@ class provider implements
         'local_playergames_student_xp_monthly',
         'local_playergames_student_xp_cache',
         'local_playergames_activity_log',
+        'local_playergames_season_summary',
     ];
 
     /**
@@ -182,6 +183,18 @@ class provider implements
             'courseid'    => 'privacy:metadata:local_playergames_activity_log:courseid',
             'timecreated' => 'privacy:metadata:local_playergames_activity_log:timecreated',
         ], 'privacy:metadata:local_playergames_activity_log');
+
+        $collection->add_database_table('local_playergames_season_summary', [
+            'userid'       => 'privacy:metadata:local_playergames_season_summary:userid',
+            'seasonid'     => 'privacy:metadata:local_playergames_season_summary:seasonid',
+            'xp'           => 'privacy:metadata:local_playergames_season_summary:xp',
+            'level'        => 'privacy:metadata:local_playergames_season_summary:level',
+            'missionsdone' => 'privacy:metadata:local_playergames_season_summary:missionsdone',
+            'finalrank'    => 'privacy:metadata:local_playergames_season_summary:finalrank',
+            'rankedof'     => 'privacy:metadata:local_playergames_season_summary:rankedof',
+            'showinhall'   => 'privacy:metadata:local_playergames_season_summary:showinhall',
+            'timecreated'  => 'privacy:metadata:local_playergames_season_summary:timecreated',
+        ], 'privacy:metadata:local_playergames_season_summary');
 
         $collection->add_database_table('local_playergames_cartridges', [
             'uploadedby' => 'privacy:metadata:local_playergames_cartridges:uploadedby',

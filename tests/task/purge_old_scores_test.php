@@ -200,4 +200,84 @@ final class purge_old_scores_test extends \advanced_testcase {
             array_map('intval', array_values($DB->get_fieldset_select('local_playergames_daily_assignments', 'gamedate', '1 = 1')))
         );
     }
+
+    public function test_saves_the_results_before_purging_the_profiles_of_an_old_season(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('seasons_keep', 1, 'local_playergames');
+
+        $now = time();
+        $older = $this->make_closed_season($now - (DAYSECS * 100), $now - (DAYSECS * 70));
+        $newer = $this->make_closed_season($now - (DAYSECS * 60), $now - (DAYSECS * 30));
+        $user = $this->getDataGenerator()->create_user();
+        foreach ([$older, $newer] as $seasonid) {
+            $DB->insert_record('local_playergames_player_profile', (object) [
+                'userid' => $user->id, 'seasonid' => $seasonid, 'xp' => 70, 'level' => 2,
+                'showinranking' => 0, 'timecreated' => 1, 'timemodified' => 1,
+            ]);
+            $DB->insert_record('local_playergames_mission_progress', (object) [
+                'userid' => $user->id, 'missionid' => 1, 'seasonid' => $seasonid,
+                'currentvalue' => 1, 'completed' => 1,
+            ]);
+        }
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        $this->assertSame(0, $DB->count_records('local_playergames_player_profile', ['seasonid' => $older]));
+        $this->assertSame(0, $DB->count_records('local_playergames_mission_progress', ['seasonid' => $older]));
+        $summary = $DB->get_record('local_playergames_season_summary', ['userid' => $user->id, 'seasonid' => $older]);
+        $this->assertSame([70, 2, 1], [(int) $summary->xp, (int) $summary->level, (int) $summary->missionsdone]);
+        // The season inside the window keeps its profile and has no summary yet.
+        $this->assertSame(1, $DB->count_records('local_playergames_player_profile', ['seasonid' => $newer]));
+        $this->assertSame(1, $DB->count_records('local_playergames_mission_progress', ['seasonid' => $newer]));
+        $this->assertFalse($DB->record_exists('local_playergames_season_summary', ['seasonid' => $newer]));
+    }
+
+    public function test_purges_the_history_older_than_the_configured_months(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('activitylog_keep', 6, 'local_playergames');
+
+        $user = $this->getDataGenerator()->create_user();
+        $old = strtotime('-7 months');
+        $recent = strtotime('-5 months');
+        foreach ([$old, $recent] as $time) {
+            $DB->insert_record('local_playergames_activity_log', (object) [
+                'userid' => $user->id, 'eventtype' => 'season_xp', 'xpdelta' => 5, 'source' => 'checkin',
+                'courseid' => 0, 'timecreated' => $time,
+            ]);
+            $DB->insert_record('local_playergames_freeze_log', (object) [
+                'userid' => $user->id, 'action' => 'earned', 'amount' => 1, 'reason' => 'mission',
+                'timecreated' => $time,
+            ]);
+        }
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        foreach (['local_playergames_activity_log', 'local_playergames_freeze_log'] as $table) {
+            $this->assertSame([$recent], array_map('intval', $DB->get_fieldset_select($table, 'timecreated', '1 = 1')));
+        }
+    }
+
+    public function test_keeps_all_the_history_when_the_months_are_zero(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('activitylog_keep', 0, 'local_playergames');
+
+        $user = $this->getDataGenerator()->create_user();
+        $DB->insert_record('local_playergames_activity_log', (object) [
+            'userid' => $user->id, 'eventtype' => 'season_xp', 'xpdelta' => 5, 'source' => 'checkin',
+            'courseid' => 0, 'timecreated' => strtotime('-5 years'),
+        ]);
+
+        ob_start();
+        (new purge_old_scores())->execute();
+        ob_get_clean();
+
+        $this->assertSame(1, $DB->count_records('local_playergames_activity_log'));
+    }
 }

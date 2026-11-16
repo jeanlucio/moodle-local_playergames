@@ -100,6 +100,14 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    $page2->add(new admin_setting_configtext(
+        'local_playergames/activitylog_keep',
+        get_string('settings_activitylog_keep', 'local_playergames'),
+        get_string('settings_activitylog_keep_desc', 'local_playergames'),
+        '12',
+        PARAM_INT
+    ));
+
     $ADMIN->add('playergames_rules', $page2);
 
     // XP and rewards.

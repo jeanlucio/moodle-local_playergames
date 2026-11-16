@@ -24,12 +24,19 @@
 
 namespace local_playergames\task;
 
+use local_playergames\hub\season_summary;
+
 /**
- * Removes daily_scores rows from seasons closed more than N seasons ago.
+ * Removes the detailed data of seasons closed more than N seasons ago, and old activity history.
  *
  * N is configured via the admin setting 'seasons_keep' (default 2).
  * The active season and the N most-recently-closed seasons are always preserved.
- * Only seasons with status = 'closed' are considered for purge.
+ * Only seasons with status = 'closed' are considered for purge. For each of them the game scores, the
+ * player profiles and the mission progress go, after the final result of every player is saved in
+ * local_playergames_season_summary, which is kept.
+ *
+ * The activity history and the freeze history are purged by age, by the 'activitylog_keep' setting
+ * (months; 0 keeps everything).
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -46,7 +53,7 @@ class purge_old_scores extends \core\task\scheduled_task {
     }
 
     /**
-     * Deletes daily_scores rows for seasons older than the retention window.
+     * Deletes the detailed data of seasons older than the retention window and the old history rows.
      *
      * @return void
      */
@@ -74,6 +81,8 @@ class purge_old_scores extends \core\task\scheduled_task {
 
         // The words of the day are read for today only, and nothing else looks at an earlier day's.
         $DB->delete_records_select('local_playergames_daily_assignments', 'gamedate < :today', ['today' => $today]);
+
+        $this->purge_history();
 
         $closedseasons = $DB->get_records_select(
             'local_playergames_seasons',
@@ -108,6 +117,12 @@ class purge_old_scores extends \core\task\scheduled_task {
             $battles = $DB->count_records('local_playergames_battle_scores', ['seasonid' => $seasonid]);
             $DB->delete_records('local_playergames_battle_scores', ['seasonid' => $seasonid]);
             mtrace("Purged {$battles} battle_scores rows for season {$seasonid}: {$season->name}");
+
+            // The result of each player is saved first, so the season is never purged without it.
+            $saved = season_summary::build($seasonid);
+            $DB->delete_records('local_playergames_mission_progress', ['seasonid' => $seasonid]);
+            $DB->delete_records('local_playergames_player_profile', ['seasonid' => $seasonid]);
+            mtrace("Saved {$saved} results and purged the profiles of season {$seasonid}: {$season->name}");
         }
 
         $preservednames = implode(', ', array_map(
@@ -115,5 +130,24 @@ class purge_old_scores extends \core\task\scheduled_task {
             $preserved
         ));
         mtrace("Preserved seasons: {$preservednames}");
+    }
+
+    /**
+     * Deletes activity history and freeze history rows older than the 'activitylog_keep' months.
+     *
+     * @return void
+     */
+    private function purge_history(): void {
+        global $DB;
+
+        $months = max(0, (int) get_config('local_playergames', 'activitylog_keep'));
+        if ($months === 0) {
+            return;
+        }
+        $cutoff = strtotime("-{$months} months");
+        foreach (['local_playergames_activity_log', 'local_playergames_freeze_log'] as $table) {
+            $DB->delete_records_select($table, 'timecreated < :cutoff', ['cutoff' => $cutoff]);
+        }
+        mtrace("Purged activity history older than {$months} months.");
     }
 }

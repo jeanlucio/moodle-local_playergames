@@ -29,9 +29,8 @@ use advanced_testcase;
 /**
  * Unit tests for the local_playergames upgrade file.
  *
- * The plugin is unreleased, so the file holds no steps yet; the test only guards that it keeps loading and
- * answering, as the Plugin Directory rejects an archive without it. Steps added after the first release
- * need a test each that rebuilds the state they expect and runs the real function against it.
+ * The plugin is unreleased, so the file holds only the steps the sites that already run it need; each step
+ * has a test that rebuilds the state it expects and runs the real function against it.
  *
  * @package    local_playergames
  * @category   test
@@ -48,8 +47,45 @@ final class db_upgrade_test extends advanced_testcase {
     public function test_upgrade_function_succeeds(): void {
         global $CFG;
 
+        require_once($CFG->libdir . '/upgradelib.php');
         require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
 
+        // The savepoint refuses to record a version the plugin already has.
+        $this->resetAfterTest();
+        set_config('version', 2026042700, 'local_playergames');
+
         $this->assertTrue(xmldb_local_playergames_upgrade(2026042700));
+    }
+
+    /**
+     * A site without the season summary table and the history index gets both.
+     *
+     * @return void
+     */
+    public function test_upgrade_creates_the_season_summary_table_and_the_history_index(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/upgradelib.php');
+        require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+
+        $dbman   = $DB->get_manager();
+        $summary = new \xmldb_table('local_playergames_season_summary');
+        $log     = new \xmldb_table('local_playergames_activity_log');
+        $index   = new \xmldb_index('idx_timecreated', XMLDB_INDEX_NOTUNIQUE, ['timecreated']);
+        $dbman->drop_table($summary);
+        $dbman->drop_index($log, $index);
+        $this->assertFalse($dbman->table_exists($summary));
+        $this->assertFalse($dbman->index_exists($log, $index));
+
+        // The savepoint refuses to record a version the plugin already has.
+        set_config('version', 2026111501, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111501));
+
+        $this->assertTrue($dbman->table_exists($summary));
+        $this->assertTrue($dbman->index_exists($log, $index));
+        set_config('version', 2026111501, 'local_playergames');
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026111501));
     }
 }

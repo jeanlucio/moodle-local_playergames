@@ -73,7 +73,9 @@ final class db_definitions_test extends \advanced_testcase {
     }
 
     /**
-     * Every class under classes/task is scheduled, so a new task is not forgotten there.
+     * Every scheduled task class under classes/task is scheduled, so a new task is not forgotten there.
+     *
+     * An adhoc task is queued by the code that needs it, not scheduled, so it is left out.
      */
     public function test_every_task_class_is_scheduled(): void {
         global $CFG;
@@ -84,7 +86,11 @@ final class db_definitions_test extends \advanced_testcase {
             $this->load('tasks.php', 'tasks')
         );
         foreach (glob($CFG->dirroot . '/local/playergames/classes/task/*.php') as $path) {
-            $this->assertContains('local_playergames\\task\\' . basename($path, '.php'), $scheduled);
+            $class = 'local_playergames\\task\\' . basename($path, '.php');
+            if (is_subclass_of($class, \core\task\adhoc_task::class)) {
+                continue;
+            }
+            $this->assertContains($class, $scheduled);
         }
     }
 

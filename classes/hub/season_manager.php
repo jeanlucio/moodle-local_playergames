@@ -207,7 +207,8 @@ class season_manager {
      * Closes a season: sets status to 'closed' and fires season_closed event.
      *
      * Player profiles and history are preserved — XP is NOT reset here.
-     * Rankings remain queryable by filtering on seasonid.
+     * Rankings remain queryable by filtering on seasonid. The final result of each player is saved
+     * by a task queued here, and kept after the purge task removes the profiles.
      *
      * @param int $seasonid
      * @return void
@@ -233,6 +234,8 @@ class season_manager {
             'userid'   => $USER->id ?? 0,
         ]);
         $event->trigger();
+
+        season_summary::queue_build($seasonid);
     }
 
     /**
@@ -327,6 +330,7 @@ class season_manager {
         $DB->delete_records('local_playergames_mission_progress', ['seasonid' => $seasonid]);
         $DB->delete_records('local_playergames_season_games', ['seasonid' => $seasonid]);
         $DB->delete_records('local_playergames_player_profile', ['seasonid' => $seasonid]);
+        $DB->delete_records('local_playergames_season_summary', ['seasonid' => $seasonid]);
         $DB->delete_records('local_playergames_seasons', ['id' => $seasonid]);
         $transaction->allow_commit();
     }

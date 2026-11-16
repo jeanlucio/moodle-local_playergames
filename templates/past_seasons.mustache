@@ -1,0 +1,73 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/past_seasons
+
+    @package local_playergames
+    @copyright 2026 Jean Lúcio
+    @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+    Example context (json):
+    {
+        "str_heading": "Previous seasons",
+        "str_col_season": "Season",
+        "str_col_xp": "Final XP",
+        "str_col_level": "Final level",
+        "str_col_missions": "Missions",
+        "str_col_rank": "Position",
+        "hasseasons": true,
+        "seasons": [
+            {
+                "name": "Season 1",
+                "level": 7,
+                "xp": 1450,
+                "missions": 12,
+                "ranked": true,
+                "rank": "3 of 120"
+            }
+        ]
+    }
+}}
+{{#hasseasons}}
+<div class="pg-past-seasons mb-4">
+    <h2 class="h4">{{str_heading}}</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">{{str_col_season}}</th>
+                    <th scope="col">{{str_col_xp}}</th>
+                    <th scope="col">{{str_col_level}}</th>
+                    <th scope="col">{{str_col_missions}}</th>
+                    <th scope="col">{{str_col_rank}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#seasons}}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{xp}}</td>
+                    <td>{{level}}</td>
+                    <td>{{missions}}</td>
+                    <td>{{rank}}</td>
+                </tr>
+                {{/seasons}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{/hasseasons}}

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/playergames/db" VERSION="20261113" COMMENT="XMLDB file for Moodle local/playergames"
+<XMLDB PATH="local/playergames/db" VERSION="20261116" COMMENT="XMLDB file for Moodle local/playergames"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -416,6 +416,30 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="idx_userid_timecreated" UNIQUE="false" FIELDS="userid, timecreated"/>
+        <INDEX NAME="idx_timecreated" UNIQUE="false" FIELDS="timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_playergames_season_summary" COMMENT="One row per user and closed season: the final result kept after the detailed season data is purged">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="seasonid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Final season XP"/>
+        <FIELD NAME="level" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Final season level"/>
+        <FIELD NAME="missionsdone" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Missions completed in the season"/>
+        <FIELD NAME="finalrank" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Position inside the group (students or staff) the user was ranked in; null when the user was not in the ranking"/>
+        <FIELD NAME="rankedof" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Number of users ranked in that group; null when finalrank is null"/>
+        <FIELD NAME="showinhall" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 while the user lets the name appear in the hall of fame; starts as showinranking of the season and the user can switch it off later"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_season" TYPE="foreign" FIELDS="seasonid" REFTABLE="local_playergames_seasons" REFFIELDS="id"/>
+        <KEY NAME="uq_userid_seasonid" TYPE="unique" FIELDS="userid, seasonid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_seasonid_finalrank" UNIQUE="false" FIELDS="seasonid, finalrank"/>
       </INDEXES>
     </TABLE>
   </TABLES>
