@@ -28,6 +28,7 @@
  */
 
 import Modal from 'core/modal';
+import Pending from 'core/pending';
 import {getString} from 'core/str';
 
 let container = null;
@@ -142,7 +143,7 @@ const applyWordUpdate = (word) => {
  * @param {number} conceptid Concept id identifying the row being guessed.
  * @param {string} guess Raw guess text typed by the player.
  */
-const submitGuess = async(conceptid, guess) => {
+const sendGuess = async(conceptid, guess) => {
     if (submitting || finished) {
         return;
     }
@@ -209,6 +210,21 @@ const submitGuess = async(conceptid, guess) => {
             }
         }
         openEndModal(endKind);
+    }
+};
+
+/**
+ * Sends a guess while the page counts as busy, so an automated test waits for the answer before going on.
+ *
+ * @param {number} conceptid Concept id identifying the row being guessed.
+ * @param {string} guess Raw guess text typed by the player.
+ */
+const submitGuess = async(conceptid, guess) => {
+    const pending = new Pending('local_playergames/play_fill:submit');
+    try {
+        await sendGuess(conceptid, guess);
+    } finally {
+        pending.resolve();
     }
 };
 

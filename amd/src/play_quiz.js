@@ -30,6 +30,7 @@
 
 import Modal from 'core/modal';
 import Notification from 'core/notification';
+import Pending from 'core/pending';
 import {getString} from 'core/str';
 
 let currentIndex = 0;
@@ -51,12 +52,18 @@ let deadline = 0;
  * @returns {Promise<Object>} The decoded response.
  */
 const post = async(params) => {
-    const response = await fetch(container.dataset.action, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({sesskey: container.dataset.sesskey, ...params}),
-    });
-    return response.json();
+    // The page counts as busy until the answer is in, so an automated test waits for it before going on.
+    const pending = new Pending('local_playergames/play_quiz:post');
+    try {
+        const response = await fetch(container.dataset.action, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({sesskey: container.dataset.sesskey, ...params}),
+        });
+        return await response.json();
+    } finally {
+        pending.resolve();
+    }
 };
 
 /**

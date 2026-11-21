@@ -28,6 +28,7 @@
  */
 
 import Modal from 'core/modal';
+import Pending from 'core/pending';
 import {getString, getStrings} from 'core/str';
 import Keys from 'local_playergames/guess/keys';
 
@@ -211,7 +212,7 @@ const updateProgress = async() => {
 /**
  * Sends the current row to the server for validation and scoring.
  */
-const submitGuess = async() => {
+const sendGuess = async() => {
     if (submitting || finished || currentGuess.length !== targetLength) {
         return;
     }
@@ -274,6 +275,18 @@ const submitGuess = async() => {
     }
 
     updateProgress();
+};
+
+/**
+ * Sends a guess while the page counts as busy, so an automated test waits for the answer before going on.
+ */
+const submitGuess = async() => {
+    const pending = new Pending('local_playergames/play_guess:submit');
+    try {
+        await sendGuess();
+    } finally {
+        pending.resolve();
+    }
 };
 
 /**
