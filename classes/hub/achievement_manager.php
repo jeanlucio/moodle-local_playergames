@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\event\achievement_earned;
+use local_playergames\games\season_game_config;
 use local_playergames\local\user_lock;
 use stdClass;
 
@@ -104,9 +105,6 @@ class achievement_manager {
             'icon'           => 'fa-bolt',
         ],
     ];
-
-    /** @var string[] Game types that count toward the all_games_day achievement. */
-    private const ALL_GAME_TYPES = ['quiz', 'guess', 'fill', 'battle'];
 
     /**
      * Ensures all hardcoded achievements exist in the DB.
@@ -264,7 +262,7 @@ class achievement_manager {
                 'userid = :uid AND gamedate = :gd AND completed = 1',
                 ['uid' => $userid, 'gd' => $gamedate]
             );
-            return count(array_intersect(self::ALL_GAME_TYPES, $played)) >= count(self::ALL_GAME_TYPES);
+            return count(array_intersect(season_game_config::GAMETYPES, $played)) >= count(season_game_config::GAMETYPES);
         }
 
         return false;

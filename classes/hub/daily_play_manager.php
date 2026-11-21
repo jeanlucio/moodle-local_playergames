@@ -45,14 +45,6 @@ use stdClass;
  * @package    local_playergames
  */
 class daily_play_manager {
-    /** @var array<string, string> Font-Awesome icon per game type. */
-    public const GAME_ICONS = [
-        'quiz'   => 'fa-question-circle',
-        'guess'  => 'fa-spell-check',
-        'fill'   => 'fa-crosshairs',
-        'battle' => 'fa-dragon',
-    ];
-
     /** @var string[] Games with a single round a day (one concept or word set per day), whatever the setting says. */
     public const SINGLE_ROUND_GAMES = ['guess', 'fill'];
 
@@ -273,19 +265,8 @@ class daily_play_manager {
             $attempts[$r->gametype] = (int) $r->attempts;
         }
 
-        $gametypes = ['quiz', 'guess', 'fill', 'battle'];
-        $namekeys  = [
-            'quiz'   => 'hub_game_quiz',
-            'guess'  => 'hub_game_guess',
-            'fill'   => 'hub_game_fill',
-            'battle' => 'hub_game_battle',
-        ];
-        $gameurls = [
-            'quiz'   => (new moodle_url('/local/playergames/play_quiz.php'))->out(false),
-            'guess'  => (new moodle_url('/local/playergames/play_guess.php'))->out(false),
-            'fill'   => (new moodle_url('/local/playergames/play_fill.php'))->out(false),
-            'battle' => (new moodle_url('/local/playergames/play_battle.php'))->out(false),
-        ];
+        // Each game has its name in hub_game_<game> and its page in play_<game>.php.
+        $gametypes = season_game_config::GAMETYPES;
         $season   = season_manager::get_active();
         $disabled = [];
         foreach ($gametypes as $gametype) {
@@ -304,12 +285,12 @@ class daily_play_manager {
             $pending = !$done && !$locked;
             $result[] = [
                 'gametype' => $gametype,
-                'name'     => get_string($namekeys[$gametype], 'local_playergames'),
-                'icon'     => self::GAME_ICONS[$gametype],
+                'name'     => get_string('hub_game_' . $gametype, 'local_playergames'),
+                'icon'     => season_game_config::ICONS[$gametype],
                 'done'     => $done,
                 'locked'   => $locked,
                 'pending'  => $pending,
-                'url'      => $pending ? ($gameurls[$gametype] ?? '') : '',
+                'url'      => $pending ? (new moodle_url('/local/playergames/play_' . $gametype . '.php'))->out(false) : '',
                 'str_done'    => get_string('hub_game_done', 'local_playergames'),
                 'str_pending' => get_string('hub_game_pending', 'local_playergames'),
                 'str_locked'  => get_string('hub_game_locked', 'local_playergames'),

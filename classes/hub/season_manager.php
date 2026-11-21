@@ -122,7 +122,7 @@ class season_manager {
      */
     public static function build_snapshot(): array {
         $snapshot = [];
-        foreach (['quiz', 'guess', 'fill', 'battle'] as $type) {
+        foreach (season_game_config::GAMETYPES as $type) {
             $pergame = max(1, (int) get_config('local_playergames', 'xp_per_game_' . $type) ?: 25);
             $games   = in_array($type, daily_play_manager::SINGLE_ROUND_GAMES, true)
                 ? 1

@@ -24,6 +24,7 @@
 
 namespace local_playergames\output;
 
+use local_playergames\games\season_game_config;
 use local_playergames\hub\activity_log as activity_log_manager;
 use local_playergames\local\text;
 use moodle_url;
@@ -47,12 +48,8 @@ class activity_log implements renderable, templatable {
     /** @var int Rows fetched per page. */
     private const PER_PAGE = 30;
 
-    /** @var array<string, string> Lang key per game type source, for season_xp rows. */
-    private const GAME_NAME_KEYS = [
-        'quiz'    => 'hub_game_quiz',
-        'guess'   => 'hub_game_guess',
-        'fill'    => 'hub_game_fill',
-        'battle'  => 'hub_game_battle',
+    /** @var array<string, string> Lang key of the sources of season XP that are not games. */
+    private const SOURCE_NAME_KEYS = [
         'checkin' => 'activity_log_source_checkin',
         'mission' => 'activity_log_source_mission',
     ];
@@ -203,7 +200,10 @@ class activity_log implements renderable, templatable {
      * @return string
      */
     private function game_name(string $source): string {
-        $key = self::GAME_NAME_KEYS[$source] ?? null;
+        if (in_array($source, season_game_config::GAMETYPES, true)) {
+            return get_string('hub_game_' . $source, 'local_playergames');
+        }
+        $key = self::SOURCE_NAME_KEYS[$source] ?? null;
         return $key !== null ? get_string($key, 'local_playergames') : $source;
     }
 }

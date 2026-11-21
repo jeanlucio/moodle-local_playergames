@@ -30,8 +30,24 @@ use local_playergames\hub\season_manager;
  * Reads per-season game configuration from local_playergames_season_games.
  */
 class season_game_config {
-    /** @var string[] Game type keys configurable per season. */
-    const GAMETYPES = ['quiz', 'battle', 'guess', 'fill'];
+    /**
+     * @var string[] Every game of the hub, in the order the hub shows them.
+     *
+     * The one list of the games: XP settings, the season snapshot, the hub, the achievement for playing every game
+     * and the season page all read it, so a new game added here reaches all of them.
+     */
+    const GAMETYPES = ['quiz', 'guess', 'fill', 'battle'];
+
+    /** @var string[] The kind of cartridge each game draws from, by game, in the order of the season page. */
+    const FAMILIES = ['quiz' => 'quiz', 'battle' => 'quiz', 'guess' => 'concept', 'fill' => 'concept'];
+
+    /** @var string[] The Font Awesome icon of each game in the hub, by game. */
+    const ICONS = [
+        'quiz' => 'fa-question-circle',
+        'guess' => 'fa-spell-check',
+        'fill' => 'fa-crosshairs',
+        'battle' => 'fa-dragon',
+    ];
 
     /**
      * Seeds default game configuration rows for a season.

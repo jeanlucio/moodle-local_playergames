@@ -122,7 +122,7 @@ if ($hassiteconfig) {
         get_string('settings_xp_heading_desc', 'local_playergames')
     ));
 
-    foreach (['quiz', 'guess', 'fill', 'battle'] as $gametype) {
+    foreach (\local_playergames\games\season_game_config::GAMETYPES as $gametype) {
         $pagexp->add(new \local_playergames\local\setting_int_range(
             'local_playergames/xp_per_game_' . $gametype,
             get_string('settings_xp_per_game_' . $gametype, 'local_playergames'),

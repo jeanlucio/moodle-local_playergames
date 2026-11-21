@@ -58,12 +58,10 @@ $PAGE->set_title($pagetitle);
 $PAGE->set_heading($pagetitle);
 
 // Games grouped by content family: the quiz games read quiz cartridges, the concept games read concept cartridges.
-$gametypes = [
-    ['type' => 'quiz', 'family' => 'quiz'],
-    ['type' => 'battle', 'family' => 'quiz'],
-    ['type' => 'guess', 'family' => 'concept'],
-    ['type' => 'fill', 'family' => 'concept'],
-];
+$gametypes = [];
+foreach (season_game_config::FAMILIES as $type => $family) {
+    $gametypes[] = ['type' => $type, 'family' => $family];
+}
 
 // Load cartridges by family type.
 $quizcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'], 'name ASC', 'id, name');
