@@ -74,6 +74,26 @@ final class generator_test extends \advanced_testcase {
     }
 
     /**
+     * As many concepts as PlayerFill asks for fill its board when the words are drawn.
+     *
+     * PlayerFill never asks for fewer than four words, whatever the setting says: a smaller pool draws nothing.
+     */
+    public function test_four_concepts_give_playerfill_its_board(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('fill_num_words', 4, 'local_playergames');
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_playergames');
+        $cartridge = $generator->create_cartridge(['name' => 'Fruits']);
+        foreach (['grape', 'lemon', 'mango', 'melon'] as $term) {
+            $generator->create_concept(['cartridgeid' => $cartridge->id, 'term' => $term, 'definition' => 'A fruit']);
+        }
+
+        \local_playergames\task\assign_daily_games::draw_now();
+
+        $this->assertSame(4, $DB->count_records('local_playergames_daily_assignments', ['gametype' => 'fill']));
+    }
+
+    /**
      * A quiz question comes with one right option and four wrong ones, as the quiz loader requires.
      */
     public function test_a_quiz_question_has_one_right_option_and_four_wrong_ones(): void {

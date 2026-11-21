@@ -6,7 +6,7 @@ Feature: Play the PlayerFill daily game
 
   Background:
     Given the following config values are set as admin:
-      | fill_num_words | 3 | local_playergames |
+      | fill_num_words | 4 | local_playergames |
     And the following "local_playergames > seasons" exist:
       | name         |
       | Behat season |
@@ -18,6 +18,7 @@ Feature: Play the PlayerFill daily game
       | Fruits    | grape | A purple fruit   |
       | Fruits    | lemon | A sour fruit     |
       | Fruits    | mango | A tropical fruit |
+      | Fruits    | melon | A striped fruit  |
     And the PlayerGames words of the day are drawn
     And the following "users" exist:
       | username | firstname | lastname | email                |
@@ -30,6 +31,7 @@ Feature: Play the PlayerFill daily game
     When I answer "grape" for the PlayerFill clue "A purple fruit"
     And I answer "lemon" for the PlayerFill clue "A sour fruit"
     And I answer "mango" for the PlayerFill clue "A tropical fruit"
+    And I answer "melon" for the PlayerFill clue "A striped fruit"
     Then I should see "Solved!"
     And I should see "XP earned:"
 
