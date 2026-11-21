@@ -14,103 +14,75 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * AMD module for the cartridge management page.
+ * Behaviour of the cartridge management page.
  *
  * Provides:
- *  - Confirmation dialog on forms with data-pg-confirm attribute.
- *  - Export button redirect for the editor tab.
+ *  - Confirmation dialog on forms with a data-pg-confirm attribute.
+ *  - The rename form of a category, opened from its row.
  *
  * @module     local_playergames/cartridge
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['core/notification', 'core/str'], function(Notification, Str) {
-    'use strict';
 
-    /**
-     * Attaches a submit-time confirmation dialog to every form that carries
-     * a data-pg-confirm attribute.
-     */
-    function attachConfirmDialogs() {
-        var forms = document.querySelectorAll('form[data-pg-confirm]');
-        forms.forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var message = form.getAttribute('data-pg-confirm');
-                Notification.confirm(
-                    '',
-                    message,
-                    // The labels go as promises, which the dialog waits for: a label filled in later would
-                    // show an English fallback to whoever submits before the strings arrive.
-                    Str.get_string('yes', 'core'),
-                    Str.get_string('no', 'core'),
-                    function() {
-                        form.submit();
-                    }
-                );
-            });
-        });
-    }
+import Notification from 'core/notification';
+import {getString} from 'core/str';
 
-    /**
-     * Wires the export button in the editor tab to navigate to the export URL.
-     */
-    function attachExportButton() {
-        var btn = document.getElementById('pg-export-editor');
-        if (!btn) {
-            return;
-        }
-        btn.addEventListener('click', function(e) {
+/**
+ * Asks for confirmation before sending every form that carries a data-pg-confirm attribute.
+ */
+const attachConfirmDialogs = () => {
+    document.querySelectorAll('form[data-pg-confirm]').forEach(form => {
+        form.addEventListener('submit', e => {
             e.preventDefault();
-            var cartridgeid = btn.getAttribute('data-cartridgeid');
-            if (cartridgeid) {
-                window.location.href = btn.href
-                    || (window.location.pathname
-                        + '?action=export_cartridge&cartridgeid=' + cartridgeid);
-            }
+            Notification.confirm(
+                '',
+                form.dataset.pgConfirm,
+                // The labels go as promises, which the dialog waits for: a label filled in later would
+                // show an English fallback to whoever submits before the strings arrive.
+                getString('yes', 'core'),
+                getString('no', 'core'),
+                // Sending the form this way does not fire the submit event again.
+                () => form.submit()
+            );
+        });
+    });
+};
+
+/**
+ * Wires the rename buttons of the categories to the hidden rename form.
+ */
+const attachRenameCategoryButtons = () => {
+    const renameForm = document.getElementById('pg-rename-cat-form');
+    if (!renameForm) {
+        return;
+    }
+    const renameIdInput = document.getElementById('pg-rename-cat-id');
+    const renameNameInput = document.getElementById('pg-rename-cat-name');
+    const cancelBtn = document.getElementById('pg-rename-cat-cancel');
+
+    document.querySelectorAll('.pg-rename-cat').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const {categoryid, name} = btn.dataset;
+            renameIdInput.value = categoryid;
+            renameNameInput.value = name;
+            renameForm.classList.remove('d-none');
+            renameNameInput.focus();
+        });
+    });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            renameForm.classList.add('d-none');
+            renameNameInput.value = '';
         });
     }
+};
 
-    /**
-     * Wires rename-category buttons to reveal the hidden rename form.
-     */
-    function attachRenameCategoryButtons() {
-        var renameForm = document.getElementById('pg-rename-cat-form');
-        var renameIdInput = document.getElementById('pg-rename-cat-id');
-        var renameNameInput = document.getElementById('pg-rename-cat-name');
-        var cancelBtn = document.getElementById('pg-rename-cat-cancel');
-
-        if (!renameForm) {
-            return;
-        }
-
-        document.querySelectorAll('.pg-rename-cat').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                renameIdInput.value = btn.getAttribute('data-categoryid');
-                renameNameInput.value = btn.getAttribute('data-name');
-                renameForm.classList.remove('d-none');
-                renameNameInput.focus();
-            });
-        });
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', function() {
-                renameForm.classList.add('d-none');
-                renameNameInput.value = '';
-            });
-        }
-    }
-
-    /**
-     * Initialises all cartridge-page behaviours.
-     */
-    function init() {
-        attachConfirmDialogs();
-        attachExportButton();
-        attachRenameCategoryButtons();
-    }
-
-    return {
-        init: init
-    };
-});
+/**
+ * Initialises the behaviour of the cartridge page.
+ */
+export const init = () => {
+    attachConfirmDialogs();
+    attachRenameCategoryButtons();
+};
