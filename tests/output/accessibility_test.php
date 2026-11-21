@@ -150,4 +150,33 @@ final class accessibility_test extends \advanced_testcase {
             );
         }
     }
+
+    /**
+     * No template runs inline JavaScript, and every form has a button that sends it.
+     *
+     * Regression test: the engagement meter sent its period form from an inline onchange handler, with no
+     * button. A keyboard user moving through the options with the arrows sent the form at each one (WCAG
+     * 3.2.2), and a Content-Security-Policy without 'unsafe-inline' left the period stuck on its default.
+     */
+    public function test_no_template_has_inline_handlers_and_every_form_can_be_sent(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        foreach (glob($CFG->dirroot . '/local/playergames/templates/*.mustache') as $file) {
+            $template = file_get_contents($file);
+            $this->assertDoesNotMatchRegularExpression(
+                '/\son[a-z]+\s*=/i',
+                $template,
+                basename($file) . ' has an inline event handler.'
+            );
+            preg_match_all('#<form\b.*?</form>#s', $template, $forms);
+            foreach ($forms[0] as $form) {
+                $this->assertMatchesRegularExpression(
+                    '/<button[^>]*type="submit"|<input[^>]*type="submit"/',
+                    $form,
+                    basename($file) . ' has a form with no submit button.'
+                );
+            }
+        }
+    }
 }

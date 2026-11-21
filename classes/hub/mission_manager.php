@@ -24,6 +24,8 @@
 
 namespace local_playergames\hub;
 
+use local_playergames\local\unique_row;
+use local_playergames\local\user_lock;
 use stdClass;
 
 /**
@@ -150,8 +152,25 @@ class mission_manager {
      * @param string $trigger  Event trigger key.
      * @param array  $context  Additional data for the trigger.
      * @return void
+     * @throws \moodle_exception When another request of the user kept the lock for the whole timeout.
      */
     public static function update(int $userid, int $seasonid, string $trigger, array $context = []): void {
+        // A mission is read, found not completed, then completed and paid. Two requests of the same user (two
+        // games, or a game and the check-in) would both find it open and both pay it, so the whole step runs
+        // under the lock of the user, which the game or the check-in that got here already holds.
+        user_lock::run($userid, fn() => self::update_locked($userid, $seasonid, $trigger, $context));
+    }
+
+    /**
+     * Does the work of update() while the request holds the lock of the user.
+     *
+     * @param int    $userid
+     * @param int    $seasonid
+     * @param string $trigger  Event trigger key.
+     * @param array  $context  Additional data for the trigger.
+     * @return void
+     */
+    private static function update_locked(int $userid, int $seasonid, string $trigger, array $context): void {
         global $DB;
         $missions = self::get_all();
 
@@ -279,23 +298,11 @@ class mission_manager {
      * @return stdClass
      */
     private static function get_or_create_progress(int $userid, int $missionid, int $seasonid): stdClass {
-        global $DB;
-        $progress = $DB->get_record(
+        return unique_row::get_or_create(
             'local_playergames_mission_progress',
-            ['userid' => $userid, 'missionid' => $missionid, 'seasonid' => $seasonid]
+            ['userid' => $userid, 'missionid' => $missionid, 'seasonid' => $seasonid],
+            ['currentvalue' => 0, 'completed' => 0, 'timecompleted' => null]
         );
-        if ($progress) {
-            return $progress;
-        }
-        $record               = new stdClass();
-        $record->userid       = $userid;
-        $record->missionid    = $missionid;
-        $record->seasonid     = $seasonid;
-        $record->currentvalue = 0;
-        $record->completed    = 0;
-        $record->timecompleted = null;
-        $record->id = $DB->insert_record('local_playergames_mission_progress', $record);
-        return $record;
     }
 
     /**

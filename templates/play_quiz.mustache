@@ -109,14 +109,14 @@
 
         {{#questions}}
         <div class="pg-quiz-question d-none" data-index="{{index}}">
-            <p class="fs-5 fw-semibold mb-4">{{{questiontext}}}</p>
+            <p class="fs-5 fw-semibold mb-4">{{questiontext}}</p>
             <div class="d-grid gap-2">
                 {{#answers}}
                 <button type="button"
                         class="pg-quiz-answer btn btn-outline-primary text-start"
                         data-choice="{{index}}">
                     <span class="pg-answer-letter fw-bold me-2">{{letter}}.</span>
-                    {{{text}}}
+                    {{text}}
                 </button>
                 {{/answers}}
             </div>

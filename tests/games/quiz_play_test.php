@@ -152,6 +152,30 @@ final class quiz_play_test extends \advanced_testcase {
     }
 
     /**
+     * The page escapes the question and its options once, and the play keeps the text as it was written.
+     *
+     * Regression test: the play kept the text escaped and the template printed it with a triple mustache, so
+     * the page was only safe because of an escape made in another class.
+     */
+    public function test_the_question_text_is_escaped_once_on_the_page(): void {
+        global $OUTPUT;
+        $this->prepare();
+        $questions = $this->questions(1);
+        $questions[0]->questiontext = 'Is 1 < 2 & <b>3</b> > 2?';
+        $questions[0]->answers[0]->text = 'A & <i>B</i>';
+        $state = quiz_play::start($this->today, (int) $this->season->id, $questions, \context_system::instance());
+
+        $view = quiz_play::view($state);
+        $this->assertSame('Is 1 < 2 & <b>3</b> > 2?', $view[0]['questiontext']);
+
+        $html = $OUTPUT->render_from_template('local_playergames/play_quiz', ['questions' => $view]);
+        $this->assertStringContainsString('Is 1 &lt; 2 &amp; &lt;b&gt;3&lt;/b&gt; &gt; 2?', $html);
+        $this->assertStringContainsString('A &amp; &lt;i&gt;B&lt;/i&gt;', $html);
+        $this->assertStringNotContainsString('<b>3</b>', $html);
+        $this->assertStringNotContainsString('&amp;amp;', $html);
+    }
+
+    /**
      * A correct answer ends the play, pays the XP once and records the day's play.
      */
     public function test_a_correct_answer_wins_and_pays_the_xp(): void {

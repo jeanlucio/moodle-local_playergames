@@ -27,6 +27,8 @@ namespace local_playergames\hub;
 use cache;
 use local_playergames\event\level_reached;
 use local_playergames\local\preferences;
+use local_playergames\local\unique_row;
+use local_playergames\local\user_lock;
 use stdClass;
 
 /**
@@ -58,8 +60,7 @@ class xp_manager {
      *
      * Reads the cap from the season's config_snapshot. If the daily cap
      * for this gametype has already been reached today, returns 0.
-     * Updates player_profile, fires level_reached if level changed,
-     * and invalidates the ranking cache.
+     * Updates player_profile and fires level_reached if level changed.
      *
      * @param int $userid User to award XP to.
      * @param int $xp Requested XP amount (before cap enforcement).
@@ -67,12 +68,32 @@ class xp_manager {
      * @param int $gamedate Unix timestamp of the game date (midnight of the day).
      * @param int $seasonid Season to award XP within.
      * @return int Actual XP awarded (0 if cap already reached).
+     * @throws \moodle_exception When another request of the user kept the lock for the whole timeout.
      */
     public static function award(int $userid, int $xp, string $gametype, int $gamedate, int $seasonid): int {
-        global $DB;
         if ($xp <= 0) {
             return 0;
         }
+        // The cap is read and the profile is written back under the lock of the user: two awards at the same
+        // time (a game and the check-in) would otherwise both add to the same old total, and one would be lost.
+        return user_lock::run(
+            $userid,
+            fn(): int => self::award_locked($userid, $xp, $gametype, $gamedate, $seasonid)
+        );
+    }
+
+    /**
+     * Does the work of award() while the request holds the lock of the user.
+     *
+     * @param int $userid User to award XP to.
+     * @param int $xp Requested XP amount, above zero.
+     * @param string $gametype Game type.
+     * @param int $gamedate Midnight timestamp of the game date.
+     * @param int $seasonid Season to award XP within.
+     * @return int Actual XP awarded.
+     */
+    private static function award_locked(int $userid, int $xp, string $gametype, int $gamedate, int $seasonid): int {
+        global $DB;
         $season   = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
         $snapshot = season_manager::get_config_snapshot($season);
         $actual   = $xp;
@@ -131,7 +152,9 @@ class xp_manager {
 
         activity_log::record($userid, activity_log::TYPE_SEASON_XP, $actual, $gametype);
 
-        self::invalidate_ranking_cache($seasonid);
+        // The ranking cache is left to its TTL. Deleted on every award (the check-in of each user's first page
+        // of the day included), it was almost never warm, and each rebuild checks the access of every listed
+        // player.
         return $actual;
     }
 
@@ -206,25 +229,12 @@ class xp_manager {
      * @return stdClass
      */
     public static function get_or_create_profile(int $userid, int $seasonid): stdClass {
-        global $DB;
-        $profile = $DB->get_record(
+        $now = time();
+        return unique_row::get_or_create(
             'local_playergames_player_profile',
-            ['userid' => $userid, 'seasonid' => $seasonid]
+            ['userid' => $userid, 'seasonid' => $seasonid],
+            ['xp' => 0, 'level' => 1, 'showinranking' => 0, 'timecreated' => $now, 'timemodified' => $now]
         );
-        if ($profile) {
-            return $profile;
-        }
-        $now             = time();
-        $profile         = new stdClass();
-        $profile->userid         = $userid;
-        $profile->seasonid       = $seasonid;
-        $profile->xp             = 0;
-        $profile->level          = 1;
-        $profile->showinranking  = 0;
-        $profile->timecreated    = $now;
-        $profile->timemodified   = $now;
-        $profile->id = $DB->insert_record('local_playergames_player_profile', $profile);
-        return $profile;
     }
 
     /**
@@ -304,18 +314,18 @@ class xp_manager {
     public static function set_ranking_visibility(int $userid, int $seasonid, bool $show): void {
         global $DB;
         $profile = self::get_or_create_profile($userid, $seasonid);
-        // The timemodified column is left alone: it breaks the ties of the ranking, and it stands for when the XP was
-        // reached, which showing or hiding the name does not change.
-        $profile->showinranking = $show ? 1 : 0;
-        $DB->update_record('local_playergames_player_profile', $profile);
+        // Only the flag is written: the whole row read above would put back the XP it had then, over an award
+        // made in another tab meanwhile. The timemodified column is left alone too: it breaks the ties of the
+        // ranking, and it stands for when the XP was reached, which showing or hiding the name does not change.
+        $DB->set_field('local_playergames_player_profile', 'showinranking', $show ? 1 : 0, ['id' => $profile->id]);
         self::invalidate_ranking_cache($seasonid);
     }
 
     /**
      * Deletes the cached ranking entry for a season.
      *
-     * Called after every XP award so the ranking reflects the latest state
-     * within the 60-second TTL window.
+     * Called when a player shows or hides the name, so the change is seen at once. XP awards are left to the
+     * 60-second TTL of the cache.
      *
      * @param int $seasonid
      * @return void

@@ -208,13 +208,17 @@ final class battle_manager_test extends \advanced_testcase {
         }
     }
 
-    public function test_cartridge_text_is_escaped_once(): void {
+    /**
+     * The text is sent as it is: the page sets it as text, so it is never escaped here (it would show as
+     * "&amp;" on the page) nor reaches the page as HTML.
+     */
+    public function test_cartridge_text_is_sent_unescaped(): void {
         $this->prepare();
         $this->add_question('Is 1 < 2 & 3 > 2?');
 
         $questions = $this->start();
 
-        $this->assertSame('Is 1 &lt; 2 &amp; 3 &gt; 2?', $questions[0]['questiontext']);
+        $this->assertSame('Is 1 < 2 & 3 > 2?', $questions[0]['questiontext']);
     }
 
     public function test_no_questions_opens_no_battle(): void {

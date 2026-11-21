@@ -24,12 +24,12 @@
 
 namespace local_playergames\hub;
 
-use core\lock\lock_config;
 use local_playergames\event\game_completed;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
 use local_playergames\local\access;
+use local_playergames\local\user_lock;
 use moodle_url;
 use stdClass;
 
@@ -146,8 +146,10 @@ class daily_play_manager {
         }
 
         // The quota and the XP cap are read, spent and written back as one step. Without the lock two
-        // parallel requests both pass the quota check and both pay.
-        $lock = lock_config::get_lock_factory('local_playergames')->get_lock("play_{$userid}_{$gametype}", 10);
+        // parallel requests both pass the quota check and both pay. The lock is the user's, not the game's:
+        // the missions, the streak and the XP of the season that the play reaches are shared by every game and
+        // by the check-in. It is taken before the transaction and kept until the commit.
+        $lock = user_lock::acquire($userid);
         if (!$lock) {
             return $refused;
         }
@@ -160,7 +162,7 @@ class daily_play_manager {
     }
 
     /**
-     * Does the work of register_play() while the caller holds the user's lock for the game.
+     * Does the work of register_play() while the caller holds the lock of the user.
      *
      * The XP, the daily row and the profile are written in one transaction, so a failure leaves
      * neither a paid play without its row nor a row without its XP.

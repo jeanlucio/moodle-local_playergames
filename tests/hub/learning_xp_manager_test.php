@@ -300,15 +300,39 @@ final class learning_xp_manager_test extends \advanced_testcase {
         $this->assertSame(2, learning_xp_manager::get_position($late, 150, 2000));
     }
 
-    public function test_record_change_invalidates_the_ranking_cache(): void {
+    /**
+     * An XP change leaves the ranking to the TTL of its cache.
+     *
+     * Regression test: every change deleted the list, so it was almost never warm and each Hub page rebuilt it,
+     * checking the access of every listed user.
+     */
+    public function test_record_change_leaves_the_ranking_cache_to_its_ttl(): void {
         $this->resetAfterTest();
         $user = (int) $this->getDataGenerator()->create_user()->id;
         $cache = \cache::make('local_playergames', 'ranking');
-        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['stale' => true]);
+        $cache->set(learning_xp_manager::RANKING_CACHE_KEY, ['kept' => true]);
 
         learning_xp_manager::record_change($user, 10);
 
-        $this->assertFalse($cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+        $this->assertSame(['kept' => true], $cache->get(learning_xp_manager::RANKING_CACHE_KEY));
+    }
+
+    /**
+     * Gains and losses are added to the totals, and the windowed total never goes below zero.
+     */
+    public function test_record_change_adds_to_the_totals_in_the_database(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = (int) $this->getDataGenerator()->create_user()->id;
+
+        learning_xp_manager::record_change($user, 30);
+        learning_xp_manager::record_change($user, 12);
+        $this->assertSame(42, learning_xp_manager::get_windowedxp($user));
+        $this->assertSame(42, (int) $DB->get_field('local_playergames_student_xp_monthly', 'xp', ['userid' => $user]));
+
+        learning_xp_manager::record_change($user, -100);
+        $this->assertSame(0, learning_xp_manager::get_windowedxp($user));
+        $this->assertSame(-58, (int) $DB->get_field('local_playergames_student_xp_monthly', 'xp', ['userid' => $user]));
     }
 
     public function test_is_visible_to_requires_the_admin_toggle(): void {

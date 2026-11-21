@@ -26,6 +26,7 @@ namespace local_playergames\hub;
 
 use cache;
 use local_playergames\local\preferences;
+use local_playergames\local\unique_row;
 use stdClass;
 
 /**
@@ -125,32 +126,35 @@ class learning_xp_manager {
         $now    = time();
         $period = self::period_for($now);
 
-        $bucket = $DB->get_record(
+        // The totals are added to in the database, not read, changed in PHP and written back: two XP changes of
+        // the same user at the same time would both start from the old total, and one would be lost. A lock of
+        // the user would not do here, since block_playerhud may fire the event inside its own transaction, and
+        // the lock would be released before that commit; the row lock of an UPDATE is held until it.
+        $bucket = unique_row::get_or_create(
             'local_playergames_student_xp_monthly',
-            ['userid' => $userid, 'period' => $period]
+            ['userid' => $userid, 'period' => $period],
+            ['xp' => 0, 'timecreated' => $now, 'timemodified' => $now]
         );
-        if ($bucket) {
-            $bucket->xp           = (int) $bucket->xp + $delta;
-            $bucket->timemodified = $now;
-            $DB->update_record('local_playergames_student_xp_monthly', $bucket);
-        } else {
-            $DB->insert_record('local_playergames_student_xp_monthly', (object) [
-                'userid'       => $userid,
-                'period'       => $period,
-                'xp'           => $delta,
-                'timecreated'  => $now,
-                'timemodified' => $now,
-            ]);
-        }
+        $DB->execute(
+            'UPDATE {local_playergames_student_xp_monthly}
+                SET xp = xp + :delta, timemodified = :now
+              WHERE id = :id',
+            ['delta' => $delta, 'now' => $now, 'id' => $bucket->id]
+        );
 
         $cacherow = self::get_or_create_cache($userid);
-        $cacherow->windowedxp   = max(0, (int) $cacherow->windowedxp + $delta);
-        $cacherow->timemodified = $now;
-        $DB->update_record('local_playergames_student_xp_cache', $cacherow);
+        $DB->execute(
+            'UPDATE {local_playergames_student_xp_cache}
+                SET windowedxp = CASE WHEN windowedxp + :delta1 < 0 THEN 0 ELSE windowedxp + :delta2 END,
+                    timemodified = :now
+              WHERE id = :id',
+            ['delta1' => $delta, 'delta2' => $delta, 'now' => $now, 'id' => $cacherow->id]
+        );
 
         activity_log::record($userid, activity_log::TYPE_LEARNING_XP, $delta, 'block_playerhud', $courseid);
 
-        self::invalidate_ranking_cache();
+        // The ranking cache is left to its TTL: deleted on every XP change of every student, it was almost never
+        // warm, and each rebuild checks the access of every listed user.
     }
 
     /**
@@ -160,21 +164,12 @@ class learning_xp_manager {
      * @return stdClass
      */
     public static function get_or_create_cache(int $userid): stdClass {
-        global $DB;
-        $cache = $DB->get_record('local_playergames_student_xp_cache', ['userid' => $userid]);
-        if ($cache) {
-            return $cache;
-        }
-        $now   = time();
-        $cache = (object) [
-            'userid'        => $userid,
-            'windowedxp'    => 0,
-            'showinranking' => 0,
-            'timecreated'   => $now,
-            'timemodified'  => $now,
-        ];
-        $cache->id = $DB->insert_record('local_playergames_student_xp_cache', $cache);
-        return $cache;
+        $now = time();
+        return unique_row::get_or_create(
+            'local_playergames_student_xp_cache',
+            ['userid' => $userid],
+            ['windowedxp' => 0, 'showinranking' => 0, 'timecreated' => $now, 'timemodified' => $now]
+        );
     }
 
     /**
@@ -200,9 +195,10 @@ class learning_xp_manager {
     public static function set_ranking_visibility(int $userid, bool $show): void {
         global $DB;
         $cacherow = self::get_or_create_cache($userid);
-        // The timemodified column is left alone, as in xp_manager::set_ranking_visibility(): it breaks ties.
-        $cacherow->showinranking = $show ? 1 : 0;
-        $DB->update_record('local_playergames_student_xp_cache', $cacherow);
+        // Only the flag is written: the whole row read above would put back the XP it had then, over a change
+        // made meanwhile. The timemodified column is left alone, as in xp_manager::set_ranking_visibility(): it
+        // breaks ties.
+        $DB->set_field('local_playergames_student_xp_cache', 'showinranking', $show ? 1 : 0, ['id' => $cacherow->id]);
 
         self::invalidate_ranking_cache();
     }
@@ -250,8 +246,8 @@ class learning_xp_manager {
     /**
      * Deletes the cached learning ranking list.
      *
-     * Called after every learning XP change or visibility toggle, so the
-     * ranking reflects the latest state within the 60-second TTL window.
+     * Called when a user shows or hides the name, so the change is seen at once. XP changes are left to the
+     * 60-second TTL of the cache.
      *
      * @return void
      */

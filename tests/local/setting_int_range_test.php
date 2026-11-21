@@ -89,4 +89,50 @@ final class setting_int_range_test extends \advanced_testcase {
     public function test_text_that_is_not_a_whole_number_is_refused(): void {
         $this->assertNotTrue($this->setting(1, 60)->validate('abc'));
     }
+
+    /**
+     * The whole number settings of the plugin all have a range: none takes a negative value, and the ones a
+     * page draws or loops over have a ceiling.
+     *
+     * Regression test: guess_max_attempts was a plain integer setting, so 1000000 was saved without a word and
+     * the PlayerGuess board tried to draw a million rows in every player's browser.
+     */
+    public function test_the_plugin_settings_refuse_values_out_of_their_range(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $root = admin_get_root(true, true);
+
+        $expected = [
+            'local_playergames_games' => [
+                'guess_max_attempts' => [1, 10],
+                'fill_max_attempts' => [1, 10],
+                'fill_num_words' => [4, 8],
+                'quiz_question_seconds' => [0, null],
+                'quiz_max_attempts' => [0, null],
+                'quiz_cooldown_minutes' => [0, null],
+            ],
+            'local_playergames_seasons' => [
+                'seasons_keep' => [1, null],
+                'activitylog_keep' => [0, null],
+            ],
+            'local_playergames_learning' => [
+                'learningxp_window_months' => [0, null],
+            ],
+        ];
+        foreach ($expected as $pagename => $settings) {
+            $page = $root->locate($pagename);
+            $this->assertInstanceOf(\admin_settingpage::class, $page, $pagename);
+            foreach ($settings as $name => [$min, $max]) {
+                // A page keys its settings by the plugin name followed by the setting name.
+                $setting = $page->settings->{"local_playergames{$name}"} ?? null;
+                $this->assertInstanceOf(setting_int_range::class, $setting, $name);
+                $this->assertTrue($setting->validate((string) $min), $name);
+                $this->assertIsString($setting->validate((string) ($min - 1)), $name);
+                if ($max !== null) {
+                    $this->assertTrue($setting->validate((string) $max), $name);
+                    $this->assertIsString($setting->validate((string) ($max + 1)), $name);
+                }
+            }
+        }
+    }
 }

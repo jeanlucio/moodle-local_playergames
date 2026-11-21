@@ -32,6 +32,8 @@ import {getString, getStrings} from 'core/str';
 
 const LETTER_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const FEEDBACK_RANK = {absent: 0, present: 1, correct: 2};
+// Same ceiling as guess_manager::MAX_ATTEMPTS: the board draws one row per guess.
+const MAX_ATTEMPTS = 10;
 
 let container = null;
 let board = null;
@@ -314,7 +316,7 @@ export default {
         messageEl = document.getElementById('pg-guess-message');
         liveEl = document.getElementById('pg-guess-live');
         targetLength = parseInt(container.dataset.targetLength, 10) || 0;
-        maxAttempts = parseInt(container.dataset.maxAttempts, 10) || 0;
+        maxAttempts = Math.min(MAX_ATTEMPTS, parseInt(container.dataset.maxAttempts, 10) || 0);
         if (targetLength <= 0 || maxAttempts <= 0) {
             return;
         }

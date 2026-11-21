@@ -54,13 +54,12 @@
             <label for="pg-engmeter-period" class="fw-semibold text-nowrap mb-0">
                 {{#str}} engmeter_period, local_playergames {{/str}}
             </label>
-            <select id="pg-engmeter-period" name="days"
-                    class="form-select form-select-sm w-auto"
-                    onchange="this.form.submit()">
+            <select id="pg-engmeter-period" name="days" class="form-select form-select-sm w-auto">
                 {{#day_options}}
                 <option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>
                 {{/day_options}}
             </select>
+            <button type="submit" class="btn btn-secondary btn-sm">{{#str}} apply, core {{/str}}</button>
         </form>
     </div>
 

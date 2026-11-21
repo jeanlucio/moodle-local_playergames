@@ -178,7 +178,7 @@ export const createUi = root => {
                 const feedback = questionDialog.querySelector('[data-field="feedback"]');
                 const next = questionDialog.querySelector('[data-action="continue"]');
                 const holder = questionDialog.querySelector('[data-field="answers"]');
-                questionDialog.querySelector('[data-field="questiontext"]').innerHTML = question.questiontext;
+                questionDialog.querySelector('[data-field="questiontext"]').textContent = question.questiontext;
                 feedback.hidden = true;
                 feedback.innerHTML = '';
                 next.hidden = true;
@@ -193,7 +193,7 @@ export const createUi = root => {
                     letter.className = 'pg-battle-answer-letter';
                     letter.textContent = LETTERS[index] || String(index + 1);
                     const text = document.createElement('span');
-                    text.innerHTML = answer.text;
+                    text.textContent = answer.text;
                     button.append(letter, text);
                     holder.appendChild(button);
                     return button;

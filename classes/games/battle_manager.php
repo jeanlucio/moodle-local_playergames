@@ -27,6 +27,7 @@ namespace local_playergames\games;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\served_questions;
+use local_playergames\local\user_lock;
 
 /**
  * Starts a battle and records how it ended.
@@ -194,6 +195,33 @@ class battle_manager {
         array $result,
         ?int $now = null
     ): array {
+        $refused = ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0];
+
+        // The open battle is taken and the day's score, which adds up the XP, is read and written back under the
+        // lock of the user: two results sent at the same time, from two sessions, would both find a battle open
+        // and both add to the same old score.
+        $lock = user_lock::acquire($userid);
+        if (!$lock) {
+            return $refused;
+        }
+        try {
+            return $this->submit_result_locked($userid, $season, $context, $result, $now ?? time());
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Does the work of submit_result() while the request holds the lock of the user.
+     *
+     * @param int $userid The player.
+     * @param \stdClass $season The active season.
+     * @param \context $context Context of the event the play fires.
+     * @param array $result Reported result: victory (bool) and bosshpdealt (int).
+     * @param int $now Reference time.
+     * @return array {success: bool, victory: bool, xpawarded: int, remaining: int}
+     */
+    private function submit_result_locked(int $userid, \stdClass $season, \context $context, array $result, int $now): array {
         $run = self::run_cache()->get($userid);
         if (!is_array($run)) {
             return ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0];
@@ -201,7 +229,6 @@ class battle_manager {
         // One result per battle: a repeated request finds nothing open.
         self::run_cache()->delete($userid);
 
-        $now      = $now ?? time();
         $gamedate = (int) $run['gamedate'];
         $total    = (int) $run['answered'];
         $correct  = (int) $run['correct'];
@@ -300,7 +327,8 @@ class battle_manager {
     /**
      * Turns a loaded question into the structure the browser receives.
      *
-     * Cartridge text is plain: it is escaped, and the feedback goes through the plain text format.
+     * Cartridge text is plain and is sent as it is: the page sets it as text, so no escape made here is relied
+     * on. The feedback goes through the plain text format and is HTML.
      *
      * @param quiz_question $question The loaded question.
      * @param string $key Its "source:sourceid" key.
@@ -310,13 +338,13 @@ class battle_manager {
     private function format_question(quiz_question $question, string $key, \context $context): array {
         $answers = [];
         foreach ($question->answers as $answer) {
-            $answers[] = ['text' => s($answer->text), 'correct' => $answer->correct];
+            $answers[] = ['text' => (string) $answer->text, 'correct' => $answer->correct];
         }
 
         $feedback = (string) ($question->generalfeedback ?? '');
         return [
             'key'          => $key,
-            'questiontext' => s($question->questiontext),
+            'questiontext' => (string) $question->questiontext,
             'feedback'     => $feedback === ''
                 ? ''
                 : format_text($feedback, FORMAT_PLAIN, ['context' => $context]),

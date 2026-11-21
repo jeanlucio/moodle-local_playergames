@@ -301,7 +301,8 @@ class quiz_play {
     /**
      * Turns a loaded question into what the play keeps: the display text and the right option.
      *
-     * Cartridge text is plain: it is escaped, and the feedback goes through the plain text format.
+     * Cartridge text is plain and is kept as it is: the template escapes it where it is shown, so nothing
+     * rendered there depends on an escape made here. The feedback goes through the plain text format.
      *
      * @param quiz_question $question The loaded question.
      * @param \context $context Context the text is filtered in.
@@ -311,7 +312,7 @@ class quiz_play {
         $answers = [];
         $correct = -1;
         foreach ($question->answers as $j => $answer) {
-            $answers[] = s($answer->text);
+            $answers[] = (string) $answer->text;
             if ($answer->correct && $correct < 0) {
                 $correct = (int) $j;
             }
@@ -322,7 +323,7 @@ class quiz_play {
             'key'          => "{$question->source}:{$question->sourceid}",
             'source'       => $question->source,
             'sourceid'     => (int) $question->sourceid,
-            'questiontext' => s($question->questiontext),
+            'questiontext' => (string) $question->questiontext,
             'answers'      => $answers,
             'correct'      => $correct,
             'feedback'     => $feedbackraw === ''

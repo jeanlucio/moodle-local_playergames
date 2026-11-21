@@ -104,6 +104,10 @@ final class fill_manager_test extends \advanced_testcase {
 
         set_config('fill_max_attempts', '0', 'local_playergames');
         $this->assertSame(fill_manager::DEFAULT_MAX_ATTEMPTS, fill_manager::max_attempts());
+
+        // A value saved before the setting had a range is cut to the ceiling.
+        set_config('fill_max_attempts', '1000000', 'local_playergames');
+        $this->assertSame(fill_manager::MAX_ATTEMPTS, fill_manager::max_attempts());
     }
 
     public function test_build_puzzle_assigns_shared_slot_to_repeated_letters(): void {

@@ -24,6 +24,7 @@
 
 namespace local_playergames\hub;
 
+use local_playergames\local\unique_row;
 use stdClass;
 
 /**
@@ -134,21 +135,12 @@ class avatar_manager {
      * @return stdClass Row from local_playergames_player_avatars.
      */
     public static function get_state(int $userid): stdClass {
-        global $DB;
-        $state = $DB->get_record('local_playergames_player_avatars', ['userid' => $userid]);
-        if ($state) {
-            return $state;
-        }
-        $now   = time();
-        $state = (object) [
-            'userid'          => $userid,
-            'bestlevel'       => 1,
-            'equipped_avatar' => null,
-            'timecreated'     => $now,
-            'timemodified'    => $now,
-        ];
-        $state->id = $DB->insert_record('local_playergames_player_avatars', $state);
-        return $state;
+        $now = time();
+        return unique_row::get_or_create(
+            'local_playergames_player_avatars',
+            ['userid' => $userid],
+            ['bestlevel' => 1, 'equipped_avatar' => null, 'timecreated' => $now, 'timemodified' => $now]
+        );
     }
 
     /**
@@ -165,9 +157,12 @@ class avatar_manager {
         global $DB;
         $state = self::get_state($userid);
         if ($level > (int) $state->bestlevel) {
-            $state->bestlevel    = $level;
-            $state->timemodified = time();
-            $DB->update_record('local_playergames_player_avatars', $state);
+            // Only the fields this method owns: the whole row would put back the avatar it had when it was read.
+            $DB->update_record('local_playergames_player_avatars', (object) [
+                'id'           => $state->id,
+                'bestlevel'    => $level,
+                'timemodified' => time(),
+            ]);
         }
     }
 
@@ -201,9 +196,13 @@ class avatar_manager {
         if ($emoji !== '' && !self::is_unlocked($emoji, (int) $state->bestlevel)) {
             throw new \moodle_exception('avatar_locked', 'local_playergames');
         }
-        $state->equipped_avatar = ($emoji === '') ? null : $emoji;
-        $state->timemodified    = time();
-        $DB->update_record('local_playergames_player_avatars', $state);
+        // Only the fields this method owns: the whole row would put back the best level it had when it was read,
+        // over a level reached in another tab meanwhile, and lock again the avatars that level unlocked.
+        $DB->update_record('local_playergames_player_avatars', (object) [
+            'id'              => $state->id,
+            'equipped_avatar' => ($emoji === '') ? null : $emoji,
+            'timemodified'    => time(),
+        ]);
     }
 
     /**

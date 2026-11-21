@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\event\achievement_earned;
+use local_playergames\local\user_lock;
 use stdClass;
 
 /**
@@ -153,8 +154,24 @@ class achievement_manager {
      * @param string $trigger  Event type: 'game_played', 'level_reached', 'streak_updated'.
      * @param array  $context  Contextual values (level, streak, gamedate, etc.).
      * @return void
+     * @throws \moodle_exception When another request of the user kept the lock for the whole timeout.
      */
     public static function check(int $userid, int $seasonid, string $trigger, array $context = []): void {
+        // The earned list is read and the new ones inserted under the lock of the user: two requests of the same
+        // moment would both find an achievement missing, and the unique key would end the second on an error.
+        user_lock::run($userid, fn() => self::check_locked($userid, $seasonid, $trigger, $context));
+    }
+
+    /**
+     * Does the work of check() while the request holds the lock of the user.
+     *
+     * @param int    $userid
+     * @param int    $seasonid Current season.
+     * @param string $trigger  Event type.
+     * @param array  $context  Contextual values.
+     * @return void
+     */
+    private static function check_locked(int $userid, int $seasonid, string $trigger, array $context): void {
         global $DB;
         $achievements  = self::get_definitions();
 

@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\local\access;
+use local_playergames\local\user_lock;
 use stdClass;
 
 /**
@@ -53,6 +54,37 @@ class checkin_manager {
         if (!$season) {
             return;
         }
+
+        // The hub calls this on every visit: a check-in already made today is seen without taking the lock.
+        // The same test is made again under the lock, where it decides.
+        $gamedate = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today = ['userid' => $userid, 'gamedate' => $gamedate, 'gametype' => 'checkin'];
+        if ($DB->record_exists('local_playergames_daily_scores', $today)) {
+            return;
+        }
+
+        // The check-in pays XP and moves the missions and the streak, which a game of the same moment also
+        // writes: both run under the lock of the user. When the lock stays taken, the next page checks in.
+        $lock = user_lock::acquire($userid);
+        if (!$lock) {
+            return;
+        }
+        try {
+            self::record_locked($userid, $season);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Does the work of record() while the request holds the lock of the user.
+     *
+     * @param int $userid The user checking in.
+     * @param stdClass $season The active season.
+     * @return void
+     */
+    private static function record_locked(int $userid, stdClass $season): void {
+        global $DB;
 
         $snapshot  = season_manager::get_config_snapshot($season);
         $checkinxp = isset($snapshot['xp_checkin_daily']) ? (int) $snapshot['xp_checkin_daily'] : 5;

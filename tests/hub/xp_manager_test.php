@@ -198,6 +198,26 @@ final class xp_manager_test extends \advanced_testcase {
         ]));
     }
 
+    /**
+     * An award leaves the ranking to the TTL of its cache; showing or hiding the name clears it at once.
+     *
+     * Regression test: every award, the daily check-in included, deleted both lists, so they were almost
+     * never warm and each Hub page rebuilt them, checking the access of every listed player.
+     */
+    public function test_award_leaves_the_ranking_cache_and_visibility_clears_it(): void {
+        $this->resetAfterTest();
+        $user     = $this->getDataGenerator()->create_user();
+        $seasonid = $this->make_season([]);
+        $cache    = \cache::make('local_playergames', 'ranking');
+        $cache->set('season_' . $seasonid . '_students', ['kept']);
+
+        xp_manager::award((int) $user->id, 10, 'quiz', mktime(0, 0, 0), $seasonid);
+        $this->assertSame(['kept'], $cache->get('season_' . $seasonid . '_students'));
+
+        xp_manager::set_ranking_visibility((int) $user->id, $seasonid, true);
+        $this->assertFalse($cache->get('season_' . $seasonid . '_students'));
+    }
+
     public function test_award_uncapped_mission_bypasses_cap(): void {
         $this->resetAfterTest();
         $this->redirectEvents();

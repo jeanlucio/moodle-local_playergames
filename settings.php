@@ -92,20 +92,20 @@ if ($hassiteconfig) {
         1
     ));
 
-    $page2->add(new admin_setting_configtext(
+    $page2->add(new \local_playergames\local\setting_int_range(
         'local_playergames/seasons_keep',
         get_string('settings_seasons_keep', 'local_playergames'),
         get_string('settings_seasons_keep_desc', 'local_playergames'),
-        '2',
-        PARAM_INT
+        2,
+        1
     ));
 
-    $page2->add(new admin_setting_configtext(
+    $page2->add(new \local_playergames\local\setting_int_range(
         'local_playergames/activitylog_keep',
         get_string('settings_activitylog_keep', 'local_playergames'),
         get_string('settings_activitylog_keep_desc', 'local_playergames'),
-        '12',
-        PARAM_INT
+        12,
+        0
     ));
 
     $ADMIN->add('playergames_rules', $page2);
@@ -204,12 +204,12 @@ if ($hassiteconfig) {
         '0'
     ));
 
-    $pagelearning->add(new admin_setting_configtext(
+    $pagelearning->add(new \local_playergames\local\setting_int_range(
         'local_playergames/learningxp_window_months',
         get_string('settings_learningxp_window_months', 'local_playergames'),
         get_string('settings_learningxp_window_months_desc', 'local_playergames'),
-        '12',
-        PARAM_INT
+        12,
+        0
     ));
 
     $ADMIN->add('playergames_rules', $pagelearning);
@@ -283,36 +283,37 @@ if ($hassiteconfig) {
         $sessionsizes
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/quiz_question_seconds',
         get_string('settings_quiz_question_seconds', 'local_playergames'),
         get_string('settings_quiz_question_seconds_desc', 'local_playergames'),
-        '120',
-        PARAM_INT
+        120,
+        0
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/quiz_max_attempts',
         get_string('settings_quiz_max_attempts', 'local_playergames'),
         get_string('settings_quiz_max_attempts_desc', 'local_playergames'),
-        '0',
-        PARAM_INT
+        0,
+        0
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/quiz_cooldown_minutes',
         get_string('settings_quiz_cooldown_minutes', 'local_playergames'),
         get_string('settings_quiz_cooldown_minutes_desc', 'local_playergames'),
-        '0',
-        PARAM_INT
+        0,
+        0
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/guess_max_attempts',
         get_string('settings_guess_max_attempts', 'local_playergames'),
         get_string('settings_guess_max_attempts_desc', 'local_playergames'),
-        '6',
-        PARAM_INT
+        6,
+        1,
+        \local_playergames\games\guess_manager::MAX_ATTEMPTS
     ));
 
     $page3->add(new \local_playergames\local\setting_word_length(
@@ -335,20 +336,22 @@ if ($hassiteconfig) {
         4
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/fill_num_words',
         get_string('settings_fill_num_words', 'local_playergames'),
         get_string('settings_fill_num_words_desc', 'local_playergames'),
-        '5',
-        PARAM_INT
+        5,
+        \local_playergames\games\fill_manager::MIN_NUM_WORDS,
+        \local_playergames\games\fill_manager::MAX_NUM_WORDS
     ));
 
-    $page3->add(new admin_setting_configtext(
+    $page3->add(new \local_playergames\local\setting_int_range(
         'local_playergames/fill_max_attempts',
         get_string('settings_fill_max_attempts', 'local_playergames'),
         get_string('settings_fill_max_attempts_desc', 'local_playergames'),
-        '4',
-        PARAM_INT
+        4,
+        1,
+        \local_playergames\games\fill_manager::MAX_ATTEMPTS
     ));
 
     $page3->add(new \local_playergames\local\setting_word_length(

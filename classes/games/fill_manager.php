@@ -55,6 +55,9 @@ class fill_manager {
     /** @var int Default maximum guesses allowed per word before the day is lost. */
     public const DEFAULT_MAX_ATTEMPTS = 4;
 
+    /** @var int Most guesses per word the setting accepts. */
+    public const MAX_ATTEMPTS = 10;
+
     /**
      * Returns the number of words assigned to PlayerFill each day.
      *
@@ -71,11 +74,11 @@ class fill_manager {
     /**
      * Returns the maximum number of guesses allowed per word before the day is lost.
      *
-     * @return int At least 1.
+     * @return int Between 1 and MAX_ATTEMPTS; a value saved before the setting had a range is cut.
      */
     public static function max_attempts(): int {
         $value = (int) get_config('local_playergames', 'fill_max_attempts');
-        return $value > 0 ? $value : self::DEFAULT_MAX_ATTEMPTS;
+        return $value > 0 ? min(self::MAX_ATTEMPTS, $value) : self::DEFAULT_MAX_ATTEMPTS;
     }
 
     /**

@@ -26,6 +26,8 @@ namespace local_playergames\hub;
 
 use local_playergames\event\streak_broken;
 use local_playergames\event\streak_updated;
+use local_playergames\local\unique_row;
+use local_playergames\local\user_lock;
 use stdClass;
 
 /**
@@ -51,8 +53,21 @@ class streak_manager {
      *
      * @param int $userid
      * @return void
+     * @throws \moodle_exception When another request of the user kept the lock for the whole timeout.
      */
     public static function record_activity(int $userid): void {
+        // The streak is read, advanced and written back: under the lock of the user, so the check-in and a game
+        // of the same moment do not both start from the old row.
+        user_lock::run($userid, fn() => self::record_activity_locked($userid));
+    }
+
+    /**
+     * Does the work of record_activity() while the request holds the lock of the user.
+     *
+     * @param int $userid
+     * @return void
+     */
+    private static function record_activity_locked(int $userid): void {
         global $DB;
         $today     = self::midnight_today();
         $yesterday = self::midnight_yesterday();
@@ -105,41 +120,71 @@ class streak_manager {
             ['yesterday' => $yesterday]
         );
 
-        foreach ($records as $streak) {
-            if ($streak->freezesavailable > 0) {
-                $streak->freezesavailable--;
-                // The freeze covers the day that was missed: count it as an active day, so that the next
-                // play continues the streak (record_activity() looks for activity yesterday) and the same
-                // missed day is not charged again tomorrow night.
-                $streak->lastactivedate = $yesterday;
-                $DB->update_record('local_playergames_streaks', $streak);
-                self::log_freeze((int) $streak->userid, 'used', 1, 'streak_break');
-
-                $event = streak_updated::create([
-                    'objectid' => $streak->id,
-                    'context'  => \context_system::instance(),
-                    'userid'   => (int) $streak->userid,
-                    'other'    => ['currentstreak' => $streak->currentstreak, 'freeze_used' => true],
-                ]);
-                $event->trigger();
-            } else {
-                $previousstreak = (int) $streak->currentstreak;
-                $streak->currentstreak = 0;
-                $DB->update_record('local_playergames_streaks', $streak);
-
-                $event = streak_broken::create([
-                    'objectid' => $streak->id,
-                    'context'  => \context_system::instance(),
-                    'userid'   => (int) $streak->userid,
-                    'other'    => ['previousstreak' => $previousstreak],
-                ]);
-                $event->trigger();
-                activity_log::record((int) $streak->userid, activity_log::TYPE_STREAK_BROKEN, 0, 'cron');
-                $broken++;
+        foreach ($records as $candidate) {
+            // A user who plays right after midnight advances the same row: the break is decided again on the row
+            // as it is now, under the lock of the user, or it would undo the play. A user whose lock stays taken
+            // is left for the next run, which still finds the missed day.
+            $lock = user_lock::acquire((int) $candidate->userid);
+            if (!$lock) {
+                continue;
+            }
+            try {
+                $broken += self::process_break_locked((int) $candidate->id, $yesterday);
+            } finally {
+                $lock->release();
             }
         }
 
         return $broken;
+    }
+
+    /**
+     * Breaks a streak, or spends a freeze on it, while the request holds the lock of its user.
+     *
+     * @param int $streakid The streak row.
+     * @param int $yesterday Midnight of yesterday.
+     * @return int 1 when the streak was broken, 0 when a freeze covered the day or nothing was due any more.
+     */
+    private static function process_break_locked(int $streakid, int $yesterday): int {
+        global $DB;
+        $streak = $DB->get_record('local_playergames_streaks', ['id' => $streakid]);
+        $due = $streak && (int) $streak->currentstreak > 0
+            && $streak->lastactivedate !== null && (int) $streak->lastactivedate < $yesterday;
+        if (!$due) {
+            return 0;
+        }
+        if ($streak->freezesavailable > 0) {
+            $streak->freezesavailable--;
+            // The freeze covers the day that was missed: count it as an active day, so that the next
+            // play continues the streak (record_activity() looks for activity yesterday) and the same
+            // missed day is not charged again tomorrow night.
+            $streak->lastactivedate = $yesterday;
+            $DB->update_record('local_playergames_streaks', $streak);
+            self::log_freeze((int) $streak->userid, 'used', 1, 'streak_break');
+
+            $event = streak_updated::create([
+                'objectid' => $streak->id,
+                'context'  => \context_system::instance(),
+                'userid'   => (int) $streak->userid,
+                'other'    => ['currentstreak' => $streak->currentstreak, 'freeze_used' => true],
+            ]);
+            $event->trigger();
+        } else {
+            $previousstreak = (int) $streak->currentstreak;
+            $streak->currentstreak = 0;
+            $DB->update_record('local_playergames_streaks', $streak);
+
+            $event = streak_broken::create([
+                'objectid' => $streak->id,
+                'context'  => \context_system::instance(),
+                'userid'   => (int) $streak->userid,
+                'other'    => ['previousstreak' => $previousstreak],
+            ]);
+            $event->trigger();
+            activity_log::record((int) $streak->userid, activity_log::TYPE_STREAK_BROKEN, 0, 'cron');
+            return 1;
+        }
+        return 0;
     }
 
     /** @var int Default cap on banked freezes when the setting is unset. */
@@ -155,12 +200,24 @@ class streak_manager {
      * @param int $userid
      * @param int $count Number of freezes to add (default 1).
      * @return int The number of freezes actually added (0 if at the cap).
+     * @throws \moodle_exception When another request of the user kept the lock for the whole timeout.
      */
     public static function add_freezes(int $userid, int $count = 1): int {
-        global $DB;
         if ($count <= 0) {
             return 0;
         }
+        return user_lock::run($userid, fn(): int => self::add_freezes_locked($userid, $count));
+    }
+
+    /**
+     * Does the work of add_freezes() while the request holds the lock of the user.
+     *
+     * @param int $userid
+     * @param int $count Number of freezes to add, above zero.
+     * @return int The number of freezes actually added.
+     */
+    private static function add_freezes_locked(int $userid, int $count): int {
+        global $DB;
         $max    = self::max_freezes();
         $streak = self::get_or_create($userid);
         if ((int) $streak->freezesavailable >= $max) {
@@ -235,19 +292,11 @@ class streak_manager {
      * @return stdClass
      */
     public static function get_or_create(int $userid): stdClass {
-        global $DB;
-        $streak = $DB->get_record('local_playergames_streaks', ['userid' => $userid]);
-        if ($streak) {
-            return $streak;
-        }
-        $record                   = new stdClass();
-        $record->userid           = $userid;
-        $record->currentstreak    = 0;
-        $record->longeststreak    = 0;
-        $record->freezesavailable = 0;
-        $record->lastactivedate   = null;
-        $record->id = $DB->insert_record('local_playergames_streaks', $record);
-        return $record;
+        return unique_row::get_or_create(
+            'local_playergames_streaks',
+            ['userid' => $userid],
+            ['currentstreak' => 0, 'longeststreak' => 0, 'freezesavailable' => 0, 'lastactivedate' => null]
+        );
     }
 
     /**

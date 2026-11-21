@@ -39,15 +39,21 @@ class guess_manager {
     /** @var int Default maximum guesses allowed before the term is revealed. */
     public const DEFAULT_MAX_ATTEMPTS = 6;
 
+    /** @var int Most guesses a day can allow: the board draws one row per guess. */
+    public const MAX_ATTEMPTS = 10;
+
     /**
      * Returns the maximum number of guesses allowed per day before the term is
      * revealed.
      *
-     * @return int At least 1.
+     * The setting refuses a value above MAX_ATTEMPTS, and a value saved before it did is cut here: the page
+     * builds one row of tiles per guess, and a large number made a board too big for the browser.
+     *
+     * @return int Between 1 and MAX_ATTEMPTS.
      */
     public static function max_attempts(): int {
         $value = (int) get_config('local_playergames', 'guess_max_attempts');
-        return $value > 0 ? $value : self::DEFAULT_MAX_ATTEMPTS;
+        return $value > 0 ? min(self::MAX_ATTEMPTS, $value) : self::DEFAULT_MAX_ATTEMPTS;
     }
 
     /**

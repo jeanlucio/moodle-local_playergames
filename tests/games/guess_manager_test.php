@@ -103,6 +103,10 @@ final class guess_manager_test extends \advanced_testcase {
 
         set_config('guess_max_attempts', '0', 'local_playergames');
         $this->assertSame(guess_manager::DEFAULT_MAX_ATTEMPTS, guess_manager::max_attempts());
+
+        // A value saved before the setting had a range is cut to the ceiling.
+        set_config('guess_max_attempts', '1000000', 'local_playergames');
+        $this->assertSame(guess_manager::MAX_ATTEMPTS, guess_manager::max_attempts());
     }
 
     public function test_is_valid_guess_checks_length_and_alphabet(): void {
