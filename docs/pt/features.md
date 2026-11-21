@@ -16,9 +16,9 @@
   página que você abre), com limite por temporada. Opcionalmente conta para o streak diário.
 * 🏆 **Player Hub — Ranking de Temporada:** Ranking com controle de privacidade (opt-in),
   desempate e separação por staff/estudante — ver [Como o Ranking Funciona](#ranking).
-* 📘 **Player Hub — XP de Aprendizado:** Um pool de XP opcional e separado, espelhado da
+* 📘 **Player Hub — XP dos cursos:** Um pool de XP opcional e separado, espelhado da
   atividade do estudante por curso no `block_playerhud`, com seu próprio ranking opt-in — ver
-  [XP de Aprendizado](#learning-xp).
+  [XP dos cursos](#learning-xp).
 * 🔥 **Player Hub — Streak e Freeze:** Acompanhamento de streak diário. Consumíveis de freeze
   evitam a perda de streak e são ganhos via missões; o check-in diário pode manter o streak vivo
   quando configurado.
@@ -30,8 +30,8 @@
   nível já alcançado pelo jogador, agrupados em 4 níveis configuráveis — ver
   [Avatares](#avatars).
 * 🕐 **Log Unificado de Atividade:** Um único log cronológico de todo evento de XP, streak e
-  freeze (XP de temporada, XP de aprendizado, freeze ganho/usado, streak quebrado), com um modal
-  de ajuda compartilhado explicando XP de temporada, XP de aprendizado, avatares e rankings.
+  freeze (XP de temporada, XP dos cursos, freeze ganho/usado, streak quebrado), com um modal
+  de ajuda compartilhado explicando XP de temporada, XP dos cursos, avatares e rankings.
 * 📦 **Sistema de Cartuchos:** Fonte de conteúdo para os minijogos. Múltiplos cartuchos ativos
   simultaneamente.
   * **Todos os jogos:** criação manual (editor inline), upload de JSON ou geração com IA (ver

@@ -49,6 +49,6 @@ minutos** e o hub apenas lê o resultado. Isso tem duas consequências para quem
 ## Escopo
 
 Esta página descreve o ranking de **temporada** (ligado ao XP de temporada e reiniciado quando
-uma temporada fecha). O [XP de Aprendizado](#learning-xp) tem seu próprio ranking separado,
+uma temporada fecha). O [XP dos cursos](#learning-xp) tem seu próprio ranking separado,
 único (não dividido por staff/estudante) e com seu próprio opt-in — veja aquela seção para
 detalhes.

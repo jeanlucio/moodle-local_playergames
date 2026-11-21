@@ -26,7 +26,7 @@ PostgreSQL & MariaDB).
 | `hub/mission_manager_test.php` | 7 | Mission sync, progress/completion with XP reward, daily and missed check-in resets |
 | `hub/achievement_manager_test.php` | 6 | Achievement sync, granting (first game/level/all-games-day), idempotency |
 | `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |
-| `observer_test.php` | 5 | `game_completed` drives streak/mission/achievement; records streak even without a season; mirrors `block_playerhud` XP changes into Learning XP |
+| `observer_test.php` | 5 | `game_completed` drives streak/mission/achievement; records streak even without a season; mirrors `block_playerhud` XP changes into Course XP |
 | `hook_callbacks_test.php` | 5 | Primary navigation link: the hub for a student, none after opting out, the dashboard for a teacher who opted out, none for a guest, and the staff lookup skipped (counted in queries) when gamification is on |
 | `games/quiz_loader_test.php` | 12 | Completeness filter, session size, active-only, id filter, metadata, random draw, fresh-question exclusion and pool reuse |
 | `games/quiz_settings_test.php` | 8 | Timer, max-attempts and cooldown configuration and their interaction |
@@ -36,7 +36,7 @@ PostgreSQL & MariaDB).
 | `games/season_game_config_test.php` | 7 | Source helpers; enabled-record lookup; per-season listing; default seeding and preservation |
 | `external/set_avatar_test.php` | 3 | Equip/unequip via the AJAX endpoint, rejecting a locked avatar |
 | `external/set_ranking_visibility_test.php` | 2 | Season ranking opt-in/opt-out toggle |
-| `external/set_learning_ranking_visibility_test.php` | 2 | Learning XP ranking opt-in/opt-out toggle |
+| `external/set_learning_ranking_visibility_test.php` | 2 | Course XP ranking opt-in/opt-out toggle |
 | `task/assign_daily_games_test.php` | 8 | Per-game concept assignment, PlayerFill's multi-concept assignment and pool-too-small skip, idempotency, no-cartridge and empty-cartridge cases, PlayerGuess eligibility filter, task name |
 | `task/reset_daily_missions_test.php` | 1 | Daily mission reset + streak break orchestration |
 | `task/close_expired_seasons_test.php` | 2 | Closes expired season; auto-renew creates and activates next |

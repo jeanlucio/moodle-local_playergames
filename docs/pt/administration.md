@@ -21,7 +21,7 @@ o destino dele.
 | | Níveis e títulos | Quanto XP cada nível exige e o título que ele dá. | Administrador do site |
 | | Avatares | A partir de que nível cada grupo de avatares é liberado. | Administrador do site |
 | | Sequência e congelamento | Como a sequência diária funciona e como se ganha um congelamento. | Administrador do site |
-| | XP de aprendizado | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
+| | XP dos cursos | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
 | **Ajuda e integrações** | Chaves de IA | Chaves usadas para gerar questões com IA. Só aparece com o plugin Central de IA instalado. | Administrador do site |
 | | Documentação | Este guia, em português e inglês. | Quem vê a aba |
 
@@ -52,8 +52,8 @@ Na página de temporadas cada temporada tem **Editar** e, exceto a ativa, **Excl
 
 As páginas do plugin em **Administração do site → Plugins → Plugins locais → PlayerGames** seguem os
 mesmos grupos: **Começar** (Cartuchos, Temporadas, Jogos da temporada), **Regras** (Participação e
-temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Avatares, Sequência e congelamento, XP de
-aprendizado) e **Acompanhamento** (Engajômetro). A aba Administração é um atalho para elas, não um
+temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Avatares, Sequência e congelamento, XP dos
+cursos) e **Acompanhamento** (Engajômetro). A aba Administração é um atalho para elas, não um
 substituto.
 
 Jogos da temporada abre a temporada ativa, ou a próxima se nenhuma estiver ativa. Sem nenhuma temporada,

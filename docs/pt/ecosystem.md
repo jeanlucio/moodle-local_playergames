@@ -16,7 +16,7 @@ transformam o Moodle em uma experiência imersiva:
 
 * **Bloco PlayerHUD:** XP, níveis, inventário, drops, missões, classes RPG, história, karma e
   ranking dentro de cada curso. Seu XP de curso pode opcionalmente espelhar para o pool de
-  [XP de Aprendizado](#learning-xp) do PlayerGames.
+  [XP dos cursos](#learning-xp) do PlayerGames.
   👉 [github.com/jeanlucio/moodle-block_playerhud](https://github.com/jeanlucio/moodle-block_playerhud)
 
 * **Filtro PlayerHUD:** Permite inserir drops de itens por meio de shortcodes no conteúdo do

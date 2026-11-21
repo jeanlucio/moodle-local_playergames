@@ -15,7 +15,7 @@ Moodle into an immersive experience:
 
 * **PlayerHUD Block:** XP, levels, inventory, drops, quests, RPG classes, story, karma, and
   ranking inside each course. Its course XP can optionally mirror into PlayerGames'
-  [Learning XP](#learning-xp) pool.
+  [Course XP](#learning-xp) pool.
   👉 [github.com/jeanlucio/moodle-block_playerhud](https://github.com/jeanlucio/moodle-block_playerhud)
 
 * **PlayerHUD Filter:** Enables item drops via shortcodes inside course content.

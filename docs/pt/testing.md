@@ -27,7 +27,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/mission_manager_test.php` | 7 | Sync de missão, progresso/conclusão com recompensa de XP, resets diário e de check-in perdido |
 | `hub/achievement_manager_test.php` | 6 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
-| `observer_test.php` | 5 | `game_completed` aciona streak/missão/conquista; registra streak mesmo sem temporada; espelha mudanças de XP do `block_playerhud` no XP de Aprendizado |
+| `observer_test.php` | 5 | `game_completed` aciona streak/missão/conquista; registra streak mesmo sem temporada; espelha mudanças de XP do `block_playerhud` no XP dos cursos |
 | `hook_callbacks_test.php` | 5 | Link na navegação principal: o hub para o estudante, nenhum depois de desativar a gamificação, o dashboard para o professor que a desativou, nenhum para visitante, e a consulta de equipe docente dispensada (contada em consultas) quando a gamificação está ligada |
 | `games/quiz_loader_test.php` | 12 | Filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados, sorteio aleatório, exclusão de questões já vistas e reuso do pool |
 | `games/quiz_settings_test.php` | 8 | Configuração de cronômetro, máximo de tentativas e cooldown, e como interagem |
@@ -37,7 +37,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `games/season_game_config_test.php` | 7 | Helpers de fonte; busca do registro habilitado; listagem por temporada; seed de defaults e preservação |
 | `external/set_avatar_test.php` | 3 | Equipar/desequipar via o endpoint AJAX, rejeitando um avatar bloqueado |
 | `external/set_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de temporada |
-| `external/set_learning_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de XP de Aprendizado |
+| `external/set_learning_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de XP dos cursos |
 | `task/assign_daily_games_test.php` | 8 | Atribuição de conceito por jogo, atribuição multi-conceito do PlayerFill e o caso de pool insuficiente, idempotência, casos sem cartucho e com cartucho vazio, filtro de elegibilidade do PlayerGuess, nome da tarefa |
 | `task/reset_daily_missions_test.php` | 1 | Orquestração do reset diário de missões + quebra de streak |
 | `task/close_expired_seasons_test.php` | 2 | Fecha temporada expirada; auto-renovação cria e ativa a próxima |

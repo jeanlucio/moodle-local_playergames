@@ -21,7 +21,7 @@ open where it leads.
 | | Levels and titles | How much XP each level takes and the title it gives. | Site administrator |
 | | Avatars | From which level each group of avatars is unlocked. | Site administrator |
 | | Streak and freeze | How the daily streak works and how a freeze is earned. | Site administrator |
-| | Learning XP | The XP courses give through PlayerHUD, shown apart from the season XP. | Site administrator |
+| | Course XP | The XP courses give through PlayerHUD, shown apart from the season XP. | Site administrator |
 | **Help and integrations** | AI keys | Keys used to generate questions with AI. Shown only when the AI Hub plugin is installed. | Site administrator |
 | | Documentation | This guide, in English and Portuguese. | Anyone who sees the tab |
 
@@ -52,7 +52,7 @@ On the seasons page each season has **Edit** and, unless it is the active one, *
 
 The plugin's pages in **Site administration → Plugins → Local plugins → PlayerGames** follow the same
 groups: **Get started** (Cartridges, Seasons, Season games), **Rules** (Participation and seasons, Game XP,
-Game rules, Levels and titles, Avatars, Streak and freeze, Learning XP) and **Monitoring** (Engagement
+Game rules, Levels and titles, Avatars, Streak and freeze, Course XP) and **Monitoring** (Engagement
 Meter). The Administration tab is a shortcut to them, not a replacement.
 
 Season games opens the active season, or the next one if none is active. With no season at all it leads

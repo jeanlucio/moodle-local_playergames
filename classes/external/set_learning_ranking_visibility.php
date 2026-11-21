@@ -49,7 +49,7 @@ class set_learning_ranking_visibility extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'show' => new external_value(PARAM_INT, '1 to appear in the learning ranking, 0 to hide'),
+            'show' => new external_value(PARAM_INT, '1 to appear in the course ranking, 0 to hide'),
         ]);
     }
 

@@ -15,9 +15,9 @@
   you open), capped per season. Optionally counts toward the daily streak.
 * 🏆 **Player Hub — Season Ranking:** Leaderboard with privacy controls (opt-in), tie-breaks and
   a staff/student split — see [Ranking Behavior](#ranking).
-* 📘 **Player Hub — Learning XP:** An optional, separate XP pool mirrored from a student's
+* 📘 **Player Hub — Course XP:** An optional, separate XP pool mirrored from a student's
   per-course activity in `block_playerhud`, with its own opt-in ranking — see
-  [Learning XP](#learning-xp).
+  [Course XP](#learning-xp).
 * 🔥 **Player Hub — Streak & Freeze:** Daily streak tracking. Freeze consumables prevent streak
   loss and are earned via missions; the daily check-in can keep the streak alive when configured.
 * 🎯 **Player Hub — Missions:** Daily, streak-based, cumulative XP, and victory-based missions
@@ -27,8 +27,8 @@
 * 🦊 **Player Hub — Avatar Collection:** Emoji avatars unlocked permanently by the highest level a
   player has ever reached, grouped into 4 configurable tiers — see [Avatars](#avatars).
 * 🕐 **Unified Activity Log:** A single, chronological log of every XP, streak and freeze event
-  (season XP, learning XP, freeze earned/used, streak broken), with a shared "how it works" help
-  modal explaining season XP, learning XP, avatars and rankings.
+  (season XP, course XP, freeze earned/used, streak broken), with a shared "how it works" help
+  modal explaining season XP, course XP, avatars and rankings.
 * 📦 **Cartridge System:** Content source for the mini-games. Supports multiple active cartridges
   simultaneously.
   * **All games:** manual creation (inline editor), JSON upload, or AI generation (see

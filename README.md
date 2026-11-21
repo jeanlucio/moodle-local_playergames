@@ -27,7 +27,7 @@ cartridges, and a companion sidebar block (`block_playergames`).
 
 📚 **[Full documentation](https://jeanlucio.github.io/moodle-local_playergames/)** — features,
 the Administration tab, the AI provider chain, the cartridge format, how the daily games (PlayerQuiz,
-PlayerGuess, PlayerFill and PlayerBattle) work, avatars, learning XP, ranking behavior, the educational
+PlayerGuess, PlayerFill and PlayerBattle) work, avatars, course XP, ranking behavior, the educational
 purpose, the PlayerGames ecosystem, the full test suite, and third-party service disclosure.
 
 ### 🔎 Third-party Service Disclosure
@@ -108,8 +108,8 @@ por cartuchos de conteúdo, e um bloco companheiro de sidebar (`block_playergame
 
 📚 **[Documentação completa](https://jeanlucio.github.io/moodle-local_playergames/pt.html)** —
 funcionalidades, a aba Administração, a cadeia de provedores de IA, o formato do cartucho, como os
-jogos diários (PlayerQuiz, PlayerGuess, PlayerFill e PlayerBattle) funcionam, avatares, XP de
-aprendizado, como o ranking funciona, a finalidade educacional, o ecossistema PlayerGames, a suíte
+jogos diários (PlayerQuiz, PlayerGuess, PlayerFill e PlayerBattle) funcionam, avatares, XP dos
+cursos, como o ranking funciona, a finalidade educacional, o ecossistema PlayerGames, a suíte
 completa de testes, e a divulgação de serviço de terceiros.
 
 ### 🔎 Divulgação de Serviço de Terceiros

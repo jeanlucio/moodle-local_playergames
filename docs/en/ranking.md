@@ -49,5 +49,5 @@ hub only reads the result. This has two consequences for administrators:
 ## Scope
 
 This page describes the **season** ranking (tied to season XP and reset when a season closes).
-[Learning XP](#learning-xp) has its own separate, single (not staff/student-split) ranking with
+[Course XP](#learning-xp) has its own separate, single (not staff/student-split) ranking with
 its own opt-in — see that section for details.
