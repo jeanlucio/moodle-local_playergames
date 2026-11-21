@@ -239,7 +239,7 @@ final class user_lock_test extends \advanced_testcase {
         $this->resetAfterTest();
         $busy = (int) $this->getDataGenerator()->create_user()->id;
         $free = (int) $this->getDataGenerator()->create_user()->id;
-        $old  = streak_manager::midnight_yesterday() - DAYSECS;
+        $old  = day::yesterday() - DAYSECS;
         foreach ([$busy, $free] as $userid) {
             $streak = streak_manager::get_or_create($userid);
             $DB->update_record('local_playergames_streaks', (object) [

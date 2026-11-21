@@ -24,6 +24,7 @@
 
 namespace local_playergames\hub;
 
+use local_playergames\local\day;
 use local_playergames\local\unique_row;
 use local_playergames\local\user_lock;
 use stdClass;
@@ -180,7 +181,7 @@ class mission_manager {
             }
             $mission  = $missions['daily'];
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if ($progress->completed && (int) $progress->timecompleted < mktime(0, 0, 0)) {
+            if ($progress->completed && (int) $progress->timecompleted < day::today()) {
                 // A mission completed on another day is over, whether or not the reset of midnight has run yet:
                 // the cron runs late on many sites, and today's play must not find yesterday's mission done.
                 $progress->completed     = 0;
@@ -230,7 +231,7 @@ class mission_manager {
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
             if (!$progress->completed) {
                 // Without a check-in yesterday the streak is broken, whether or not the reset of midnight has run.
-                $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => streak_manager::midnight_yesterday()];
+                $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => day::yesterday()];
                 if ($progress->currentvalue > 0 && !$DB->record_exists('local_playergames_daily_scores', $yesterday)) {
                     $progress->currentvalue = 0;
                 }
@@ -265,7 +266,7 @@ class mission_manager {
         }
         [$insql, $params] = $DB->get_in_or_equal($missionids, SQL_PARAMS_NAMED, 'mid');
         $params['seasonid'] = $seasonid;
-        $params['today'] = mktime(0, 0, 0);
+        $params['today'] = day::today();
         // The rows are found by the time they were completed, so that time is cleared last: once it is null the
         // condition no longer matches them.
         $where = "missionid {$insql} AND seasonid = :seasonid AND timecompleted < :today";

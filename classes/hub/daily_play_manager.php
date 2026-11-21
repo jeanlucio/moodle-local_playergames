@@ -29,6 +29,7 @@ use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
 use local_playergames\local\access;
+use local_playergames\local\day;
 use local_playergames\local\user_lock;
 use moodle_url;
 use stdClass;
@@ -248,7 +249,7 @@ class daily_play_manager {
     public static function get_games_today(int $userid, array $snapshot): array {
         global $DB;
 
-        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today = day::today();
         $activetypes = $DB->get_fieldset_sql(
             'SELECT DISTINCT type FROM {local_playergames_cartridges} WHERE active = 1'
         );
@@ -313,7 +314,7 @@ class daily_play_manager {
         if (in_array($gametype, self::SINGLE_ROUND_GAMES, true)) {
             // These games play the words the daily task drew, from the cartridges the season keeps for them:
             // an active concept cartridge is not enough when none of those words exists today.
-            $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+            $today = day::today();
             return $gametype === 'guess'
                 ? guess_manager::get_daily_concept($today) !== null
                 : count(fill_manager::get_daily_concepts($today)) >= 2;

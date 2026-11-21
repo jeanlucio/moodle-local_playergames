@@ -27,6 +27,7 @@ namespace local_playergames\hub;
 use cache;
 use local_playergames\event\level_reached;
 use local_playergames\local\access;
+use local_playergames\local\day;
 use local_playergames\local\preferences;
 use local_playergames\local\unique_row;
 use local_playergames\local\user_lock;
@@ -171,7 +172,7 @@ class xp_manager {
         if ($xp <= 0) {
             return 0;
         }
-        $today    = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today    = day::today();
         return self::award($userid, $xp, 'mission', $today, $seasonid);
     }
 

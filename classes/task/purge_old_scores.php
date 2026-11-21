@@ -25,6 +25,7 @@
 namespace local_playergames\task;
 
 use local_playergames\hub\season_summary;
+use local_playergames\local\day;
 
 /**
  * Removes the detailed data of seasons closed more than N seasons ago, and old activity history.
@@ -63,7 +64,7 @@ class purge_old_scores extends \core\task\scheduled_task {
 
         // The "already shown today" set is only relevant for the current day;
         // drop every earlier row so the table never accumulates.
-        $today        = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today        = day::today();
         $stalecount   = $DB->count_records_select(
             'local_playergames_served_questions',
             'gamedate < :today',

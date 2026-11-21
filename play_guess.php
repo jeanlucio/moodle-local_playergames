@@ -33,6 +33,7 @@ use local_playergames\games\guess_state;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\daily_play_manager;
 use local_playergames\hub\season_manager;
+use local_playergames\local\day;
 use local_playergames\local\game_page;
 
 require_login();
@@ -40,7 +41,7 @@ $context = context_system::instance();
 require_capability('local/playergames:viewhub', $context);
 \local_playergames\local\access::require_participant();
 
-$gamedate   = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+$gamedate   = day::today();
 $formaction = (new moodle_url('/local/playergames/play_guess.php'))->out(false);
 $maxattempts = guess_manager::max_attempts();
 

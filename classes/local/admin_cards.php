@@ -242,7 +242,7 @@ final class admin_cards {
         return get_string(
             'admin_state_season_upcoming',
             'local_playergames',
-            userdate((int) $season->startdate, get_string('strftimedate', 'langconfig'))
+            day::format((int) $season->startdate, get_string('strftimedate', 'langconfig'))
         );
     }
 

@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\local\access;
+use local_playergames\local\day;
 use local_playergames\local\user_lock;
 use stdClass;
 
@@ -57,7 +58,7 @@ class checkin_manager {
 
         // The hub calls this on every visit: a check-in already made today is seen without taking the lock.
         // The same test is made again under the lock, where it decides.
-        $gamedate = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $gamedate = day::today();
         $today = ['userid' => $userid, 'gamedate' => $gamedate, 'gametype' => 'checkin'];
         if ($DB->record_exists('local_playergames_daily_scores', $today)) {
             return;
@@ -88,7 +89,7 @@ class checkin_manager {
 
         $snapshot  = season_manager::get_config_snapshot($season);
         $checkinxp = isset($snapshot['xp_checkin_daily']) ? (int) $snapshot['xp_checkin_daily'] : 5;
-        $gamedate  = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $gamedate  = day::today();
 
         $alreadydone = $DB->record_exists(
             'local_playergames_daily_scores',

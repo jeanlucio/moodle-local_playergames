@@ -27,6 +27,7 @@ require(__DIR__ . '/../../config.php');
 use core\output\notification;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\season_summary;
+use local_playergames\local\day;
 
 require_login();
 $context = context_system::instance();
@@ -81,8 +82,8 @@ if (data_submitted()) {
         $name      = required_param('name', PARAM_TEXT);
         $startstr  = required_param('startdate', PARAM_TEXT);
         $endstr    = required_param('enddate', PARAM_TEXT);
-        $startdate = season_manager::date_to_timestamp($startstr, false);
-        $enddate   = season_manager::date_to_timestamp($endstr, true);
+        $startdate = day::from_date($startstr, false);
+        $enddate   = day::from_date($endstr, true);
 
         if (!$startdate || !$enddate || $enddate <= $startdate) {
             $notifications[] = $OUTPUT->notification(
@@ -95,8 +96,8 @@ if (data_submitted()) {
         }
     } else if ($action === 'update' && $seasonid > 0) {
         $name      = required_param('name', PARAM_TEXT);
-        $startdate = season_manager::date_to_timestamp(optional_param('startdate', '', PARAM_TEXT), false);
-        $enddate   = season_manager::date_to_timestamp(optional_param('enddate', '', PARAM_TEXT), true);
+        $startdate = day::from_date(optional_param('startdate', '', PARAM_TEXT), false);
+        $enddate   = day::from_date(optional_param('enddate', '', PARAM_TEXT), true);
         $existing  = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
         $closed    = $existing->status === season_manager::STATUS_CLOSED;
         if (!$closed && (!$startdate || !$enddate || $enddate <= $startdate)) {
@@ -148,8 +149,8 @@ foreach ($seasons as $season) {
     $seasondata[] = [
         'id'             => (int) $season->id,
         'name'           => $name,
-        'startdate'      => userdate($season->startdate, get_string('strftimedatefullshort', 'langconfig')),
-        'enddate'        => userdate($season->enddate, get_string('strftimedatefullshort', 'langconfig')),
+        'startdate'      => day::format((int) $season->startdate, get_string('strftimedatefullshort', 'langconfig')),
+        'enddate'        => day::format((int) $season->enddate, get_string('strftimedatefullshort', 'langconfig')),
         'status'         => get_string('season_status_' . $season->status, 'local_playergames'),
         'statusbadge'    => $statusbadge,
         'players'        => $playercount,
@@ -174,8 +175,8 @@ foreach ($seasons as $season) {
 }
 
 $months      = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
-$defaultstart = userdate(time(), '%Y-%m-%d');
-$defaultend   = userdate(\local_playergames\hub\season_manager::add_months(time(), $months), '%Y-%m-%d');
+$defaultstart = day::to_date(time());
+$defaultend   = day::to_date(season_manager::add_months(time(), $months));
 $nextnum      = $DB->count_records('local_playergames_seasons') + 1;
 $defaultname  = get_string('defaultseasonname', 'local_playergames');
 $defaultname  = preg_replace('/\d+$/', (string) $nextnum, $defaultname) ?? $defaultname;
@@ -218,8 +219,8 @@ if ($editing) {
     $templatedata['editing']         = true;
     $templatedata['lockdates']       = $editing->status === season_manager::STATUS_CLOSED;
     $templatedata['defaultname']     = (string) $editing->name;
-    $templatedata['defaultstart']    = userdate((int) $editing->startdate, '%Y-%m-%d');
-    $templatedata['defaultend']      = userdate((int) $editing->enddate, '%Y-%m-%d');
+    $templatedata['defaultstart']    = day::to_date((int) $editing->startdate);
+    $templatedata['defaultend']      = day::to_date((int) $editing->enddate);
 }
 
 echo $OUTPUT->header();

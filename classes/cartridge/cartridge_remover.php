@@ -24,6 +24,8 @@
 
 namespace local_playergames\cartridge;
 
+use local_playergames\local\day;
+
 /**
  * Deletes a cartridge, its content and the references other tables hold to it.
  *
@@ -96,7 +98,7 @@ class cartridge_remover {
             return false;
         }
 
-        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today = day::today();
         [$insql, $inparams] = $DB->get_in_or_equal($conceptids, SQL_PARAMS_NAMED);
         $gametypes = $DB->get_fieldset_select(
             'local_playergames_daily_assignments',

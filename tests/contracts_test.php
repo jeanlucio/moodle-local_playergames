@@ -73,7 +73,6 @@ final class contracts_test extends \advanced_testcase {
             'max_freezes' => 'reads a setting',
             'get_freeze_log' => 'reads',
             'get_or_create' => 'creates an empty row through unique_row, which settles a race on the unique key',
-            'midnight_yesterday' => 'computes',
         ],
         'hub\mission_manager' => [
             'sync' => 'writes the mission definitions, which belong to nobody',
@@ -267,6 +266,28 @@ final class contracts_test extends \advanced_testcase {
         }
 
         $this->assertSame(['classes/hub/checkin_manager.php', 'classes/hub/daily_play_manager.php'], $writers);
+    }
+
+    /**
+     * The midnight of the day is worked out in local\day only, and no date is read in the timezone of the user.
+     *
+     * Every play, daily word and season bound is compared with the others, so they must all come from the same
+     * midnight: a season read with make_timestamp(), in the timezone of the administrator, started and ended
+     * hours away from the midnight that dated the plays.
+     */
+    public function test_the_day_is_worked_out_in_one_place(): void {
+        global $CFG;
+        $own = "/mktime\\(0, 0, 0(\\)|, \\(int\\) date\\('n'(, \\\$[a-z]+)?\\), \\(int\\) date\\('j')"
+            . "|make_timestamp\\(|usergetmidnight\\(/";
+        $found = [];
+        foreach ($this->plugin_php_files() as $file) {
+            $source = file_get_contents($CFG->dirroot . '/local/playergames/' . $file);
+            if ($file !== 'classes/local/day.php' && preg_match($own, $source)) {
+                $found[] = $file;
+            }
+        }
+
+        $this->assertSame([], $found, 'Use local\\day for the midnight of a day and for typed dates.');
     }
 
     /**

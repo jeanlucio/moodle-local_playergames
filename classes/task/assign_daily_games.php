@@ -28,6 +28,7 @@ use core_text;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
+use local_playergames\local\day;
 
 /**
  * Picks a random concept from active cartridges for each concept-based game
@@ -102,7 +103,7 @@ class assign_daily_games extends \core\task\scheduled_task {
      */
     public function execute(): void {
         global $DB;
-        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today = day::today();
 
         $activeids = $DB->get_fieldset_select(
             'local_playergames_cartridges',

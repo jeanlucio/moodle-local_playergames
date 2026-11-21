@@ -24,6 +24,8 @@
 
 namespace local_playergames\hub;
 
+use local_playergames\local\day;
+
 /**
  * Unit tests for {@see streak_manager}.
  *
@@ -133,7 +135,7 @@ final class streak_manager_test extends \advanced_testcase {
         $streakid = (int) streak_manager::get_or_create((int) $user->id)->id;
 
         $method = new \ReflectionMethod(streak_manager::class, 'process_break_locked');
-        $broken = $method->invoke(null, $streakid, streak_manager::midnight_yesterday());
+        $broken = $method->invoke(null, $streakid, day::yesterday());
 
         $this->assertSame(0, $broken);
         $streak = streak_manager::get_or_create((int) $user->id);
@@ -306,26 +308,5 @@ final class streak_manager_test extends \advanced_testcase {
         $this->assertSame([3, 2], array_map(fn($entry) => (int) $entry->amount, $log));
         $this->assertCount(3, streak_manager::get_freeze_log((int) $user->id));
         $this->assertSame([], streak_manager::get_freeze_log((int) $this->getDataGenerator()->create_user()->id));
-    }
-
-    /**
-     * "Yesterday" is the midnight of the previous calendar day even on the two days a year the clocks
-     * change, when the day has 25 or 23 hours.
-     */
-    public function test_midnight_yesterday_is_the_previous_calendar_midnight_on_the_days_the_clocks_change(): void {
-        $this->resetAfterTest();
-        $this->setTimezone('Europe/Lisbon', 'Europe/Lisbon');
-
-        // The clocks went back on 25 October 2026 (a 25-hour day) and forward on 29 March 2026 (23 hours).
-        foreach ([[2026, 10, 26], [2026, 10, 25], [2026, 3, 30], [2026, 3, 29], [2026, 6, 15]] as [$year, $month, $day]) {
-            $now = mktime(12, 0, 0, $month, $day, $year);
-
-            $expected = mktime(0, 0, 0, $month, $day - 1, $year);
-            $this->assertSame($expected, streak_manager::midnight_yesterday($now), "{$year}-{$month}-{$day}");
-            $this->assertSame('000000', date('His', $expected));
-        }
-        // The old arithmetic missed on the day after the clocks went back.
-        $monday = mktime(0, 0, 0, 10, 26, 2026);
-        $this->assertNotSame($monday - DAYSECS, streak_manager::midnight_yesterday(mktime(12, 0, 0, 10, 26, 2026)));
     }
 }

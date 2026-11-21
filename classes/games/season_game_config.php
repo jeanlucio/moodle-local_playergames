@@ -25,6 +25,7 @@
 namespace local_playergames\games;
 
 use local_playergames\hub\season_manager;
+use local_playergames\local\day;
 
 /**
  * Reads per-season game configuration from local_playergames_season_games.
@@ -125,7 +126,7 @@ class season_game_config {
     public static function release_todays_words_outside(int $seasonid): bool {
         global $DB;
 
-        $today = mktime(0, 0, 0, (int) date('n'), (int) date('j'), (int) date('Y'));
+        $today = day::today();
         $dropped = false;
         foreach (['guess', 'fill'] as $gametype) {
             $config = $DB->get_record('local_playergames_season_games', ['seasonid' => $seasonid, 'gametype' => $gametype]);
