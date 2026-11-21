@@ -40,10 +40,12 @@
                 "exhausted": false,
                 "revealword": "",
                 "canguess": true,
-                "attemptsused": 0
+                "attemptsused": 0,
+                "attemptsleft": "Attempts left for this word: 4"
             }
         ],
         "huburl": "/local/playergames/hub.php",
+        "str_instructions": "Each row hides a word; its clue is below the tiles. Tiles with the same number hide the same letter.",
         "str_already_played": "You have already played PlayerFill today.",
         "str_no_concept": "No terms available.",
         "str_revealed_title": "Out of attempts",
@@ -97,6 +99,8 @@
          data-str-invalid="{{str_invalid}}"
          data-str-error="{{#cleanstr}} fill_submit_error, local_playergames {{/cleanstr}}">
 
+        <p class="pg-fill-instructions">{{str_instructions}}</p>
+
         <div id="pg-fill-message" class="text-danger small mb-2" role="alert" aria-live="polite">&nbsp;</div>
 
         <div id="pg-fill-rows" class="pg-fill-rows">
@@ -124,6 +128,7 @@
                            autocomplete="off" autocapitalize="characters">
                     <button type="button" class="pg-fill-submit btn btn-primary btn-sm">{{str_submit}}</button>
                 </div>
+                <div class="pg-fill-attempts small{{^canguess}} d-none{{/canguess}}" data-region="attempts">{{attemptsleft}}</div>
 
                 {{#revealword}}
                 <div class="pg-fill-revealword text-muted small">{{revealword}}</div>

@@ -382,4 +382,101 @@ final class assign_daily_games_test extends \advanced_testcase {
 
         $this->assertSame(get_string('task_assign_daily_games', 'local_playergames'), (new assign_daily_games())->get_name());
     }
+
+    /**
+     * Adds concepts to a cartridge.
+     *
+     * @param int $cartridgeid The cartridge.
+     * @param string[] $terms The terms, each with a made-up definition.
+     * @return int[] Concept ids keyed by term.
+     */
+    private function add_terms(int $cartridgeid, array $terms): array {
+        global $DB;
+        $ids = [];
+        foreach ($terms as $term) {
+            $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
+                'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => "About {$term}",
+                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+            ]);
+        }
+        return $ids;
+    }
+
+    /**
+     * The terms a game was given today.
+     *
+     * @param string $gametype The game.
+     * @return string[]
+     */
+    private function terms_of(string $gametype): array {
+        global $DB;
+        return $DB->get_fieldset_sql(
+            "SELECT c.term
+               FROM {local_playergames_daily_assignments} a
+               JOIN {local_playergames_concepts} c ON c.id = a.conceptid
+              WHERE a.gamedate = :today AND a.gametype = :gametype",
+            ['today' => mktime(0, 0, 0), 'gametype' => $gametype]
+        );
+    }
+
+    /**
+     * PlayerFill leaves out the word of PlayerGuess while other words are enough for the puzzle.
+     *
+     * Regression test: both games drew from the same cartridge independently, so the word of PlayerGuess could be
+     * one of the words of PlayerFill, and solving one game gave the answer of the other away.
+     */
+    public function test_fill_leaves_out_the_word_of_guess(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridgeid = $this->seed_concepts();
+        $this->add_terms($cartridgeid, ['cloud', 'grass', 'light']);
+
+        // The draw is random: repeated, a shared word would show up in some of the runs.
+        for ($run = 0; $run < 15; $run++) {
+            $this->run_task();
+            $guess = $this->terms_of('guess');
+            $this->assertCount(1, $guess);
+            $this->assertNotContains($guess[0], $this->terms_of('fill'));
+            $this->assertCount(fill_manager::num_words(), $this->terms_of('fill'));
+            $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => mktime(0, 0, 0)]);
+        }
+    }
+
+    /**
+     * With no other word left, PlayerFill takes the word of PlayerGuess rather than skipping the day.
+     */
+    public function test_fill_takes_the_word_of_guess_when_nothing_else_is_left(): void {
+        $this->resetAfterTest();
+        $this->seed_concepts();
+
+        $this->run_task();
+
+        $this->assertCount(fill_manager::num_words(), $this->terms_of('fill'));
+        $this->assertContains($this->terms_of('guess')[0], $this->terms_of('fill'));
+    }
+
+    /**
+     * A word of PlayerGuess drawn again later in the day avoids the words of PlayerFill, by term and not only by
+     * concept: two cartridges can hold the same word.
+     */
+    public function test_guess_drawn_after_fill_avoids_its_words(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $first = $this->seed_concepts();
+        $this->run_task();
+        $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => mktime(0, 0, 0), 'gametype' => 'guess']);
+
+        // The same words again in a second cartridge, plus one word only PlayerGuess can take.
+        $now = time();
+        $second = (int) $DB->insert_record('local_playergames_cartridges', (object) [
+            'name' => 'Copy', 'version' => '1.0', 'language' => 'en', 'type' => 'concept',
+            'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => 1,
+        ]);
+        $this->add_terms($second, ['apple', 'table', 'planet', 'river', 'stone']);
+        $this->add_terms($first, ['ocean']);
+
+        $this->run_task();
+
+        $this->assertSame(['ocean'], $this->terms_of('guess'));
+    }
 }

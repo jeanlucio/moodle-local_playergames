@@ -27,6 +27,7 @@ namespace local_playergames\hub;
 use local_playergames\event\season_closed;
 use local_playergames\event\season_created;
 use local_playergames\games\season_game_config;
+use local_playergames\local\day;
 use stdClass;
 
 /**
@@ -221,18 +222,16 @@ class season_manager {
      */
     public static function close(int $seasonid): void {
         global $DB, $USER;
-        $DB->set_field(
-            'local_playergames_seasons',
-            'status',
-            self::STATUS_CLOSED,
-            ['id' => $seasonid]
-        );
-        $DB->set_field(
-            'local_playergames_seasons',
-            'timemodified',
-            time(),
-            ['id' => $seasonid]
-        );
+        $season = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
+        $record = (object) ['id' => $seasonid, 'status' => self::STATUS_CLOSED, 'timemodified' => time()];
+
+        // A season closed before its planned end ends today: the purge and the deletion remove the plays of the
+        // season by its dates, and the days it never used belong to whichever season comes next.
+        $endoftoday = day::from_date(day::to_date(time()), true);
+        if ((int) $season->enddate > $endoftoday && (int) $season->startdate <= $endoftoday) {
+            $record->enddate = $endoftoday;
+        }
+        $DB->update_record('local_playergames_seasons', $record);
 
         $event = season_closed::create([
             'objectid' => $seasonid,
@@ -273,6 +272,52 @@ class season_manager {
         }
         $record->timemodified = time();
         $DB->update_record('local_playergames_seasons', $record);
+    }
+
+    /**
+     * Returns a season whose days cross the given dates, if any.
+     *
+     * Seasons never share a day: the purge and the deletion remove the plays of a season by its dates, so a shared
+     * day would take the plays of the other season with it.
+     *
+     * @param int $startdate Midnight of the first day.
+     * @param int $enddate Last second of the last day.
+     * @param int $excludeid A season left out of the check, the one being edited.
+     * @return stdClass|null The first season found, by start date.
+     */
+    public static function find_overlap(int $startdate, int $enddate, int $excludeid = 0): ?stdClass {
+        global $DB;
+        $records = $DB->get_records_select(
+            'local_playergames_seasons',
+            'id <> :id AND startdate <= :end AND enddate >= :start',
+            ['id' => $excludeid, 'start' => $startdate, 'end' => $enddate],
+            'startdate ASC',
+            'id, name, startdate, enddate',
+            0,
+            1
+        );
+        return $records ? reset($records) : null;
+    }
+
+    /**
+     * The message shown when the dates of a season cross another season, or null when they do not.
+     *
+     * @param int $startdate Midnight of the first day.
+     * @param int $enddate Last second of the last day.
+     * @param int $excludeid The season being edited, or 0.
+     * @return string|null HTML-safe text for a notification.
+     */
+    public static function overlap_error(int $startdate, int $enddate, int $excludeid = 0): ?string {
+        $other = self::find_overlap($startdate, $enddate, $excludeid);
+        if ($other === null) {
+            return null;
+        }
+        $format = get_string('strftimedatefullshort', 'langconfig');
+        return get_string('error_season_overlap', 'local_playergames', (object) [
+            'name' => s(\local_playergames\local\text::plain($other->name)),
+            'start' => day::format((int) $other->startdate, $format),
+            'end' => day::format((int) $other->enddate, $format),
+        ]);
     }
 
     /**

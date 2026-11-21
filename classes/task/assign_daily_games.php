@@ -128,7 +128,8 @@ class assign_daily_games extends \core\task\scheduled_task {
             }
 
             $pool = $this->season_cartridges($gametype, $activeids);
-            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $minlen, $maxlen);
+            $avoid = $this->terms_assigned_today('fill', $today);
+            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $minlen, $maxlen, $avoid);
             if ($conceptid === null) {
                 $this->report("No eligible concept found for {$gametype} — skipping.");
                 continue;
@@ -237,21 +238,17 @@ class assign_daily_games extends \core\task\scheduled_task {
         $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
 
         $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
-        $ids = [];
-        foreach ($rows as $row) {
-            $normalized = guess_manager::normalize($row->term);
-            if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
-                $ids[] = (int) $row->id;
-            }
-        }
+        [$fresh, $avoided] = $this->split_by_terms($rows, $this->terms_assigned_today('guess', $today));
 
-        if (count($ids) < $numwords) {
+        if (count($fresh) + count($avoided) < $numwords) {
             $this->report('Not enough eligible concepts for fill — skipping.');
             return;
         }
 
-        shuffle($ids);
-        $chosen = array_slice($ids, 0, $numwords);
+        // The word of PlayerGuess goes in only when the others are not enough for the puzzle.
+        shuffle($fresh);
+        shuffle($avoided);
+        $chosen = array_slice(array_merge($fresh, $avoided), 0, $numwords);
 
         $records = [];
         foreach ($chosen as $conceptid) {
@@ -271,9 +268,11 @@ class assign_daily_games extends \core\task\scheduled_task {
      * @param int[] $cartridgeids Active cartridge IDs.
      * @param int $minlen Minimum term length.
      * @param int $maxlen Maximum term length.
+     * @param array $avoid Normalized terms already in another game today, keyed by term: used only when nothing else
+     *                     is left.
      * @return int|null Concept ID or null if none found.
      */
-    private function pick_concept(array $cartridgeids, int $minlen, int $maxlen): ?int {
+    private function pick_concept(array $cartridgeids, int $minlen, int $maxlen, array $avoid = []): ?int {
         global $DB;
 
         [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
@@ -284,18 +283,61 @@ class assign_daily_games extends \core\task\scheduled_task {
         $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
 
         $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
-        $ids = [];
-        foreach ($rows as $row) {
-            $normalized = guess_manager::normalize($row->term);
-            if (guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
-                $ids[] = (int) $row->id;
-            }
-        }
-
-        if (empty($ids)) {
+        [$fresh, $avoided] = $this->split_by_terms($rows, $avoid);
+        // A word another game uses today is drawn only when no other is left.
+        $choices = $fresh !== [] ? $fresh : $avoided;
+        if ($choices === []) {
             return null;
         }
+        return (int) $choices[array_rand($choices)];
+    }
 
-        return (int) $ids[array_rand($ids)];
+    /**
+     * Splits the letters-only concepts among the rows into the ones whose term is free and the ones in $avoid.
+     *
+     * @param \stdClass[] $rows Concepts with id and term.
+     * @param array $avoid Normalized terms to keep apart, keyed by term.
+     * @return array [int[] $fresh, int[] $avoided]
+     */
+    private function split_by_terms(array $rows, array $avoid): array {
+        $fresh = [];
+        $avoided = [];
+        foreach ($rows as $row) {
+            $normalized = guess_manager::normalize($row->term);
+            if (!guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
+                continue;
+            }
+            if (isset($avoid[$normalized])) {
+                $avoided[] = (int) $row->id;
+            } else {
+                $fresh[] = (int) $row->id;
+            }
+        }
+        return [$fresh, $avoided];
+    }
+
+    /**
+     * The normalized terms another game was given today.
+     *
+     * The same word in PlayerGuess and PlayerFill on one day gives the answer of one game away in the other.
+     *
+     * @param string $gametype The game whose words to read.
+     * @param int $today Midnight of today.
+     * @return array Keyed by normalized term.
+     */
+    private function terms_assigned_today(string $gametype, int $today): array {
+        global $DB;
+        $terms = $DB->get_fieldset_sql(
+            "SELECT c.term
+               FROM {local_playergames_daily_assignments} a
+               JOIN {local_playergames_concepts} c ON c.id = a.conceptid
+              WHERE a.gamedate = :today AND a.gametype = :gametype",
+            ['today' => $today, 'gametype' => $gametype]
+        );
+        $avoid = [];
+        foreach ($terms as $term) {
+            $avoid[guess_manager::normalize($term)] = true;
+        }
+        return $avoid;
     }
 }

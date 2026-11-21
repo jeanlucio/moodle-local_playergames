@@ -652,6 +652,15 @@ body.path-local-playergames .pg-fill-input {
     text-transform: uppercase;
 }
 
+body.path-local-playergames .pg-fill-instructions {
+    font-size: 0.9rem;
+    margin-block-end: 0.75rem;
+}
+
+body.path-local-playergames .pg-fill-attempts {
+    margin-block-start: 0.25rem;
+}
+
 /* ── Level configuration table ───────────────────────────────────── */
 
 body.path-local-playergames .pg-levels-num-col {
@@ -660,6 +669,45 @@ body.path-local-playergames .pg-levels-num-col {
 
 body.path-local-playergames .pg-levels-xp-col {
     width: 12rem;
+}
+
+/* ── Hub: layout ──────────────────────────────────────────────────── */
+
+/* On a phone the cards stack in the order of the page, with today's games right under the profile: below the
+   missions and the ranking, the games were a long scroll away. On a wide screen the profile and the missions
+   take the left column and the games sit above the ranking on the right. */
+body.path-local-playergames .pg-hub-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 992px) {
+    body.path-local-playergames .pg-hub-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        grid-template-areas:
+            "profile games"
+            "profile ranking"
+            "missions ranking";
+        grid-template-rows: auto auto 1fr;
+        align-items: start;
+    }
+
+    body.path-local-playergames .pg-hub-area-profile {
+        grid-area: profile;
+    }
+
+    body.path-local-playergames .pg-hub-area-games {
+        grid-area: games;
+    }
+
+    body.path-local-playergames .pg-hub-area-missions {
+        grid-area: missions;
+    }
+
+    body.path-local-playergames .pg-hub-area-ranking {
+        grid-area: ranking;
+    }
 }
 
 /* ── Hub: ranking table and mission progress bar ─────────────────── */

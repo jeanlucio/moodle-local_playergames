@@ -218,13 +218,14 @@ final class season_manager_test extends \advanced_testcase {
         $season = season_manager::create('Done', $start, $start + DAYSECS);
         season_manager::activate((int) $season->id);
         season_manager::close((int) $season->id);
+        $closed = $DB->get_record('local_playergames_seasons', ['id' => $season->id], '*', MUST_EXIST);
 
         season_manager::update((int) $season->id, 'Renamed', $start + (DAYSECS * 5), $start + (DAYSECS * 6));
 
         $record = $DB->get_record('local_playergames_seasons', ['id' => $season->id], '*', MUST_EXIST);
         $this->assertSame('Renamed', $record->name);
-        $this->assertEquals($start, $record->startdate);
-        $this->assertEquals($start + DAYSECS, $record->enddate);
+        $this->assertEquals($closed->startdate, $record->startdate);
+        $this->assertEquals($closed->enddate, $record->enddate);
         $this->assertSame(season_manager::STATUS_CLOSED, $record->status);
     }
 
@@ -374,5 +375,85 @@ final class season_manager_test extends \advanced_testcase {
         foreach ($cases as [$start, $months, $expected]) {
             $this->assertSame($expected, season_manager::add_months($start, $months), date('c', $start) . " + {$months}");
         }
+    }
+
+    /**
+     * A season closed before its planned end ends today.
+     *
+     * Regression test: the planned end was kept, so a season closed early still covered the days of the next
+     * season, and its purge or deletion, which go by its dates, took the plays of that season with it.
+     */
+    public function test_closing_before_the_planned_end_ends_the_season_today(): void {
+        global $DB;
+        $start = day::from_date(day::to_date(time() - 10 * DAYSECS), false);
+        $season = season_manager::create('Early', $start, day::from_date(day::to_date(time() + 60 * DAYSECS), true));
+        season_manager::activate((int) $season->id);
+
+        season_manager::close((int) $season->id);
+
+        $row = $DB->get_record('local_playergames_seasons', ['id' => $season->id]);
+        $this->assertSame(day::from_date(day::to_date(time()), true), (int) $row->enddate);
+        $this->assertSame($start, (int) $row->startdate);
+    }
+
+    /**
+     * A season closed after its end, as the scheduled task does, keeps the end it had.
+     */
+    public function test_closing_an_expired_season_keeps_its_end(): void {
+        global $DB;
+        $end = day::from_date(day::to_date(time() - 2 * DAYSECS), true);
+        $season = season_manager::create('Done', $end - 30 * DAYSECS, $end);
+        season_manager::activate((int) $season->id);
+
+        season_manager::close((int) $season->id);
+
+        $this->assertSame($end, (int) $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $season->id]));
+    }
+
+    /**
+     * A season that has not started yet keeps its dates when closed, so its end never comes before its start.
+     */
+    public function test_closing_a_season_that_has_not_started_keeps_its_dates(): void {
+        global $DB;
+        $start = day::from_date(day::to_date(time() + 5 * DAYSECS), false);
+        $end = day::from_date(day::to_date(time() + 40 * DAYSECS), true);
+        $season = season_manager::create('Future', $start, $end);
+        season_manager::activate((int) $season->id);
+
+        season_manager::close((int) $season->id);
+
+        $this->assertSame($end, (int) $DB->get_field('local_playergames_seasons', 'enddate', ['id' => $season->id]));
+    }
+
+    public function test_find_overlap_finds_a_season_sharing_a_day(): void {
+        $first = season_manager::create('First', day::from_date('2026-01-01', false), day::from_date('2026-01-31', true));
+        season_manager::create('Later', day::from_date('2026-03-01', false), day::from_date('2026-03-31', true));
+
+        $sameday = season_manager::find_overlap(day::from_date('2026-01-31', false), day::from_date('2026-02-20', true));
+        $this->assertSame((int) $first->id, (int) $sameday->id);
+        $this->assertNull(season_manager::find_overlap(day::from_date('2026-02-01', false), day::from_date('2026-02-28', true)));
+        $inside = season_manager::find_overlap(day::from_date('2026-01-10', false), day::from_date('2026-01-12', true));
+        $this->assertSame((int) $first->id, (int) $inside->id);
+        $around = season_manager::find_overlap(day::from_date('2025-12-01', false), day::from_date('2026-02-10', true));
+        $this->assertSame((int) $first->id, (int) $around->id);
+    }
+
+    public function test_find_overlap_leaves_out_the_season_being_edited(): void {
+        $season = season_manager::create('Self', day::from_date('2026-01-01', false), day::from_date('2026-01-31', true));
+
+        $this->assertNull(season_manager::find_overlap(
+            day::from_date('2026-01-05', false),
+            day::from_date('2026-02-15', true),
+            (int) $season->id
+        ));
+    }
+
+    public function test_overlap_error_names_the_other_season(): void {
+        season_manager::create('Fish & Chips', day::from_date('2026-01-01', false), day::from_date('2026-01-31', true));
+
+        $message = season_manager::overlap_error(day::from_date('2026-01-20', false), day::from_date('2026-02-20', true));
+
+        $this->assertStringContainsString('Fish &amp; Chips', $message);
+        $this->assertNull(season_manager::overlap_error(day::from_date('2026-02-01', false), day::from_date('2026-02-20', true)));
     }
 }

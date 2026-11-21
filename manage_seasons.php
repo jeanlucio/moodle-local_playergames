@@ -67,6 +67,25 @@ if (!data_submitted() && $seasonid > 0) {
         echo $OUTPUT->footer();
         exit;
     }
+    if ($action === 'close' && $target->status === season_manager::STATUS_ACTIVE) {
+        $message = get_string('season_close_confirm', 'local_playergames', (object) [
+            'name' => s(\local_playergames\local\text::plain($target->name)),
+            'today' => day::format(time(), get_string('strftimedatefullshort', 'langconfig')),
+        ]);
+        echo $OUTPUT->header();
+        echo $OUTPUT->confirm(
+            $message,
+            new single_button(
+                new moodle_url($PAGE->url, ['action' => 'close', 'seasonid' => $seasonid]),
+                get_string('season_close', 'local_playergames'),
+                'post',
+                single_button::BUTTON_DANGER
+            ),
+            $PAGE->url
+        );
+        echo $OUTPUT->footer();
+        exit;
+    }
     if ($action === 'edit') {
         $editing = $target;
     }
@@ -85,11 +104,14 @@ if (data_submitted()) {
         $startdate = day::from_date($startstr, false);
         $enddate   = day::from_date($endstr, true);
 
+        $overlap = ($startdate && $enddate) ? season_manager::overlap_error($startdate, $enddate, 0) : null;
         if (!$startdate || !$enddate || $enddate <= $startdate) {
             $notifications[] = $OUTPUT->notification(
                 get_string('error_season_invalid_dates', 'local_playergames'),
                 'error'
             );
+        } else if ($overlap !== null) {
+            $notifications[] = $OUTPUT->notification($overlap, 'error');
         } else {
             season_manager::create($name, $startdate, $enddate);
             $done = ['season_created_ok', notification::NOTIFY_SUCCESS];
@@ -100,11 +122,16 @@ if (data_submitted()) {
         $enddate   = day::from_date(optional_param('enddate', '', PARAM_TEXT), true);
         $existing  = $DB->get_record('local_playergames_seasons', ['id' => $seasonid], '*', MUST_EXIST);
         $closed    = $existing->status === season_manager::STATUS_CLOSED;
+        $overlap   = (!$closed && $startdate && $enddate)
+            ? season_manager::overlap_error($startdate, $enddate, $seasonid) : null;
         if (!$closed && (!$startdate || !$enddate || $enddate <= $startdate)) {
             $notifications[] = $OUTPUT->notification(
                 get_string('error_season_invalid_dates', 'local_playergames'),
                 'error'
             );
+            $editing = $existing;
+        } else if ($overlap !== null) {
+            $notifications[] = $OUTPUT->notification($overlap, 'error');
             $editing = $existing;
         } else {
             season_manager::update($seasonid, $name, $startdate, $enddate);
@@ -136,8 +163,9 @@ if (data_submitted()) {
 
 $seasons    = $DB->get_records('local_playergames_seasons', null, 'timecreated DESC');
 $seasondata = [];
+$playercounts = season_summary::count_players_by_season();
 foreach ($seasons as $season) {
-    $playercount = season_summary::count_players((int) $season->id);
+    $playercount = $playercounts[(int) $season->id] ?? 0;
     if ($season->status === season_manager::STATUS_ACTIVE) {
         $statusbadge = 'pg-badge-success';
     } else if ($season->status === season_manager::STATUS_UPCOMING) {
@@ -166,6 +194,10 @@ foreach ($seasons as $season) {
             ['action' => 'delete', 'seasonid' => (int) $season->id]
         ))->out(false),
         'editlabel'      => get_string('season_edit_aria', 'local_playergames', $name),
+        'closeurl'       => (new moodle_url(
+            '/local/playergames/manage_seasons.php',
+            ['action' => 'close', 'seasonid' => (int) $season->id]
+        ))->out(false),
         'deletelabel'    => get_string('season_delete_aria', 'local_playergames', $name),
         'gameconfigurl'  => (new moodle_url(
             '/local/playergames/manage_season_games.php',
@@ -175,8 +207,14 @@ foreach ($seasons as $season) {
 }
 
 $months      = max(1, (int) get_config('local_playergames', 'season_duration_months') ?: 6);
-$defaultstart = day::to_date(time());
-$defaultend   = day::to_date(season_manager::add_months(time(), $months));
+// Seasons never share a day, so the suggestion starts after the last one when that one still runs today.
+$laststart = time();
+$lastend = (int) $DB->get_field_sql('SELECT MAX(enddate) FROM {local_playergames_seasons}');
+if ($lastend >= day::today()) {
+    $laststart = $lastend + 1;
+}
+$defaultstart = day::to_date($laststart);
+$defaultend   = day::to_date(season_manager::add_months($laststart, $months));
 $nextnum      = $DB->count_records('local_playergames_seasons') + 1;
 $defaultname  = get_string('defaultseasonname', 'local_playergames');
 $defaultname  = preg_replace('/\d+$/', (string) $nextnum, $defaultname) ?? $defaultname;

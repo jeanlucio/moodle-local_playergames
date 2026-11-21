@@ -23,7 +23,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/checkin_manager_test.php` | 11 | Insert do check-in + concessão de XP, idempotência, cap de temporada, avanço opcional de streak, elegibilidade de participante |
 | `hub/served_questions_test.php` | 3 | Conjunto "já exibido" do dia agrupado por fonte, escopo idempotente, itens inválidos ignorados |
 | `hub/streak_manager_test.php` | 12 | Início/continuação/reset de streak, consumo de freeze, processamento de quebra |
-| `hub/season_manager_test.php` | 15 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next`; se existe alguma temporada; edição (a encerrada mantém as datas), exclusão só dos dados da própria temporada, a ativa recusada |
+| `hub/season_manager_test.php` | 28 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next`; se existe alguma temporada; edição (a encerrada mantém as datas), exclusão só dos dados da própria temporada, a ativa recusada; encerrar antes do prazo termina a temporada hoje; datas sobrepostas encontradas e nomeadas |
 | `hub/mission_manager_test.php` | 7 | Sync de missão, progresso/conclusão com recompensa de XP, resets diário e de check-in perdido |
 | `hub/achievement_manager_test.php` | 6 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
@@ -38,7 +38,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `external/set_avatar_test.php` | 3 | Equipar/desequipar via o endpoint AJAX, rejeitando um avatar bloqueado |
 | `external/set_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de temporada |
 | `external/set_learning_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de XP dos cursos |
-| `task/assign_daily_games_test.php` | 8 | Atribuição de conceito por jogo, atribuição multi-conceito do PlayerFill e o caso de pool insuficiente, idempotência, casos sem cartucho e com cartucho vazio, filtro de elegibilidade do PlayerGuess, nome da tarefa |
+| `task/assign_daily_games_test.php` | 17 | Atribuição de conceito por jogo, atribuição multi-conceito do PlayerFill e o caso de pool insuficiente, idempotência, casos sem cartucho e com cartucho vazio, filtro de elegibilidade do PlayerGuess, nome da tarefa; PlayerGuess e PlayerFill nunca dividem uma palavra enquanto houver outras |
 | `task/reset_daily_missions_test.php` | 1 | Orquestração do reset diário de missões + quebra de streak |
 | `task/close_expired_seasons_test.php` | 2 | Fecha temporada expirada; auto-renovação cria e ativa a próxima |
 | `task/purge_old_scores_test.php` | 3 | Purga pela janela de retenção; no-op dentro da janela; os resultados de batalha das temporadas fora da janela também são purgados |
@@ -52,7 +52,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `cartridge/question_bank_importer_test.php` | 9 | Cópia para um novo cartucho de quiz ativo, nome da categoria, questões com mídia deixadas de fora (contadas), questões inutilizáveis, só a última versão pronta, nada a importar, categorias privadas e usuários sem permissão recusados, texto simplificado mantendo maiúsculas e entidades |
 | `cartridge/glossary_importer_test.php` | 4 | Glossários globais listados com as entradas aprovadas, importação para um cartucho de conceitos, recusa de glossário de curso e de glossário vazio |
 | `local/text_test.php` | 4 | Nomes em texto plano: texto como digitado, o título do nível, páginas de cartucho escapando os nomes uma vez e formulários de edição preenchendo os campos com o texto armazenado |
-| `local/engagement_report_test.php` | 4 | Métricas vazias, contagem de cursos, detecção de curso Player, divisão por escopo |
+| `local/engagement_report_test.php` | 14 | Métricas vazias, contagem de cursos, detecção de curso Player, divisão por escopo; a comparação guardada por uma hora por período e conjunto de cursos |
 | `ecosystem/plugin_registry_test.php` | 2 | Estrutura do catálogo e componentes únicos |
 | `ecosystem/plugin_status_test.php` | 1 | Status de instalação por componente; hub reportado como instalado |
 | `event/events_test.php` | 1 | Os nove eventos disparam, são capturados e renderizam descrição |

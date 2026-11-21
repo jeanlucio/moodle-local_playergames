@@ -177,12 +177,11 @@
         </span>
     </div>
 
-    <div class="row g-4">
-        {{! Left column: profile + missions }}
-        <div class="col-lg-4">
-
+    {{! One column on a phone, in this order; two columns on a wide screen, see .pg-hub-grid. }}
+    <div class="pg-hub-grid">
+        <div class="pg-hub-area-profile">
             {{! Profile card }}
-            <div class="card pg-hub-profile-card mb-4">
+            <div class="card pg-hub-profile-card">
                 <div class="card-header">
                     <h2 class="h5 mb-0">
                         <i class="fa fa-user-circle me-2" aria-hidden="true"></i>{{str_profile}}
@@ -263,7 +262,7 @@
 
                     {{#rankingenabled}}
                     <div class="form-check form-switch mt-3">
-                        <input class="form-check-input" type="checkbox"
+                        <input class="form-check-input" type="checkbox" role="switch"
                             id="pg-showinranking"
                             data-ranking-visibility
                             {{#showinranking}}checked{{/showinranking}}>
@@ -275,7 +274,7 @@
 
                     {{#learningxprankingenabled}}
                     <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox"
+                        <input class="form-check-input" type="checkbox" role="switch"
                             id="pg-show-learningxpranking"
                             data-learning-ranking-visibility
                             {{#learningshowinranking}}checked{{/learningshowinranking}}>
@@ -286,7 +285,57 @@
                     {{/learningxprankingenabled}}
                 </div>
             </div>
+        </div>
 
+        <div class="pg-hub-area-games">
+            {{! Today's games }}
+            <div class="card pg-hub-games-card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">
+                        <i class="fa fa-gamepad me-2" aria-hidden="true"></i>{{str_games}}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-2 row-cols-md-4 g-3">
+                        {{#games}}
+                        <div class="col">
+                            <div class="pg-hub-game-card text-center p-3 rounded position-relative
+                                {{#done}}pg-game-done{{/done}}
+                                {{#locked}}pg-game-locked{{/locked}}
+                                {{#pending}}pg-game-pending{{/pending}}">
+                                {{#pending}}{{#url}}
+                                <a href="{{url}}" class="stretched-link" aria-label="{{name}}"></a>
+                                {{/url}}{{/pending}}
+                                <i class="fa {{icon}} fs-3 mb-2
+                                    {{#done}}text-success{{/done}}
+                                    {{#locked}}text-muted{{/locked}}
+                                    {{#pending}}text-primary{{/pending}}"
+                                    aria-hidden="true"></i>
+                                <div class="fw-semibold small">{{name}}</div>
+                                <div class="mt-1">
+                                    {{#done}}
+                                    <span class="badge pg-badge-success">
+                                        <i class="fa fa-check me-1" aria-hidden="true"></i>{{str_done}}
+                                    </span>
+                                    {{/done}}
+                                    {{#locked}}
+                                    <span class="badge bg-secondary">
+                                        <i class="fa fa-lock me-1" aria-hidden="true"></i>{{str_locked}}
+                                    </span>
+                                    {{/locked}}
+                                    {{#pending}}
+                                    <span class="badge bg-primary">{{str_pending}}</span>
+                                    {{/pending}}
+                                </div>
+                            </div>
+                        </div>
+                        {{/games}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pg-hub-area-missions">
             {{! Missions }}
             {{#hasmissions}}
             <div class="card pg-hub-missions-card">
@@ -337,12 +386,9 @@
                 </div>
             </div>
             {{/hasmissions}}
+        </div>
 
-        </div>{{! end left column }}
-
-        {{! Right column: ranking + games }}
-        <div class="col-lg-8">
-
+        <div class="pg-hub-area-ranking">
             {{#rankingenabled}}
             <div class="card pg-hub-ranking-card mb-4">
                 <div class="card-header d-flex align-items-center justify-content-between">
@@ -660,55 +706,8 @@
                 </div>
             </div>
             {{/learningxprankingenabled}}
-
-            {{! Today's games }}
-            <div class="card pg-hub-games-card">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">
-                        <i class="fa fa-gamepad me-2" aria-hidden="true"></i>{{str_games}}
-                    </h2>
-                </div>
-                <div class="card-body">
-                    <div class="row row-cols-2 row-cols-md-4 g-3">
-                        {{#games}}
-                        <div class="col">
-                            <div class="pg-hub-game-card text-center p-3 rounded position-relative
-                                {{#done}}pg-game-done{{/done}}
-                                {{#locked}}pg-game-locked{{/locked}}
-                                {{#pending}}pg-game-pending{{/pending}}">
-                                {{#pending}}{{#url}}
-                                <a href="{{url}}" class="stretched-link" aria-label="{{name}}"></a>
-                                {{/url}}{{/pending}}
-                                <i class="fa {{icon}} fs-3 mb-2
-                                    {{#done}}text-success{{/done}}
-                                    {{#locked}}text-muted{{/locked}}
-                                    {{#pending}}text-primary{{/pending}}"
-                                    aria-hidden="true"></i>
-                                <div class="fw-semibold small">{{name}}</div>
-                                <div class="mt-1">
-                                    {{#done}}
-                                    <span class="badge pg-badge-success">
-                                        <i class="fa fa-check me-1" aria-hidden="true"></i>{{str_done}}
-                                    </span>
-                                    {{/done}}
-                                    {{#locked}}
-                                    <span class="badge bg-secondary">
-                                        <i class="fa fa-lock me-1" aria-hidden="true"></i>{{str_locked}}
-                                    </span>
-                                    {{/locked}}
-                                    {{#pending}}
-                                    <span class="badge bg-primary">{{str_pending}}</span>
-                                    {{/pending}}
-                                </div>
-                            </div>
-                        </div>
-                        {{/games}}
-                    </div>
-                </div>
-            </div>
-
-        </div>{{! end right column }}
-    </div>{{! end row }}
+        </div>
+    </div>{{! end pg-hub-grid }}
 
     {{! Avatar collection — hidden source moved into the modal on first open. }}
     {{> local_playergames/avatar_collection_modal }}

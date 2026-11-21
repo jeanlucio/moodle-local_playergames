@@ -47,6 +47,14 @@ Na página de temporadas cada temporada tem **Editar** e, exceto a ativa, **Excl
 * **Excluir** pede confirmação e remove a temporada com as configurações dos jogos e o XP, as missões e os
   resultados dos jogadores dela. As pontuações diárias desses dias também saem, a menos que outra temporada
   cubra os mesmos dias. A temporada ativa não pode ser excluída: encerre-a primeiro. Não dá para desfazer.
+* **Encerrar temporada** também pede confirmação, porque uma temporada encerrada não pode ser reaberta.
+  Encerrada antes do término previsto, a temporada termina hoje: a data de término passa a ser a de hoje, e os
+  dias que ela não usou ficam livres para a próxima temporada.
+
+Temporadas nunca compartilham um dia. Criar ou editar uma temporada cujas datas cruzam outra é recusado, com o
+nome e as datas da outra, porque a tarefa de retenção e o **Excluir** removem as pontuações de uma temporada
+pelas datas dela. O formulário sugere uma data de início depois da última temporada quando ela ainda está em
+curso: depois de encerrar uma temporada hoje, a próxima pode começar amanhã.
 
 ## A mesma ordem na administração do Moodle
 

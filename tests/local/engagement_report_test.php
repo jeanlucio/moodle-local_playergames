@@ -294,4 +294,31 @@ final class engagement_report_test extends \advanced_testcase {
 
         $this->assertSame(70.0, $metrics['grade_avg']);
     }
+
+    /**
+     * The comparison is kept per period and set of courses, whatever the order the courses come in.
+     *
+     * It counts the core log of every course in the period, which took over a second with two million log rows in a
+     * load test, and the page was worked out again on every visit.
+     */
+    public function test_compare_is_kept_per_period_and_set_of_courses(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $c1 = (int) $this->getDataGenerator()->create_course()->id;
+        $c2 = (int) $this->getDataGenerator()->create_course()->id;
+        $report = new engagement_report();
+        $first = $report->compare(30, [$c1, $c2]);
+
+        $queries = $DB->perf_get_queries();
+        $again = $report->compare(30, [$c2, $c1]);
+
+        $this->assertSame($first, $again);
+        $this->assertSame(0, $DB->perf_get_queries() - $queries);
+
+        // Another period is worked out on its own.
+        $queries = $DB->perf_get_queries();
+        $report->compare(60, [$c1, $c2]);
+        $this->assertGreaterThan($queries, $DB->perf_get_queries());
+        $this->assertSame(1, $report->compare(30, [$c1])['without']['course_count']);
+    }
 }

@@ -244,11 +244,41 @@ class engagement_report {
     /**
      * Compares metrics between courses that have Player plugins and those that do not.
      *
+     * The answer is kept for an hour per period and set of courses: it counts the core log of every course in the
+     * period, which takes seconds on a large site, and the page is opened again each time the period changes.
+     *
      * @param int        $days      Analysis window in days.
      * @param int[]|null $scopeids  When set, only these course IDs are considered (teacher scope).
-     * @return array{with:array, without:array}
+     * @return array{with:array, without:array, time:int} Time is when the numbers were worked out.
      */
     public function compare(int $days, ?array $scopeids = null): array {
+        if ($scopeids === null) {
+            $scopekey = 'all';
+        } else {
+            $sorted = array_map('intval', $scopeids);
+            sort($sorted);
+            $scopekey = sha1(implode(',', $sorted));
+        }
+        $cache = \cache::make('local_playergames', 'engagement');
+        $key = 'd' . $days . '_' . $scopekey;
+        $kept = $cache->get($key);
+        if (is_array($kept)) {
+            return $kept;
+        }
+
+        $result = $this->compute($days, $scopeids);
+        $cache->set($key, $result);
+        return $result;
+    }
+
+    /**
+     * Works out the comparison that compare() keeps, see there.
+     *
+     * @param int $days Look-back window in days.
+     * @param int[]|null $scopeids Restrict to these course IDs, or null for all courses.
+     * @return array
+     */
+    private function compute(int $days, ?array $scopeids): array {
         $playerids = $this->get_player_courseids();
         $playeridset = array_flip($playerids);
 
@@ -264,6 +294,7 @@ class engagement_report {
         return [
             'with'    => $this->get_metrics($withplayer, $days),
             'without' => $this->get_metrics($withoutplayer, $days),
+            'time'    => time(),
         ];
     }
 }

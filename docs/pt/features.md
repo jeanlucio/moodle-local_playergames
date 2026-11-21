@@ -62,7 +62,8 @@
   diz quando a próxima começa — ver [Ecossistema PlayerGames](#ecosystem).
 * 📅 **Gerenciamento de Temporadas:** Criar, editar, fechar, excluir e renovar automaticamente temporadas com
   snapshots de configuração. As pontuações das temporadas encerradas mais recentes são mantidas (duas
-  por padrão, configurável); a tarefa semanal de retenção remove as mais antigas.
+  por padrão, configurável); a tarefa noturna de retenção remove as mais antigas e guarda o resultado
+  final de cada jogador para o hall da fama.
 * 🔐 **Privacidade (LGPD/GDPR):** Privacy Provider completo — declaração de metadados, export e
   deleção de todos os dados pessoais armazenados; cartuchos compartilhados são preservados com o
   autor anonimizado.

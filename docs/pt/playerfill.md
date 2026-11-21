@@ -39,6 +39,13 @@ são elegíveis, o mesmo filtro que o PlayerGuess aplica ao seu próprio termo d
 existirem menos conceitos elegíveis do que a quantidade de palavras configurada, o PlayerFill
 simplesmente fica sem atribuição naquele dia, em vez de iniciar uma cruzadinha incompleta.
 
+A palavra do dia do PlayerGuess fica de fora do PlayerFill, e vice-versa, também quando dois cartuchos têm a
+mesma palavra: resolver um jogo daria a resposta do outro. Ela só entra quando as outras palavras não bastam
+para a cruzadinha, para que o dia nunca fique sem jogo.
+
+A página explica as regras acima da cruzadinha (a dica fica abaixo dos quadrados, o mesmo número esconde a
+mesma letra e quantas tentativas cada palavra tem) e mostra abaixo de cada palavra quantas tentativas restam.
+
 ## Configurações do administrador
 
 *Administração do site → Plugins → Plugins locais → PlayerGames → Regras → Regras dos jogos*

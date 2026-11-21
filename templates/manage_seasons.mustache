@@ -36,6 +36,7 @@
                 "candelete": false,
                 "editurl": "/local/playergames/manage_seasons.php?action=edit&seasonid=1",
                 "deleteurl": "/local/playergames/manage_seasons.php?action=delete&seasonid=1",
+                "closeurl": "/local/playergames/manage_seasons.php?action=close&seasonid=1",
                 "editlabel": "Edit season Season 1",
                 "deletelabel": "Delete season Season 1",
                 "gameconfigurl": "/local/playergames/manage_season_games.php?seasonid=1"
@@ -176,14 +177,7 @@
                         </a>
                         {{/candelete}}
                         {{#canclose}}
-                        <form method="post" action="{{formaction}}" class="d-inline">
-                            <input type="hidden" name="sesskey" value="{{sesskey}}">
-                            <input type="hidden" name="action" value="close">
-                            <input type="hidden" name="seasonid" value="{{id}}">
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                {{str_close}}
-                            </button>
-                        </form>
+                        <a href="{{closeurl}}" class="btn btn-sm btn-danger">{{str_close}}</a>
                         {{/canclose}}
                     </td>
                 </tr>

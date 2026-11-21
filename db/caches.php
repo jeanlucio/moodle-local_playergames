@@ -25,6 +25,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 $definitions = [
+    // The engagement meter counts the core log of every course in the period, which takes seconds on a large site.
+    'engagement' => [
+        'mode'      => cache_store::MODE_APPLICATION,
+        'ttl'       => 3600,
+        'simplekeys' => true,
+    ],
     'ranking' => [
         'mode'      => cache_store::MODE_APPLICATION,
         'ttl'       => 60,

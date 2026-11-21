@@ -114,6 +114,11 @@ if (!$noconcept && !$alreadyplayed) {
             'revealword'   => ($word['resolved'] || $revealed) ? $word['originalterm'] : '',
             'canguess'     => !$word['resolved'] && !$word['exhausted'] && !$revealed,
             'attemptsused' => $word['attemptsused'],
+            'attemptsleft' => get_string(
+                'fill_attempts_left',
+                'local_playergames',
+                max(0, $maxattempts - (int) $word['attemptsused'])
+            ),
         ];
     }
 }
@@ -127,6 +132,7 @@ $templatedata = [
     'rows'                 => $rows,
     'max_attempts'         => $maxattempts,
     'huburl'               => (new moodle_url('/local/playergames/hub.php'))->out(false),
+    'str_instructions'     => get_string('fill_instructions', 'local_playergames', $maxattempts),
     'str_already_played'   => get_string('fill_already_played', 'local_playergames'),
     'str_no_concept'       => get_string('fill_no_concept', 'local_playergames'),
     'str_revealed_title'   => get_string('fill_revealed_title', 'local_playergames'),

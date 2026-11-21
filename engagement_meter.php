@@ -154,6 +154,12 @@ echo $OUTPUT->render_from_template(
     (new \local_playergames\output\nav_header('engmeter'))->export_for_template($OUTPUT)
 );
 
+$computedat = get_string(
+    'engmeter_computed_at',
+    'local_playergames',
+    userdate($data['time'], get_string('strftimedatetimeshort', 'langconfig'))
+);
+
 $templatedata = [
     'pageurl'         => (new moodle_url('/local/playergames/engagement_meter.php'))->out(false),
     'scope'           => $scope,
@@ -164,6 +170,7 @@ $templatedata = [
     'with_count'      => get_string('engmeter_courses_count', 'local_playergames', $with['course_count']),
     'without_count'   => get_string('engmeter_courses_count', 'local_playergames', $without['course_count']),
     'disclaimer'      => get_string('engmeter_disclaimer', 'local_playergames'),
+    'computedat'      => $computedat,
     'chart_events'    => $OUTPUT->render($chartevents),
     'chart_completion' => $OUTPUT->render($chartcomp),
     'chart_grade'     => $OUTPUT->render($chartgrade),

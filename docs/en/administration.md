@@ -47,6 +47,14 @@ On the seasons page each season has **Edit** and, unless it is the active one, *
 * **Delete** asks for confirmation and removes the season with its game settings and the XP, missions and
   results of its players. The daily scores of those days go too, unless another season covers the same
   days. The active season cannot be deleted: close it first. Deleting cannot be undone.
+* **Close season** asks for confirmation too, as a closed season cannot be reopened. Closed before its planned
+  end, the season ends today: its end date changes to today's, so the days it never used are free for the
+  next season.
+
+Seasons never share a day. Creating or editing a season whose dates cross another one is refused, with the
+name and dates of the other season, because the retention task and **Delete** remove the scores of a season by
+its dates. The form suggests a start date after the last season when that one still runs: after closing a
+season today, the next one can start tomorrow.
 
 ## The same order in the Moodle administration
 

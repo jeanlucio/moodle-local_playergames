@@ -227,6 +227,29 @@ final class season_summary_test extends \advanced_testcase {
         $this->assertSame(2, season_summary::count_players($seasonid));
     }
 
+    public function test_count_players_by_season_matches_count_players(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $live = $this->make_season();
+        $purged = $this->make_season();
+        $empty = $this->make_season();
+        foreach ([$live, $purged] as $seasonid) {
+            $this->make_profile($this->make_user('student'), $seasonid, 10, false);
+            $this->make_profile($this->make_user('student'), $seasonid, 20, false);
+            season_summary::build($seasonid);
+        }
+        $this->make_profile($this->make_user('student'), $live, 0, false);
+        $DB->delete_records('local_playergames_player_profile', ['seasonid' => $purged]);
+
+        $counts = season_summary::count_players_by_season();
+
+        foreach ([$live, $purged, $empty] as $seasonid) {
+            $this->assertSame(season_summary::count_players($seasonid), $counts[$seasonid] ?? 0);
+        }
+        $this->assertSame(3, $counts[$live]);
+        $this->assertSame(2, $counts[$purged]);
+    }
+
     public function test_get_for_user_lists_the_most_recent_season_first(): void {
         global $DB;
         $this->resetAfterTest();

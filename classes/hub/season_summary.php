@@ -171,6 +171,31 @@ class season_summary {
     }
 
     /**
+     * Number of players of every season, counted as count_players() does, in two queries.
+     *
+     * @return int[] Keyed by season id; a season without players is left out.
+     */
+    public static function count_players_by_season(): array {
+        global $DB;
+
+        $profiles = $DB->get_records_sql_menu(
+            "SELECT seasonid, COUNT(1)
+               FROM {local_playergames_player_profile}
+           GROUP BY seasonid"
+        );
+        $summaries = $DB->get_records_sql_menu(
+            "SELECT seasonid, COUNT(1)
+               FROM {local_playergames_season_summary}
+           GROUP BY seasonid"
+        );
+        $counts = [];
+        foreach ($profiles + $summaries as $seasonid => $count) {
+            $counts[(int) $seasonid] = (int) $count;
+        }
+        return $counts;
+    }
+
+    /**
      * Returns the results of a user, most recent season first.
      *
      * @param int $userid The user.

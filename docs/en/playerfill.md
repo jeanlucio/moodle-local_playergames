@@ -38,6 +38,13 @@ are eligible, the same filter PlayerGuess applies to its own single daily term. 
 concepts exist than the configured word count, PlayerFill is simply left unassigned for that day
 rather than starting an undersized puzzle.
 
+The word of the day of PlayerGuess is left out of PlayerFill, and the other way round, also when two
+cartridges hold the same word: solving one game would otherwise give the answer of the other away. It goes in
+only when the other words are not enough for the puzzle, so the day is never left without a game.
+
+The page explains the rules above the puzzle (each clue is below its tiles, the same number hides the same
+letter, and how many attempts each word has) and shows under each word how many attempts it has left.
+
 ## Admin settings
 
 *Site administration → Plugins → Local plugins → PlayerGames → Rules → Game rules*

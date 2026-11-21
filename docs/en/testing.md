@@ -22,7 +22,7 @@ PostgreSQL & MariaDB).
 | `hub/checkin_manager_test.php` | 11 | Check-in insert + XP award, idempotency, season cap, optional streak advance, participant eligibility |
 | `hub/served_questions_test.php` | 3 | Per-day "already shown" set grouped by source, idempotent scoping, invalid items ignored |
 | `hub/streak_manager_test.php` | 12 | Streak start/continue/reset, freeze consumption, overnight break processing |
-| `hub/season_manager_test.php` | 15 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next`; whether any season exists; editing (a closed season keeps its dates), deleting only a season's own data, the active season refused |
+| `hub/season_manager_test.php` | 28 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next`; whether any season exists; editing (a closed season keeps its dates), deleting only a season's own data, the active season refused; closing early ends the season today; overlapping dates found and named |
 | `hub/mission_manager_test.php` | 7 | Mission sync, progress/completion with XP reward, daily and missed check-in resets |
 | `hub/achievement_manager_test.php` | 6 | Achievement sync, granting (first game/level/all-games-day), idempotency |
 | `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |
@@ -37,7 +37,7 @@ PostgreSQL & MariaDB).
 | `external/set_avatar_test.php` | 3 | Equip/unequip via the AJAX endpoint, rejecting a locked avatar |
 | `external/set_ranking_visibility_test.php` | 2 | Season ranking opt-in/opt-out toggle |
 | `external/set_learning_ranking_visibility_test.php` | 2 | Course XP ranking opt-in/opt-out toggle |
-| `task/assign_daily_games_test.php` | 8 | Per-game concept assignment, PlayerFill's multi-concept assignment and pool-too-small skip, idempotency, no-cartridge and empty-cartridge cases, PlayerGuess eligibility filter, task name |
+| `task/assign_daily_games_test.php` | 17 | Per-game concept assignment, PlayerFill's multi-concept assignment and pool-too-small skip, idempotency, no-cartridge and empty-cartridge cases, PlayerGuess eligibility filter, task name; PlayerGuess and PlayerFill never share a word while others are left |
 | `task/reset_daily_missions_test.php` | 1 | Daily mission reset + streak break orchestration |
 | `task/close_expired_seasons_test.php` | 2 | Closes expired season; auto-renew creates and activates next |
 | `task/purge_old_scores_test.php` | 3 | Retention-window purge; keep-within-window no-op; battle results of seasons beyond the window are purged too |
@@ -51,7 +51,7 @@ PostgreSQL & MariaDB).
 | `cartridge/question_bank_importer_test.php` | 9 | Copy into a new active quiz cartridge, category name, left out questions with a medium (counted), unusable questions, latest ready version only, nothing to import, private categories and users who may not use them refused, text flattened keeping case and entities |
 | `cartridge/glossary_importer_test.php` | 4 | Global glossaries listed with their approved entries, import into a concept cartridge, refusal of a course glossary and of an empty one |
 | `local/text_test.php` | 4 | Plain-text names: text as typed, the level title, cartridge pages escaping names once, and edit forms filling inputs with the stored text |
-| `local/engagement_report_test.php` | 4 | Empty metrics, course counting, player-course detection, scope split |
+| `local/engagement_report_test.php` | 14 | Empty metrics, course counting, player-course detection, scope split; the comparison kept for an hour per period and set of courses |
 | `ecosystem/plugin_registry_test.php` | 2 | Catalog structure and unique components |
 | `ecosystem/plugin_status_test.php` | 1 | Installed status keyed by component; hub reported installed |
 | `event/events_test.php` | 1 | All nine events trigger, are captured and render a description |

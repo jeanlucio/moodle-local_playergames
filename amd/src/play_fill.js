@@ -124,6 +124,10 @@ const applyWordUpdate = (word) => {
     if (guessform) {
         guessform.classList.toggle('d-none', Rules.closed(word, finished));
     }
+    const attempts = row.querySelector('[data-region="attempts"]');
+    if (attempts) {
+        attempts.classList.toggle('d-none', Rules.closed(word, finished));
+    }
 
     let revealEl = row.querySelector('.pg-fill-revealword');
     if (word.revealword) {
@@ -198,6 +202,10 @@ const sendGuess = async(conceptid, guess) => {
         showMessage(await getString('fill_word_announce_solved', 'local_playergames'));
     } else if (result.kind === 'wrong') {
         showMessage(await getString('fill_wrong_guess', 'local_playergames', result.left));
+        const counter = rowsEl.querySelector(`.pg-fill-row[data-conceptid="${conceptid}"] [data-region="attempts"]`);
+        if (counter) {
+            counter.textContent = await getString('fill_attempts_left', 'local_playergames', result.left);
+        }
     }
 
     if (finished) {

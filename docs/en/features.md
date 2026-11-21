@@ -58,7 +58,7 @@
   when the next one starts — see [PlayerGames Ecosystem](#ecosystem).
 * 📅 **Season Management:** Create, edit, close, delete and auto-renew seasons with configuration snapshots.
   The scores of the most recent closed seasons are kept (two by default, configurable); the
-  weekly retention task removes older ones.
+  nightly retention task removes older ones, keeping each player's final result for the hall of fame.
 * 🔐 **Privacy (GDPR):** Complete Privacy Provider — metadata declaration, export and deletion of
   all stored personal data; shared cartridges are preserved with the uploader anonymised.
 * 🧪 **Automated Tests:** 320-case PHPUnit suite and 42 Node tests for PlayerBattle's rules, green
