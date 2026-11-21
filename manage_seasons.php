@@ -24,6 +24,7 @@
 
 require(__DIR__ . '/../../config.php');
 
+use core\output\notification;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\season_summary;
 
@@ -73,6 +74,9 @@ if (!data_submitted() && $seasonid > 0) {
 if (data_submitted()) {
     require_sesskey();
 
+    // A done action goes back to the page with its message (Post/Redirect/Get): shown in the same response,
+    // reloading the page sent the action again, and a second activation said another season was active.
+    $done = null;
     if ($action === 'create') {
         $name      = required_param('name', PARAM_TEXT);
         $startstr  = required_param('startdate', PARAM_TEXT);
@@ -87,10 +91,7 @@ if (data_submitted()) {
             );
         } else {
             season_manager::create($name, $startdate, $enddate);
-            $notifications[] = $OUTPUT->notification(
-                get_string('season_created_ok', 'local_playergames'),
-                'success'
-            );
+            $done = ['season_created_ok', notification::NOTIFY_SUCCESS];
         }
     } else if ($action === 'update' && $seasonid > 0) {
         $name      = required_param('name', PARAM_TEXT);
@@ -106,43 +107,29 @@ if (data_submitted()) {
             $editing = $existing;
         } else {
             season_manager::update($seasonid, $name, $startdate, $enddate);
-            $notifications[] = $OUTPUT->notification(
-                get_string('season_updated_ok', 'local_playergames'),
-                'success'
-            );
+            $done = ['season_updated_ok', notification::NOTIFY_SUCCESS];
         }
     } else if ($action === 'delete' && $seasonid > 0) {
         try {
             season_manager::delete($seasonid);
-            $notifications[] = $OUTPUT->notification(
-                get_string('season_deleted_ok', 'local_playergames'),
-                'success'
-            );
+            $done = ['season_deleted_ok', notification::NOTIFY_SUCCESS];
         } catch (moodle_exception $e) {
-            $notifications[] = $OUTPUT->notification(
-                get_string('error_season_delete_active', 'local_playergames'),
-                'error'
-            );
+            $done = ['error_season_delete_active', notification::NOTIFY_ERROR];
         }
     } else if ($action === 'activate' && $seasonid > 0) {
         try {
             season_manager::activate($seasonid);
-            $notifications[] = $OUTPUT->notification(
-                get_string('season_activated_ok', 'local_playergames'),
-                'success'
-            );
+            $done = ['season_activated_ok', notification::NOTIFY_SUCCESS];
         } catch (moodle_exception $e) {
-            $notifications[] = $OUTPUT->notification(
-                get_string('error_season_already_active', 'local_playergames'),
-                'error'
-            );
+            $done = ['error_season_already_active', notification::NOTIFY_ERROR];
         }
     } else if ($action === 'close' && $seasonid > 0) {
         season_manager::close($seasonid);
-        $notifications[] = $OUTPUT->notification(
-            get_string('season_closed_ok', 'local_playergames'),
-            'success'
-        );
+        $done = ['season_closed_ok', notification::NOTIFY_SUCCESS];
+    }
+
+    if ($done !== null) {
+        redirect($PAGE->url, get_string($done[0], 'local_playergames'), null, $done[1]);
     }
 }
 

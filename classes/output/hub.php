@@ -61,9 +61,6 @@ class hub implements renderable, templatable {
     /** @var int Maximum ranking rows fetched from DB. */
     private const RANKING_LIMIT = 50;
 
-    /** @var int Pages of RANKING_LIMIT rows read while looking for users who still take part. */
-    private const RANKING_MAX_PAGES = 4;
-
     /** @var int Current user ID. */
     private int $userid;
 
@@ -358,7 +355,10 @@ class hub implements renderable, templatable {
             }
 
             [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('p');
-            $params = array_merge($params, $optoutparams);
+            // A role that lost viewhub, or a change of the allowed_participants setting, leaves the flag of the
+            // profile on: the rule of the hub is asked in the query, the same one that counts the position.
+            [$participantsql, $participantparams] = access::participant_sql('p.userid', $wantstaff);
+            $params = array_merge($params, $optoutparams, $participantparams);
 
             $sql = "SELECT p.userid, p.xp, p.level,
                            u.firstname, u.lastname,
@@ -371,21 +371,11 @@ class hub implements renderable, templatable {
                        AND u.deleted = 0
                        AND u.suspended = 0
                        AND {$optoutsql}
+                       AND {$participantsql}
                        {$filter}
                   ORDER BY p.xp DESC, p.timemodified ASC, p.userid ASC";
 
-            // The query cannot tell who still takes part: a role that lost viewhub, or a change of the
-            // allowed_participants setting, leaves the flag of the profile on. The rule the hub itself
-            // applies is asked here, with the staff lookup already in hand and the opt-out already in the query.
-            $records = $this->take_participants(
-                $sql,
-                $params,
-                fn(\stdClass $r): bool => access::is_participant(
-                    (int) $r->userid,
-                    in_array((int) $r->userid, $staffids, true),
-                    false
-                )
-            );
+            $records = $DB->get_records_sql($sql, $params, 0, self::RANKING_LIMIT);
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
@@ -431,6 +421,8 @@ class hub implements renderable, templatable {
 
         if ($ranking === false) {
             [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('c');
+            // The learning XP is not tied to the staff or student split, so only the capability is asked.
+            [$participantsql, $participantparams] = access::participant_sql('c.userid');
 
             $sql = "SELECT c.userid, c.windowedxp,
                            u.firstname, u.lastname,
@@ -443,15 +435,10 @@ class hub implements renderable, templatable {
                        AND u.suspended = 0
                        AND c.windowedxp > 0
                        AND {$optoutsql}
+                       AND {$participantsql}
                   ORDER BY c.windowedxp DESC, c.timemodified ASC, c.userid ASC";
 
-            // The learning XP is not tied to the staff or student split, so only the capability is asked.
-            $context = \context_system::instance();
-            $records = $this->take_participants(
-                $sql,
-                $optoutparams,
-                fn(\stdClass $r): bool => has_capability('local/playergames:viewhub', $context, (int) $r->userid)
-            );
+            $records = $DB->get_records_sql($sql, array_merge($optoutparams, $participantparams), 0, self::RANKING_LIMIT);
             $ranking = [];
             $pos     = 1;
             foreach ($records as $r) {
@@ -476,41 +463,6 @@ class hub implements renderable, templatable {
         unset($row);
 
         return $ranking;
-    }
-
-    /**
-     * Reads a ranking query in pages and keeps the rows the test accepts, until the list is full.
-     *
-     * Rows are taken in the order of the query, so the users who no longer take part are skipped without
-     * leaving the list short while there are others behind them. The reading stops after a few pages: the
-     * rule costs a capability check per user, and a top full of users who lost access is not worth more.
-     *
-     * @param string $sql The ranking query, ordered.
-     * @param array $params Its parameters.
-     * @param callable $keep Receives a row, returns whether it belongs on the list.
-     * @return \stdClass[] At most RANKING_LIMIT rows.
-     */
-    private function take_participants(string $sql, array $params, callable $keep): array {
-        global $DB;
-
-        $kept   = [];
-        $offset = 0;
-        for ($page = 0; $page < self::RANKING_MAX_PAGES && count($kept) < self::RANKING_LIMIT; $page++) {
-            $records = $DB->get_records_sql($sql, $params, $offset, self::RANKING_LIMIT);
-            foreach ($records as $record) {
-                if ($keep($record)) {
-                    $kept[] = $record;
-                }
-                if (count($kept) >= self::RANKING_LIMIT) {
-                    break;
-                }
-            }
-            if (count($records) < self::RANKING_LIMIT) {
-                break;
-            }
-            $offset += self::RANKING_LIMIT;
-        }
-        return $kept;
     }
 
     /**

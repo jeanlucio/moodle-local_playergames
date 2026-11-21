@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use cache;
+use local_playergames\local\access;
 use local_playergames\local\preferences;
 use local_playergames\local\unique_row;
 use stdClass;
@@ -210,7 +211,8 @@ class learning_xp_manager {
      * Mirrors the ORDER BY of the learning ranking (windowedxp DESC,
      * timemodified ASC, userid ASC). The user never counts themselves. Used to
      * show the position of someone who opted in but falls outside the loaded
-     * top-50 list. A single indexed COUNT — no full-table sort.
+     * top-50 list. A single indexed COUNT — no full-table sort. Counts only the users the list itself would
+     * show, by the same rule (access::participant_sql()).
      *
      * @param int $userid User whose position is wanted.
      * @param int $mywindowedxp The user's windowed learning XP.
@@ -221,6 +223,7 @@ class learning_xp_manager {
         global $DB;
 
         [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('c');
+        [$participantsql, $participantparams] = access::participant_sql('c.userid');
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_student_xp_cache} c
                   JOIN {user} u ON u.id = c.userid
@@ -228,6 +231,7 @@ class learning_xp_manager {
                    AND u.deleted = 0
                    AND u.suspended = 0
                    AND {$optoutsql}
+                   AND {$participantsql}
                    AND (c.windowedxp > :xpgt
                         OR (c.windowedxp = :xpeq1 AND c.timemodified < :tmlt)
                         OR (c.windowedxp = :xpeq2 AND c.timemodified = :tmeq AND c.userid < :myuserid))";
@@ -238,7 +242,7 @@ class learning_xp_manager {
             'xpeq2'    => $mywindowedxp,
             'tmeq'     => $mytimemodified,
             'myuserid' => $userid,
-        ] + $optoutparams;
+        ] + $optoutparams + $participantparams;
 
         return (int) $DB->count_records_sql($sql, $params) + 1;
     }

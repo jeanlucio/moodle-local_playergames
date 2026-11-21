@@ -27,19 +27,6 @@
 define(['core/notification', 'core/str'], function(Notification, Str) {
     'use strict';
 
-    /** @var {Object} Preloaded confirmation button labels. */
-    var confirmStrings = {yes: 'Yes', no: 'No'};
-
-    // Preload yes/no strings for confirm dialogs.
-    Str.get_strings([
-        {key: 'yes', component: 'core'},
-        {key: 'no', component: 'core'},
-    ]).then(function(results) {
-        confirmStrings.yes = results[0];
-        confirmStrings.no = results[1];
-        return results;
-    }).catch(Notification.exception);
-
     /**
      * Attaches a submit-time confirmation dialog to every form that carries
      * a data-pg-confirm attribute.
@@ -53,8 +40,10 @@ define(['core/notification', 'core/str'], function(Notification, Str) {
                 Notification.confirm(
                     '',
                     message,
-                    confirmStrings.yes,
-                    confirmStrings.no,
+                    // The labels go as promises, which the dialog waits for: a label filled in later would
+                    // show an English fallback to whoever submits before the strings arrive.
+                    Str.get_string('yes', 'core'),
+                    Str.get_string('no', 'core'),
                     function() {
                         form.submit();
                     }

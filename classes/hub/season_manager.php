@@ -178,7 +178,8 @@ class season_manager {
     /**
      * Activates a season that is in 'upcoming' status.
      *
-     * Only one season can be active at a time. Throws if another season is active.
+     * Only one season can be active at a time. Throws if another season is active; asking again for the season
+     * that is already active changes nothing.
      *
      * @param int $seasonid
      * @return void
@@ -186,7 +187,12 @@ class season_manager {
     public static function activate(int $seasonid): void {
         global $DB;
         $existing = self::get_active();
-        if ($existing && $existing->id !== $seasonid) {
+        // The id of a record is a string: compared to the int without a cast, every active season looked like
+        // "another" one, and asking again for the one just activated said another season was active.
+        if ($existing && (int) $existing->id === $seasonid) {
+            return;
+        }
+        if ($existing) {
             throw new \moodle_exception('error_season_already_active', 'local_playergames');
         }
         $DB->set_field(

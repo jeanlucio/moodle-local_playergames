@@ -353,6 +353,35 @@ final class xp_manager_test extends \advanced_testcase {
         $this->assertSame(1, xp_manager::get_season_position($staff, $seasonid, 900, $t, $staffids, true));
     }
 
+    /**
+     * The position counts only the players the hub lets in: on a students-only site the staff ranked are the
+     * administrators, and on a staff-only site no student is.
+     */
+    public function test_get_season_position_follows_the_allowed_participants(): void {
+        $this->resetAfterTest();
+        $seasonid = $this->make_season([]);
+        $t = 1000;
+        $admin   = (int) get_admin()->id;
+        $teacher = (int) $this->getDataGenerator()->create_user()->id;
+        $student = (int) $this->getDataGenerator()->create_user()->id;
+        $ahead   = (int) $this->getDataGenerator()->create_user()->id;
+        $this->make_profile($teacher, $seasonid, 900, true, $t);
+        $this->make_profile($admin, $seasonid, 100, true, $t);
+        $this->make_profile($ahead, $seasonid, 800, true, $t);
+        $this->make_profile($student, $seasonid, 50, true, $t);
+        $staffids = [$admin, $teacher];
+
+        set_config('allowed_participants', 'students', 'local_playergames');
+        $this->assertSame(1, xp_manager::get_season_position($admin, $seasonid, 100, $t, $staffids, true));
+        $this->assertSame(2, xp_manager::get_season_position($student, $seasonid, 50, $t, $staffids, false));
+
+        set_config('allowed_participants', 'both', 'local_playergames');
+        $this->assertSame(2, xp_manager::get_season_position($admin, $seasonid, 100, $t, $staffids, true));
+
+        set_config('allowed_participants', 'staff', 'local_playergames');
+        $this->assertSame(1, xp_manager::get_season_position($student, $seasonid, 50, $t, $staffids, false));
+    }
+
     public function test_get_season_position_no_staff_returns_zero(): void {
         $this->resetAfterTest();
         $seasonid = $this->make_season([]);

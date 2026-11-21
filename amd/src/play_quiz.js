@@ -132,6 +132,25 @@ const hideContinue = () => {
 };
 
 /**
+ * Shows which attempt the player is on.
+ *
+ * The number goes into the string, so each language places it where it belongs.
+ *
+ * @param {number} attempt The attempt, from 1.
+ */
+const showAttempt = async attempt => {
+    const progressText = document.getElementById('pg-quiz-progress-text');
+    if (!progressText) {
+        return;
+    }
+    try {
+        progressText.textContent = await getString('quiz_attempt_number', 'local_playergames', attempt);
+    } catch (error) {
+        Notification.exception(error);
+    }
+};
+
+/**
  * Reveals the question at the given pool index, resets its controls and restarts the timer.
  *
  * @param {number} index Zero-based index into the questions pool.
@@ -154,11 +173,7 @@ const showQuestion = (index, seconds) => {
         b.classList.remove('btn-success', 'btn-danger');
         b.classList.add('btn-outline-primary');
     });
-    const progressText = document.getElementById('pg-quiz-progress-text');
-    if (progressText) {
-        const label = container.dataset.strAttempt || 'Attempt';
-        progressText.textContent = `${label} ${attemptNumber}`;
-    }
+    showAttempt(attemptNumber);
     startTimer(seconds);
 };
 

@@ -281,6 +281,58 @@ class access {
     }
 
     /**
+     * The rule of is_participant() as an SQL condition on a user id column, for the rankings.
+     *
+     * A ranking list and the position of a player outside it must leave out the same users: someone who lost
+     * the viewhub capability, or a group the allowed_participants setting no longer lets in, keeps the
+     * showinranking flag of the profile. Asked in the query, the rule needs no capability check per listed
+     * user. The opt-out is not part of it: the queries have preferences::sql_not_opted_out() already.
+     *
+     * @param string $useridcolumn The column holding the user id, e.g. 'p.userid'.
+     * @param bool|null $wantstaff True for the staff list, false for the students list, null for a list that
+     *     is not split between them (the learning XP), where only the capability counts.
+     * @return array [string $sql, array $params] The condition and its named parameters.
+     */
+    public static function participant_sql(string $useridcolumn, ?bool $wantstaff = null): array {
+        $context = context_system::instance();
+
+        // A site administrator passes has_capability() whatever the roles say, so is let in by id as well.
+        [$adminsql, $params] = self::site_admins_sql($useridcolumn);
+        [$viewsql, $viewparams] = get_with_capability_sql($context, 'local/playergames:viewhub');
+        $conditions = ["({$useridcolumn} IN ({$viewsql}) OR {$adminsql})"];
+        $params += $viewparams;
+
+        $allowed = get_config('local_playergames', 'allowed_participants') ?: 'students';
+        if ($wantstaff === true && $allowed === 'students') {
+            // On a students-only site the staff who still take part are the administrators (see can_view_hub()).
+            [$adminsql, $adminparams] = self::site_admins_sql($useridcolumn);
+            [$configsql, $configparams] = get_with_capability_sql($context, 'moodle/site:config');
+            $conditions[] = "({$useridcolumn} IN ({$configsql}) OR {$adminsql})";
+            $params += $adminparams + $configparams;
+        } else if ($wantstaff === false && $allowed === 'staff') {
+            $conditions[] = '1 = 0';
+        }
+
+        return [implode(' AND ', $conditions), $params];
+    }
+
+    /**
+     * An SQL condition matching the site administrators, with parameter names of its own.
+     *
+     * @param string $useridcolumn The column holding the user id.
+     * @return array [string $sql, array $params]
+     */
+    private static function site_admins_sql(string $useridcolumn): array {
+        global $CFG, $DB;
+        $admins = array_values(array_filter(array_map('intval', explode(',', (string) $CFG->siteadmins))));
+        if ($admins === []) {
+            return ['1 = 0', []];
+        }
+        [$insql, $params] = $DB->get_in_or_equal($admins, SQL_PARAMS_NAMED, 'pgadmin');
+        return ["{$useridcolumn} {$insql}", $params];
+    }
+
+    /**
      * Where a page sends a user the participant rules turned away.
      *
      * Staff the setting turns away from the hub have the dashboard; anyone else goes to their own page. Never

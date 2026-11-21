@@ -612,6 +612,44 @@ final class hub_test extends \advanced_testcase {
     }
 
     /**
+     * The position of a player below the fifty listed counts the same people as the list.
+     *
+     * Regression test: the list left out the players barred from the hub, the count of the position did not,
+     * so a player 52nd in the list read a position of 55, in both the season and the learning ranking.
+     */
+    public function test_the_position_below_the_list_leaves_out_the_users_the_list_leaves_out(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $season = $this->start_season();
+        set_config('showlearningxp', 1, 'local_playergames');
+        set_config('learningxpranking', 1, 'local_playergames');
+        $users = [];
+        $profiles = [];
+        $caches = [];
+        for ($i = 0; $i < 55; $i++) {
+            $users[] = $user = $this->getDataGenerator()->create_user();
+            $profiles[] = (object) [
+                'userid' => $user->id, 'seasonid' => $season->id, 'xp' => 1000 - $i, 'level' => 1,
+                'showinranking' => 1, 'timecreated' => 1700000000, 'timemodified' => 1700000000,
+            ];
+            $caches[] = (object) [
+                'userid' => $user->id, 'windowedxp' => 1000 - $i, 'showinranking' => 1,
+                'timecreated' => 1700000000, 'timemodified' => 1700000000,
+            ];
+        }
+        $DB->insert_records('local_playergames_player_profile', $profiles);
+        $DB->insert_records('local_playergames_student_xp_cache', $caches);
+        $this->bar_from_the_hub(array_slice($users, 0, 3));
+
+        $data = $this->export_for($users[54]);
+
+        $this->assertCount(50, $data['studentranking']);
+        $this->assertSame(0, $data['selfinstudents']);
+        $this->assertSame(get_string('hub_your_position', 'local_playergames', 52), $data['str_your_position']);
+        $this->assertSame(get_string('hub_your_position', 'local_playergames', 52), $data['str_learning_position']);
+    }
+
+    /**
      * A change of the allowed participants takes the group that is no longer allowed off the list.
      */
     public function test_the_rankings_follow_a_change_of_the_allowed_participants(): void {

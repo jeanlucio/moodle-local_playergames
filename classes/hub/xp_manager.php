@@ -26,6 +26,7 @@ namespace local_playergames\hub;
 
 use cache;
 use local_playergames\event\level_reached;
+use local_playergames\local\access;
 use local_playergames\local\preferences;
 use local_playergames\local\unique_row;
 use local_playergames\local\user_lock;
@@ -244,7 +245,8 @@ class xp_manager {
      * Mirrors the ORDER BY of the hub ranking (xp DESC, timemodified ASC,
      * userid ASC) so ties resolve identically: whoever reached the XP earlier
      * ranks ahead, with userid as the final deterministic fallback. The user
-     * never counts themselves. A single indexed COUNT — no full-table sort.
+     * never counts themselves. A single indexed COUNT — no full-table sort. Counts only the players the list
+     * itself would show, by the same rule (access::participant_sql()).
      *
      * @param int   $userid User whose position is wanted.
      * @param int   $seasonid Active season ID.
@@ -284,7 +286,8 @@ class xp_manager {
         }
 
         [$optoutsql, $optoutparams] = preferences::sql_not_opted_out('p');
-        $params = array_merge($params, $optoutparams);
+        [$participantsql, $participantparams] = access::participant_sql('p.userid', $wantstaff);
+        $params = array_merge($params, $optoutparams, $participantparams);
 
         $sql = "SELECT COUNT(1)
                   FROM {local_playergames_player_profile} p
@@ -294,6 +297,7 @@ class xp_manager {
                    AND u.deleted = 0
                    AND u.suspended = 0
                    AND {$optoutsql}
+                   AND {$participantsql}
                    {$filter}
                    AND (p.xp > :xpgt
                         OR (p.xp = :xpeq1 AND p.timemodified < :tmlt)

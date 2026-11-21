@@ -178,7 +178,6 @@ $templatedata = [
     ),
     'str_no_questions'   => get_string('quiz_no_questions', 'local_playergames'),
     'str_completed'      => get_string('quiz_completed', 'local_playergames'),
-    'str_attempt'        => get_string('quiz_attempt', 'local_playergames'),
     'str_time_left'      => get_string('quiz_time_left', 'local_playergames'),
     'str_continue'       => get_string('quiz_continue', 'local_playergames'),
     'str_view_result'    => get_string('quiz_view_result', 'local_playergames'),

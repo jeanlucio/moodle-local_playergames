@@ -29,6 +29,7 @@
 
 import Modal from 'core/modal';
 import {getString, getStrings} from 'core/str';
+import Keys from 'local_playergames/guess/keys';
 
 const LETTER_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const FEEDBACK_RANK = {absent: 0, present: 1, correct: 2};
@@ -334,15 +335,9 @@ export default {
         updateProgress();
 
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey || e.altKey || e.metaKey) {
-                return;
-            }
-            if (e.key === 'Enter') {
-                handleKey('ENTER');
-            } else if (e.key === 'Backspace') {
-                handleKey('BACKSPACE');
-            } else if (/^[a-zA-Z]$/.test(e.key)) {
-                handleKey(e.key.toUpperCase());
+            const key = Keys.boardKey(e);
+            if (key !== null) {
+                handleKey(key);
             }
         });
 

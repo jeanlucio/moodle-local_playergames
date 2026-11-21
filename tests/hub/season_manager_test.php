@@ -94,6 +94,26 @@ final class season_manager_test extends \advanced_testcase {
         season_manager::activate((int) $second->id);
     }
 
+    /**
+     * Asking again for the season that is already active changes nothing and raises no error.
+     *
+     * Regression test: the id of the record (a string) was compared to the int with !==, so the season
+     * just activated counted as "another active season", and reloading the page after activating said so.
+     */
+    public function test_activating_the_active_season_again_changes_nothing(): void {
+        global $DB;
+        $start = mktime(0, 0, 0);
+        $season = season_manager::create('S', $start, $start + DAYSECS);
+        season_manager::activate((int) $season->id);
+        $DB->set_field('local_playergames_seasons', 'timemodified', 1000, ['id' => $season->id]);
+
+        season_manager::activate((int) $season->id);
+
+        $row = $DB->get_record('local_playergames_seasons', ['id' => $season->id]);
+        $this->assertSame(season_manager::STATUS_ACTIVE, $row->status);
+        $this->assertSame(1000, (int) $row->timemodified);
+    }
+
     public function test_close_sets_closed_status(): void {
         global $DB;
         $start = mktime(0, 0, 0);
