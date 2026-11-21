@@ -13,12 +13,13 @@ Feature: Play the PlayerFill daily game
     And the following "local_playergames > cartridges" exist:
       | name   |
       | Fruits |
+    # Each term has a letter no other term has: a word whose letters the solved words all reveal solves itself.
     And the following "local_playergames > concepts" exist:
-      | cartridge | term  | definition       |
-      | Fruits    | grape | A purple fruit   |
-      | Fruits    | lemon | A sour fruit     |
-      | Fruits    | mango | A tropical fruit |
-      | Fruits    | melon | A striped fruit  |
+      | cartridge | term  | definition     |
+      | Fruits    | grape | A purple fruit |
+      | Fruits    | lemon | A sour fruit   |
+      | Fruits    | kiwi  | A fuzzy fruit  |
+      | Fruits    | date  | A sweet fruit  |
     And the PlayerGames words of the day are drawn
     And the following "users" exist:
       | username | firstname | lastname | email                |
@@ -30,8 +31,8 @@ Feature: Play the PlayerFill daily game
   Scenario: Solving every word wins the game
     When I answer "grape" for the PlayerFill clue "A purple fruit"
     And I answer "lemon" for the PlayerFill clue "A sour fruit"
-    And I answer "mango" for the PlayerFill clue "A tropical fruit"
-    And I answer "melon" for the PlayerFill clue "A striped fruit"
+    And I answer "kiwi" for the PlayerFill clue "A fuzzy fruit"
+    And I answer "date" for the PlayerFill clue "A sweet fruit"
     Then I should see "Solved!"
     And I should see "XP earned:"
 
