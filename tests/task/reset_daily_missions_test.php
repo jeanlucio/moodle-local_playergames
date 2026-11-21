@@ -51,9 +51,12 @@ final class reset_daily_missions_test extends \advanced_testcase {
             'timecreated' => $now, 'timemodified' => $now,
         ]);
 
-        // Complete the daily mission so the reset has something to clear.
+        // Complete the daily mission yesterday, so the reset has something to clear.
         mission_manager::update((int) $user->id, $seasonid, 'game_played');
         $daily = $DB->get_record('local_playergames_missions', ['type' => 'daily'], '*', MUST_EXIST);
+        $DB->set_field('local_playergames_mission_progress', 'timecompleted', mktime(0, 0, 0) - 3600, [
+            'userid' => $user->id, 'missionid' => $daily->id,
+        ]);
         $this->assertTrue($DB->record_exists('local_playergames_mission_progress', [
             'userid' => $user->id, 'missionid' => $daily->id, 'completed' => 1,
         ]));

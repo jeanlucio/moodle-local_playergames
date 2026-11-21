@@ -180,6 +180,13 @@ class mission_manager {
             }
             $mission  = $missions['daily'];
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
+            if ($progress->completed && (int) $progress->timecompleted < mktime(0, 0, 0)) {
+                // A mission completed on another day is over, whether or not the reset of midnight has run yet:
+                // the cron runs late on many sites, and today's play must not find yesterday's mission done.
+                $progress->completed     = 0;
+                $progress->currentvalue  = 0;
+                $progress->timecompleted = null;
+            }
             if ($progress->completed) {
                 return;
             }
@@ -222,6 +229,11 @@ class mission_manager {
             $mission  = $missions['checkin_streak'];
             $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
             if (!$progress->completed) {
+                // Without a check-in yesterday the streak is broken, whether or not the reset of midnight has run.
+                $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => streak_manager::midnight_yesterday()];
+                if ($progress->currentvalue > 0 && !$DB->record_exists('local_playergames_daily_scores', $yesterday)) {
+                    $progress->currentvalue = 0;
+                }
                 $progress->currentvalue++;
                 if ($progress->currentvalue >= (int) $mission->targetvalue) {
                     self::complete_mission($userid, $seasonid, $mission, $progress);
@@ -233,9 +245,10 @@ class mission_manager {
     }
 
     /**
-     * Resets daily-type mission progress for all users in a season.
+     * Resets the daily missions of a season that were completed before today.
      *
-     * Called at midnight by the reset_daily_missions task.
+     * Called at midnight by the reset_daily_missions task, which can run late: a mission already completed today
+     * is today's and stays. A play that comes before the reset does the same reset for its own user.
      *
      * @param int $seasonid
      * @return void
@@ -252,16 +265,20 @@ class mission_manager {
         }
         [$insql, $params] = $DB->get_in_or_equal($missionids, SQL_PARAMS_NAMED, 'mid');
         $params['seasonid'] = $seasonid;
-        $where = "missionid {$insql} AND seasonid = :seasonid";
-        $DB->set_field_select('local_playergames_mission_progress', 'completed', 0, $where, $params);
+        $params['today'] = mktime(0, 0, 0);
+        // The rows are found by the time they were completed, so that time is cleared last: once it is null the
+        // condition no longer matches them.
+        $where = "missionid {$insql} AND seasonid = :seasonid AND timecompleted < :today";
         $DB->set_field_select('local_playergames_mission_progress', 'currentvalue', 0, $where, $params);
+        $DB->set_field_select('local_playergames_mission_progress', 'completed', 0, $where, $params);
         $DB->set_field_select('local_playergames_mission_progress', 'timecompleted', null, $where, $params);
     }
 
     /**
      * Resets checkin_streak progress for users who missed a check-in yesterday.
      *
-     * Called at midnight by the reset_daily_missions task.
+     * Called at midnight by the reset_daily_missions task, which can run late: a user who already checked in
+     * today had the streak restarted by that check-in, which the reset must not undo.
      *
      * @param int $seasonid
      * @param int $yesterday Unix timestamp of midnight yesterday.
@@ -273,8 +290,8 @@ class mission_manager {
         if (!$missionid) {
             return;
         }
-        // Whoever has no check-in of yesterday loses the streak. Asked of the database as a subquery: a list of
-        // the ids of everybody who did check in would grow with the site.
+        // Whoever has no check-in of yesterday, nor of today, loses the streak. Asked of the database as a
+        // subquery: a list of the ids of everybody who did check in would grow with the site.
         $DB->set_field_select(
             'local_playergames_mission_progress',
             'currentvalue',
@@ -284,7 +301,7 @@ class mission_manager {
                                   FROM {local_playergames_daily_scores} ds
                                  WHERE ds.userid = {local_playergames_mission_progress}.userid
                                    AND ds.gametype = 'checkin'
-                                   AND ds.gamedate = :yesterday)",
+                                   AND ds.gamedate >= :yesterday)",
             ['mid' => $missionid, 'sid' => $seasonid, 'yesterday' => $yesterday]
         );
     }

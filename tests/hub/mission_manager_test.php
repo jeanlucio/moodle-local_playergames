@@ -160,6 +160,8 @@ final class mission_manager_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $seasonid = $this->make_season();
         mission_manager::update((int) $user->id, $seasonid, 'game_played');
+        // Completed yesterday, as it is when the reset of midnight runs.
+        $DB->set_field('local_playergames_mission_progress', 'timecompleted', mktime(0, 0, 0) - 3600, ['userid' => $user->id]);
 
         mission_manager::reset_daily($seasonid);
 
@@ -172,6 +174,127 @@ final class mission_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $progress->completed);
         $this->assertSame(0, (int) $progress->currentvalue);
         $this->assertNull($progress->timecompleted);
+    }
+
+    /**
+     * Reads the progress of a user on a mission.
+     *
+     * @param int $userid The user.
+     * @param string $type The type of the mission.
+     * @param int $seasonid The season.
+     * @return \stdClass The progress row.
+     */
+    private function progress(int $userid, string $type, int $seasonid): \stdClass {
+        global $DB;
+        $missionid = (int) $DB->get_field('local_playergames_missions', 'id', ['type' => $type], MUST_EXIST);
+        return $DB->get_record(
+            'local_playergames_mission_progress',
+            ['userid' => $userid, 'missionid' => $missionid, 'seasonid' => $seasonid],
+            '*',
+            MUST_EXIST
+        );
+    }
+
+    /**
+     * Records a check-in of a user on a day.
+     *
+     * @param int $userid The user.
+     * @param int $gamedate Midnight of the day.
+     */
+    private function checked_in(int $userid, int $gamedate): void {
+        global $DB;
+        $DB->insert_record('local_playergames_daily_scores', (object) [
+            'userid' => $userid, 'gamedate' => $gamedate, 'gametype' => 'checkin',
+            'completed' => 1, 'xpawarded' => 5, 'attempts' => 1, 'timeplayed' => time(),
+        ]);
+    }
+
+    /**
+     * A daily mission completed today stays completed when the reset of midnight runs late.
+     *
+     * Regression test: the reset cleared every daily mission of the season, so on a site whose cron ran after
+     * the first plays of the day those plays could complete the mission, and pay it, a second time.
+     */
+    public function test_a_late_reset_keeps_the_daily_mission_completed_today(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $userid = (int) $this->getDataGenerator()->create_user()->id;
+        $seasonid = $this->make_season();
+        mission_manager::update($userid, $seasonid, 'game_played');
+        $paid = $this->xp($userid, $seasonid);
+
+        mission_manager::reset_daily($seasonid);
+        mission_manager::update($userid, $seasonid, 'game_played');
+
+        $this->assertSame(1, (int) $this->progress($userid, 'daily', $seasonid)->completed);
+        $this->assertSame($paid, $this->xp($userid, $seasonid));
+    }
+
+    /**
+     * The first play of the day starts the daily mission again even when the reset of midnight has not run yet.
+     */
+    public function test_a_play_before_the_late_reset_starts_the_daily_mission_again(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $userid = (int) $this->getDataGenerator()->create_user()->id;
+        $seasonid = $this->make_season();
+        mission_manager::update($userid, $seasonid, 'game_played');
+        $DB->set_field('local_playergames_mission_progress', 'timecompleted', mktime(0, 0, 0) - 3600, ['userid' => $userid]);
+        $yesterday = $this->xp($userid, $seasonid);
+
+        mission_manager::update($userid, $seasonid, 'game_played');
+
+        $progress = $this->progress($userid, 'daily', $seasonid);
+        $this->assertSame(1, (int) $progress->completed);
+        $this->assertGreaterThanOrEqual(mktime(0, 0, 0), (int) $progress->timecompleted);
+        $this->assertGreaterThan($yesterday, $this->xp($userid, $seasonid));
+    }
+
+    /**
+     * A check-in after a missed day starts the streak over even when the reset of midnight has not run yet.
+     *
+     * Regression test: the check-in added to the broken streak, and the late reset then cleared it, check-in
+     * of today included.
+     */
+    public function test_a_checkin_after_a_missed_day_starts_the_streak_over_before_the_reset_runs(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $userid = (int) $this->getDataGenerator()->create_user()->id;
+        $seasonid = $this->make_season();
+        mission_manager::sync();
+        $this->checked_in($userid, mktime(0, 0, 0) - (2 * DAYSECS));
+        for ($i = 0; $i < 3; $i++) {
+            mission_manager::update($userid, $seasonid, 'checkin');
+        }
+        $this->assertSame(1, (int) $this->progress($userid, 'checkin_streak', $seasonid)->currentvalue);
+        $DB->set_field('local_playergames_mission_progress', 'currentvalue', 5, ['userid' => $userid]);
+        $this->checked_in($userid, mktime(0, 0, 0));
+
+        mission_manager::update($userid, $seasonid, 'checkin');
+        mission_manager::reset_missed_checkin_streaks($seasonid, mktime(0, 0, 0) - DAYSECS);
+
+        $this->assertSame(1, (int) $this->progress($userid, 'checkin_streak', $seasonid)->currentvalue);
+    }
+
+    /**
+     * A check-in that follows one of yesterday adds to the streak.
+     */
+    public function test_a_checkin_after_one_of_yesterday_adds_to_the_streak(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $userid = (int) $this->getDataGenerator()->create_user()->id;
+        $seasonid = $this->make_season();
+        mission_manager::update($userid, $seasonid, 'checkin');
+        $DB->set_field('local_playergames_mission_progress', 'currentvalue', 5, ['userid' => $userid]);
+        $this->checked_in($userid, mktime(0, 0, 0) - DAYSECS);
+
+        mission_manager::update($userid, $seasonid, 'checkin');
+        mission_manager::reset_missed_checkin_streaks($seasonid, mktime(0, 0, 0) - DAYSECS);
+
+        $this->assertSame(6, (int) $this->progress($userid, 'checkin_streak', $seasonid)->currentvalue);
     }
 
     public function test_reset_missed_checkin_streaks(): void {
