@@ -56,6 +56,9 @@ class assign_daily_games extends \core\task\scheduled_task {
     /** @var string[] Game types that each receive a single concept assignment. */
     private const CONCEPT_GAMES = ['guess'];
 
+    /** @var bool Whether the run reports nothing, as it must when a web request draws the words. */
+    private bool $quiet = false;
+
     /**
      * Returns the human-readable task name.
      *
@@ -73,11 +76,22 @@ class assign_daily_games extends \core\task\scheduled_task {
      * @return void
      */
     public static function draw_now(): void {
-        ob_start();
-        try {
-            (new self())->execute();
-        } finally {
-            ob_end_clean();
+        // Not mtrace() inside an output buffer: mtrace() flushes, which sends the headers of the page, and the
+        // redirect that ends every such request then prints a page instead of answering with a redirection.
+        $task = new self();
+        $task->quiet = true;
+        $task->execute();
+    }
+
+    /**
+     * Writes a line of the task's report, unless the run is a quiet one.
+     *
+     * @param string $line The line.
+     * @return void
+     */
+    private function report(string $line): void {
+        if (!$this->quiet) {
+            mtrace($line);
         }
     }
 
@@ -96,7 +110,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             'active = 1'
         );
         if (empty($activeids)) {
-            mtrace('No active cartridges — skipping assignment.');
+            $this->report('No active cartridges — skipping assignment.');
             return;
         }
 
@@ -108,14 +122,14 @@ class assign_daily_games extends \core\task\scheduled_task {
                 ['gamedate' => $today, 'gametype' => $gametype]
             );
             if ($alreadyassigned) {
-                mtrace("Assignment already exists for {$gametype} today — skipping.");
+                $this->report("Assignment already exists for {$gametype} today — skipping.");
                 continue;
             }
 
             $pool = $this->season_cartridges($gametype, $activeids);
             $conceptid = $pool === [] ? null : $this->pick_concept($pool, $minlen, $maxlen);
             if ($conceptid === null) {
-                mtrace("No eligible concept found for {$gametype} — skipping.");
+                $this->report("No eligible concept found for {$gametype} — skipping.");
                 continue;
             }
 
@@ -124,12 +138,12 @@ class assign_daily_games extends \core\task\scheduled_task {
             $record->gametype = $gametype;
             $record->conceptid = $conceptid;
             $DB->insert_record('local_playergames_daily_assignments', $record);
-            mtrace("Assigned concept {$conceptid} to {$gametype} for today.");
+            $this->report("Assigned concept {$conceptid} to {$gametype} for today.");
         }
 
         $fillpool = $this->season_cartridges('fill', $activeids);
         if ($fillpool === []) {
-            mtrace('No cartridge kept for fill in the active season — skipping assignment.');
+            $this->report('No cartridge kept for fill in the active season — skipping assignment.');
             return;
         }
         $this->assign_fill($fillpool, $today);
@@ -150,7 +164,9 @@ class assign_daily_games extends \core\task\scheduled_task {
         $min = (int) get_config('local_playergames', $prefix . '_minlen') ?: $defaultmin;
         $max = (int) get_config('local_playergames', $prefix . '_maxlen') ?: $defaultmax;
         if ($min < 1 || $max < $min) {
-            mtrace("The {$prefix} term length range {$min}-{$max} cannot match any term — using {$defaultmin}-{$defaultmax}.");
+            $this->report(
+                "The {$prefix} term length range {$min}-{$max} cannot match any term — using {$defaultmin}-{$defaultmax}."
+            );
             return [$defaultmin, $defaultmax];
         }
         return [$min, $max];
@@ -205,7 +221,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             ['gamedate' => $today, 'gametype' => 'fill']
         );
         if ($alreadyassigned) {
-            mtrace('Assignment already exists for fill today — skipping.');
+            $this->report('Assignment already exists for fill today — skipping.');
             return;
         }
 
@@ -229,7 +245,7 @@ class assign_daily_games extends \core\task\scheduled_task {
         }
 
         if (count($ids) < $numwords) {
-            mtrace('Not enough eligible concepts for fill — skipping.');
+            $this->report('Not enough eligible concepts for fill — skipping.');
             return;
         }
 
@@ -241,7 +257,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             $records[] = (object) ['gamedate' => $today, 'gametype' => 'fill', 'conceptid' => $conceptid];
         }
         $DB->insert_records('local_playergames_daily_assignments', $records);
-        mtrace('Assigned ' . count($chosen) . ' concepts to fill for today.');
+        $this->report('Assigned ' . count($chosen) . ' concepts to fill for today.');
     }
 
     /**

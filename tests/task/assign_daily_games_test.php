@@ -73,6 +73,32 @@ final class assign_daily_games_test extends \advanced_testcase {
         ob_get_clean();
     }
 
+    /**
+     * Drawing the words from a web request reports nothing, and still draws them.
+     *
+     * Regression test: mtrace() flushes, which sends the headers of the page, and the redirect that ends the
+     * request then printed a page and changed the session after closing it, instead of redirecting.
+     */
+    public function test_drawing_from_a_web_request_reports_nothing(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        require_once(__DIR__ . '/../fixtures/mtrace_recorder.php');
+        $this->seed_concepts();
+        $CFG->mtrace_wrapper = __NAMESPACE__ . '\\mtrace_recorder';
+        $CFG->local_playergames_mtrace_lines = [];
+
+        assign_daily_games::draw_now();
+        $quiet = $CFG->local_playergames_mtrace_lines;
+        (new assign_daily_games())->execute();
+        $reported = $CFG->local_playergames_mtrace_lines;
+        unset($CFG->mtrace_wrapper, $CFG->local_playergames_mtrace_lines);
+
+        $this->assertSame([], $quiet);
+        $this->assertTrue($DB->record_exists('local_playergames_daily_assignments', ['gametype' => 'guess']));
+        // The task run by cron still reports, here that the words of today are drawn already.
+        $this->assertNotEmpty($reported);
+    }
+
     public function test_get_name_returns_a_string(): void {
         $this->assertNotEmpty((new assign_daily_games())->get_name());
     }
