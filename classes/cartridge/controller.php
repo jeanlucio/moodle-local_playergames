@@ -423,7 +423,11 @@ class controller {
      * @return string Rendered HTML.
      */
     private function render_tab_ai(\renderer_base $output, string $baseurl): string {
+        global $PAGE, $USER;
+
         $gen = new ai_generator();
+        // The forms of this tab send the topic to core_ai: the page asks for the AI usage policy before they do.
+        $PAGE->requires->js_call_amd('local_playergames/ai_policy', 'init', [!$gen->needs_policy((int) $USER->id)]);
 
         $aipreviewdata = null;
         if ($this->aipreview !== null) {

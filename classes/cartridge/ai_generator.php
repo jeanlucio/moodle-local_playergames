@@ -24,6 +24,8 @@
 
 namespace local_playergames\cartridge;
 
+use local_playergames\local\ai_policy;
+
 /**
  * Builds cartridge concept prompts and generates content through the AI Hub.
  *
@@ -115,6 +117,19 @@ class ai_generator {
             return true;
         }
         return $this->has_core_ai();
+    }
+
+    /**
+     * Whether the page must ask a user to accept the AI usage policy before sending anything to generate.
+     *
+     * Only core_ai answers to that policy: the hub has its own, and a site without a core_ai provider has nothing
+     * to accept.
+     *
+     * @param int $userid The user.
+     * @return bool
+     */
+    public function needs_policy(int $userid): bool {
+        return !ai_policy::agreed($userid) && $this->has_core_ai();
     }
 
     /**
@@ -267,6 +282,9 @@ class ai_generator {
 
             if (empty($providers[$actionclass])) {
                 return ['success' => false, 'message' => ''];
+            }
+            if (!ai_policy::agreed((int) $USER->id)) {
+                return ['success' => false, 'message' => get_string('error_ai_policy_not_accepted', 'local_playergames')];
             }
 
             $prompttext = $system !== '' ? ($system . "\n\n" . $user) : $user;

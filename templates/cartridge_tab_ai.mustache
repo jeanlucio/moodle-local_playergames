@@ -95,7 +95,7 @@
             {{#str}}cartridge_ai_heading, local_playergames{{/str}}
         </div>
         <div class="card-body">
-            <form method="post" action="{{action_url}}">
+            <form method="post" action="{{action_url}}" data-pg-ai-policy="1">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
                 <input type="hidden" name="action" value="generate_ai">
                 <input type="hidden" name="tab" value="ai">
@@ -271,7 +271,7 @@
             {{#str}}cartridge_ai_tab_quiz, local_playergames{{/str}}
         </div>
         <div class="card-body">
-            <form method="post" action="{{action_url}}">
+            <form method="post" action="{{action_url}}" data-pg-ai-policy="1">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
                 <input type="hidden" name="action" value="generate_ai_quiz">
                 <input type="hidden" name="tab" value="ai">

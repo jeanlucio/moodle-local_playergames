@@ -19,6 +19,7 @@
  * Provides:
  *  - Delete confirmation dialog on forms with a data-pg-confirm attribute.
  *  - The rename form of a category, opened from its row.
+ *  - The AI usage policy of the site, asked for before a form sends anything to the AI.
  *
  * @module     local_playergames/cartridge
  * @copyright  2026 Jean Lúcio
@@ -27,6 +28,7 @@
 
 import Notification from 'core/notification';
 import {getString} from 'core/str';
+import {ensure as ensureAiPolicy} from 'local_playergames/ai_policy';
 
 /**
  * Asks for confirmation before sending every form that carries a data-pg-confirm attribute, all of them deletions.
@@ -82,9 +84,25 @@ const attachRenameCategoryButtons = () => {
 };
 
 /**
+ * Holds every form that carries a data-pg-ai-policy attribute until the AI usage policy of the site is accepted.
+ */
+const attachAiPolicyGate = () => {
+    document.querySelectorAll('form[data-pg-ai-policy]').forEach(form => {
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (await ensureAiPolicy()) {
+                // Sending the form this way does not fire the submit event again.
+                form.submit();
+            }
+        });
+    });
+};
+
+/**
  * Initialises the behaviour of the cartridge page.
  */
 export const init = () => {
     attachConfirmDialogs();
     attachRenameCategoryButtons();
+    attachAiPolicyGate();
 };

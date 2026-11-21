@@ -145,6 +145,58 @@ final class ai_generator_test extends \advanced_testcase {
             $manager->method('process_action')->willReturn($response);
         }
         \core\di::set(\core_ai\manager::class, $manager);
+        $this->accept_ai_policy();
+    }
+
+    /**
+     * Logs in a user who has accepted the AI usage policy of the site, as core_ai requires before any use.
+     *
+     * @return void
+     */
+    private function accept_ai_policy(): void {
+        $this->setAdminUser();
+        if (!\core_ai\manager::get_user_policy_status((int) $GLOBALS['USER']->id)) {
+            \core_ai\manager::user_policy_accepted((int) $GLOBALS['USER']->id, \context_system::instance()->id);
+        }
+    }
+
+    /**
+     * Nothing reaches core_ai before the user accepted the AI usage policy of the site.
+     *
+     * Regression test: the topic and the reference text went to the provider of core_ai without the policy the
+     * AI placements of the core ask for first.
+     */
+    public function test_core_ai_is_not_reached_before_the_policy_is_accepted(): void {
+        $this->resetAfterTest();
+        if ((new \ReflectionMethod(\core_ai\manager::class, 'get_providers_for_actions'))->isStatic()) {
+            $this->markTestSkipped('The core_ai manager cannot be mocked on this Moodle version.');
+        }
+        $this->setAdminUser();
+        $manager = $this->createMock(\core_ai\manager::class);
+        $manager->method('get_providers_for_actions')
+            ->willReturn([\core_ai\aiactions\generate_text::class => [new \stdClass()]]);
+        $manager->expects($this->never())->method('process_action');
+        \core\di::set(\core_ai\manager::class, $manager);
+
+        $result = $this->call_core_ai();
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(get_string('error_ai_policy_not_accepted', 'local_playergames'), $result['message']);
+    }
+
+    /**
+     * The page asks for the policy only while it is not accepted and core_ai is the source it would reach.
+     */
+    public function test_the_page_asks_for_the_policy_only_when_core_ai_needs_it(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $userid = (int) $GLOBALS['USER']->id;
+
+        $this->assertTrue($this->generator_with_core_ai(true)->needs_policy($userid));
+        $this->assertFalse($this->generator_with_core_ai(false)->needs_policy($userid));
+
+        \core_ai\manager::user_policy_accepted($userid, \context_system::instance()->id);
+        $this->assertFalse($this->generator_with_core_ai(true)->needs_policy($userid));
     }
 
     /**

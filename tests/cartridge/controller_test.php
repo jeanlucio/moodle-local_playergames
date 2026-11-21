@@ -677,6 +677,11 @@ final class controller_test extends \advanced_testcase {
             ->willReturn([\core_ai\aiactions\generate_text::class => [new \stdClass()]]);
         $manager->method('process_action')->willReturn($response);
         \core\di::set(\core_ai\manager::class, $manager);
+        // The generation runs as the administrator, who has accepted the AI usage policy core_ai asks for first.
+        $this->setAdminUser();
+        if (!\core_ai\manager::get_user_policy_status((int) $GLOBALS['USER']->id)) {
+            \core_ai\manager::user_policy_accepted((int) $GLOBALS['USER']->id, \context_system::instance()->id);
+        }
     }
 
     /**
