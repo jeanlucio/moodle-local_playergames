@@ -173,6 +173,9 @@ const showQuestion = (index, seconds) => {
         b.classList.remove('btn-success', 'btn-danger');
         b.classList.add('btn-outline-primary');
     });
+    // The play comes back to the same questions once it has gone through them all, and this page keeps their
+    // markup: the verdict marks of the last answer would otherwise give the right option away.
+    current.querySelectorAll('.pg-quiz-mark').forEach(mark => mark.remove());
     showAttempt(attemptNumber);
     startTimer(seconds);
 };
@@ -194,7 +197,7 @@ const lockAnswers = () => {
  */
 const markAnswer = (button, icon) => {
     const mark = document.createElement('i');
-    mark.className = `fa ${icon} me-2`;
+    mark.className = `pg-quiz-mark fa ${icon} me-2`;
     mark.setAttribute('aria-hidden', 'true');
     button.prepend(mark);
 };

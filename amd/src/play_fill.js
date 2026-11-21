@@ -166,7 +166,10 @@ const submitGuess = async(conceptid, guess) => {
         });
         data = await response.json();
     } catch (e) {
+        // A session that expired, a refused sesskey or a lost connection all answer with something that is not
+        // the JSON of a verdict: tell the player instead of leaving the board as if the key did nothing.
         submitting = false;
+        showMessage(container.dataset.strError);
         return;
     }
 

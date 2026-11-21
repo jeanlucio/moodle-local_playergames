@@ -107,9 +107,11 @@ if (data_submitted()) {
         }
     }
 
-    // Today's words were drawn from the cartridges the season kept until now: draw them again if one of them
-    // came from a cartridge it no longer keeps for that game.
-    if ($season->status === season_manager::STATUS_ACTIVE && season_game_config::release_todays_words_outside($seasonid)) {
+    // Today's words were drawn from the cartridges the season kept until now: release those that came from a
+    // cartridge it no longer keeps for that game, then draw for every game left without words, which also covers
+    // a game that had nothing to draw from before this change.
+    if ($season->status === season_manager::STATUS_ACTIVE) {
+        season_game_config::release_todays_words_outside($seasonid);
         \local_playergames\task\assign_daily_games::draw_now();
     }
 

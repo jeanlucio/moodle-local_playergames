@@ -17,7 +17,7 @@
  * Behaviour of the cartridge management page.
  *
  * Provides:
- *  - Confirmation dialog on forms with a data-pg-confirm attribute.
+ *  - Delete confirmation dialog on forms with a data-pg-confirm attribute.
  *  - The rename form of a category, opened from its row.
  *
  * @module     local_playergames/cartridge
@@ -29,21 +29,23 @@ import Notification from 'core/notification';
 import {getString} from 'core/str';
 
 /**
- * Asks for confirmation before sending every form that carries a data-pg-confirm attribute.
+ * Asks for confirmation before sending every form that carries a data-pg-confirm attribute, all of them deletions.
  */
 const attachConfirmDialogs = () => {
     document.querySelectorAll('form[data-pg-confirm]').forEach(form => {
         form.addEventListener('submit', e => {
             e.preventDefault();
-            Notification.confirm(
-                '',
-                form.dataset.pgConfirm,
+            // Every one of these forms deletes something, hence the delete dialog and its danger button.
+            Notification.deleteCancel(
                 // The labels go as promises, which the dialog waits for: a label filled in later would
                 // show an English fallback to whoever submits before the strings arrive.
-                getString('yes', 'core'),
-                getString('no', 'core'),
+                getString('confirm', 'core'),
+                form.dataset.pgConfirm,
+                getString('delete', 'core'),
                 // Sending the form this way does not fire the submit event again.
-                () => form.submit()
+                () => form.submit(),
+                () => null,
+                {triggerElement: e.submitter ?? null}
             );
         });
     });

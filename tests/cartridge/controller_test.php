@@ -597,6 +597,11 @@ final class controller_test extends \advanced_testcase {
 
         $cartridge = $DB->get_record('local_playergames_cartridges', [], '*', MUST_EXIST);
         $this->assertSame(1, $DB->count_records('local_playergames_concepts', ['cartridgeid' => $cartridge->id]));
+        // The games had nothing to draw from before: the new cartridge gives them their word at once.
+        $this->assertSame(
+            (int) $DB->get_field('local_playergames_concepts', 'id', ['cartridgeid' => $cartridge->id], MUST_EXIST),
+            $this->todays_guess_word()
+        );
         $imported = array_filter(
             $sink->get_events(),
             fn($event): bool => $event instanceof \local_playergames\event\cartridge_imported
@@ -624,6 +629,7 @@ final class controller_test extends \advanced_testcase {
         $this->assertSame('Bot', $cartridge->author);
         $this->assertSame(2, $DB->count_records('local_playergames_concepts', ['cartridgeid' => $cartridge->id]));
         $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $cartridge->id]));
+        $this->assertNotNull($this->todays_guess_word());
         $this->assertNotEmpty(array_filter(
             $sink->get_events(),
             fn($event): bool => $event instanceof \local_playergames\event\cartridge_imported
@@ -1128,6 +1134,77 @@ final class controller_test extends \advanced_testcase {
 
         $this->assertSame(1, (int) $DB->get_field('local_playergames_cartridges', 'active', ['id' => $first]));
         $this->assertSame($ids['grape'], $assigned());
+    }
+
+    /**
+     * Reads today's PlayerGuess word.
+     *
+     * @return int|null The concept id, or null when the game has none today.
+     */
+    private function todays_guess_word(): ?int {
+        global $DB;
+        $conceptid = $DB->get_field(
+            'local_playergames_daily_assignments',
+            'conceptid',
+            ['gamedate' => mktime(0, 0, 0), 'gametype' => 'guess']
+        );
+        return $conceptid === false ? null : (int) $conceptid;
+    }
+
+    /**
+     * The first concept a game can use, added after the task of midnight found none, gives the game its word
+     * at once; a concept added afterwards leaves that word as it is.
+     */
+    public function test_adding_a_concept_draws_todays_word_when_the_game_had_none(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->make_cartridge('Fruits');
+
+        $this->dispatch(['action' => 'add_concept', 'cartridgeid' => $cartridge, 'term' => 'grape', 'definition' => 'A fruit']);
+
+        $grape = (int) $DB->get_field('local_playergames_concepts', 'id', ['term' => 'grape'], MUST_EXIST);
+        $this->assertSame($grape, $this->todays_guess_word());
+
+        $this->dispatch(['action' => 'add_concept', 'cartridgeid' => $cartridge, 'term' => 'lemon', 'definition' => 'A fruit']);
+
+        $this->assertSame($grape, $this->todays_guess_word());
+    }
+
+    /**
+     * Switching on a cartridge when no other one was on gives the games their words at once.
+     */
+    public function test_switching_a_cartridge_on_draws_todays_word_when_the_game_had_none(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->make_cartridge('Fruits');
+        $grape = (int) $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $cartridge, 'term' => 'grape', 'definition' => 'A fruit', 'difficulty' => 3,
+        ]);
+        $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $cartridge]);
+
+        $this->dispatch(['action' => 'toggle_active', 'cartridgeid' => $cartridge]);
+
+        $this->assertSame($grape, $this->todays_guess_word());
+    }
+
+    /**
+     * A term edited into one the game can use gives the game its word at once.
+     */
+    public function test_editing_a_term_into_a_usable_one_draws_todays_word_when_the_game_had_none(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $cartridge = $this->make_cartridge('Fruits');
+        // Too short for PlayerGuess, which draws terms of four letters or more by default.
+        $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => $cartridge, 'term' => 'fig', 'definition' => 'A fruit', 'difficulty' => 3,
+        ]);
+
+        $this->dispatch([
+            'action' => 'edit_concept', 'cartridgeid' => $cartridge, 'concept_id' => $conceptid,
+            'term' => 'grape', 'definition' => 'A fruit',
+        ]);
+
+        $this->assertSame($conceptid, $this->todays_guess_word());
     }
 
     /**

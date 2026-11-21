@@ -111,6 +111,36 @@ body.path-local-playergames .pg-gap-3 {
     gap: 1rem;
 }
 
+/* Bootstrap 4 (Moodle 4.5) has none of these Bootstrap 5 utilities, and its bridge to Bootstrap 5 does not add
+   them. On Moodle 5.x Bootstrap's own rules give the same values. */
+body.path-local-playergames .d-grid {
+    display: grid;
+}
+
+body.path-local-playergames .fw-semibold {
+    font-weight: 600;
+}
+
+body.path-local-playergames .fw-bold {
+    font-weight: 700;
+}
+
+body.path-local-playergames .fs-3 {
+    font-size: 1.75rem;
+}
+
+body.path-local-playergames .fs-4 {
+    font-size: 1.5rem;
+}
+
+body.path-local-playergames .fs-5 {
+    font-size: 1.25rem;
+}
+
+body.path-local-playergames .fs-6 {
+    font-size: 1rem;
+}
+
 /* ── PlayerQuiz per-question timer ────────────────────────────────── */
 
 body.path-local-playergames .pg-quiz-timer {

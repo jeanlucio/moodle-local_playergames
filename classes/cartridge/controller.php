@@ -661,9 +661,11 @@ class controller {
                 'objectid' => $result->cartridgeid,
             ]);
             $event->trigger();
-            $successkey = ($result->type ?? 'concept') === 'quiz'
-                ? 'cartridge_import_success_quiz'
-                : 'cartridge_import_success';
+            $isquiz = ($result->type ?? 'concept') === 'quiz';
+            if (!$isquiz) {
+                $this->draw_todays_words();
+            }
+            $successkey = $isquiz ? 'cartridge_import_success_quiz' : 'cartridge_import_success';
             redirect(
                 $this->url(['cartridgeid' => $result->cartridgeid]),
                 get_string($successkey, 'local_playergames', $result),
@@ -719,6 +721,7 @@ class controller {
                 'objectid' => $result->cartridgeid,
             ]);
             $event->trigger();
+            $this->draw_todays_words();
             redirect(
                 $this->url(['cartridgeid' => $result->cartridgeid]),
                 get_string('cartridge_import_success', 'local_playergames', $result),
@@ -941,6 +944,7 @@ class controller {
             'objectid' => $newcartridgeid,
         ]);
         $event->trigger();
+        $this->draw_todays_words();
 
         redirect(
             $this->url(['tab' => 'editor', 'cartridgeid' => $newcartridgeid]),
@@ -1030,6 +1034,7 @@ class controller {
             time(),
             ['id' => $postcartridgeid]
         );
+        $this->draw_todays_words();
         redirect(
             $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
             get_string('concept_saved', 'local_playergames'),
@@ -1082,7 +1087,9 @@ class controller {
         $updated->id = $existingconcept->id;
         $termchanged = $updated->term !== $existingconcept->term;
         $DB->update_record('local_playergames_concepts', $updated);
-        if ($termchanged && (new cartridge_remover())->release_todays_word((int) $existingconcept->id)) {
+        if ($termchanged) {
+            // The old term may have been one of today's words, and the new one may be the first a game can use.
+            (new cartridge_remover())->release_todays_word((int) $existingconcept->id);
             $this->draw_todays_words();
         }
         $DB->set_field(
@@ -1138,15 +1145,17 @@ class controller {
         $cartridgerow->active = $cartridgerow->active ? 0 : 1;
         $cartridgerow->timemodified = time();
         $DB->update_record('local_playergames_cartridges', $cartridgerow);
-        if (!$cartridgerow->active && (new cartridge_remover())->release_todays_words($postcartridgeid)) {
+        if ($cartridgerow->active || (new cartridge_remover())->release_todays_words($postcartridgeid)) {
             $this->draw_todays_words();
         }
         redirect($this->url(), '', null, \core\output\notification::NOTIFY_SUCCESS);
     }
 
     /**
-     * Draws today's words again after some of them were removed, so the games do not stay empty until midnight.
+     * Draws today's words for the games that have none, so they do not stay empty until midnight.
      *
+     * Called after today's words were removed, and after concepts were added or a cartridge was turned on, since
+     * the task of midnight may have found nothing to draw. A game that still has its words for today keeps them.
      * The daily task reports on its progress, which is not for this page.
      *
      * @return void
