@@ -219,6 +219,35 @@ final class guess_manager_test extends \advanced_testcase {
         $this->assertTrue($second['finished']);
     }
 
+    /**
+     * Rows that already reach a lowered limit make a lost round, for the page and for the next guess alike.
+     *
+     * Regression test: the round only ended when a guess was sent, so after the administrator lowered the
+     * limit below the rows a player had already played the page drew fewer rows than it had to replay, broke,
+     * and left the player with no keyboard until the next day.
+     */
+    public function test_a_limit_lowered_below_the_rows_played_ends_the_round(): void {
+        $this->resetAfterTest();
+        $season = $this->open_round('planet');
+        set_config('guess_max_attempts', 6, 'local_playergames');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+        foreach (['zzzzzz', 'yyyyyy', 'xxxxxx'] as $guess) {
+            $this->assertFalse(guess_manager::submit_guess((int) $user->id, $guess, $today, $season, $context)['finished']);
+        }
+
+        set_config('guess_max_attempts', 2, 'local_playergames');
+        $concept = guess_manager::get_daily_concept($today);
+        $state = guess_state::load((int) $user->id, $today, (int) $concept->id, (string) $concept->term);
+        $replay = guess_manager::submit_guess((int) $user->id, 'planet', $today, $season, $context);
+
+        $this->assertTrue($state['finished']);
+        $this->assertFalse($state['won']);
+        $this->assertCount(3, $state['rows']);
+        $this->assertSame(['success' => false, 'reason' => 'finished'], $replay);
+    }
+
     public function test_a_win_pays_the_xp_once_and_closes_the_round(): void {
         global $DB;
         $this->resetAfterTest();

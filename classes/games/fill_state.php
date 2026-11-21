@@ -79,6 +79,18 @@ class fill_state {
             ];
         }
 
+        // A word that already used the attempts allowed now has run out, even when the setting went down after
+        // they were used, and a word that runs out loses the round, as it does when the last attempt is played.
+        if (empty($state['finished'])) {
+            foreach ($state['words'] as $index => $word) {
+                if (!$word['resolved'] && (int) $word['attemptsused'] >= fill_manager::max_attempts()) {
+                    $state['words'][$index]['exhausted'] = true;
+                    $state['finished'] = true;
+                    $state['won'] = false;
+                }
+            }
+        }
+
         return $state;
     }
 

@@ -321,6 +321,30 @@ final class fill_manager_test extends \advanced_testcase {
         $this->assertTrue($second['words'][0]['exhausted']);
     }
 
+    /**
+     * A word that already used a lowered limit has run out, which loses the round as its last attempt would.
+     */
+    public function test_a_limit_lowered_below_the_attempts_used_ends_the_round(): void {
+        $this->resetAfterTest();
+        [$season, $gato] = $this->open_round();
+        set_config('fill_max_attempts', 4, 'local_playergames');
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+        foreach (['zzzz', 'yyyy'] as $guess) {
+            $answer = fill_manager::submit_word_guess((int) $user->id, $gato, $guess, $today, $season, $context);
+            $this->assertFalse($answer['finished']);
+        }
+
+        set_config('fill_max_attempts', 2, 'local_playergames');
+        $state = fill_state::load((int) $user->id, $today, fill_manager::get_daily_concepts($today));
+        $replay = fill_manager::submit_word_guess((int) $user->id, $gato, 'gato', $today, $season, $context);
+
+        $this->assertTrue($state['finished']);
+        $this->assertFalse($state['won']);
+        $this->assertSame(['success' => false, 'reason' => 'finished'], $replay);
+    }
+
     public function test_resolving_every_word_pays_the_xp_once(): void {
         global $DB;
         $this->resetAfterTest();

@@ -66,6 +66,13 @@ class guess_state {
             ];
         }
 
+        // Rows that already reach the attempts allowed now make a lost round, even when the setting went down
+        // after they were played: the page could not draw them all, and no further guess would be judged.
+        if (empty($state['finished']) && count($state['rows']) >= guess_manager::max_attempts()) {
+            $state['finished'] = true;
+            $state['won'] = false;
+        }
+
         return $state;
     }
 
