@@ -120,6 +120,27 @@ final class streak_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $streak->currentstreak);
     }
 
+    /**
+     * The break is decided again on the row as it is once the lock is held: a play that came between the
+     * search of the cron and its lock already continued the streak, and the cron must leave it alone.
+     */
+    public function test_the_break_is_decided_again_under_the_lock(): void {
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $user = $this->getDataGenerator()->create_user();
+        // The cron found this row with a missed day; the player then played today.
+        $this->set_streak((int) $user->id, 6, 6, mktime(0, 0, 0), 1);
+        $streakid = (int) streak_manager::get_or_create((int) $user->id)->id;
+
+        $method = new \ReflectionMethod(streak_manager::class, 'process_break_locked');
+        $broken = $method->invoke(null, $streakid, streak_manager::midnight_yesterday());
+
+        $this->assertSame(0, $broken);
+        $streak = streak_manager::get_or_create((int) $user->id);
+        $this->assertSame(6, (int) $streak->currentstreak);
+        $this->assertSame(1, (int) $streak->freezesavailable);
+    }
+
     public function test_process_breaks_consumes_freeze(): void {
         $this->resetAfterTest();
         $this->redirectEvents();

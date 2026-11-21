@@ -439,6 +439,23 @@ final class battle_manager_test extends \advanced_testcase {
     }
 
     /**
+     * A battle takes no more answers past its ceiling, so a script cannot keep one battle open to farm them.
+     */
+    public function test_a_battle_takes_no_answer_past_its_ceiling(): void {
+        $this->prepare();
+        $this->add_question();
+        $question = $this->start()[0];
+        $cache = \cache::make_from_params(\cache_store::MODE_SESSION, 'local_playergames', 'battle');
+        $userid = (int) $GLOBALS['USER']->id;
+        $run = $cache->get($userid);
+        $run['answered'] = 200;
+        $cache->set($userid, $run);
+
+        $this->assertSame(['success' => false, 'reason' => 'limit'], $this->answer_key($question['key'], 0));
+        $this->assertSame(200, $cache->get($userid)['answered']);
+    }
+
+    /**
      * A question is not asked again before every other one was, so one question cannot be used to try
      * its options one after another.
      */

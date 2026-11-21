@@ -1,0 +1,9 @@
+{
+    "name": "Imported fruits",
+    "version": "1.0",
+    "language": "en",
+    "concepts": [
+        {"term": "grape", "definition": "A purple fruit", "category": "Fruits", "difficulty": 2},
+        {"term": "lemon", "definition": "A sour fruit", "category": "Fruits", "difficulty": 3}
+    ]
+}

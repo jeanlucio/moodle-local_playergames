@@ -50,3 +50,23 @@ Feature: Manage the cartridges of PlayerGames
     And I click on "Delete" "button" in the "Confirm" "dialogue"
     Then I should see "Cartridge deleted."
     And I should not see "Fruits"
+
+  @javascript @_file_upload
+  Scenario: An imported concept cartridge is listed and gives PlayerGuess its word at once
+    Given I am on the "local_playergames > Cartridge import" page
+    When I choose the PlayerGames cartridge file "local/playergames/tests/fixtures/cartridge_fruits.json" to import
+    And I press "Import JSON"
+    And I should see "Imported 2 concepts."
+    And I log out
+    And I log in as "student1"
+    And I am on the "local_playergames > PlayerGuess" page
+    Then I should not see "No terms available"
+    And "#pg-guess-board" "css_element" should exist
+
+  @javascript @_file_upload
+  Scenario: A file that is not valid JSON is refused
+    Given I am on the "local_playergames > Cartridge import" page
+    When I choose the PlayerGames cartridge file "local/playergames/tests/fixtures/cartridge_broken.json" to import
+    And I press "Import JSON"
+    Then I should see "The uploaded file does not contain valid JSON."
+    And I should not see "Imported"

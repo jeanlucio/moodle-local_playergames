@@ -38,7 +38,7 @@ class behat_local_playergames extends behat_base {
     /**
      * Converts page names to URLs for steps like 'I am on the "local_playergames > PlayerGuess" page'.
      *
-     * Recognised page names: Hub, PlayerGuess, PlayerFill, PlayerQuiz, Cartridges, Seasons.
+     * Recognised page names: Hub, PlayerGuess, PlayerFill, PlayerQuiz, Cartridges, Cartridge import, Seasons.
      *
      * @param string $page The page name.
      * @return moodle_url The URL of the page.
@@ -51,6 +51,7 @@ class behat_local_playergames extends behat_base {
             'playerfill' => '/local/playergames/play_fill.php',
             'playerquiz' => '/local/playergames/play_quiz.php',
             'cartridges' => '/local/playergames/cartridge.php',
+            'cartridge import' => '/local/playergames/cartridge.php?tab=import',
             'seasons' => '/local/playergames/manage_seasons.php',
         ];
         $key = strtolower($page);
@@ -89,6 +90,21 @@ class behat_local_playergames extends behat_base {
      */
     public function the_playergames_words_of_the_day_are_drawn(): void {
         \local_playergames\task\assign_daily_games::draw_now();
+    }
+
+    /**
+     * Chooses a cartridge file in the JSON import form of the cartridge page.
+     *
+     * The form takes a plain file field, which no core step fills; the file picker steps of core attach the
+     * file the same way.
+     *
+     * @When I choose the PlayerGames cartridge file :filepath to import
+     * @param string $filepath The file, relative to the root of Moodle.
+     */
+    public function i_choose_the_playergames_cartridge_file_to_import(string $filepath): void {
+        global $CFG;
+        $field = $this->find_field(get_string('cartridge_import_file', 'local_playergames'));
+        $field->attachFile($CFG->dirroot . '/' . $filepath);
     }
 
     /**

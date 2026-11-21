@@ -360,6 +360,24 @@ final class fill_manager_test extends \advanced_testcase {
         $this->assertSame(['success' => false, 'reason' => 'invalid'], $answer);
     }
 
+    /**
+     * A guess that is not a word of letters of the right length is refused and costs no attempt.
+     */
+    public function test_a_guess_that_cannot_be_the_word_costs_no_attempt(): void {
+        $this->resetAfterTest();
+        [$season, $gato] = $this->open_round();
+        $user = $this->getDataGenerator()->create_user();
+        $today = mktime(0, 0, 0);
+        $context = \context_system::instance();
+
+        foreach (['gatos', 'ga', 'g4to', ''] as $guess) {
+            $answer = fill_manager::submit_word_guess((int) $user->id, $gato, $guess, $today, $season, $context);
+            $this->assertSame(['success' => false, 'reason' => 'invalid'], $answer, $guess);
+        }
+        $first = fill_manager::submit_word_guess((int) $user->id, $gato, 'zzzz', $today, $season, $context);
+        $this->assertSame(1, $first['words'][0]['attemptsused']);
+    }
+
     public function test_submit_is_unavailable_without_words_for_the_day(): void {
         $this->resetAfterTest();
         [$season, $gato] = $this->open_round();

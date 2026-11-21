@@ -418,6 +418,48 @@ final class access_test extends \advanced_testcase {
      * An administrator takes a group out of the gamification by prohibiting viewhub for its role, and
      * the participant rule follows, so nothing that records game data lets those users in.
      */
+    /**
+     * Lists the users the ranking condition lets in, among the ones given.
+     *
+     * @param int[] $userids The users to look at.
+     * @param bool|null $wantstaff The list asked for: staff, students, or not split.
+     * @return int[] The ids let in, sorted.
+     */
+    private function ranked(array $userids, ?bool $wantstaff): array {
+        global $DB;
+        [$where, $params] = access::participant_sql('u.id', $wantstaff);
+        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'pick');
+        $ids = array_map('intval', $DB->get_fieldset_sql(
+            "SELECT u.id FROM {user} u WHERE u.id {$insql} AND {$where}",
+            $params + $inparams
+        ));
+        sort($ids);
+        return $ids;
+    }
+
+    /**
+     * The ranking condition follows the allowed_participants setting for each list.
+     *
+     * The rankings ask it in SQL instead of calling is_participant() for every row, so both must agree:
+     * on a students-only site the staff list keeps only the administrators, on a staff-only site the
+     * students list is empty.
+     */
+    public function test_the_ranking_condition_follows_the_participants_setting(): void {
+        $this->resetAfterTest();
+        $student = (int) $this->getDataGenerator()->create_user()->id;
+        $admin = (int) get_admin()->id;
+        $users = [$student, $admin];
+        sort($users);
+
+        $this->assertSame($users, $this->ranked($users, null));
+
+        set_config('allowed_participants', 'students', 'local_playergames');
+        $this->assertSame([$admin], $this->ranked($users, true));
+
+        set_config('allowed_participants', 'staff', 'local_playergames');
+        $this->assertSame([], $this->ranked($users, false));
+    }
+
     public function test_is_participant_is_false_when_viewhub_is_prohibited(): void {
         $this->resetAfterTest();
         $student = $this->getDataGenerator()->create_user();

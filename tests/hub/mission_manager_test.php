@@ -297,6 +297,30 @@ final class mission_manager_test extends \advanced_testcase {
         $this->assertSame(6, (int) $this->progress($userid, 'checkin_streak', $seasonid)->currentvalue);
     }
 
+    /**
+     * The seventh check-in in a row completes the check-in streak mission and pays its XP, once.
+     */
+    public function test_the_seventh_checkin_in_a_row_completes_the_streak_mission(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $userid = (int) $this->getDataGenerator()->create_user()->id;
+        $seasonid = $this->make_season();
+        mission_manager::update($userid, $seasonid, 'checkin');
+        $DB->set_field('local_playergames_mission_progress', 'currentvalue', 6, ['userid' => $userid]);
+        $this->checked_in($userid, mktime(0, 0, 0) - DAYSECS);
+        $mission = $DB->get_record('local_playergames_missions', ['type' => 'checkin_streak'], '*', MUST_EXIST);
+        $before = $this->xp($userid, $seasonid);
+
+        mission_manager::update($userid, $seasonid, 'checkin');
+        mission_manager::update($userid, $seasonid, 'checkin');
+
+        $progress = $this->progress($userid, 'checkin_streak', $seasonid);
+        $this->assertSame(1, (int) $progress->completed);
+        $this->assertSame(7, (int) $progress->currentvalue);
+        $this->assertSame($before + (int) $mission->xpreward, $this->xp($userid, $seasonid));
+    }
+
     public function test_reset_missed_checkin_streaks(): void {
         global $DB;
         $this->resetAfterTest();

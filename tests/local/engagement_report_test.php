@@ -198,6 +198,21 @@ final class engagement_report_test extends \advanced_testcase {
     /**
      * The site-wide comparison takes every course but the site course.
      */
+    /**
+     * Without a scope, the comparison takes every course of the site, as the page of the administration asks.
+     */
+    public function test_compare_without_a_scope_takes_every_course(): void {
+        $this->resetAfterTest();
+        for ($i = 0; $i < 3; $i++) {
+            $this->getDataGenerator()->create_course();
+        }
+
+        $result = (new engagement_report())->compare(30);
+
+        $this->assertSame(0, $result['with']['course_count']);
+        $this->assertSame(3, $result['without']['course_count']);
+    }
+
     public function test_the_all_courses_scope_excludes_the_site_course(): void {
         $this->resetAfterTest();
         $first = $this->getDataGenerator()->create_course();
