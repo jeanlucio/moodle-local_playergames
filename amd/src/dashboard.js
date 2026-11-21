@@ -26,6 +26,7 @@
  */
 
 import Modal from 'core/modal';
+import Graph from 'local_playergames/dashboard/graph';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -89,9 +90,8 @@ const drawEdges = (container, overlay, edges) => {
         }
         const a = centreOf(fromEl, containerRect);
         const b = centreOf(toEl, containerRect);
-        const midx = a.x + (b.x - a.x) * 0.5;
         const path = document.createElementNS(SVGNS, 'path');
-        path.setAttribute('d', `M ${a.x} ${a.y} C ${midx} ${a.y} ${midx} ${b.y} ${b.x} ${b.y}`);
+        path.setAttribute('d', Graph.edgePath(a, b));
         path.setAttribute('class', `pg-eco-edge pg-edge-${edge.type}`);
         path.dataset.from = edge.from;
         path.dataset.to = edge.to;
@@ -148,35 +148,7 @@ const wireHighlight = (container, card, neighbours) => {
  */
 const readEdges = () => {
     const el = document.getElementById('pg-ecosystem-edges');
-    if (!el) {
-        return [];
-    }
-    try {
-        return JSON.parse(el.textContent) || [];
-    } catch (e) {
-        return [];
-    }
-};
-
-/**
- * Builds an undirected adjacency map from the edge list.
- *
- * @param {Array<{from: string, to: string}>} edges The edge list.
- * @return {Map<string, Set<string>>}
- */
-const buildNeighbours = (edges) => {
-    const map = new Map();
-    const add = (a, b) => {
-        if (!map.has(a)) {
-            map.set(a, new Set());
-        }
-        map.get(a).add(b);
-    };
-    edges.forEach(edge => {
-        add(edge.from, edge.to);
-        add(edge.to, edge.from);
-    });
-    return map;
+    return el ? Graph.parseEdges(el.textContent) : [];
 };
 
 /**
@@ -190,7 +162,7 @@ const init = () => {
     }
 
     const edges = readEdges();
-    const neighbours = buildNeighbours(edges);
+    const neighbours = Graph.neighbours(edges);
     const cards = container.querySelectorAll('.pg-eco-card');
 
     cards.forEach(card => {

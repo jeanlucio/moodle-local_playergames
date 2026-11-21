@@ -31,6 +31,7 @@
 import Modal from 'core/modal';
 import Notification from 'core/notification';
 import Pending from 'core/pending';
+import Rules from 'local_playergames/quiz/rules';
 import {getString} from 'core/str';
 
 let currentIndex = 0;
@@ -88,9 +89,7 @@ const renderTimer = (seconds) => {
     if (!timerEl) {
         return;
     }
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    timerEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+    timerEl.textContent = Rules.clock(seconds);
 };
 
 /**
@@ -109,7 +108,7 @@ const startTimer = (seconds) => {
     timerEl.classList.remove('d-none');
     renderTimer(seconds);
     timerInterval = window.setInterval(() => {
-        const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+        const remaining = Rules.secondsLeft(deadline, Date.now());
         renderTimer(remaining);
         if (remaining <= 0) {
             clearTimer();
@@ -234,14 +233,15 @@ const announceVerdict = async(correct, right) => {
 const revealResult = (result, choice) => {
     const question = questions[currentIndex];
     const buttons = Array.from(question.querySelectorAll('.pg-quiz-answer'));
-    const right = buttons.find(b => parseInt(b.dataset.choice, 10) === result.correctindex);
+    const {right: rightindex, wrong: wrongindex} = Rules.marks(result.correctindex, choice);
+    const right = buttons.find(b => parseInt(b.dataset.choice, 10) === rightindex);
     if (right) {
         right.classList.remove('btn-outline-primary');
         right.classList.add('btn-success');
         markAnswer(right, 'fa-check');
     }
-    const picked = buttons.find(b => parseInt(b.dataset.choice, 10) === choice);
-    if (picked && picked !== right) {
+    const picked = buttons.find(b => parseInt(b.dataset.choice, 10) === wrongindex);
+    if (picked) {
         picked.classList.remove('btn-outline-primary');
         picked.classList.add('btn-danger');
         markAnswer(picked, 'fa-xmark');
@@ -395,7 +395,7 @@ export default {
         attemptNumber = parseInt(container.dataset.attempt, 10) || 1;
         timerEl = document.getElementById('pg-quiz-timer');
 
-        const start = Math.min(parseInt(container.dataset.current, 10) || 0, questions.length - 1);
+        const start = Rules.startIndex(container.dataset.current, questions.length);
         showQuestion(start, parseInt(container.dataset.firstSeconds, 10) || questionSeconds);
 
         container.addEventListener('click', (e) => {

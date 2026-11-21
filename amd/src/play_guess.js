@@ -30,10 +30,9 @@
 import Modal from 'core/modal';
 import Pending from 'core/pending';
 import {getString, getStrings} from 'core/str';
+import Board from 'local_playergames/guess/board';
 import Keys from 'local_playergames/guess/keys';
 
-const LETTER_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const FEEDBACK_RANK = {absent: 0, present: 1, correct: 2};
 // Same ceiling as guess_manager::MAX_ATTEMPTS: the board draws one row per guess.
 const MAX_ATTEMPTS = 10;
 
@@ -117,17 +116,15 @@ const applyFeedback = (rowIndex, guess, feedback) => {
         state.className = 'visually-hidden';
         state.textContent = `, ${stateText[feedback[index]]}`;
         tile.appendChild(state);
+    });
 
-        const letter = guess[index];
-        const current = keyStatus[letter];
-        if (!current || FEEDBACK_RANK[feedback[index]] > FEEDBACK_RANK[current]) {
-            keyStatus[letter] = feedback[index];
-            const key = container.querySelector(`.pg-guess-key[data-key="${letter}"]`);
-            if (key) {
-                key.classList.remove('pg-guess-key-absent', 'pg-guess-key-present', 'pg-guess-key-correct');
-                key.classList.add(`pg-guess-key-${feedback[index]}`);
-                key.setAttribute('aria-label', `${letter}, ${stateText[feedback[index]]}`);
-            }
+    Object.entries(Board.upgradeKeys(keyStatus, guess, feedback)).forEach(([letter, verdict]) => {
+        keyStatus[letter] = verdict;
+        const key = container.querySelector(`.pg-guess-key[data-key="${letter}"]`);
+        if (key) {
+            key.classList.remove('pg-guess-key-absent', 'pg-guess-key-present', 'pg-guess-key-correct');
+            key.classList.add(`pg-guess-key-${verdict}`);
+            key.setAttribute('aria-label', `${letter}, ${stateText[verdict]}`);
         }
     });
 };
@@ -157,8 +154,7 @@ const announceRow = async(guess, feedback) => {
     if (!liveEl) {
         return;
     }
-    const summary = guess.map((letter, index) => `${letter} ${stateText[feedback[index]]}`).join('; ');
-    liveEl.textContent = await getString('guess_row_result', 'local_playergames', summary);
+    liveEl.textContent = await getString('guess_row_result', 'local_playergames', Board.rowSummary(guess, feedback, stateText));
 };
 
 /**
@@ -299,22 +295,18 @@ const handleKey = (key) => {
     if (finished || submitting) {
         return;
     }
-    if (key === 'ENTER') {
-        if (currentGuess.length !== targetLength) {
-            showMessage(container.dataset.strInvalid);
-            return;
-        }
+    const {guess, action} = Board.type(currentGuess, key, targetLength);
+    if (action === 'invalid') {
+        showMessage(container.dataset.strInvalid);
+        return;
+    }
+    if (action === 'submit') {
         showMessage('');
         submitGuess();
         return;
     }
-    if (key === 'BACKSPACE') {
-        currentGuess.pop();
-        renderCurrentGuess();
-        return;
-    }
-    if (LETTER_KEYS.includes(key) && currentGuess.length < targetLength) {
-        currentGuess.push(key);
+    if (guess !== currentGuess) {
+        currentGuess = guess;
         renderCurrentGuess();
     }
 };
@@ -333,7 +325,7 @@ export default {
         messageEl = document.getElementById('pg-guess-message');
         liveEl = document.getElementById('pg-guess-live');
         targetLength = parseInt(container.dataset.targetLength, 10) || 0;
-        maxAttempts = Math.min(MAX_ATTEMPTS, parseInt(container.dataset.maxAttempts, 10) || 0);
+        maxAttempts = Board.rowCount(container.dataset.maxAttempts, MAX_ATTEMPTS);
         if (targetLength <= 0 || maxAttempts <= 0) {
             return;
         }

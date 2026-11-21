@@ -29,6 +29,7 @@
 
 import Modal from 'core/modal';
 import Pending from 'core/pending';
+import Rules from 'local_playergames/fill/rules';
 import {getString} from 'core/str';
 
 let container = null;
@@ -121,7 +122,7 @@ const applyWordUpdate = (word) => {
 
     const guessform = row.querySelector('.pg-fill-guessform');
     if (guessform) {
-        guessform.classList.toggle('d-none', word.resolved || word.exhausted || finished);
+        guessform.classList.toggle('d-none', Rules.closed(word, finished));
     }
 
     let revealEl = row.querySelector('.pg-fill-revealword');
@@ -192,12 +193,11 @@ const sendGuess = async(conceptid, guess) => {
 
     // A guess that did not solve the word changes nothing on screen but the tiles of the words it cleared, so
     // say how it went; the message is also what a screen reader announces.
-    const guessed = data.words.find(word => word.conceptid === conceptid);
-    if (guessed && guessed.resolved) {
+    const result = Rules.outcome(data.words, conceptid, container.dataset.maxAttempts);
+    if (result.kind === 'solved') {
         showMessage(await getString('fill_word_announce_solved', 'local_playergames'));
-    } else if (guessed && !guessed.exhausted) {
-        const left = Math.max(0, (parseInt(container.dataset.maxAttempts, 10) || 0) - guessed.attemptsused);
-        showMessage(await getString('fill_wrong_guess', 'local_playergames', left));
+    } else if (result.kind === 'wrong') {
+        showMessage(await getString('fill_wrong_guess', 'local_playergames', result.left));
     }
 
     if (finished) {
