@@ -51,16 +51,16 @@ letter, and how many attempts each word has) and shows under each word how many 
 
 | Setting | Default | What it does |
 |---|---|---|
-| **Fill words per day** | 5 | How many terms make up each day's puzzle. Clamped between 4 and 8. |
-| **Fill maximum attempts per word** | 4 | Guesses allowed on a single term before the whole day ends in a loss. |
-| **Fill minimum term length** | 3 | Shortest term eligible for the daily assignment. |
-| **Fill maximum term length** | 12 | Longest term eligible for the daily assignment. |
+| **PlayerFill words per day** | 5 | How many terms make up each day's puzzle. Clamped between 4 and 8. |
+| **PlayerFill maximum attempts per word** | 4 | Guesses allowed on a single term before the whole day ends in a loss. |
+| **Minimum term length for PlayerFill** | 3 | Shortest term eligible for the daily assignment. |
+| **Maximum term length for PlayerFill** | 12 | Longest term eligible for the daily assignment. |
 
 *Site administration → Plugins → Local plugins → PlayerGames → Rules → Game XP*
 
 | Setting | Default | What it does |
 |---|---|---|
-| **XP per Fill game** | 25 | XP awarded on a winning day. |
+| **XP per PlayerFill game** | 25 | XP awarded on a winning day. |
 
 Fill has one puzzle a day, so it has one round a day and pays its XP once, on the win; there is no
 "games per day" setting for it.

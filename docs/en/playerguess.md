@@ -1,6 +1,6 @@
 # 🔡 How PlayerGuess Works
 
-PlayerGuess is a daily Wordle-style mini-game: guess a term from the active cartridge, letter by
+PlayerGuess is a daily word-guessing mini-game: guess a term from the active cartridge, letter by
 letter, within a limited number of attempts.
 
 ## The play loop
@@ -42,7 +42,7 @@ assigned to a PlayerGuess day.
 
 | Setting | Default | What it does |
 |---|---|---|
-| **XP per Guess game** | 25 | XP awarded on a winning round. |
+| **XP per PlayerGuess game** | 25 | XP awarded on a winning round. |
 
 Guess has one concept a day, so it has one round a day and pays its XP once, on the win; there is
 no "games per day" setting for it.

@@ -7,7 +7,7 @@ vez**.
 ## Questões do Banco de Questões do Moodle
 
 A aba *Importar do banco de questões* da página de cartuchos copia as questões de múltipla escolha de uma
-categoria para um novo cartucho de quiz, que os jogos usam como qualquer outro. A categoria se limita ao
+categoria para um novo cartucho de questões, que os jogos usam como qualquer outro. A categoria se limita ao
 que o Moodle mantém **para reuso**: bancos criados para compartilhar questões entre cursos (Moodle 5.x) ou
 categorias no contexto do sistema (Moodle 4.5). O banco de um curso nunca é oferecido, para que questões
 de um curso não fiquem expostas a todo o site. A lista mostra só as categorias que quem importa pode usar,

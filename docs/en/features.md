@@ -33,14 +33,14 @@
   simultaneously.
   * **All games:** manual creation (inline editor), JSON upload, or AI generation (see
     [AI Provider Chain](#ai-provider-chain)).
-  * **PlayerQuiz and PlayerBattle:** quiz cartridges can also be created from a **Moodle Question
+  * **PlayerQuiz and PlayerBattle:** question cartridges can also be created from a **Moodle Question
     Bank** kept for reuse by the whole site (multiple-choice questions only, copied as plain text) —
     see [How PlayerQuiz Works](#playerquiz).
   * **PlayerGuess and PlayerFill:** always use concept cartridges, which can also be created from a
     **global glossary** of the site.
 * 🧠 **PlayerQuiz:** Daily multiple-choice mini-game using concepts from the active cartridge —
   see [How PlayerQuiz Works](#playerquiz).
-* 🔡 **PlayerGuess:** Daily Wordle-style mini-game — guess the term letter by letter — see
+* 🔡 **PlayerGuess:** Daily word-guessing mini-game — guess the term letter by letter — see
   [How PlayerGuess Works](#playerguess).
 * 📝 **PlayerFill:** Daily crossword-style mini-game — numbered positions; the same number shares
   the same letter across multiple terms; solving one reveals letters in others (cascade effect).

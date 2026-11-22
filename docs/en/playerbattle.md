@@ -60,7 +60,7 @@ answers questions and waits.
 
 ## Content and settings
 
-PlayerBattle asks **quiz-type cartridges**, including the ones imported from a **Moodle Question Bank**
+PlayerBattle asks **question cartridges**, including the ones imported from a **Moodle Question Bank**
 (see [How PlayerQuiz Works](#playerquiz)), as chosen for the season in the *Season games* card of the
 [Administration](#administration) tab.
 

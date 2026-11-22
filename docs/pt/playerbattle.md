@@ -62,7 +62,7 @@ questões e espera.
 
 ## Conteúdo e configurações
 
-O PlayerBattle pergunta **cartuchos do tipo quiz**, inclusive os importados de um **Banco de Questões do
+O PlayerBattle pergunta **cartuchos de questões**, inclusive os importados de um **Banco de Questões do
 Moodle** (ver [Como o PlayerQuiz Funciona](#playerquiz)), conforme escolhido para a temporada no card
 *Jogos da temporada* da aba [Administração](#administration).
 

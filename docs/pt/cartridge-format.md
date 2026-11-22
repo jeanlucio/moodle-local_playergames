@@ -1,7 +1,7 @@
 # 📦 Formato do Cartucho
 
 Os cartuchos de conteúdo são arquivos JSON que alimentam os minijogos. Um cartucho de **conceitos**
-(termos e definições, como abaixo) alimenta o PlayerGuess e o PlayerFill; um cartucho de **quiz**
+(termos e definições, como abaixo) alimenta o PlayerGuess e o PlayerFill; um cartucho de **questões**
 (questões com as respostas) alimenta o PlayerQuiz e o PlayerBattle:
 
 ```json
@@ -24,9 +24,9 @@ Os cartuchos de conteúdo são arquivos JSON que alimentam os minijogos. Um cart
 - Termos para o PlayerGuess: filtrados por comprimento configurável (padrão 4–8 letras) e devem
   ser uma única palavra alfabética (sem espaços, dígitos ou hífens) — ver
   [Como o PlayerGuess Funciona](#playerguess)
-- Cartuchos do tipo quiz: cada questão aceita um `generalfeedback` opcional, exibido ao jogador
+- Cartuchos de questões: cada questão aceita um `generalfeedback` opcional, exibido ao jogador
   após responder
-- Cartuchos de quiz podem ser criados a partir de um **Banco de Questões do Moodle** (aba *Importar do
+- Cartuchos de questões podem ser criados a partir de um **Banco de Questões do Moodle** (aba *Importar do
   banco de questões* da página de cartuchos): as questões de múltipla escolha de uma categoria mantida
   para reuso por todo o site são copiadas como texto simples, até o limite do importador. Questões com
   imagem, som ou vídeo ficam de fora, e o cartucho é uma cópia: mudanças feitas depois no banco não

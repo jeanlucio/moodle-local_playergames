@@ -6,7 +6,7 @@ cartridges and shows them **one at a time**.
 ## Questions from the Moodle Question Bank
 
 The *Import from question bank* tab of the cartridge page copies the multiple-choice questions of a
-category into a new quiz cartridge, which the games then use like any other. The category is limited to
+category into a new question cartridge, which the games then use like any other. The category is limited to
 what Moodle keeps **for reuse**: question banks created to share questions across courses (Moodle 5.x) or
 categories in the system context (Moodle 4.5). A course's own bank is never offered, so questions that
 belong to one course are not exposed to the whole site. The list only shows categories the person

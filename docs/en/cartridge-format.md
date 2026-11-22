@@ -1,7 +1,7 @@
 # 📦 Cartridge Format
 
 Content cartridges are JSON files that power the mini-games. A **concept** cartridge (terms and
-definitions, as below) feeds PlayerGuess and PlayerFill; a **quiz** cartridge (questions with their
+definitions, as below) feeds PlayerGuess and PlayerFill; a **question** cartridge (questions with their
 answers) feeds PlayerQuiz and PlayerBattle:
 
 ```json
@@ -24,9 +24,9 @@ answers) feeds PlayerQuiz and PlayerBattle:
 - Terms for PlayerGuess: filtered by configurable length (default 4–8 letters) and must be a
   single alphabetic word (no spaces, digits or hyphens) — see
   [How PlayerGuess Works](#playerguess)
-- Quiz-type cartridges: each question accepts an optional `generalfeedback` string, shown to the
+- Question cartridges: each question accepts an optional `generalfeedback` string, shown to the
   player after they answer
-- Quiz cartridges can be created from a **Moodle Question Bank** (the *Import from question bank* tab of
+- Question cartridges can be created from a **Moodle Question Bank** (the *Import from question bank* tab of
   the cartridge page): the multiple-choice questions of a category kept for reuse by the whole site are
   copied as plain text, up to the importer's limit. Questions with an image, sound or video are left out,
   and the cartridge is a copy: later changes in the bank do not reach it

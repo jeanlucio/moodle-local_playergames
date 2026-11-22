@@ -30,7 +30,7 @@ Feature: Play the PlayerQuiz daily game
   @javascript
   Scenario: A correct answer shows the result as a modal
     When I click on "Correct option" "button"
-    Then I should see "Quiz completed!"
+    Then I should see "PlayerQuiz completed!"
     And I should see "XP earned:"
 
   @javascript

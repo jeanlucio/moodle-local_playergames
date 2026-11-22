@@ -1,6 +1,6 @@
 # 🔡 Como o PlayerGuess Funciona
 
-O PlayerGuess é um minijogo diário estilo Wordle: adivinhe um termo do cartucho ativo, letra por
+O PlayerGuess é um minijogo diário de adivinhação de palavras: adivinhe um termo do cartucho ativo, letra por
 letra, dentro de um número limitado de tentativas.
 
 ## O fluxo da jogada
@@ -43,7 +43,7 @@ exemplo, um hífen, nunca é atribuído a um dia de PlayerGuess.
 
 | Configuração | Padrão | O que faz |
 |---|---|---|
-| **XP por jogo do Guess** | 25 | XP concedido numa rodada vencida. |
+| **XP por jogo do PlayerGuess** | 25 | XP concedido numa rodada vencida. |
 
 O Guess tem um conceito por dia, então tem uma rodada por dia e paga o XP uma vez, na vitória; não
 existe configuração de "jogos por dia" para ele.
