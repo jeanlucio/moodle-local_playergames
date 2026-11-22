@@ -62,7 +62,7 @@ round's deck is*.
 | Setting | Default | What it does |
 |---|---|---|
 | **Time per question (seconds)** | 120 (2 min) | Countdown per question. Reaching zero counts as a wrong answer and advances. `0` disables the timer. |
-| **Maximum attempts** | 0 (unlimited) | Wrong answers (including timeouts) that end a play without XP. `0` keeps the original behaviour — the game continues until the player answers correctly. |
+| **Maximum attempts** | Unlimited | Wrong answers (including timeouts) that end a play without XP, picked from Unlimited or 1 to 10. With Unlimited the game continues until the player answers correctly, so a play always pays XP. |
 | **Cooldown after failing (minutes)** | 0 | When a play ends in failure, the quiz is locked for this many minutes. Persisted server-side (a page reload does **not** bypass it). Only meaningful together with an attempt limit. |
 | **Questions per session** | 20 | Size of each play's draw, chosen from a capped list (5–50). |
 

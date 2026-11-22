@@ -291,12 +291,22 @@ if ($hassiteconfig) {
         0
     ));
 
-    $page3->add(new \local_playergames\local\setting_int_range(
+    // A pick list, as in the activities of the ecosystem. A stored value above the list (set by a script) stays in
+    // it, or saving the page would silently turn it into Unlimited.
+    $quizattempts = [0 => get_string('unlimited')];
+    for ($i = 1; $i <= 10; $i++) {
+        $quizattempts[$i] = $i;
+    }
+    $storedattempts = (int) get_config('local_playergames', 'quiz_max_attempts');
+    if ($storedattempts > 10) {
+        $quizattempts[$storedattempts] = $storedattempts;
+    }
+    $page3->add(new admin_setting_configselect(
         'local_playergames/quiz_max_attempts',
         get_string('settings_quiz_max_attempts', 'local_playergames'),
         get_string('settings_quiz_max_attempts_desc', 'local_playergames'),
         0,
-        0
+        $quizattempts
     ));
 
     $page3->add(new \local_playergames\local\setting_int_range(

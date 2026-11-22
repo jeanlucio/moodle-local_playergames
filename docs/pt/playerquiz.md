@@ -63,7 +63,7 @@ partidas hoje* vs *qual o tamanho do baralho de cada partida*.
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | **Tempo por questão (segundos)** | 120 (2 min) | Contagem regressiva por questão. Chegar a zero conta como erro e avança. `0` desativa o cronômetro. |
-| **Máximo de tentativas** | 0 (ilimitado) | Erros (incluindo tempo esgotado) que encerram a jogada sem XP. `0` mantém o comportamento original — o jogo continua até o jogador acertar. |
+| **Máximo de tentativas** | Ilimitado | Erros (incluindo tempo esgotado) que encerram a jogada sem XP, escolhidos entre Ilimitado e 1 a 10. Com Ilimitado o jogo continua até o jogador acertar, então a jogada sempre rende XP. |
 | **Cooldown ao falhar (minutos)** | 0 | Quando uma jogada termina em falha, o quiz fica bloqueado por estes minutos. Persistido no servidor (recarregar a página **não** contorna). Só faz sentido junto com um limite de tentativas. |
 | **Questões por sessão** | 20 | Tamanho do sorteio de cada jogada, escolhido em uma lista com teto (5–50). |
 

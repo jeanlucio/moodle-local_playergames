@@ -108,7 +108,6 @@ final class setting_int_range_test extends \advanced_testcase {
                 'fill_max_attempts' => [1, 10],
                 'fill_num_words' => [4, 8],
                 'quiz_question_seconds' => [0, null],
-                'quiz_max_attempts' => [0, null],
                 'quiz_cooldown_minutes' => [0, null],
             ],
             'local_playergames_seasons' => [
@@ -134,5 +133,37 @@ final class setting_int_range_test extends \advanced_testcase {
                 }
             }
         }
+    }
+
+    /**
+     * The Quiz attempts are picked from Unlimited and 1 to 10, Unlimited by default.
+     */
+    public function test_the_quiz_attempts_are_a_pick_list_from_unlimited_to_ten(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $root = admin_get_root(true, true);
+
+        $setting = $root->locate('local_playergames_games')->settings->local_playergamesquiz_max_attempts;
+
+        $this->assertInstanceOf(\admin_setting_configselect::class, $setting);
+        $setting->load_choices();
+        $this->assertSame(range(0, 10), array_keys($setting->choices));
+        $this->assertSame(get_string('unlimited'), $setting->choices[0]);
+        $this->assertSame(0, $setting->get_defaultsetting());
+    }
+
+    /**
+     * A stored number of attempts above the list stays in it, so saving the page keeps it.
+     */
+    public function test_a_stored_quiz_attempts_above_the_list_stays_in_it(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        set_config('quiz_max_attempts', 15, 'local_playergames');
+        $root = admin_get_root(true, true);
+
+        $setting = $root->locate('local_playergames_games')->settings->local_playergamesquiz_max_attempts;
+
+        $this->assertArrayHasKey(15, $setting->choices);
+        $this->assertSame('', $setting->write_setting('15'));
     }
 }
