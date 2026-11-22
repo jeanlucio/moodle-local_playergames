@@ -729,6 +729,35 @@ body.path-local-playergames .pg-hub-grid {
 
 /* ── Hub: ranking table and mission progress bar ─────────────────── */
 
+/* On a phone the two ranking tabs do not fit beside the title: the header wraps, so the tabs move to a line of
+   their own and stay side by side, instead of stacking in the corner. */
+body.path-local-playergames .pg-hub-ranking-header {
+    row-gap: 0.5rem;
+}
+
+body.path-local-playergames .pg-hub-ranking-header .nav {
+    flex-wrap: nowrap;
+}
+
+/* On a phone the tabs take the whole line in two equal halves; a label longer than its half breaks inside its
+   own tab rather than overflowing the card or squeezing the other tab. */
+@media (max-width: 575.98px) {
+    body.path-local-playergames .pg-hub-ranking-header .nav {
+        width: 100%;
+    }
+
+    body.path-local-playergames .pg-hub-ranking-header .nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    body.path-local-playergames .pg-hub-ranking-header .nav-link {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+    }
+}
+
 body.path-local-playergames .pg-hub-rank-pos-col {
     width: 3rem;
 }

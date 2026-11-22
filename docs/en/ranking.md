@@ -12,8 +12,9 @@ by who got there first.
 
 ## Staff / student split
 
-Rankings are split into two groups: **students** and **staff** (anyone with course-editing
-capability in at least one course, or the site-admin flag). Whether a viewer sees one or both
+Rankings are split into two groups: **students** and **staff**. Staff are the site administrators and
+everyone who can edit at least one course, such as managers and editing teachers. Everyone else counts as a
+student, a non-editing teacher included. Whether a viewer sees one or both
 groups depends on their own role and the site's participant setting:
 
 - A regular student or teacher sees only their own group's ranking.

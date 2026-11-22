@@ -15,7 +15,7 @@
 * 📅 **Player Hub — Check-in Diário:** Ganhe XP apenas por estar no site uma vez ao dia (a primeira
   página que você abre), com limite por temporada. Opcionalmente conta para o streak diário.
 * 🏆 **Player Hub — Ranking de Temporada:** Ranking com controle de privacidade (opt-in),
-  desempate e separação por staff/estudante — ver [Como o Ranking Funciona](#ranking).
+  desempate e separação entre estudantes e professores e gestores — ver [Como o Ranking Funciona](#ranking).
 * 📘 **Player Hub — XP dos cursos:** Um pool de XP opcional e separado, espelhado da
   atividade do estudante por curso no `block_playerhud`, com seu próprio ranking opt-in — ver
   [XP dos cursos](#learning-xp).

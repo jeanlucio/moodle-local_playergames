@@ -17,7 +17,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `cartridge/payload_test.php` | 3 | Limpeza dos campos importados e devolvidos pela IA: um escalar vira texto e qualquer outra coisa conta como ausente; um valor único vira lista; números são limitados com um valor padrão |
 | `hub/xp_manager_test.php` | 17 | Limiares de nível, cap por jogo, recompensa de missão sem cap, evento de subida de nível, posição/desempate no ranking de temporada |
 | `hub/avatar_manager_test.php` | 10 | Seed do catálogo padrão, limiares de faixa, rastreio do melhor nível vitalício, regras de desbloqueio/equipar, rejeição de equipar avatar bloqueado |
-| `hub/learning_xp_manager_test.php` | 22 | Blocos mensais com janela, controle de visibilidade (independente do status de staff), opt-in e posição no ranking, correção no recálculo |
+| `hub/learning_xp_manager_test.php` | 22 | Blocos mensais com janela, controle de visibilidade (independente de ser professor ou gestor), opt-in e posição no ranking, correção no recálculo |
 | `hub/daily_play_manager_test.php` | 6 | Múltiplas jogadas dividem o XP igualmente; jogada além da cota diária rejeitada; última jogada aparada no cap exato; o payload extra (vitória) chega ao evento e só completa a missão da batalha quando marcado; todo jogo pendente aponta para a sua página e um já jogado não |
 | `hub/level_manager_test.php` | 8 | Seed da escada, busca de XP/título, save com renumeração + piso zero, restaurar padrão, geração linear e limites |
 | `hub/checkin_manager_test.php` | 11 | Insert do check-in + concessão de XP, idempotência, cap de temporada, avanço opcional de streak, elegibilidade de participante |
@@ -28,7 +28,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/achievement_manager_test.php` | 6 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
 | `observer_test.php` | 5 | `game_completed` aciona streak/missão/conquista; registra streak mesmo sem temporada; espelha mudanças de XP do `block_playerhud` no XP dos cursos |
-| `hook_callbacks_test.php` | 5 | Link na navegação principal: o hub para o estudante, nenhum depois de desativar a gamificação, o dashboard para o professor que a desativou, nenhum para visitante, e a consulta de equipe docente dispensada (contada em consultas) quando a gamificação está ligada |
+| `hook_callbacks_test.php` | 5 | Link na navegação principal: o hub para o estudante, nenhum depois de desativar a gamificação, o dashboard para o professor que a desativou, nenhum para visitante, e a consulta de professores e gestores dispensada (contada em consultas) quando a gamificação está ligada |
 | `games/quiz_loader_test.php` | 12 | Filtro de completude, tamanho da sessão, só-ativos, filtro por id, metadados, sorteio aleatório, exclusão de questões já vistas e reuso do pool |
 | `games/quiz_settings_test.php` | 6 | Configuração de cronômetro, máximo de tentativas e tamanho da sessão |
 | `games/day_loss_test.php` | 7 | O dia perdido: as derrotas permitidas o fecham, Ilimitado nunca fecha, ele continua fechado, pertence a um usuário, jogo e dia, e os jogos de palavras o leem da própria rodada |
@@ -46,7 +46,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `task/recompute_learning_xp_test.php` | 2 | Recálculo noturno da janela descarta blocos vencidos e corrige desvio de cache |
 | `privacy/provider_test.php` | 9 | Metadata, contextos, userlist, export e as três rotas de deleção; toda tabela declarada lista exatamente as suas colunas reais |
 | `output/hub_test.php` | 2 | Quem recebe o atalho para a página de temporadas enquanto não há temporada: o administrador, e mais ninguém |
-| `local/access_test.php` | 16 | Detecção de staff (admin de site, capacidade de edição de curso), resolução em lote de ids de staff, regras de visibilidade do hub; para onde cada papel é levado |
+| `local/access_test.php` | 16 | Detecção de professores e gestores (admin de site, capacidade de edição de curso), resolução em lote dos ids de professores e gestores, regras de visibilidade do hub; para onde cada papel é levado |
 | `local/admin_cards_test.php` | 8 | Aba Administração: cards e grupos por permissão (administrador, gerente, estudante), a aba na navegação, o estado de cada card, nome de temporada escapado uma vez e o link da documentação abrindo em nova aba |
 | `local/game_page_test.php` | 2 | O aviso das páginas de jogo quando não há temporada ativa, e que ele nunca diz que o jogo já foi jogado |
 | `local/question_bank_reuse_test.php` | 3 | Quais categorias do banco de questões são mantidas para reuso (bancos compartilhados no Moodle 5.x, contexto do sistema no 4.5), contagem de questões, o que o usuário pode escolher |

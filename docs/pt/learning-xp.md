@@ -29,13 +29,13 @@ O XP dos cursos só é exibido quando **ambas** as condições são verdadeiras:
 - a configuração de participantes do site permite estudantes (`students` ou `both`).
 
 Diferente da maioria das outras funcionalidades voltadas ao estudante, a visibilidade **não**
-depende de o visualizador estar marcado como staff — um professor que também é um estudante
+depende de o visualizador ser professor ou gestor — um professor que também é um estudante
 genuíno ganhando XP do PlayerHUD em outro curso ainda vê o próprio XP dos cursos.
 
 ## Seu próprio ranking
 
 O XP dos cursos tem seu **próprio ranking opt-in separado** — uma única lista top-50 (não
-dividida por staff/estudante como o ranking de temporada), controlada por seu próprio toggle de
+dividida entre estudantes e professores e gestores como o ranking de temporada), controlada por seu próprio toggle de
 admin. Jogadores com XP com janela igual a zero são excluídos completamente em vez de ocupar uma
 posição, e cada jogador tem um toggle de opt-in independente do usado na visibilidade do ranking
 de temporada. A busca de posição para jogadores fora do top 50 segue a mesma regra de desempate
