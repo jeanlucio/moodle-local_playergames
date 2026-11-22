@@ -23,6 +23,7 @@
     Example context (json):
     {
         "already_played": false,
+        "closed_today": false,
         "no_questions": false,
         "playable": true,
         "config": "{}",
@@ -30,6 +31,7 @@
         "str_already_played": "You have already played PlayerBattle today. Come back tomorrow!",
         "str_back_to_hub": "Back to Hub",
         "str_board_label": "Game board.",
+        "str_closed_today": "You ran out of attempts at PlayerBattle today. Come back tomorrow!",
         "str_continue": "Continue",
         "str_defeat": "Defeat",
         "str_hp": "HP",
@@ -65,6 +67,16 @@
         </div>
     </div>
     {{/already_played}}
+
+    {{#closed_today}}
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-circle-xmark me-2" aria-hidden="true"></i>
+        {{str_closed_today}}
+        <div class="mt-3">
+            <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
+        </div>
+    </div>
+    {{/closed_today}}
 
     {{#no_questions}}
     <div class="alert alert-warning" role="alert">

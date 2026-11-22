@@ -103,6 +103,26 @@ final class daily_play_manager_test extends \advanced_testcase {
         $this->assertTrue($games['fill']['pending']);
     }
 
+    /**
+     * A game lost today shows as closed until tomorrow, with the link to how the day ended.
+     */
+    public function test_a_game_lost_today_shows_as_closed(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->add_cartridge('quiz');
+        $today = \local_playergames\local\day::today();
+        \local_playergames\games\day_loss::record((int) $user->id, 'battle', $today, 1);
+
+        $games = array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
+
+        $this->assertTrue($games['battle']['lost']);
+        $this->assertFalse($games['battle']['pending']);
+        $this->assertFalse($games['battle']['done']);
+        $this->assertStringContainsString('play_battle.php', $games['battle']['url']);
+        $this->assertFalse($games['quiz']['lost']);
+        $this->assertTrue($games['quiz']['pending']);
+    }
+
     public function test_an_inactive_cartridge_opens_nothing(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();

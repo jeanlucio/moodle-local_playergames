@@ -108,7 +108,6 @@ final class setting_int_range_test extends \advanced_testcase {
                 'fill_max_attempts' => [1, 10],
                 'fill_num_words' => [4, 8],
                 'quiz_question_seconds' => [0, null],
-                'quiz_cooldown_minutes' => [0, null],
             ],
             'local_playergames_seasons' => [
                 'seasons_keep' => [1, null],
@@ -136,20 +135,34 @@ final class setting_int_range_test extends \advanced_testcase {
     }
 
     /**
-     * The Quiz attempts are picked from Unlimited and 1 to 10, Unlimited by default.
+     * The attempts of PlayerQuiz and PlayerBattle are picked from Unlimited and 1 to 10, Unlimited by default.
      */
-    public function test_the_quiz_attempts_are_a_pick_list_from_unlimited_to_ten(): void {
+    public function test_the_attempts_are_a_pick_list_from_unlimited_to_ten(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $root = admin_get_root(true, true);
 
-        $setting = $root->locate('local_playergames_games')->settings->local_playergamesquiz_max_attempts;
+        foreach (['quiz_max_attempts', 'battle_max_attempts'] as $name) {
+            $setting = $root->locate('local_playergames_games')->settings->{"local_playergames{$name}"};
 
-        $this->assertInstanceOf(\admin_setting_configselect::class, $setting);
-        $setting->load_choices();
-        $this->assertSame(range(0, 10), array_keys($setting->choices));
-        $this->assertSame(get_string('unlimited'), $setting->choices[0]);
-        $this->assertSame(0, $setting->get_defaultsetting());
+            $this->assertInstanceOf(\admin_setting_configselect::class, $setting, $name);
+            $setting->load_choices();
+            $this->assertSame(range(0, 10), array_keys($setting->choices), $name);
+            $this->assertSame(get_string('unlimited'), $setting->choices[0], $name);
+            $this->assertSame(0, $setting->get_defaultsetting(), $name);
+        }
+    }
+
+    /**
+     * Settings that did nothing, or that a lost day replaced, are no longer offered.
+     */
+    public function test_the_removed_settings_are_gone(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $settings = admin_get_root(true, true)->locate('local_playergames_games')->settings;
+
+        $this->assertFalse(isset($settings->local_playergamesconcept_day_mode));
+        $this->assertFalse(isset($settings->local_playergamesquiz_cooldown_minutes));
     }
 
     /**

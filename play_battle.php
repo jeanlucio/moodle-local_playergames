@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\battle_manager;
+use local_playergames\games\day_loss;
 use local_playergames\games\season_game_config;
 use local_playergames\hub\avatar_manager;
 use local_playergames\hub\daily_play_manager;
@@ -51,6 +52,7 @@ if (data_submitted()) {
     if (
         $season === null
         || season_game_config::is_disabled((int) $season->id, 'battle')
+        || day_loss::is_closed((int) $USER->id, 'battle', $gamedate)
         || !in_array($postaction, ['answer_question', 'submit_result'], true)
     ) {
         echo json_encode(['success' => false, 'xpawarded' => 0]);
@@ -91,9 +93,11 @@ if ($blocked !== null) {
 $snapshot      = season_manager::get_config_snapshot($activeseason);
 $remaining     = daily_play_manager::remaining_plays((int) $USER->id, 'battle', $gamedate, $snapshot);
 $alreadyplayed = $remaining <= 0;
+// The defeats allowed for the day were all used: the game stays closed until tomorrow.
+$closedtoday = !$alreadyplayed && day_loss::is_closed((int) $USER->id, 'battle', $gamedate);
 
-$questions = $alreadyplayed ? [] : $manager->start_battle((int) $USER->id, $gamedate, $context);
-$noquestions = !$alreadyplayed && empty($questions);
+$questions = ($alreadyplayed || $closedtoday) ? [] : $manager->start_battle((int) $USER->id, $gamedate, $context);
+$noquestions = !$alreadyplayed && !$closedtoday && empty($questions);
 
 // Texts the script puts together while playing, with their {$a} placeholders left for it to fill.
 $jsstrings = [];
@@ -102,7 +106,7 @@ foreach (
         'answer_error', 'msg_blocked', 'msg_cell', 'msg_correct', 'msg_heal', 'msg_hit_opponent', 'msg_hit_player',
         'msg_no_match', 'msg_opponent_crit', 'msg_poison', 'msg_selected', 'msg_shuffled', 'msg_wrong',
         'opponent', 'piece_grimoire', 'piece_orb', 'piece_potion', 'piece_shield', 'piece_star', 'piece_sword',
-        'player', 'save_error', 'start_error', 'summary', 'turn_opponent', 'turn_player', 'xp_earned',
+        'closed_today', 'player', 'save_error', 'start_error', 'summary', 'turn_opponent', 'turn_player', 'xp_earned',
     ] as $key
 ) {
     $jsstrings[$key] = get_string('battle_' . $key, 'local_playergames');
@@ -120,7 +124,7 @@ $config = [
 $strings = [];
 foreach (
     [
-        'already_played', 'back_to_hub', 'board_label', 'continue', 'defeat', 'hp', 'instructions', 'loading',
+        'already_played', 'back_to_hub', 'board_label', 'closed_today', 'continue', 'defeat', 'hp', 'instructions', 'loading',
         'mana', 'multiplier', 'no_questions', 'opponent', 'play_again', 'player', 'poison', 'question_title',
         'retry_save', 'shield', 'shield_ready', 'sound', 'victory',
     ] as $key
@@ -128,15 +132,16 @@ foreach (
     $strings['str_' . $key] = get_string('battle_' . $key, 'local_playergames');
 }
 
-if (!$alreadyplayed && !$noquestions) {
+if (!$alreadyplayed && !$closedtoday && !$noquestions) {
     $PAGE->requires->js_call_amd('local_playergames/battle_boot', 'init');
 }
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_playergames/play_battle', $strings + [
     'already_played'  => $alreadyplayed,
+    'closed_today'    => $closedtoday,
     'no_questions'    => $noquestions,
-    'playable'        => !$alreadyplayed && !$noquestions,
+    'playable'        => !$alreadyplayed && !$closedtoday && !$noquestions,
     'config'          => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
     'huburl'          => (new moodle_url('/local/playergames/hub.php'))->out(false),
     'cards'           => [

@@ -375,6 +375,11 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
             }
             // The server records the victory only when the battle looks played, whatever was claimed.
             const won = victory && data.victory;
+            if (data.closed) {
+                // The defeats allowed for the day are used up: no other battle until tomorrow.
+                ui.setSaved(strings.closed_today, false);
+                return;
+            }
             ui.setSaved(won ? format(strings.xp_earned, data.xpawarded) : '', data.remaining > 0 || !won);
         } catch (error) {
             window.console.error(error);

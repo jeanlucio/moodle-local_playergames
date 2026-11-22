@@ -243,6 +243,46 @@ final class battle_manager_test extends \advanced_testcase {
         $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $user->id]));
     }
 
+    /**
+     * The defeats allowed for the day close PlayerBattle until tomorrow, without XP.
+     *
+     * Regression test: a defeat never spent the play, so a player could battle again at once until they won, and the
+     * game could not be lost.
+     */
+    public function test_the_allowed_defeats_close_the_day(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        set_config('battle_max_attempts', 2, 'local_playergames');
+
+        $this->start();
+        $first = $this->finish(false);
+        $this->assertFalse($first['closed']);
+        $this->assertSame(1, $first['remaining']);
+
+        $this->start();
+        $second = $this->finish(false);
+        $this->assertTrue($second['closed']);
+        $this->assertSame(0, $second['xpawarded']);
+        $this->assertTrue(day_loss::is_closed((int) $user->id, 'battle', $this->today));
+    }
+
+    /**
+     * A victory is not a defeat: it never counts toward the limit.
+     */
+    public function test_a_victory_does_not_count_toward_the_defeats(): void {
+        $user = $this->prepare(2);
+        $this->add_question();
+        $this->add_question('Q2?');
+        set_config('battle_max_attempts', 1, 'local_playergames');
+
+        $this->start();
+        $won = $this->finish(true);
+
+        $this->assertTrue($won['victory']);
+        $this->assertFalse($won['closed']);
+        $this->assertFalse(day_loss::is_closed((int) $user->id, 'battle', $this->today));
+    }
+
     public function test_defeat_is_saved_without_xp_and_keeps_the_play(): void {
         global $DB;
         $user = $this->prepare();
@@ -259,6 +299,9 @@ final class battle_manager_test extends \advanced_testcase {
         $this->assertSame(0, (int) $row->victory);
         $this->assertSame(30, (int) $row->bosshpdealt);
         $this->assertSame(0, $DB->count_records('local_playergames_daily_scores', ['userid' => $user->id]));
+        // With unlimited attempts, the default, a defeat leaves the day open.
+        $this->assertFalse($result['closed']);
+        $this->assertFalse(day_loss::is_closed((int) $user->id, 'battle', $this->today));
     }
 
     public function test_victory_earns_the_season_xp_and_spends_the_play(): void {

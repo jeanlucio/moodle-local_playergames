@@ -24,7 +24,7 @@ importe a categoria de novo e desative o cartucho antigo.
 - **Erro** (ou o tempo esgotar) → a alternativa correta é revelada e a próxima questão carrega.
 - **Acerto** → a jogada termina e o XP é concedido.
 - Com um limite de tentativas definido, esgotar as tentativas encerra a jogada em **falha** (sem
-  XP) e pode iniciar um cooldown.
+  XP) e fecha o PlayerQuiz até o dia seguinte.
 
 Como a jogada termina no **primeiro acerto**, o jogador raramente responde o pool inteiro — a
 maioria das questões da sessão é só um colchão que dá variedade e margem para errar antes de
@@ -63,17 +63,17 @@ partidas hoje* vs *qual o tamanho do baralho de cada partida*.
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | **Tempo por questão (segundos)** | 120 (2 min) | Contagem regressiva por questão. Chegar a zero conta como erro e avança. `0` desativa o cronômetro. |
-| **Máximo de tentativas** | Ilimitado | Erros (incluindo tempo esgotado) que encerram a jogada sem XP, escolhidos entre Ilimitado e 1 a 10. Com Ilimitado o jogo continua até o jogador acertar, então a jogada sempre rende XP. |
-| **Cooldown ao falhar (minutos)** | 0 | Quando uma jogada termina em falha, o quiz fica bloqueado por estes minutos. Persistido no servidor (recarregar a página **não** contorna). Só faz sentido junto com um limite de tentativas. |
+| **Máximo de tentativas** | Ilimitado | Erros (incluindo tempo esgotado) que encerram o PlayerQuiz pelo resto do dia sem XP, escolhidos entre Ilimitado e 1 a 10. Com Ilimitado o jogo continua até o jogador acertar, então a jogada sempre rende XP. |
 | **Questões por sessão** | 20 | Tamanho do sorteio de cada jogada, escolhido em uma lista com teto (5–50). |
 
-## Como cronômetro, tentativas e cooldown se encaixam
+## Como cronômetro e tentativas se encaixam
 
 - O tempo esgotar é tratado exatamente como um erro.
-- Uma jogada só pode **falhar** quando há um limite de tentativas; com tentativas ilimitadas
-  (`0`) o jogo entra em loop até o acerto, então o cooldown nunca dispara.
-- Uma jogada falha **não dá XP e não consome jogada do dia** — o cooldown é o único freio, então
-  com cooldown `0` o jogador pode tentar de novo na hora.
+- Uma jogada só pode **falhar** quando há um limite de tentativas; com Ilimitado o jogo entra em loop
+  até o acerto.
+- Uma jogada falha **não dá XP e fecha o PlayerQuiz até o dia seguinte**, a mesma regra dos outros
+  jogos: dia perdido é dia perdido. A derrota fica guardada no servidor, então recarregar a página,
+  trocar de navegador ou entrar de novo não reabre o jogo, e o hub mostra *Volte amanhã*.
 
 ## Por que o tamanho da sessão tem teto
 

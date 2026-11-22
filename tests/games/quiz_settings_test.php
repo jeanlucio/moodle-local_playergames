@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests for the PlayerQuiz settings and cooldown resolver.
+ * Tests for the PlayerQuiz settings.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -70,48 +70,16 @@ final class quiz_settings_test extends \advanced_testcase {
         $this->assertSame(50, (new quiz_settings())->session_size());
     }
 
-    public function test_max_attempts_and_cooldown_minutes_default_and_clamp(): void {
+    public function test_max_attempts_default_and_clamp(): void {
         $this->resetAfterTest();
         $settings = new quiz_settings();
         unset_config('quiz_max_attempts', 'local_playergames');
-        unset_config('quiz_cooldown_minutes', 'local_playergames');
         $this->assertSame(0, $settings->max_attempts());
-        $this->assertSame(0, $settings->cooldown_minutes());
 
         set_config('quiz_max_attempts', '3', 'local_playergames');
-        set_config('quiz_cooldown_minutes', '5', 'local_playergames');
         $this->assertSame(3, $settings->max_attempts());
-        $this->assertSame(5, $settings->cooldown_minutes());
 
         set_config('quiz_max_attempts', '-2', 'local_playergames');
         $this->assertSame(0, $settings->max_attempts());
-    }
-
-    public function test_cooldown_starts_and_expires(): void {
-        $this->resetAfterTest();
-        $user = $this->getDataGenerator()->create_user();
-        set_config('quiz_cooldown_minutes', '10', 'local_playergames');
-        $settings = new quiz_settings();
-
-        $now = 1000000;
-        $settings->start_cooldown((int) $user->id, $now);
-
-        $this->assertTrue($settings->is_on_cooldown((int) $user->id, $now));
-        $this->assertSame(600, $settings->cooldown_remaining((int) $user->id, $now));
-        // Once the window elapses there is no remaining time and no lock.
-        $this->assertFalse($settings->is_on_cooldown((int) $user->id, $now + 600));
-        $this->assertSame(0, $settings->cooldown_remaining((int) $user->id, $now + 600));
-    }
-
-    public function test_cooldown_disabled_does_not_lock(): void {
-        $this->resetAfterTest();
-        $user = $this->getDataGenerator()->create_user();
-        set_config('quiz_cooldown_minutes', '0', 'local_playergames');
-        $settings = new quiz_settings();
-
-        $settings->start_cooldown((int) $user->id, 1000000);
-
-        $this->assertFalse($settings->is_on_cooldown((int) $user->id, 1000000));
-        $this->assertSame(0, $settings->cooldown_remaining((int) $user->id, 1000000));
     }
 }

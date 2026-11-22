@@ -70,7 +70,6 @@ final class quiz_play_test extends \advanced_testcase {
         $this->setUser($this->user);
         set_config('quiz_question_seconds', 0, 'local_playergames');
         set_config('quiz_max_attempts', 0, 'local_playergames');
-        set_config('quiz_cooldown_minutes', 0, 'local_playergames');
     }
 
     /**
@@ -232,19 +231,20 @@ final class quiz_play_test extends \advanced_testcase {
         $this->assertSame(1, quiz_play::next()['index']);
         $this->answer(1, 0);
         $this->assertSame(0, quiz_play::next()['index']);
+        // With unlimited attempts the play never fails, so the day is never closed.
+        $this->assertFalse(day_loss::is_closed((int) $this->user->id, 'quiz', $this->today));
     }
 
     /**
-     * The wrong-answer limit ends the play in failure, with no XP, and starts the cooldown.
+     * The wrong-answer limit ends the play in failure, with no XP, and closes the game for the day.
      *
-     * Regression test: the cooldown only started when the browser chose to report the failure, so
-     * a player who never reported it had no waiting time.
+     * Regression test: a lost play only started a cooldown, 0 minutes by default, after which a new play drew new
+     * questions, so the limit never cost the day and the quiz could not be lost.
      */
-    public function test_running_out_of_attempts_fails_and_starts_the_cooldown(): void {
+    public function test_running_out_of_attempts_fails_and_closes_the_day(): void {
         global $DB;
         $this->prepare();
         set_config('quiz_max_attempts', 2, 'local_playergames');
-        set_config('quiz_cooldown_minutes', 10, 'local_playergames');
         $this->start();
 
         $this->answer(0, 0);
@@ -254,7 +254,7 @@ final class quiz_play_test extends \advanced_testcase {
         $this->assertTrue($result['finished']);
         $this->assertFalse($result['won']);
         $this->assertSame(0, $result['xpawarded']);
-        $this->assertGreaterThan(0, (new quiz_settings())->cooldown_remaining((int) $this->user->id));
+        $this->assertTrue(day_loss::is_closed((int) $this->user->id, 'quiz', $this->today));
         $this->assertFalse($DB->record_exists('local_playergames_daily_scores', ['userid' => $this->user->id]));
         $this->assertSame('noplay', $this->answer(1, 2)['reason']);
     }
@@ -354,7 +354,6 @@ final class quiz_play_test extends \advanced_testcase {
         $this->prepare();
         set_config('quiz_question_seconds', 60, 'local_playergames');
         set_config('quiz_max_attempts', 1, 'local_playergames');
-        set_config('quiz_cooldown_minutes', 10, 'local_playergames');
         $this->start();
         $this->change_state(function (array $state): array {
             $state['shownat'] = time() - 600;
@@ -364,7 +363,7 @@ final class quiz_play_test extends \advanced_testcase {
         $resumed = quiz_play::resume((int) $this->user->id, $this->today, (int) $this->season->id);
 
         $this->assertNull($resumed);
-        $this->assertGreaterThan(0, (new quiz_settings())->cooldown_remaining((int) $this->user->id));
+        $this->assertTrue(day_loss::is_closed((int) $this->user->id, 'quiz', $this->today));
     }
 
     /**

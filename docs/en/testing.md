@@ -29,7 +29,8 @@ PostgreSQL & MariaDB).
 | `observer_test.php` | 5 | `game_completed` drives streak/mission/achievement; records streak even without a season; mirrors `block_playerhud` XP changes into Course XP |
 | `hook_callbacks_test.php` | 5 | Primary navigation link: the hub for a student, none after opting out, the dashboard for a teacher who opted out, none for a guest, and the staff lookup skipped (counted in queries) when gamification is on |
 | `games/quiz_loader_test.php` | 12 | Completeness filter, session size, active-only, id filter, metadata, random draw, fresh-question exclusion and pool reuse |
-| `games/quiz_settings_test.php` | 8 | Timer, max-attempts and cooldown configuration and their interaction |
+| `games/quiz_settings_test.php` | 6 | Timer, max-attempts and session size configuration |
+| `games/day_loss_test.php` | 7 | A lost day: the allowed defeats close it, Unlimited never does, it stays closed, it belongs to one user, game and day, and the word games read it from their own round |
 | `games/guess_manager_test.php` | 7 | Daily concept resolution, term normalisation, Wordle-style letter feedback (including duplicate letters), guess validation |
 | `games/fill_manager_test.php` | 10 | Word count/max-attempts config clamping, shared letter→slot assignment (including disjoint terms), tile reveal state, cross-reveal cascade, per-day term ordering and filtering, POST response payload reveal rules |
 | `games/battle_manager_test.php` | 12 | PlayerBattle on the server: questions delivered ready for the browser with the text escaped once, no battle without questions, a defeat saved without XP and without spending the play, a victory with the season XP (also past the quota, with none), the best result of the day, a battle accepted once, counters kept in range, only the questions delivered counted as seen |

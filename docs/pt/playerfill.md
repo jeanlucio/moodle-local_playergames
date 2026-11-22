@@ -53,7 +53,7 @@ mesma letra e quantas tentativas cada palavra tem) e mostra abaixo de cada palav
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | **Palavras por dia do PlayerFill** | 5 | Quantos termos compõem a cruzadinha de cada dia. Limitado entre 4 e 8. |
-| **Tentativas máximas por palavra do PlayerFill** | 4 | Tentativas permitidas num único termo antes que o dia inteiro termine em derrota. |
+| **Máximo de tentativas por palavra do PlayerFill** | 4 | Tentativas permitidas num único termo antes que o dia inteiro termine em derrota. |
 | **Comprimento mínimo de termo para PlayerFill** | 3 | Menor termo elegível para a atribuição diária. |
 | **Comprimento máximo de termo para PlayerFill** | 12 | Maior termo elegível para a atribuição diária. |
 

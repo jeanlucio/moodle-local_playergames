@@ -23,8 +23,8 @@ category again and deactivate the old cartridge.
 - **Wrong answer** (or the timer running out) → the correct option is revealed, then the next
   question loads.
 - **Correct answer** → the play ends and XP is awarded.
-- With an attempt limit set, running out of attempts ends the play in **failure** (no XP) and may
-  start a cooldown.
+- With an attempt limit set, running out of attempts ends the play in **failure** (no XP) and closes
+  PlayerQuiz until the next day.
 
 Because a play ends on the **first correct answer**, a player rarely answers the whole pool —
 most questions in a session are just a buffer that provides variety and room to be wrong before
@@ -62,17 +62,17 @@ round's deck is*.
 | Setting | Default | What it does |
 |---|---|---|
 | **Time per question (seconds)** | 120 (2 min) | Countdown per question. Reaching zero counts as a wrong answer and advances. `0` disables the timer. |
-| **Maximum attempts** | Unlimited | Wrong answers (including timeouts) that end a play without XP, picked from Unlimited or 1 to 10. With Unlimited the game continues until the player answers correctly, so a play always pays XP. |
-| **Cooldown after failing (minutes)** | 0 | When a play ends in failure, the quiz is locked for this many minutes. Persisted server-side (a page reload does **not** bypass it). Only meaningful together with an attempt limit. |
+| **Maximum attempts** | Unlimited | Wrong answers (including timeouts) that close PlayerQuiz for the rest of the day without XP, picked from Unlimited or 1 to 10. With Unlimited the game continues until the player answers correctly, so a play always pays XP. |
 | **Questions per session** | 20 | Size of each play's draw, chosen from a capped list (5–50). |
 
-## How the timer, attempts and cooldown interlock
+## How the timer and the attempts interlock
 
 - A timer expiry is treated exactly like a wrong answer.
-- A play can only **fail** when a maximum-attempts limit is set; with unlimited attempts (`0`) the
-  game loops until a correct answer, so the cooldown never triggers.
-- A failed play awards **no XP and does not consume a daily play** — the cooldown is the only
-  throttle, so with cooldown `0` the player may retry immediately.
+- A play can only **fail** when a maximum-attempts limit is set; with Unlimited the game loops until a
+  correct answer.
+- A failed play awards **no XP and closes PlayerQuiz until the next day**, the same rule as the other
+  games: a lost day is lost. The defeat is kept on the server, so a reload, another browser or a new
+  login does not reopen the game, and the hub shows it as *Come back tomorrow*.
 
 ## Why the session size is capped
 

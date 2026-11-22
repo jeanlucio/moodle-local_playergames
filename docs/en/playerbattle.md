@@ -43,7 +43,10 @@ day count come from the Game XP settings the season was created with.
 
 - **A victory** spends one daily play and gives the season's XP for the game. Past the day's quota, a victory
   is still saved, but gives no XP.
-- **A defeat** is saved but gives no XP and **does not spend the play**: the player may try again at once.
+- **A defeat** is saved but gives no XP. With **Maximum attempts** at Unlimited, the default, it does not
+  spend the play and the player may try again at once. With a limit of 1 to 10, that many defeats close
+  PlayerBattle until the next day, as a lost day closes the other games; the hub shows it as
+  *Come back tomorrow*.
 - The day keeps the **best result**: a victory over a defeat, then the one that dealt the most damage.
 - The first victory completes the **First Victory** mission.
 - The questions shown count as seen for the day, in a defeat too, so the next try brings new ones. When
@@ -68,6 +71,7 @@ PlayerBattle asks **question cartridges**, including the ones imported from a **
 |---|---|
 | *Season games* | Whether PlayerBattle runs in the season and which cartridges its questions come from. |
 | *Rules → Game XP* | XP per PlayerBattle game and how many plays a day give XP. |
+| *Rules → Game rules* | **Maximum attempts**: how many lost battles close the game for the day, Unlimited by default. |
 
 ## Playing it
 

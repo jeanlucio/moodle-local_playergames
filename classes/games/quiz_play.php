@@ -31,8 +31,8 @@ use local_playergames\hub\served_questions;
  * Holds the questions delivered to a player and decides every answer.
  *
  * The browser never receives which option is right. It sends the option the player chose, and the
- * server says whether it was correct, counts the wrong answers and the time, ends the play, starts
- * the cooldown and pays the XP. The play lives in the user's session, so reloading the page resumes
+ * server says whether it was correct, counts the wrong answers and the time, ends the play, closes the
+ * game for the day when the play is lost and pays the XP. The play lives in the user's session, so reloading the page resumes
  * it with the same questions and the same wrong-answer count instead of drawing a fresh set. Like
  * the PlayerGuess round, it does not survive a logout.
  *
@@ -107,7 +107,7 @@ class quiz_play {
             $state['wrong']++;
             if (self::out_of_attempts($state)) {
                 $state['finished'] = true;
-                (new quiz_settings())->start_cooldown($userid);
+                day_loss::record($userid, 'quiz', (int) $state['gamedate'], 1);
                 self::save($state);
                 return null;
             }
@@ -170,7 +170,8 @@ class quiz_play {
             $state['awaitingnext'] = true;
             if (self::out_of_attempts($state)) {
                 $state['finished'] = true;
-                (new quiz_settings())->start_cooldown($userid);
+                // The play is lost, and with it the day: the next play would only draw new questions.
+                day_loss::record($userid, 'quiz', (int) $state['gamedate'], 1);
             }
         }
         self::save($state);

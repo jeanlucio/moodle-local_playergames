@@ -43,7 +43,10 @@ dia contam vêm das configurações de XP dos jogos com que a temporada foi cria
 
 - **Uma vitória** gasta uma jogada do dia e dá o XP do jogo na temporada. Além da cota do dia, a vitória
   ainda é salva, mas não dá XP.
-- **Uma derrota** é salva, mas não dá XP e **não gasta a jogada**: o jogador pode tentar de novo na hora.
+- **Uma derrota** é salva, mas não dá XP. Com **Máximo de tentativas** em Ilimitado, o padrão, ela não
+  gasta a jogada e o jogador pode tentar de novo na hora. Com um limite de 1 a 10, esse número de derrotas
+  fecha o PlayerBattle até o dia seguinte, como um dia perdido fecha os outros jogos; o hub mostra
+  *Volte amanhã*.
 - O dia guarda o **melhor resultado**: uma vitória vale mais que uma derrota, e depois vale a que causou
   mais dano.
 - A primeira vitória completa a missão **Primeira Vitória**.
@@ -70,6 +73,7 @@ Moodle** (ver [Como o PlayerQuiz Funciona](#playerquiz)), conforme escolhido par
 |---|---|
 | *Jogos da temporada* | Se o PlayerBattle roda na temporada e de quais cartuchos vêm as questões dele. |
 | *Regras → XP dos jogos* | XP por jogo do PlayerBattle e quantas jogadas por dia rendem XP. |
+| *Regras → Regras dos jogos* | **Máximo de tentativas**: quantas batalhas perdidas fecham o jogo no dia, Ilimitado por padrão. |
 
 ## Jogando
 

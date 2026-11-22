@@ -24,7 +24,7 @@
         "sesskey": "abc123",
         "formaction": "/local/playergames/play_quiz.php",
         "already_played": false,
-        "cooldown_active": false,
+        "closed_today": false,
         "no_questions": false,
         "question_seconds": 120,
         "first_seconds": 120,
@@ -32,15 +32,15 @@
         "attempt": 1,
         "huburl": "/local/playergames/hub.php",
         "str_already_played": "You have already played PlayerQuiz today.",
-        "str_locked": "PlayerQuiz is on cooldown",
-        "str_locked_msg": "PlayerQuiz will be available again in 2 mins.",
+        "str_closed": "Out of attempts",
+        "str_closed_msg": "You ran out of attempts at PlayerQuiz today. Come back tomorrow!",
         "str_no_questions": "No questions available.",
         "str_completed": "Correct!",
         "str_time_left": "Time left",
         "str_continue": "Continue",
         "str_view_result": "View result",
         "str_failed": "Out of attempts",
-        "str_failed_msg": "You ran out of attempts. Head back to the Hub and try again.",
+        "str_failed_msg": "You ran out of attempts at PlayerQuiz today. Come back tomorrow!",
         "str_result_xp": "XP earned:",
         "str_back_to_hub": "Back to Hub",
         "questions": [
@@ -70,16 +70,16 @@
     </div>
     {{/already_played}}
 
-    {{#cooldown_active}}
+    {{#closed_today}}
     <div class="alert alert-warning" role="alert">
-        <i class="fa fa-hourglass-half me-2" aria-hidden="true"></i>
-        <strong>{{str_locked}}</strong>
-        <div class="mt-1">{{str_locked_msg}}</div>
+        <i class="fa fa-circle-xmark me-2" aria-hidden="true"></i>
+        <strong>{{str_closed}}</strong>
+        <div class="mt-1">{{str_closed_msg}}</div>
         <div class="mt-3">
             <a href="{{huburl}}" class="btn btn-primary btn-sm">{{str_back_to_hub}}</a>
         </div>
     </div>
-    {{/cooldown_active}}
+    {{/closed_today}}
 
     {{#no_questions}}
     <div class="alert alert-warning" role="alert">
@@ -88,7 +88,7 @@
     </div>
     {{/no_questions}}
 
-    {{^already_played}}{{^cooldown_active}}{{^no_questions}}
+    {{^already_played}}{{^closed_today}}{{^no_questions}}
     <div id="pg-quiz-container"
          data-action="{{formaction}}"
          data-sesskey="{{sesskey}}"
@@ -159,6 +159,6 @@
         </div>
 
     </div>
-    {{/no_questions}}{{/cooldown_active}}{{/already_played}}
+    {{/no_questions}}{{/closed_today}}{{/already_played}}
 
 </div>

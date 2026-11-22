@@ -105,9 +105,12 @@
                 "done": false,
                 "locked": false,
                 "pending": true,
+                "lost": false,
+                "url": "/local/playergames/play_quiz.php",
                 "str_done": "Done",
                 "str_pending": "Play",
-                "str_locked": "No cartridge"
+                "str_locked": "No cartridge",
+                "str_lost": "Come back tomorrow"
             }
         ],
         "str_profile": "Your profile",
@@ -302,13 +305,15 @@
                             <div class="pg-hub-game-card text-center p-3 rounded position-relative
                                 {{#done}}pg-game-done{{/done}}
                                 {{#locked}}pg-game-locked{{/locked}}
-                                {{#pending}}pg-game-pending{{/pending}}">
-                                {{#pending}}{{#url}}
+                                {{#pending}}pg-game-pending{{/pending}}
+                                {{#lost}}pg-game-lost{{/lost}}">
+                                {{#url}}
                                 <a href="{{url}}" class="stretched-link" aria-label="{{name}}"></a>
-                                {{/url}}{{/pending}}
+                                {{/url}}
                                 <i class="fa {{icon}} fs-3 mb-2
                                     {{#done}}text-success{{/done}}
                                     {{#locked}}text-muted{{/locked}}
+                                    {{#lost}}text-secondary{{/lost}}
                                     {{#pending}}text-primary{{/pending}}"
                                     aria-hidden="true"></i>
                                 <div class="fw-semibold small">{{name}}</div>
@@ -326,6 +331,11 @@
                                     {{#pending}}
                                     <span class="badge bg-primary">{{str_pending}}</span>
                                     {{/pending}}
+                                    {{#lost}}
+                                    <span class="badge bg-secondary">
+                                        <i class="fa fa-circle-xmark me-1" aria-hidden="true"></i>{{str_lost}}
+                                    </span>
+                                    {{/lost}}
                                 </div>
                             </div>
                         </div>

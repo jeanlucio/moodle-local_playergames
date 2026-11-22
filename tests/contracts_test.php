@@ -96,6 +96,7 @@ final class contracts_test extends \advanced_testcase {
             'count_this_season' => 'reads',
         ],
         'games\battle_manager' => [
+            'max_attempts' => 'reads a setting',
             'start_battle' => 'keeps the battle in the session of the request; nothing is paid before submit_result',
             'answer_question' => 'judges one answer in the session of the request; nothing is paid before submit_result',
         ],

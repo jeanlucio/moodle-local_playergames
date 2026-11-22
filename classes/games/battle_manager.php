@@ -61,6 +61,15 @@ class battle_manager {
     private const MAX_DAMAGE_DEALT = 1000000;
 
     /**
+     * Lost battles that close the game for the day; 0 lets the player try again until they win.
+     *
+     * @return int
+     */
+    public static function max_attempts(): int {
+        return max(0, (int) get_config('local_playergames', 'battle_max_attempts'));
+    }
+
+    /**
      * Opens a battle for the user and returns its questions, ready to send to the browser.
      *
      * @param int $userid The player.
@@ -195,7 +204,7 @@ class battle_manager {
         array $result,
         ?int $now = null
     ): array {
-        $refused = ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0];
+        $refused = ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0, 'closed' => false];
 
         // The open battle is taken and the day's score, which adds up the XP, is read and written back under the
         // lock of the user: two results sent at the same time, from two sessions, would both find a battle open
@@ -224,7 +233,7 @@ class battle_manager {
     private function submit_result_locked(int $userid, \stdClass $season, \context $context, array $result, int $now): array {
         $run = self::run_cache()->get($userid);
         if (!is_array($run)) {
-            return ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0];
+            return ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0, 'closed' => false];
         }
         // One result per battle: a repeated request finds nothing open.
         self::run_cache()->delete($userid);
@@ -239,9 +248,12 @@ class battle_manager {
             && $total >= self::MIN_VICTORY_ANSWERS;
 
         $xpawarded = 0;
+        $closed = false;
         if ($victory) {
             $play = daily_play_manager::register_play($userid, 'battle', $gamedate, $season, $context, ['victory' => 1]);
             $xpawarded = (int) $play['xpawarded'];
+        } else {
+            $closed = day_loss::record($userid, 'battle', $gamedate, self::max_attempts());
         }
 
         $this->save_score($userid, (int) $season->id, $gamedate, [
@@ -254,8 +266,8 @@ class battle_manager {
             'duration'         => $duration,
         ]);
 
-        // The questions answered count as seen whether or not the battle was won: a defeat does not
-        // spend the play, so the next try should bring new ones.
+        // The questions answered count as seen whether or not the battle was won: a defeat that leaves the
+        // day open lets the player try again, and the next try should bring new ones.
         $this->record_seen($userid, $gamedate, (array) $run['judging']);
 
         $snapshot = season_manager::get_config_snapshot($season);
@@ -264,6 +276,7 @@ class battle_manager {
             'victory'   => $victory,
             'xpawarded' => $xpawarded,
             'remaining' => daily_play_manager::remaining_plays($userid, 'battle', $gamedate, $snapshot),
+            'closed'    => $closed,
         ];
     }
 

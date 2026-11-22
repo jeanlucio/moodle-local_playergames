@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * PlayerQuiz gameplay settings and failure cooldown resolver.
+ * PlayerQuiz gameplay settings.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -25,19 +25,11 @@
 namespace local_playergames\games;
 
 /**
- * Reads the admin-configured PlayerQuiz rules, applying defaults and bounds,
- * and manages the cooldown that locks the quiz after a failed play.
- *
- * The cooldown is stored as a user preference holding the unix time until
- * which the quiz stays locked. The reference time is injectable so the logic
- * can be exercised deterministically by tests.
+ * Reads the admin-configured PlayerQuiz rules, applying defaults and bounds.
  *
  * @package    local_playergames
  */
 class quiz_settings {
-    /** @var string User preference holding the cooldown expiry timestamp. */
-    public const PREF_COOLDOWN = 'local_playergames_quizcooldown';
-
     /** @var int Default per-question time limit in seconds (two minutes). */
     public const DEFAULT_SECONDS = 120;
 
@@ -58,21 +50,12 @@ class quiz_settings {
     }
 
     /**
-     * Returns the maximum wrong attempts before a play fails; 0 is unlimited.
+     * Returns the wrong answers that lose the play, and the day; 0 is unlimited.
      *
      * @return int
      */
     public function max_attempts(): int {
         return max(0, (int) get_config('local_playergames', 'quiz_max_attempts'));
-    }
-
-    /**
-     * Returns the cooldown applied after a failed play, in minutes; 0 disables.
-     *
-     * @return int
-     */
-    public function cooldown_minutes(): int {
-        return max(0, (int) get_config('local_playergames', 'quiz_cooldown_minutes'));
     }
 
     /**
@@ -83,46 +66,5 @@ class quiz_settings {
     public function session_size(): int {
         $value = (int) get_config('local_playergames', 'quiz_session_size');
         return $value > 0 ? $value : self::DEFAULT_SESSION;
-    }
-
-    /**
-     * Returns the seconds remaining on the user's cooldown, or 0 when none.
-     *
-     * @param int $userid User to check.
-     * @param int|null $now Reference time; defaults to the current time.
-     * @return int
-     */
-    public function cooldown_remaining(int $userid, ?int $now = null): int {
-        $now = $now ?? time();
-        $until = (int) get_user_preferences(self::PREF_COOLDOWN, 0, $userid);
-        return max(0, $until - $now);
-    }
-
-    /**
-     * Returns whether the quiz is currently locked for the user by a cooldown.
-     *
-     * @param int $userid User to check.
-     * @param int|null $now Reference time; defaults to the current time.
-     * @return bool
-     */
-    public function is_on_cooldown(int $userid, ?int $now = null): bool {
-        return $this->cooldown_remaining($userid, $now) > 0;
-    }
-
-    /**
-     * Starts the failure cooldown for the user. Does nothing when the cooldown
-     * is disabled (zero minutes).
-     *
-     * @param int $userid User to lock out.
-     * @param int|null $now Reference time; defaults to the current time.
-     * @return void
-     */
-    public function start_cooldown(int $userid, ?int $now = null): void {
-        $minutes = $this->cooldown_minutes();
-        if ($minutes <= 0) {
-            return;
-        }
-        $now = $now ?? time();
-        set_user_preference(self::PREF_COOLDOWN, $now + $minutes * 60, $userid);
     }
 }

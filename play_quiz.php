@@ -27,6 +27,7 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_playergames\games\day_loss;
 use local_playergames\games\quiz_loader;
 use local_playergames\games\quiz_play;
 use local_playergames\games\quiz_settings;
@@ -61,7 +62,7 @@ if (data_submitted()) {
         $season === null
         || $remaining <= 0
         || season_game_config::is_disabled((int) $season->id, 'quiz')
-        || (new quiz_settings())->is_on_cooldown((int) $USER->id)
+        || day_loss::is_closed((int) $USER->id, 'quiz', $gamedate)
     ) {
         echo json_encode(['success' => false, 'reason' => 'unavailable']);
         exit;
@@ -109,12 +110,10 @@ $alreadyplayed = $remaining <= 0;
 // Gameplay rules configured by the admin (read live so changes apply at once).
 $settings        = new quiz_settings();
 $questionseconds = $settings->question_seconds();
-$cooldownminutes = $settings->cooldown_minutes();
 $sessionsize     = $settings->session_size();
 
-// Cooldown lock: set when the player previously ran out of attempts.
-$cooldownremaining = $settings->cooldown_remaining((int) $USER->id);
-$cooldownactive    = !$alreadyplayed && $cooldownremaining > 0;
+// A play lost earlier today closes the game until tomorrow.
+$closedtoday = !$alreadyplayed && day_loss::is_closed((int) $USER->id, 'quiz', $gamedate);
 
 $questions    = [];
 $noquestions  = false;
@@ -122,17 +121,16 @@ $currentindex = 0;
 $attempt      = 1;
 $firstseconds = $questionseconds;
 
-if (!$alreadyplayed && !$cooldownactive) {
+if (!$alreadyplayed && !$closedtoday) {
     // A play left open by a reload continues with the same questions and wrong-answer count.
     $play = quiz_play::resume((int) $USER->id, $gamedate, (int) $activeseason->id);
 
     if ($play === null) {
-        // A cooldown can start while resuming, when time ran out during an absence.
-        $cooldownremaining = $settings->cooldown_remaining((int) $USER->id);
-        $cooldownactive    = $cooldownremaining > 0;
+        // The play can be lost while resuming, when time ran out during an absence.
+        $closedtoday = day_loss::is_closed((int) $USER->id, 'quiz', $gamedate);
     }
 
-    if ($play === null && !$cooldownactive) {
+    if ($play === null && !$closedtoday) {
         // A season with no row for the game predates per-season config: it draws from all the cartridges.
         $gameconfig   = season_game_config::get_for_active_season('quiz');
         $cartridgeids = $gameconfig !== null ? $gameconfig->cartridgeids : null;
@@ -149,14 +147,10 @@ if (!$alreadyplayed && !$cooldownactive) {
         $currentindex = (int) $play['current'];
         $attempt      = (int) $play['wrong'] + 1;
         $firstseconds = quiz_play::seconds_left($play);
-    } else if (!$cooldownactive) {
+    } else if (!$closedtoday) {
         $noquestions = true;
     }
 }
-
-$failedmsg = $cooldownminutes > 0
-    ? get_string('quiz_failed_cooldown', 'local_playergames', $cooldownminutes)
-    : get_string('quiz_failed_retry', 'local_playergames');
 
 $templatedata = [
     'sesskey'            => sesskey(),
@@ -166,29 +160,25 @@ $templatedata = [
     'attempt'            => $attempt,
     'first_seconds'      => $firstseconds,
     'already_played'     => $alreadyplayed,
-    'cooldown_active'    => $cooldownactive,
+    'closed_today'       => $closedtoday,
     'no_questions'       => $noquestions,
     'question_seconds'   => $questionseconds,
     'huburl'             => (new moodle_url('/local/playergames/hub.php'))->out(false),
     'str_already_played' => get_string('quiz_already_played', 'local_playergames'),
-    'str_locked'         => get_string('quiz_locked', 'local_playergames'),
-    'str_locked_msg'     => get_string(
-        'quiz_locked_msg',
-        'local_playergames',
-        format_time(max(0, $cooldownremaining))
-    ),
+    'str_closed'         => get_string('quiz_failed', 'local_playergames'),
+    'str_closed_msg'     => get_string('quiz_closed_today', 'local_playergames'),
     'str_no_questions'   => get_string('quiz_no_questions', 'local_playergames'),
     'str_completed'      => get_string('quiz_completed', 'local_playergames'),
     'str_time_left'      => get_string('quiz_time_left', 'local_playergames'),
     'str_continue'       => get_string('quiz_continue', 'local_playergames'),
     'str_view_result'    => get_string('quiz_view_result', 'local_playergames'),
     'str_failed'         => get_string('quiz_failed', 'local_playergames'),
-    'str_failed_msg'     => $failedmsg,
+    'str_failed_msg'     => get_string('quiz_closed_today', 'local_playergames'),
     'str_result_xp'      => get_string('quiz_result_xp', 'local_playergames'),
     'str_back_to_hub'    => get_string('quiz_back_to_hub', 'local_playergames'),
 ];
 
-if (!$alreadyplayed && !$cooldownactive && !$noquestions) {
+if (!$alreadyplayed && !$closedtoday && !$noquestions) {
     $PAGE->requires->js_call_amd('local_playergames/play_quiz', 'init');
 }
 

@@ -291,12 +291,13 @@ if ($hassiteconfig) {
         0
     ));
 
-    // A pick list, as in the activities of the ecosystem. A stored value above the list (set by a script) stays in
-    // it, or saving the page would silently turn it into Unlimited.
-    $quizattempts = [0 => get_string('unlimited')];
+    // The attempts of PlayerQuiz and PlayerBattle are pick lists, as in the activities of the ecosystem. A stored
+    // value above the list (set by a script) stays in it, or saving the page would silently turn it into Unlimited.
+    $attemptchoices = [0 => get_string('unlimited')];
     for ($i = 1; $i <= 10; $i++) {
-        $quizattempts[$i] = $i;
+        $attemptchoices[$i] = $i;
     }
+    $quizattempts = $attemptchoices;
     $storedattempts = (int) get_config('local_playergames', 'quiz_max_attempts');
     if ($storedattempts > 10) {
         $quizattempts[$storedattempts] = $storedattempts;
@@ -307,14 +308,6 @@ if ($hassiteconfig) {
         get_string('settings_quiz_max_attempts_desc', 'local_playergames'),
         0,
         $quizattempts
-    ));
-
-    $page3->add(new \local_playergames\local\setting_int_range(
-        'local_playergames/quiz_cooldown_minutes',
-        get_string('settings_quiz_cooldown_minutes', 'local_playergames'),
-        get_string('settings_quiz_cooldown_minutes_desc', 'local_playergames'),
-        0,
-        0
     ));
 
     $page3->add(new \local_playergames\local\setting_int_range(
@@ -384,16 +377,17 @@ if ($hassiteconfig) {
         3
     ));
 
-    $conceptdayoptions = [
-        'random' => get_string('cartridge_concept_day_random', 'local_playergames'),
-        'bycategory' => get_string('cartridge_concept_day_bycategory', 'local_playergames'),
-    ];
+    $battleattempts = $attemptchoices;
+    $storedattempts = (int) get_config('local_playergames', 'battle_max_attempts');
+    if ($storedattempts > 10) {
+        $battleattempts[$storedattempts] = $storedattempts;
+    }
     $page3->add(new admin_setting_configselect(
-        'local_playergames/concept_day_mode',
-        get_string('cartridge_concept_day_mode', 'local_playergames'),
-        get_string('cartridge_concept_day_mode_desc', 'local_playergames'),
-        'random',
-        $conceptdayoptions
+        'local_playergames/battle_max_attempts',
+        get_string('settings_battle_max_attempts', 'local_playergames'),
+        get_string('settings_battle_max_attempts_desc', 'local_playergames'),
+        0,
+        $battleattempts
     ));
 
     $ADMIN->add('playergames_rules', $page3, 'local_playergames_avatars');

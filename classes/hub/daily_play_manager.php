@@ -25,6 +25,7 @@
 namespace local_playergames\hub;
 
 use local_playergames\event\game_completed;
+use local_playergames\games\day_loss;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
@@ -275,6 +276,7 @@ class daily_play_manager {
             $disabled[$gametype] = $season !== null
                 && season_game_config::is_disabled((int) $season->id, $gametype);
         }
+        $lostgames = array_flip(day_loss::closed_games($userid, $today));
         $result = [];
         foreach ($gametypes as $gametype) {
             if ($disabled[$gametype] ?? false) {
@@ -282,8 +284,10 @@ class daily_play_manager {
             }
             $games   = self::games_per_day($snapshot, $gametype);
             $done    = ($attempts[$gametype] ?? 0) >= $games;
-            $locked  = !$done && !self::has_content($gametype, $activetypes);
-            $pending = !$done && !$locked;
+            // A game lost today stays closed until tomorrow; its page still shows how the day ended.
+            $lost    = !$done && isset($lostgames[$gametype]);
+            $locked  = !$done && !$lost && !self::has_content($gametype, $activetypes);
+            $pending = !$done && !$lost && !$locked;
             $result[] = [
                 'gametype' => $gametype,
                 'name'     => get_string('hub_game_' . $gametype, 'local_playergames'),
@@ -291,10 +295,13 @@ class daily_play_manager {
                 'done'     => $done,
                 'locked'   => $locked,
                 'pending'  => $pending,
-                'url'      => $pending ? (new moodle_url('/local/playergames/play_' . $gametype . '.php'))->out(false) : '',
+                'lost'     => $lost,
+                'url'      => ($pending || $lost)
+                    ? (new moodle_url('/local/playergames/play_' . $gametype . '.php'))->out(false) : '',
                 'str_done'    => get_string('hub_game_done', 'local_playergames'),
                 'str_pending' => get_string('hub_game_pending', 'local_playergames'),
                 'str_locked'  => get_string('hub_game_locked', 'local_playergames'),
+                'str_lost'    => get_string('hub_game_lost', 'local_playergames'),
             ];
         }
         return $result;

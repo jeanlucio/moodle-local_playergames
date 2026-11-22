@@ -97,5 +97,15 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111603, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112200) {
+        // The choice of the concept of the day never changed the draw, and the PlayerQuiz cooldown gave way to a
+        // lost play closing the day: the settings and the cooldown kept for each user go with them.
+        unset_config('concept_day_mode', 'local_playergames');
+        unset_config('quiz_cooldown_minutes', 'local_playergames');
+        $DB->delete_records('user_preferences', ['name' => 'local_playergames_quizcooldown']);
+
+        upgrade_plugin_savepoint(true, 2026112200, 'local', 'playergames');
+    }
+
     return true;
 }

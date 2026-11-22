@@ -205,10 +205,6 @@ class provider implements
             'local_playergames_gamification',
             'privacy:pref_gamification'
         );
-        $collection->add_user_preference(
-            'local_playergames_quizcooldown',
-            'privacy:pref_quizcooldown'
-        );
 
         return $collection;
     }
@@ -413,7 +409,6 @@ class provider implements
     public static function export_user_preferences(int $userid): void {
         $prefs = [
             'local_playergames_gamification' => 'privacy:pref_gamification',
-            'local_playergames_quizcooldown' => 'privacy:pref_quizcooldown',
         ];
         foreach ($prefs as $prefname => $stringkey) {
             $value = get_user_preferences($prefname, null, $userid);
