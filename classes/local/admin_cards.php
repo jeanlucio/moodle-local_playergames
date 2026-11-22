@@ -179,6 +179,12 @@ final class admin_cards {
                     'url' => $setting('local_playergames_learning'),
                 ],
             ],
+            'data' => [
+                [
+                    'key' => 'resetdata', 'name' => 'admin_item_resetdata', 'cap' => self::CAP_CONFIG,
+                    'url' => new moodle_url('/local/playergames/reset_data.php'),
+                ],
+            ],
             'help' => [
                 [
                     'key' => 'aikeys', 'name' => 'admin_item_aikeys', 'cap' => self::CAP_CONFIG,

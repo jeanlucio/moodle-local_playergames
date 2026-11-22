@@ -22,6 +22,7 @@ open where it leads.
 | | Avatars | From which level each group of avatars is unlocked. | Site administrator |
 | | Streak and freeze | How the daily streak works and how a freeze is earned. | Site administrator |
 | | Course XP | The XP courses give through PlayerHUD, shown apart from the season XP. | Site administrator |
+| **Data** | Reset data | Deletes the seasons and everything the players earned, to start again from zero. The cartridges and the settings stay. | Site administrator |
 | **Help and integrations** | AI keys | Keys used to generate questions with AI. Shown only when the AI Hub plugin is installed. | Site administrator |
 | | Documentation | This guide, in English and Portuguese. | Anyone who sees the tab |
 
@@ -56,12 +57,29 @@ name and dates of the other season, because the retention task and **Delete** re
 its dates. The form suggests a start date after the last season when that one still runs: after closing a
 season today, the next one can start tomorrow.
 
+### Resetting all the data
+
+Deleting the seasons and the cartridges one by one leaves what belongs to no season: streaks, freezes,
+achievements, avatar progress, the activity history and the course XP mirrored from PlayerHUD. **Reset data**
+deletes all of it, for every user, to start again from zero, after a pilot for instance.
+
+* **Deleted:** every season, the active one included, with its game settings; the season results and the
+  hall of fame; the daily scores, battles and rounds; the season profiles and mission progress; the streaks,
+  freezes, achievements and avatar progress; the activity and freeze history; the course XP mirrored from
+  PlayerHUD (the XP in PlayerHUD itself is not touched).
+* **Kept:** the cartridges with their questions and concepts, the levels and titles, the avatar catalogue,
+  the missions and achievements themselves, every setting, and each user's choice to take part.
+
+The page lists how many records each group holds, and nothing is deleted until the administrator types the
+confirmation word (*RESET*; *ZERAR* in Portuguese). It cannot be undone. The site log records who did it,
+when and how many records went (event *PlayerGames data reset*).
+
 ## The same order in the Moodle administration
 
 The plugin's pages in **Site administration → Plugins → Local plugins → PlayerGames** follow the same
 groups: **Get started** (Cartridges, Seasons, Season games), **Rules** (Participation and seasons, Game XP,
-Game rules, Levels and titles, Avatars, Streak and freeze, Course XP) and **Monitoring** (Engagement
-Meter). The Administration tab is a shortcut to them, not a replacement.
+Game rules, Levels and titles, Avatars, Streak and freeze, Course XP), **Monitoring** (Engagement
+Meter) and **Data** (Reset data). The Administration tab is a shortcut to them, not a replacement.
 
 Season games opens the active season, or the next one if none is active. With no season at all it leads
 to the seasons page.

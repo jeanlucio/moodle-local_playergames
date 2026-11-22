@@ -53,6 +53,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `cartridge/question_bank_importer_test.php` | 9 | Cópia para um novo cartucho de questões ativo, nome da categoria, questões com mídia deixadas de fora (contadas), questões inutilizáveis, só a última versão pronta, nada a importar, categorias privadas e usuários sem permissão recusados, texto simplificado mantendo maiúsculas e entidades |
 | `cartridge/glossary_importer_test.php` | 4 | Glossários globais listados com as entradas aprovadas, importação para um cartucho de conceitos, recusa de glossário de curso e de glossário vazio |
 | `local/text_test.php` | 4 | Nomes em texto plano: texto como digitado, o título do nível, páginas de cartucho escapando os nomes uma vez e formulários de edição preenchendo os campos com o texto armazenado |
+| `local/data_reset_test.php` | 4 | Toda tabela apagada ou mantida, as tabelas de dados pessoais apagadas, as temporadas contadas sozinhas, e um zerar que apaga o jogo, mantém o conteúdo, as configurações e as escolhas dos usuários e registra quem fez |
 | `local/engagement_report_test.php` | 14 | Métricas vazias, contagem de cursos, detecção de curso Player, divisão por escopo; a comparação guardada por uma hora por período e conjunto de cursos |
 | `ecosystem/plugin_registry_test.php` | 2 | Estrutura do catálogo e componentes únicos |
 | `ecosystem/plugin_status_test.php` | 1 | Status de instalação por componente; hub reportado como instalado |

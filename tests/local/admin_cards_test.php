@@ -94,15 +94,16 @@ final class admin_cards_test extends \advanced_testcase {
 
         $groups = admin_cards::for_user((int) $GLOBALS['USER']->id);
 
-        $this->assertSame(['start', 'rules', 'help'], array_column($groups, 'key'));
+        $this->assertSame(['start', 'rules', 'data', 'help'], array_column($groups, 'key'));
         $keys = array_map(static fn($group): array => array_column($group['cards'], 'key'), $groups);
         $this->assertSame(['cartridges', 'seasons', 'seasongames'], $keys[0]);
         $this->assertSame(
             ['participation', 'xp', 'games', 'levels', 'avatars', 'streak', 'learning'],
             $keys[1]
         );
+        $this->assertSame(['resetdata'], $keys[2]);
         $help = admin_cards::has_ai_hub() ? ['aikeys', 'docs'] : ['docs'];
-        $this->assertSame($help, $keys[2]);
+        $this->assertSame($help, $keys[3]);
     }
 
     public function test_a_manager_gets_only_the_cartridges_and_the_documentation(): void {

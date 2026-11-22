@@ -34,8 +34,8 @@ if ($hassiteconfig) {
     );
 
     // The groups follow the order an administrator works in: first the content and the season, then
-    // the rules, then how it is going. The Administration tab shows the same groups.
-    foreach (['start', 'rules', 'followup'] as $group) {
+    // the rules, then how it is going, and last the data kept. The Administration tab shows the same groups.
+    foreach (['start', 'rules', 'followup', 'data'] as $group) {
         $ADMIN->add(
             'playergames',
             new admin_category(
@@ -449,6 +449,16 @@ if ($hassiteconfig) {
             'local_playergames_engagementmeter',
             get_string('engmeter_pagetitle', 'local_playergames'),
             new moodle_url('/local/playergames/engagement_meter.php', ['scope' => 'all']),
+            'moodle/site:config'
+        )
+    );
+
+    $ADMIN->add(
+        'playergames_data',
+        new admin_externalpage(
+            'local_playergames_resetdata',
+            get_string('admin_item_resetdata', 'local_playergames'),
+            new moodle_url('/local/playergames/reset_data.php'),
             'moodle/site:config'
         )
     );

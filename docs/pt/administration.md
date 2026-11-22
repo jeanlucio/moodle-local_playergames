@@ -22,6 +22,7 @@ o destino dele.
 | | Avatares | A partir de que nível cada grupo de avatares é liberado. | Administrador do site |
 | | Sequência e congelamento | Como a sequência diária funciona e como se ganha um congelamento. | Administrador do site |
 | | XP dos cursos | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
+| **Dados** | Zerar dados | Apaga as temporadas e tudo o que os jogadores conquistaram, para recomeçar do zero. Os cartuchos e as configurações ficam. | Administrador do site |
 | **Ajuda e integrações** | Chaves de IA | Chaves usadas para gerar questões com IA. Só aparece com o plugin Central de IA instalado. | Administrador do site |
 | | Documentação | Este guia, em português e inglês. | Quem vê a aba |
 
@@ -56,12 +57,31 @@ nome e as datas da outra, porque a tarefa de retenção e o **Excluir** removem 
 pelas datas dela. O formulário sugere uma data de início depois da última temporada quando ela ainda está em
 curso: depois de encerrar uma temporada hoje, a próxima pode começar amanhã.
 
+### Zerar todos os dados
+
+Excluir as temporadas e os cartuchos um a um deixa o que não pertence a nenhuma temporada: sequências,
+congelamentos, conquistas, progresso dos avatares, o histórico de atividade e o XP dos cursos espelhado do
+PlayerHUD. **Zerar dados** apaga tudo isso, de todos os usuários, para recomeçar do zero, depois de um
+piloto, por exemplo.
+
+* **Apagado:** todas as temporadas, inclusive a ativa, com a configuração dos jogos; os resultados das
+  temporadas e o hall da fama; as pontuações diárias, batalhas e rodadas; os perfis da temporada e o
+  progresso das missões; as sequências, congelamentos, conquistas e progresso dos avatares; o histórico de
+  atividade e de congelamentos; o XP dos cursos espelhado do PlayerHUD (o XP do próprio PlayerHUD não é
+  tocado).
+* **Mantido:** os cartuchos com suas questões e conceitos, os níveis e títulos, o catálogo de avatares, as
+  próprias missões e conquistas, todas as configurações e a escolha de cada usuário de participar.
+
+A página mostra quantos registros há em cada grupo, e nada é apagado até o administrador digitar a palavra de
+confirmação (*ZERAR*; *RESET* em inglês). Não dá para desfazer. O log do site registra quem fez, quando e
+quantos registros saíram (evento *Dados do PlayerGames zerados*).
+
 ## A mesma ordem na administração do Moodle
 
 As páginas do plugin em **Administração do site → Plugins → Plugins locais → PlayerGames** seguem os
 mesmos grupos: **Começar** (Cartuchos, Temporadas, Jogos da temporada), **Regras** (Participação e
 temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Avatares, Sequência e congelamento, XP dos
-cursos) e **Acompanhamento** (Engajômetro). A aba Administração é um atalho para elas, não um
+cursos), **Acompanhamento** (Engajômetro) e **Dados** (Zerar dados). A aba Administração é um atalho para elas, não um
 substituto.
 
 Jogos da temporada abre a temporada ativa, ou a próxima se nenhuma estiver ativa. Sem nenhuma temporada,

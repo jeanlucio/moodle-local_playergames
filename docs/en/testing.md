@@ -52,6 +52,7 @@ PostgreSQL & MariaDB).
 | `cartridge/question_bank_importer_test.php` | 9 | Copy into a new active question cartridge, category name, left out questions with a medium (counted), unusable questions, latest ready version only, nothing to import, private categories and users who may not use them refused, text flattened keeping case and entities |
 | `cartridge/glossary_importer_test.php` | 4 | Global glossaries listed with their approved entries, import into a concept cartridge, refusal of a course glossary and of an empty one |
 | `local/text_test.php` | 4 | Plain-text names: text as typed, the level title, cartridge pages escaping names once, and edit forms filling inputs with the stored text |
+| `local/data_reset_test.php` | 4 | Every table deleted or kept, the personal-data tables deleted, the seasons counted alone, and a reset that deletes the play, keeps the content, the settings and the users' choices, and logs who did it |
 | `local/engagement_report_test.php` | 14 | Empty metrics, course counting, player-course detection, scope split; the comparison kept for an hour per period and set of courses |
 | `ecosystem/plugin_registry_test.php` | 2 | Catalog structure and unique components |
 | `ecosystem/plugin_status_test.php` | 1 | Installed status keyed by component; hub reported installed |

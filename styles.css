@@ -671,6 +671,23 @@ body.path-local-playergames .pg-levels-xp-col {
     width: 12rem;
 }
 
+/* ── Reset data ───────────────────────────────────────────────────── */
+
+body.path-local-playergames .pg-reset-table {
+    max-width: 40rem;
+}
+
+body.path-local-playergames .pg-reset-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-width: 30rem;
+}
+
+body.path-local-playergames .pg-reset-confirm .form-control {
+    flex: 1 1 12rem;
+}
+
 /* ── Hub: layout ──────────────────────────────────────────────────── */
 
 /* On a phone the cards stack in the order of the page, with today's games right under the profile: below the
