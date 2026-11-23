@@ -19,8 +19,8 @@ o destino dele.
 | | XP dos jogos | Quanto XP cada jogo dá e quantas vezes por dia ele rende XP. | Administrador do site |
 | | Regras dos jogos | Tempo por questão, tentativas e as demais regras de cada jogo. | Administrador do site |
 | | Níveis e títulos | Quanto XP cada nível exige e o título que ele dá. Os avatares se liberam ao longo desta escada. | Administrador do site |
-| | Sequência e congelamento | Como a sequência diária funciona e como se ganha um congelamento. | Administrador do site |
-| | Missões | As metas que dão XP extra ou congelamento: metas e prêmios, e novas missões dos mesmos tipos. | Administrador do site |
+| | Sequência e proteção | Como a sequência diária funciona e como se ganha uma proteção. | Administrador do site |
+| | Missões | As metas que dão XP extra ou proteção: metas e prêmios, e novas missões dos mesmos tipos. | Administrador do site |
 | | XP dos cursos | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
 | **Dados** | Zerar dados | Apaga as temporadas e tudo o que os jogadores conquistaram, para recomeçar do zero. Os cartuchos e as configurações ficam. | Administrador do site |
 | **Ajuda e integrações** | Chaves de IA | Chaves usadas para gerar questões com IA. Só aparece com o plugin Central de IA instalado. | Administrador do site |
@@ -60,14 +60,14 @@ curso: depois de encerrar uma temporada hoje, a próxima pode começar amanhã.
 ### Zerar todos os dados
 
 Excluir as temporadas e os cartuchos um a um deixa o que não pertence a nenhuma temporada: sequências,
-congelamentos, conquistas, progresso dos avatares, o histórico de atividade e o XP dos cursos espelhado do
+proteções, conquistas, progresso dos avatares, o histórico de atividade e o XP dos cursos espelhado do
 PlayerHUD. **Zerar dados** apaga tudo isso, de todos os usuários, para recomeçar do zero, depois de um
 piloto, por exemplo.
 
 * **Apagado:** todas as temporadas, inclusive a ativa, com a configuração dos jogos; os resultados das
   temporadas e o hall da fama; as pontuações diárias, batalhas e rodadas; os perfis da temporada e o
-  progresso das missões; as sequências, congelamentos, conquistas e progresso dos avatares; o histórico de
-  atividade e de congelamentos; o XP dos cursos espelhado do PlayerHUD (o XP do próprio PlayerHUD não é
+  progresso das missões; as sequências, proteções, conquistas e progresso dos avatares; o histórico de
+  atividade e de proteções; o XP dos cursos espelhado do PlayerHUD (o XP do próprio PlayerHUD não é
   tocado).
 * **Mantido:** os cartuchos com suas questões e conceitos, os níveis e títulos, o catálogo de avatares, as
   próprias missões e conquistas, todas as configurações e a escolha de cada usuário de participar.
@@ -80,7 +80,7 @@ quantos registros saíram (evento *Dados do PlayerGames zerados*).
 
 As páginas do plugin em **Administração do site → Plugins → Plugins locais → PlayerGames** seguem os
 mesmos grupos: **Começar** (Cartuchos, Temporadas, Jogos da temporada), **Regras** (Participação e
-temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Sequência e congelamento, Missões,
+temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Sequência e proteção, Missões,
 XP dos cursos), **Acompanhamento** (Engajômetro) e **Dados** (Zerar dados). A aba Administração é um atalho para elas, não um
 substituto.
 
@@ -91,7 +91,7 @@ PlayerBattle. O site começa com seis (entre elas, sequências de 7, 14 e 30 dia
 os prêmios, dar um nome, desativar ou adicionar outras dos mesmos tipos. Cada missão vale uma vez por temporada, menos
 as diárias, que recomeçam todo dia.
 
-As missões de sequência seguem a sequência do hub, que o congelamento protege e que a configuração *Atividade da
+As missões de sequência seguem a sequência do hub, que a proteção salva e que a configuração *Atividade da
 sequência* conta só pelos jogos, ou por um jogo ou pelo check-in diário. A sequência continua de uma temporada para a
 outra, mas suas missões contam no máximo os dias que a temporada já teve, para que quem chega com uma sequência longa
 comece do primeiro dia, como todo mundo.

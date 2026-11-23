@@ -253,6 +253,8 @@ class hub implements renderable, templatable {
             'checkin_max'        => $checkinmax,
             'hascheckin'         => $checkinmax > 0,
             'str_checkins'       => get_string('hub_checkins', 'local_playergames'),
+            'str_checkins_info'  => get_string('hub_checkins_info', 'local_playergames'),
+            'str_learningxp_info' => get_string('hub_learningxp_info', 'local_playergames'),
             'str_checkins_hint'  => get_string(
                 'hub_checkins_hint',
                 'local_playergames',

@@ -785,8 +785,25 @@ body.path-local-playergames .pg-hub-stats > .pg-hub-stat-box {
     }
 }
 
-body.path-local-playergames .pg-hub-stat-hint {
-    font-size: 0.75rem;
+/* The ⓘ beside a figure: its explanation shows on hover, on tap or on focus, and a screen reader reads it. */
+body.path-local-playergames .pg-hub-info {
+    font-size: 0.8rem;
+    line-height: 1;
+    vertical-align: baseline;
+    color: var(--bs-secondary-color, #5c636a);
+}
+
+/* The freeze history opens like a button, and its arrow turns when it is open. */
+body.path-local-playergames .pg-hub-freeze-log > summary {
+    list-style: none;
+}
+
+body.path-local-playergames .pg-hub-freeze-log > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.path-local-playergames .pg-hub-freeze-log[open] .pg-hub-freeze-log-caret {
+    transform: rotate(180deg);
 }
 
 /* On a phone the cards stack in the order of the page, with today's games right under the profile: below the

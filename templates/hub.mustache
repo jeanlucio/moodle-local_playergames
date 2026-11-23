@@ -155,7 +155,9 @@
             ]}
         ],
         "hasfreezelog": true,
-        "str_freeze_log": "Freeze history",
+        "str_freeze_log": "Show freeze history",
+        "str_checkins_info": "More about the check-ins with XP",
+        "str_learningxp_info": "More about the course XP",
         "freezelog": [
             {"timeformatted": "22 Jun 2026, 14:30", "label": "Earned 1 freeze — mission complete", "isearned": true},
             {"timeformatted": "20 Jun 2026, 00:05", "label": "Used 1 freeze — streak protected", "isearned": false}
@@ -225,7 +227,7 @@
                             <small class="text-muted">{{str_streak}}</small>
                         </div>
                         <div class="pg-hub-stat-box rounded p-2 text-center">
-                            <i class="fa fa-snowflake text-info" aria-hidden="true"></i>
+                            <i class="fa fa-shield-heart text-info" aria-hidden="true"></i>
                             <div class="fw-bold">{{freezes}}</div>
                             <small class="text-muted">{{str_freezes}}</small>
                         </div>
@@ -234,7 +236,11 @@
                             <i class="fa fa-calendar-check text-success" aria-hidden="true"></i>
                             <div class="fw-bold">{{checkin_done}}/{{checkin_max}}</div>
                             <small class="text-muted">{{str_checkins}}</small>
-                            <small class="d-block pg-hub-stat-hint">{{str_checkins_hint}}</small>
+                            <button type="button" class="btn btn-link p-0 pg-hub-info" data-toggle="tooltip" data-bs-toggle="tooltip"
+                                data-placement="top" data-bs-placement="top" title="{{str_checkins_hint}}">
+                                <i class="fa fa-circle-info" aria-hidden="true"></i>
+                                <span class="visually-hidden">{{str_checkins_info}}: {{str_checkins_hint}}</span>
+                            </button>
                         </div>
                         {{/hascheckin}}
                         {{#showlearningxp}}
@@ -242,17 +248,20 @@
                             <i class="fa fa-graduation-cap text-primary" aria-hidden="true"></i>
                             <div class="fw-bold">{{learningxp}}</div>
                             <small class="text-muted">{{str_learningxp}}</small>
+                            <button type="button" class="btn btn-link p-0 pg-hub-info" data-toggle="tooltip" data-bs-toggle="tooltip"
+                                data-placement="top" data-bs-placement="top" title="{{str_learningxp_hint}}">
+                                <i class="fa fa-circle-info" aria-hidden="true"></i>
+                                <span class="visually-hidden">{{str_learningxp_info}}: {{str_learningxp_hint}}</span>
+                            </button>
                         </div>
                         {{/showlearningxp}}
                     </div>
-                    {{#showlearningxp}}
-                    <small class="text-muted d-block mt-1">{{str_learningxp_hint}}</small>
-                    {{/showlearningxp}}
 
                     {{#hasfreezelog}}
-                    <details class="pg-hub-freeze-log mt-2">
-                        <summary class="text-muted small" style="cursor:pointer;list-style:none;">
+                    <details class="pg-hub-freeze-log mt-3">
+                        <summary class="btn btn-sm btn-outline-secondary">
                             <i class="fa fa-history me-1" aria-hidden="true"></i>{{str_freeze_log}}
+                            <i class="fa fa-chevron-down ms-1 pg-hub-freeze-log-caret" aria-hidden="true"></i>
                         </summary>
                         <ul class="list-unstyled small mb-0 mt-1 ps-1">
                             {{#freezelog}}
@@ -370,7 +379,7 @@
                                     <small class="text-muted">
                                         +{{xpreward}} XP
                                         {{#freezereward}}
-                                        <i class="fa fa-snowflake text-info ms-1"
+                                        <i class="fa fa-shield-heart text-info ms-1"
                                             role="img"
                                             aria-label="{{str_freeze_reward_title}}"></i>
                                         {{/freezereward}}
