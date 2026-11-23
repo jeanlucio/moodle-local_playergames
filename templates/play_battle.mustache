@@ -44,7 +44,7 @@
         "str_opponent": "Opponent",
         "str_play_again": "Play again",
         "str_player": "You",
-        "str_poison": "Poison",
+        "str_poison": "Hex",
         "str_question_title": "Question",
         "str_retry_save": "Try again",
         "str_shield": "Shield",
@@ -95,6 +95,14 @@
         {{#attempts_notice}}
         <p class="pg-battle-instructions"><strong>{{attempts_notice}}</strong></p>
         {{/attempts_notice}}
+
+        {{! The sound switch sits above the fighters, where it is found before the battle starts. }}
+        <div class="pg-battle-tools">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="sound" aria-pressed="false">
+                <i class="fa fa-volume-off" aria-hidden="true" data-region="soundicon"></i>
+                {{str_sound}}
+            </button>
+        </div>
 
         <div class="pg-battle-cards">
             {{#cards}}
@@ -153,13 +161,6 @@
             <div id="pg-battle-board" class="pg-battle-board">
                 <p class="pg-battle-loading" data-region="loading">{{str_loading}}</p>
             </div>
-        </div>
-
-        <div class="pg-battle-tools">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="sound" aria-pressed="false">
-                <i class="fa fa-volume-off" aria-hidden="true" data-region="soundicon"></i>
-                {{str_sound}}
-            </button>
         </div>
 
         <div class="visually-hidden" aria-live="polite" data-region="live"></div>

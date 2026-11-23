@@ -75,7 +75,7 @@ Node, so they are tested without a browser. The CI runs them with `node --test`.
 |-----------|------:|-----------------|
 | `js/battle/prng.test.js` | 5 | The seeded generator: same seed, same sequence; different seeds differ; values in [0, 1); a fixed known sequence; seeds coerced to unsigned 32 bits |
 | `js/battle/board_rules.test.js` | 14 | A new grid has only the types in play and no match; the number of types is the one asked for; matches found with their size; a piece in two matches is destroyed once; type 0 is a piece, not an empty cell; swaps; which type a swap would match; the opponent's move; shuffling; gravity and refill |
-| `js/battle/combat_rules.test.js` | 23 | Starting state and the pinned balance; combo bonus; Sword damage and the multiplier; Potion; the Shield and Grimoire meters; the Orb filling the mana bar; the critical hit and the cost of a wrong answer; poison ticks; victory and defeat; the rules never change the state they are given |
+| `js/battle/combat_rules.test.js` | 23 | Starting state and the pinned balance; combo bonus; Sword damage and the multiplier; Potion; the Shield and Grimoire meters; the Orb filling the mana bar; the critical hit and the cost of a wrong answer; hex ticks; victory and defeat; the rules never change the state they are given |
 | **Total** | **42** | |
 
 ```bash

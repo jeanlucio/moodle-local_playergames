@@ -1416,7 +1416,6 @@ body.path-local-playergames .pg-battle-loading {
 }
 
 body.path-local-playergames .pg-battle-tools {
-    margin-block-start: 0.5rem;
     text-align: end;
 }
 

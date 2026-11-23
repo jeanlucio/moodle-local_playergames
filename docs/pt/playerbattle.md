@@ -13,10 +13,10 @@ forma combinação volta ao lugar e não gasta o turno. O jogador joga primeiro,
 | Peça | Efeito |
 |---|---|
 | ⭐ **Estrela** | +0,1 no multiplicador de dano de quem a combinou. O multiplicador aumenta o dano das Espadas e o golpe crítico, e é gasto pelo golpe crítico ou perdido ao errar uma questão. |
-| 📖 **Grimório** | Enche um medidor de veneno. Cheio, o outro lado fica envenenado por três turnos: perde a unidade de dano de quem o envenenou no início de cada turno seu, e o escudo não impede. |
+| 📖 **Grimório** | Enche um medidor de feitiço. Cheio, lança um feitiço sobre o outro lado por três turnos: ele perde a unidade de dano de quem lançou o feitiço no início de cada turno seu, e o escudo não impede. |
 | ❓ **Orbe** | Enche a barra de mana (20 por peça, 100 é cheia). Quando ela enche, o jogador encara uma questão. |
 | ⚔️ **Espada** | Dano direto: uma unidade de dano numa combinação de três, ×1,5 com quatro, ×2 com cinco. |
-| 🛡️ **Escudo** | Enche um medidor de escudo. Cheio, cancela o próximo golpe recebido (de Espada, crítico ou de uma resposta errada). O veneno o atravessa. |
+| 🛡️ **Escudo** | Enche um medidor de escudo. Cheio, cancela o próximo golpe recebido (de Espada, crítico ou de uma resposta errada). O feitiço o atravessa. |
 | 🧪 **Poção** | Cura um quarto da unidade de dano por peça, até o HP máximo. |
 
 Os dois lados começam com 200 de HP. Uma combinação de três Espadas causa 10 de dano quando é do jogador e

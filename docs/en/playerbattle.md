@@ -13,10 +13,10 @@ slides back and does not cost the turn. The player moves first, then the opponen
 | Piece | Effect |
 |---|---|
 | ⭐ **Star** | +0.1 to the damage multiplier of whoever matched it. The multiplier raises Sword hits and the critical hit, and is spent by the critical hit or lost on a wrong answer. |
-| 📖 **Grimoire** | Fills a poison meter. When full, the other side is poisoned for three turns: it loses the damage unit of whoever poisoned it at the start of each of its turns, and the shield does not stop it. |
+| 📖 **Grimoire** | Fills a hex meter. When full, it casts a hex on the other side for three turns: it loses the damage unit of whoever cast it at the start of each of its turns, and the shield does not stop it. |
 | ❓ **Orb** | Fills the mana bar (20 per piece, 100 is full). When it fills, the player faces a question. |
 | ⚔️ **Sword** | Direct damage: one damage unit for a match of three, ×1.5 for four, ×2 for five. |
-| 🛡️ **Shield** | Fills a shield meter. When full, it cancels the next hit taken (a Sword, a critical hit or a wrong answer). Poison goes through it. |
+| 🛡️ **Shield** | Fills a shield meter. When full, it cancels the next hit taken (a Sword, a critical hit or a wrong answer). The hex goes through it. |
 | 🧪 **Potion** | Heals a quarter of the damage unit per piece, up to the maximum HP. |
 
 Both sides start with 200 HP. A match of three Swords hits for 10 when the player makes it and for 8

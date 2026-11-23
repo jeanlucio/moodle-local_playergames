@@ -76,7 +76,7 @@ carregam no Node, então são testadas sem navegador. O CI as roda com `node --t
 |------------------|------:|-----------------|
 | `js/battle/prng.test.js` | 5 | O gerador com semente: mesma semente, mesma sequência; sementes diferentes diferem; valores em [0, 1); uma sequência conhecida e fixa; sementes convertidas para 32 bits sem sinal |
 | `js/battle/board_rules.test.js` | 14 | Uma grade nova só tem os tipos em jogo e nenhuma combinação; o número de tipos é o pedido; combinações achadas com o tamanho; uma peça em duas combinações é destruída uma vez; o tipo 0 é uma peça, não uma célula vazia; trocas; que tipo uma troca combinaria; a jogada do oponente; embaralhamento; gravidade e reposição |
-| `js/battle/combat_rules.test.js` | 23 | Estado inicial e o balanceamento fixado; bônus de combo; dano das Espadas e o multiplicador; Poção; os medidores de Escudo e Grimório; o Orbe enchendo a mana; o golpe crítico e o custo de uma resposta errada; ticks de veneno; vitória e derrota; as regras nunca alteram o estado recebido |
+| `js/battle/combat_rules.test.js` | 23 | Estado inicial e o balanceamento fixado; bônus de combo; dano das Espadas e o multiplicador; Poção; os medidores de Escudo e Grimório; o Orbe enchendo a mana; o golpe crítico e o custo de uma resposta errada; ticks de feitiço; vitória e derrota; as regras nunca alteram o estado recebido |
 | **Total** | **42** | |
 
 ```bash
