@@ -217,38 +217,35 @@
                     </div>
                     {{/maxlevel}}
 
-                    <div class="row row-cols-2 g-2 mt-1">
-                        <div class="col">
-                            <div class="pg-hub-stat-box rounded p-2 text-center">
-                                <i class="fa fa-fire text-warning" aria-hidden="true"></i>
-                                <div class="fw-bold">{{streak}}</div>
-                                <small class="text-muted">{{str_streak}}</small>
-                            </div>
+                    {{! Two boxes a row in a narrow card, all of them in one row when the card is wide enough. }}
+                    <div class="pg-hub-stats mt-1">
+                        <div class="pg-hub-stat-box rounded p-2 text-center">
+                            <i class="fa fa-fire text-warning" aria-hidden="true"></i>
+                            <div class="fw-bold">{{streak}}</div>
+                            <small class="text-muted">{{str_streak}}</small>
                         </div>
-                        <div class="col">
-                            <div class="pg-hub-stat-box rounded p-2 text-center">
-                                <i class="fa fa-snowflake text-info" aria-hidden="true"></i>
-                                <div class="fw-bold">{{freezes}}</div>
-                                <small class="text-muted">{{str_freezes}}</small>
-                            </div>
+                        <div class="pg-hub-stat-box rounded p-2 text-center">
+                            <i class="fa fa-snowflake text-info" aria-hidden="true"></i>
+                            <div class="fw-bold">{{freezes}}</div>
+                            <small class="text-muted">{{str_freezes}}</small>
                         </div>
+                        {{#hascheckin}}
+                        <div class="pg-hub-stat-box rounded p-2 text-center">
+                            <i class="fa fa-calendar-check text-success" aria-hidden="true"></i>
+                            <div class="fw-bold">{{checkin_done}}/{{checkin_max}}</div>
+                            <small class="text-muted">{{str_checkins}}</small>
+                            <small class="d-block pg-hub-stat-hint">{{str_checkins_hint}}</small>
+                        </div>
+                        {{/hascheckin}}
+                        {{#showlearningxp}}
+                        <div class="pg-hub-stat-box rounded p-2 text-center">
+                            <i class="fa fa-graduation-cap text-primary" aria-hidden="true"></i>
+                            <div class="fw-bold">{{learningxp}}</div>
+                            <small class="text-muted">{{str_learningxp}}</small>
+                        </div>
+                        {{/showlearningxp}}
                     </div>
-
-                    {{#hascheckin}}
-                    <div class="pg-hub-stat-box rounded p-2 text-center mt-2">
-                        <i class="fa fa-calendar-check text-success" aria-hidden="true"></i>
-                        <div class="fw-bold">{{checkin_done}}/{{checkin_max}}</div>
-                        <small class="text-muted">{{str_checkins}}</small>
-                        <small class="d-block">{{str_checkins_hint}}</small>
-                    </div>
-                    {{/hascheckin}}
-
                     {{#showlearningxp}}
-                    <div class="pg-hub-stat-box rounded p-2 text-center mt-2">
-                        <i class="fa fa-graduation-cap text-primary" aria-hidden="true"></i>
-                        <div class="fw-bold">{{learningxp}}</div>
-                        <small class="text-muted">{{str_learningxp}}</small>
-                    </div>
                     <small class="text-muted d-block mt-1">{{str_learningxp_hint}}</small>
                     {{/showlearningxp}}
 

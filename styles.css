@@ -766,6 +766,29 @@ body.path-local-playergames .pg-reset-confirm .form-control {
 
 /* ── Hub: layout ──────────────────────────────────────────────────── */
 
+/* The figures of the profile: two to a row, and all in one row while the hub has a single column and the profile card
+   is as wide as the page; on a phone, and in the left column of a wide screen, the card is too narrow for four. */
+body.path-local-playergames .pg-hub-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+body.path-local-playergames .pg-hub-stats > .pg-hub-stat-box {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    body.path-local-playergames .pg-hub-stats > .pg-hub-stat-box {
+        flex-basis: 0;
+    }
+}
+
+body.path-local-playergames .pg-hub-stat-hint {
+    font-size: 0.75rem;
+}
+
 /* On a phone the cards stack in the order of the page, with today's games right under the profile: below the
    missions and the ranking, the games were a long scroll away. On a wide screen the profile and the missions
    take the left column and the games sit above the ranking on the right. */
