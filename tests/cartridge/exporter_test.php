@@ -45,9 +45,9 @@ final class exporter_test extends \advanced_testcase {
             'language' => 'en',
             'author' => 'Jean Lúcio',
             'concepts' => [
-                ['term' => 'Alpha', 'definition' => 'First', 'category' => 'Greek', 'difficulty' => 1],
-                ['term' => 'Beta', 'definition' => 'Second', 'category' => 'Greek', 'difficulty' => 2],
-                ['term' => 'Solo', 'definition' => 'Alone', 'category' => '', 'difficulty' => 3],
+                ['term' => 'Alpha', 'definition' => 'First'],
+                ['term' => 'Beta', 'definition' => 'Second'],
+                ['term' => 'Solo', 'definition' => 'Alone'],
             ],
         ]);
     }
@@ -69,8 +69,6 @@ final class exporter_test extends \advanced_testcase {
                     'questiontext' => 'Capital of France?',
                     'correct' => 'Paris',
                     'distractors' => ['London', 'Berlin', 'Madrid', 'Rome'],
-                    'category' => 'Geography',
-                    'difficulty' => 4,
                 ],
             ],
         ]);
@@ -93,10 +91,7 @@ final class exporter_test extends \advanced_testcase {
         $this->assertArrayHasKey('concepts', $data);
         $this->assertCount(3, $data['concepts']);
 
-        $byterm = array_column($data['concepts'], null, 'term');
-        $this->assertSame('Greek', $byterm['Alpha']['category']);
-        // A concept without a category exports an empty category string.
-        $this->assertSame('', $byterm['Solo']['category']);
+        $this->assertSame(['term' => 'Alpha', 'definition' => 'First'], $data['concepts'][0]);
     }
 
     public function test_build_quiz_export_structure(): void {
@@ -119,8 +114,7 @@ final class exporter_test extends \advanced_testcase {
         $this->assertSame('Paris', $q['correct']);
         $this->assertCount(4, $q['distractors']);
         $this->assertContains('London', $q['distractors']);
-        $this->assertSame('Geography', $q['category']);
-        $this->assertSame(4, $q['difficulty']);
+        $this->assertSame(['questiontext', 'correct', 'distractors'], array_keys($q));
     }
 
     public function test_quiz_export_includes_general_feedback(): void {
@@ -139,16 +133,12 @@ final class exporter_test extends \advanced_testcase {
                     'questiontext' => 'With feedback?',
                     'correct' => 'Yes',
                     'distractors' => ['A', 'B', 'C', 'D'],
-                    'category' => 'General',
-                    'difficulty' => 2,
                     'generalfeedback' => 'Explains the answer.',
                 ],
                 [
                     'questiontext' => 'Without feedback?',
                     'correct' => 'Yes',
                     'distractors' => ['A', 'B', 'C', 'D'],
-                    'category' => 'General',
-                    'difficulty' => 2,
                 ],
             ],
         ]);

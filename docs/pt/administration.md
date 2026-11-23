@@ -91,7 +91,8 @@ temporada: o interruptor acompanha as caixas, e ligá-lo de novo marca todos.
 
 No PlayerGuess e no PlayerFill, cada cartucho mostra quantas das suas palavras servem para o jogo, e a página avisa
 quando os cartuchos escolhidos não bastam. Na central, o cartão do jogo diz o motivo de não ter o que jogar: sem
-cartucho ativo, sem palavras que atendam aos requisitos ou palavras do dia ainda não sorteadas.
+cartucho ativo, sem palavras que atendam aos requisitos ou sem questões nos cartuchos escolhidos, ou palavras do dia
+ainda não sorteadas. Excluir o único cartucho que um jogo usa desliga o jogo, e a página avisa.
 
 ## Primeira configuração
 

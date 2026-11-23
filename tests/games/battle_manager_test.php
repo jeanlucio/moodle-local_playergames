@@ -94,7 +94,7 @@ final class battle_manager_test extends \advanced_testcase {
         }
         $qid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
             'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => $text,
-            'source' => 'manual', 'difficulty' => 3, 'categoryid' => null,
+            'source' => 'manual',
             'generalfeedback' => $feedback, 'timecreated' => $now,
         ]);
         $DB->insert_record('local_playergames_concept_answers', (object) [

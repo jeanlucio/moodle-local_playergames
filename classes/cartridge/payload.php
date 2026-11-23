@@ -73,17 +73,4 @@ class payload {
         }
         return $texts;
     }
-
-    /**
-     * Returns a field as an integer clamped to a range, or $default when it is not a number.
-     *
-     * @param mixed $value Field of the decoded payload.
-     * @param int $min Lowest value.
-     * @param int $max Highest value.
-     * @param int $default Returned when the value is missing or not numeric.
-     * @return int
-     */
-    public static function number(mixed $value, int $min, int $max, int $default): int {
-        return is_numeric($value) ? max($min, min($max, (int) $value)) : $default;
-    }
 }

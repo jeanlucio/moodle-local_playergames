@@ -59,26 +59,11 @@ class exporter {
             'id ASC'
         );
 
-        $catmap = [];
-        $catids = array_filter(array_column((array) $concepts, 'categoryid'));
-        if (!empty($catids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal($catids);
-            $catrows = $DB->get_records_sql(
-                "SELECT id, name FROM {local_playergames_categories} WHERE id {$insql}",
-                $inparams
-            );
-            foreach ($catrows as $cat) {
-                $catmap[(int) $cat->id] = $cat->name;
-            }
-        }
-
         $conceptsdata = [];
         foreach ($concepts as $c) {
             $conceptsdata[] = [
                 'term' => $c->term,
                 'definition' => $c->definition,
-                'category' => $catmap[(int) $c->categoryid] ?? '',
-                'difficulty' => (int) $c->difficulty,
             ];
         }
 
@@ -122,19 +107,6 @@ class exporter {
             }
         }
 
-        $catmap = [];
-        $catids = array_filter(array_column((array) $questions, 'categoryid'));
-        if (!empty($catids)) {
-            [$insql, $inparams] = $DB->get_in_or_equal($catids);
-            $catrows = $DB->get_records_sql(
-                "SELECT id, name FROM {local_playergames_categories} WHERE id {$insql}",
-                $inparams
-            );
-            foreach ($catrows as $cat) {
-                $catmap[(int) $cat->id] = $cat->name;
-            }
-        }
-
         $questionsdata = [];
         foreach ($questions as $q) {
             $correct = '';
@@ -150,8 +122,6 @@ class exporter {
                 'questiontext' => $q->questiontext,
                 'correct' => $correct,
                 'distractors' => $distractors,
-                'category' => $catmap[(int) $q->categoryid] ?? '',
-                'difficulty' => (int) $q->difficulty,
             ];
             if (!empty($q->generalfeedback)) {
                 $questiondata['generalfeedback'] = $q->generalfeedback;

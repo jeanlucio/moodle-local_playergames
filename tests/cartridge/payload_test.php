@@ -48,15 +48,6 @@ final class payload_test extends \advanced_testcase {
         $this->assertSame([], payload::values(null));
     }
 
-    public function test_number_clamps_and_falls_back(): void {
-        $this->assertSame(5, payload::number(9, 1, 5, 3));
-        $this->assertSame(1, payload::number('-4', 1, 5, 3));
-        $this->assertSame(2, payload::number('2', 1, 5, 3));
-        $this->assertSame(3, payload::number(['x'], 1, 5, 3));
-        $this->assertSame(3, payload::number(null, 1, 5, 3));
-        $this->assertSame(3, payload::number('abc', 1, 5, 3));
-    }
-
     public function test_texts_keeps_only_the_texts_that_are_not_empty(): void {
         $this->assertSame(['a', 'c', '4'], payload::texts(['a', '', ['b'], 'c', '  ', null, 4]));
         $this->assertSame(['one'], payload::texts('one'));

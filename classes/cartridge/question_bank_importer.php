@@ -87,7 +87,7 @@ class question_bank_importer {
         $left = ['images' => 0, 'unusable' => 0, 'beyond' => 0];
         $questions = [];
         foreach ($this->read_questions($categoryid) as $row) {
-            $converted = $this->convert($row, text::plain($category->name));
+            $converted = $this->convert($row);
             if ($converted === 'images' || $converted === 'unusable') {
                 $left[$converted]++;
             } else if (count($questions) >= importer::MAX_QUESTIONS) {
@@ -169,11 +169,10 @@ class question_bank_importer {
      * question with partial credit, or with several answers worth a share each, has no single key.
      *
      * @param \stdClass $row A question read by read_questions().
-     * @param string $categoryname Name of the bank category, kept as the category in the cartridge.
      * @return array|string The cartridge question, 'images' when it has a medium, 'unusable' when it has
      *     no single right answer with four wrong ones.
      */
-    private function convert(\stdClass $row, string $categoryname) {
+    private function convert(\stdClass $row) {
         $correct = [];
         $wrong = [];
         foreach ($row->answers as $answer) {
@@ -205,8 +204,6 @@ class question_bank_importer {
                 fn(\stdClass $answer): string => $this->flatten((string) $answer->answer, (int) $answer->answerformat),
                 array_slice($wrong, 0, 4)
             ),
-            'category'        => $categoryname,
-            'difficulty'      => 3,
             'generalfeedback' => $this->flatten((string) $row->generalfeedback, (int) $row->generalfeedbackformat),
         ];
         // A text that is empty once flattened (only tags, for instance) leaves nothing to show.

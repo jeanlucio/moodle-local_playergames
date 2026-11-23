@@ -9,10 +9,9 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 
 | Arquivo de teste | Casos | O que é coberto |
 |------------------|------:|-----------------|
-| `cartridge/importer_test.php` | 14 | Importação de conceito e quiz; inferência de tipo; clamp de dificuldade; dedup de categoria; erros de schema; campos de tipo errado; a importação inteira salva em uma só transação |
+| `cartridge/importer_test.php` | 14 | Importação de conceito e quiz; inferência de tipo; campos de um arquivo antigo ignorados; erros de schema; campos de tipo errado; a importação inteira salva em uma só transação |
 | `cartridge/exporter_test.php` | 5 | Estrutura do export concept/quiz e round-trip completo import→export incluindo metadados de raiz |
-| `cartridge/category_manager_test.php` | 7 | CRUD de categoria, sortorder incremental, `ensure` idempotente, checagem de posse, conceito null ao excluir |
-| `cartridge/quiz_generator_test.php` | 12 | Parsing da resposta de quiz, defaults de categoria/dificuldade, persistência em `save_standalone`; respostas com campos de tipo errado |
+| `cartridge/quiz_generator_test.php` | 12 | Parsing da resposta de quiz, persistência em `save_standalone`; respostas com campos de tipo errado |
 | `cartridge/ai_generator_test.php` | 7 | Parser de conceitos: JSON encapsulado/puro/com fences, JSON inválido e ausência de conceitos; delegação à fachada do AI Hub com fallback para `core_ai`; respostas com campos de tipo errado |
 | `cartridge/payload_test.php` | 3 | Limpeza dos campos importados e devolvidos pela IA: um escalar vira texto e qualquer outra coisa conta como ausente; um valor único vira lista; números são limitados com um valor padrão |
 | `hub/xp_manager_test.php` | 17 | Limiares de nível, cap por jogo, recompensa de missão sem cap, evento de subida de nível, posição/desempate no ranking de temporada |
@@ -52,7 +51,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `local/admin_cards_test.php` | 8 | Aba Administração: cards e grupos por permissão (administrador, gerente, estudante), a aba na navegação, o estado de cada card, nome de temporada escapado uma vez e o link da documentação abrindo em nova aba |
 | `local/game_page_test.php` | 2 | O aviso das páginas de jogo quando não há temporada ativa, e que ele nunca diz que o jogo já foi jogado |
 | `local/question_bank_reuse_test.php` | 3 | Quais categorias do banco de questões são mantidas para reuso (bancos compartilhados no Moodle 5.x, contexto do sistema no 4.5), contagem de questões, o que o usuário pode escolher |
-| `cartridge/question_bank_importer_test.php` | 9 | Cópia para um novo cartucho de questões ativo, nome da categoria, questões com mídia deixadas de fora (contadas), questões inutilizáveis, só a última versão pronta, nada a importar, categorias privadas e usuários sem permissão recusados, texto simplificado mantendo maiúsculas e entidades |
+| `cartridge/question_bank_importer_test.php` | 8 | Cópia para um novo cartucho de questões ativo, questões com mídia deixadas de fora (contadas), questões inutilizáveis, só a última versão pronta, nada a importar, categorias privadas e usuários sem permissão recusados, texto simplificado mantendo maiúsculas e entidades |
 | `cartridge/glossary_importer_test.php` | 4 | Glossários globais listados com as entradas aprovadas, importação para um cartucho de conceitos, recusa de glossário de curso e de glossário vazio |
 | `local/text_test.php` | 4 | Nomes em texto plano: texto como digitado, o título do nível, páginas de cartucho escapando os nomes uma vez e formulários de edição preenchendo os campos com o texto armazenado |
 | `local/data_reset_test.php` | 4 | Toda tabela apagada ou mantida, as tabelas de dados pessoais apagadas, as temporadas contadas sozinhas, e um zerar que apaga o jogo, mantém o conteúdo, as configurações e as escolhas dos usuários e registra quem fez |

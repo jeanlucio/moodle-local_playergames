@@ -161,4 +161,46 @@ final class db_upgrade_test extends advanced_testcase {
         set_config('version', 2026111602, 'local_playergames');
         $this->assertTrue(xmldb_local_playergames_upgrade(2026111602));
     }
+
+    /**
+     * The difficulty, the categories and their index go, and the content of the cartridges stays.
+     *
+     * @return void
+     */
+    public function test_upgrade_drops_the_difficulty_and_the_categories(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/upgradelib.php');
+        require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+        $dbman = $DB->get_manager();
+        $tables = ['local_playergames_concepts', 'local_playergames_concept_questions'];
+        $index = new \xmldb_index('idx_categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
+        foreach ($tables as $name) {
+            $table = new \xmldb_table($name);
+            $dbman->add_field($table, new \xmldb_field('difficulty', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '3'));
+            $dbman->add_field($table, new \xmldb_field('categoryid', XMLDB_TYPE_INTEGER, '10'));
+            $dbman->add_index($table, $index);
+        }
+        $categories = new \xmldb_table('local_playergames_categories');
+        $categories->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $categories->add_field('name', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
+        $categories->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $dbman->create_table($categories);
+        $DB->insert_record('local_playergames_concepts', (object) [
+            'cartridgeid' => 1, 'term' => 'apple', 'definition' => 'A fruit', 'difficulty' => 4, 'categoryid' => 1,
+        ]);
+        set_config('version', 2026112300, 'local_playergames');
+
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026112300));
+
+        foreach ($tables as $name) {
+            $table = new \xmldb_table($name);
+            $this->assertFalse($dbman->field_exists($table, new \xmldb_field('difficulty')));
+            $this->assertFalse($dbman->field_exists($table, new \xmldb_field('categoryid')));
+        }
+        $this->assertFalse($dbman->table_exists($categories));
+        $this->assertTrue($DB->record_exists('local_playergames_concepts', ['term' => 'apple']));
+    }
 }

@@ -39,12 +39,6 @@ class quiz_question {
     /** @var string Question stem text. */
     public string $questiontext = '';
 
-    /** @var int Difficulty 1–5 . */
-    public int $difficulty = 0;
-
-    /** @var int|null Cartridge category id, or null when uncategorised. */
-    public ?int $categoryid = null;
-
     /** @var string|null Optional general feedback shown after the question is answered. */
     public ?string $generalfeedback = null;
 

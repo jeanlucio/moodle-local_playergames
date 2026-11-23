@@ -115,6 +115,33 @@ class season_game_config {
     }
 
     /**
+     * The active cartridges a game draws from.
+     *
+     * No configuration (no active season, or a season that predates per-season configuration) and no list both mean
+     * every active cartridge of the game's kind.
+     *
+     * @param string $gametype Game type.
+     * @param string[] $activetypes Type of each active cartridge, keyed by cartridge id.
+     * @param \stdClass|null $config Configuration of the game in the season.
+     * @return int[] Cartridge ids.
+     */
+    public static function usable_cartridges(string $gametype, array $activetypes, ?\stdClass $config): array {
+        $activeids = array_map('intval', array_keys($activetypes, self::FAMILIES[$gametype], true));
+        $kept = json_decode((string) ($config->cartridgeids ?? ''), true);
+        return is_array($kept) ? array_values(array_intersect($activeids, array_map('intval', $kept))) : $activeids;
+    }
+
+    /**
+     * The type of each active cartridge.
+     *
+     * @return string[] Keyed by cartridge id.
+     */
+    public static function active_cartridge_types(): array {
+        global $DB;
+        return $DB->get_records_menu('local_playergames_cartridges', ['active' => 1], '', 'id, type');
+    }
+
+    /**
      * Turns the form of a game into what the season stores.
      *
      * With every cartridge ticked no list is stored, so the ones created later are used as well; with none ticked the

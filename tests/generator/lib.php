@@ -77,7 +77,7 @@ class local_playergames_generator extends component_generator_base {
     /**
      * Creates a concept of a cartridge.
      *
-     * @param array $record cartridgeid, term, definition, and optionally difficulty (1 to 5).
+     * @param array $record cartridgeid, term, definition.
      * @return stdClass The concept.
      */
     public function create_concept(array $record): stdClass {
@@ -86,7 +86,6 @@ class local_playergames_generator extends component_generator_base {
             'cartridgeid' => (int) $record['cartridgeid'],
             'term' => (string) $record['term'],
             'definition' => (string) $record['definition'],
-            'difficulty' => (int) ($record['difficulty'] ?? 3),
         ];
         $concept->id = (int) $DB->insert_record('local_playergames_concepts', $concept);
         return $concept;
@@ -106,8 +105,6 @@ class local_playergames_generator extends component_generator_base {
             'cartridgeid' => (int) $record['cartridgeid'],
             'questiontext' => (string) $record['questiontext'],
             'source' => 'manual',
-            'difficulty' => 3,
-            'categoryid' => null,
             'generalfeedback' => (string) ($record['feedback'] ?? ''),
             'timecreated' => time(),
         ];

@@ -8,10 +8,9 @@ PostgreSQL & MariaDB).
 
 | Test file | Cases | What is covered |
 |-----------|------:|-----------------|
-| `cartridge/importer_test.php` | 14 | Concept and quiz import; type inference; difficulty clamping; category dedup; schema-error paths; fields of the wrong type; the whole import saved in one transaction |
+| `cartridge/importer_test.php` | 14 | Concept and quiz import; type inference; fields of an older file ignored; schema-error paths; fields of the wrong type; the whole import saved in one transaction |
 | `cartridge/exporter_test.php` | 5 | Concept/quiz export structure and full import→export round-trip including root metadata |
-| `cartridge/category_manager_test.php` | 7 | Category CRUD, incrementing sortorder, idempotent `ensure`, ownership guard, concept null-on-delete |
-| `cartridge/quiz_generator_test.php` | 12 | Quiz response parsing, category/difficulty defaults, `save_standalone` persistence; responses with fields of the wrong type |
+| `cartridge/quiz_generator_test.php` | 12 | Quiz response parsing, `save_standalone` persistence; responses with fields of the wrong type |
 | `cartridge/ai_generator_test.php` | 7 | Concept response parser: wrapped/bare/fenced JSON, invalid and missing-concepts errors; delegation to the AI Hub facade with a `core_ai` fallback; responses with fields of the wrong type |
 | `cartridge/payload_test.php` | 3 | Cleaning of imported and AI-returned fields: a scalar becomes text and anything else counts as missing; a single value is wrapped as a list; numbers are clamped with a fallback |
 | `hub/xp_manager_test.php` | 17 | Level thresholds, per-game cap enforcement, uncapped mission award, level-up event, season ranking position/tie-break |
@@ -51,7 +50,7 @@ PostgreSQL & MariaDB).
 | `local/admin_cards_test.php` | 8 | Administration tab: cards and groups by permission (administrator, manager, student), the tab in the navigation, the state of each card, a season name escaped once, and the documentation link opening in a new tab |
 | `local/game_page_test.php` | 2 | The notice of the game pages when no season is active, and that it never says the game was already played |
 | `local/question_bank_reuse_test.php` | 3 | Which question bank categories are kept for reuse (shared banks on Moodle 5.x, system context on 4.5), question counts, what a user may choose |
-| `cartridge/question_bank_importer_test.php` | 9 | Copy into a new active question cartridge, category name, left out questions with a medium (counted), unusable questions, latest ready version only, nothing to import, private categories and users who may not use them refused, text flattened keeping case and entities |
+| `cartridge/question_bank_importer_test.php` | 8 | Copy into a new active question cartridge, left out questions with a medium (counted), unusable questions, latest ready version only, nothing to import, private categories and users who may not use them refused, text flattened keeping case and entities |
 | `cartridge/glossary_importer_test.php` | 4 | Global glossaries listed with their approved entries, import into a concept cartridge, refusal of a course glossary and of an empty one |
 | `local/text_test.php` | 4 | Plain-text names: text as typed, the level title, cartridge pages escaping names once, and edit forms filling inputs with the stored text |
 | `local/data_reset_test.php` | 4 | Every table deleted or kept, the personal-data tables deleted, the seasons counted alone, and a reset that deletes the play, keeps the content, the settings and the users' choices, and logs who did it |

@@ -88,7 +88,8 @@ the season: the switch follows the boxes, and turning it on again checks them al
 
 For PlayerGuess and PlayerFill, each cartridge shows how many of its words serve the game, and the page warns when
 the chosen cartridges are not enough. In the hub, the card of the game says why there is nothing to play: no active
-cartridge, no words that meet the requirements, or words of the day not drawn yet.
+cartridge, no words that meet the requirements or no questions in the chosen cartridges, or words of the day not
+drawn yet. Deleting the only cartridge a game uses switches the game off, and the page says so.
 
 ## First setup
 

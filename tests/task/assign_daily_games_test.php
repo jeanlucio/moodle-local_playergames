@@ -55,8 +55,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         ];
         foreach ($terms as $term => $def) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
-                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def, 'language' => null,
             ]);
         }
         return $cid;
@@ -177,8 +176,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         ]);
         foreach (['apple' => 'A fruit', 'table' => 'Furniture'] as $term => $def) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
-                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def, 'language' => null,
             ]);
         }
 
@@ -229,8 +227,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         // valid letters-only guess target; "table" is the only eligible term.
         foreach (['AI-5' => 'Institutional Act No. 5', 'table' => 'Furniture'] as $term => $def) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def,
-                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => $def, 'language' => null,
             ]);
         }
 
@@ -281,8 +278,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         ]);
         foreach (['zebra', 'tiger', 'koala', 'panda', 'camel'] as $term) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cid, 'term' => $term, 'definition' => 'An animal',
-                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+                'cartridgeid' => $cid, 'term' => $term, 'definition' => 'An animal', 'language' => null,
             ]);
         }
         return $cid;
@@ -395,8 +391,7 @@ final class assign_daily_games_test extends \advanced_testcase {
         $ids = [];
         foreach ($terms as $term) {
             $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => "About {$term}",
-                'difficulty' => 3, 'categoryid' => null, 'language' => null,
+                'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => "About {$term}", 'language' => null,
             ]);
         }
         return $ids;

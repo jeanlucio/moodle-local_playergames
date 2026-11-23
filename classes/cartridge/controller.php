@@ -161,12 +161,6 @@ class controller {
             $this->action_toggle_active();
         } else if ($postaction === 'delete_cartridge') {
             $this->action_delete_cartridge();
-        } else if ($postaction === 'add_category') {
-            $this->action_add_category();
-        } else if ($postaction === 'rename_category') {
-            $this->action_rename_category();
-        } else if ($postaction === 'delete_category') {
-            $this->action_delete_category();
         } else if ($postaction === 'add_quiz_question') {
             $this->action_add_quiz_question();
         } else if ($postaction === 'edit_quiz_question') {
@@ -411,6 +405,7 @@ class controller {
         $ctx = [
             'action_url' => (new \moodle_url($baseurl))->out(false),
             'sesskey' => sesskey(),
+            'language' => text::language_name(),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_create', $ctx);
     }
@@ -464,10 +459,7 @@ class controller {
                 ? ($this->aiformdata->context ?? '') : '',
             'ai_form_language'    => $this->aiformdata ? $this->aiformdata->language : text::language_name(),
             'ai_form_quantity'    => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
-            'ai_form_difficulty'  => $this->aiformdata
-                ? (int) $this->aiformdata->difficulty : 3,
-            'ai_form_categories'  => $this->aiformdata
-                ? ($this->aiformdata->categories ?? '') : '',
+            'ai_form_levels'      => $this->level_options($this->aiformdata ? (int) $this->aiformdata->level : 3),
             // Quiz sub-tab.
             'has_quiz_error'      => $this->quizerror !== '',
             'quiz_error'          => $this->quizerror,
@@ -478,12 +470,9 @@ class controller {
                 ? $this->quizformdata->language : text::language_name(),
             'quiz_form_quantity'  => $this->quizformdata
                 ? (int) $this->quizformdata->quantity : 20,
-            'quiz_form_difficulty' => $this->quizformdata
-                ? (int) ($this->quizformdata->difficulty ?? 3) : 3,
+            'quiz_form_levels'    => $this->level_options($this->quizformdata ? (int) $this->quizformdata->level : 3),
             'quiz_form_context'   => $this->quizformdata
                 ? ($this->quizformdata->context ?? '') : '',
-            'quiz_form_categories' => $this->quizformdata
-                ? ($this->quizformdata->categories ?? '') : '',
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_ai', $ctx);
     }
@@ -505,8 +494,6 @@ class controller {
     ): string {
         $editconcept = null;
 
-        $catmgr = new category_manager();
-        $categories = $catmgr->get_categories($this->cartridgeid);
         $concepts = array_values(
             $db->get_records(
                 'local_playergames_concepts',
@@ -521,17 +508,10 @@ class controller {
             ) ?: null;
         }
 
-        $catnamelookup = [];
-        foreach ($categories as $cat) {
-            $catnamelookup[(int) $cat->id] = text::plain($cat->name);
-        }
-
         $formaction = 'add_concept';
         $formconceptid = 0;
         $formterm = '';
         $formdefinition = '';
-        $formcategoryid = 0;
-        $formdifficulty = 3;
         $editingconcept = false;
 
         if ($editconcept !== null) {
@@ -539,28 +519,7 @@ class controller {
             $formconceptid = $editconcept->id;
             $formterm = $editconcept->term;
             $formdefinition = $editconcept->definition;
-            $formcategoryid = isset($editconcept->categoryid) ? (int) $editconcept->categoryid : 0;
-            $formdifficulty = (int) $editconcept->difficulty;
             $editingconcept = true;
-        }
-
-        $categoryoptions = [];
-        foreach ($categories as $cat) {
-            $categoryoptions[] = [
-                'id' => (int) $cat->id,
-                'name' => text::plain($cat->name),
-                'selected' => (int) $cat->id === $formcategoryid,
-            ];
-        }
-
-        $catrows = [];
-        foreach ($categories as $cat) {
-            $catrows[] = [
-                'id' => (int) $cat->id,
-                'name' => text::plain($cat->name),
-                'cartridgeid' => $this->cartridgeid,
-                'sesskey' => sesskey(),
-            ];
         }
 
         $conceptrows = [];
@@ -570,14 +529,10 @@ class controller {
                 'cartridgeid' => $this->cartridgeid,
                 'editconcept' => $concept->id,
             ]))->out(false);
-            $catid = isset($concept->categoryid) ? (int) $concept->categoryid : 0;
             $conceptrows[] = [
                 'id' => $concept->id,
                 'term' => text::plain($concept->term),
                 'definition' => text::plain($concept->definition),
-                'category' => $catid > 0 && isset($catnamelookup[$catid])
-                    ? $catnamelookup[$catid] : '',
-                'difficulty' => (int) $concept->difficulty,
                 'edit_url' => $editconcepturl,
                 'sesskey' => sesskey(),
                 'cartridgeid' => $this->cartridgeid,
@@ -608,11 +563,6 @@ class controller {
             'form_concept_id' => $formconceptid,
             'form_term' => $formterm,
             'form_definition' => $formdefinition,
-            'form_categoryid' => $formcategoryid,
-            'form_difficulty' => $formdifficulty,
-            'categories' => $catrows,
-            'categories_empty' => empty($catrows),
-            'category_options' => $categoryoptions,
             'concepts' => $conceptrows,
             'concepts_empty' => empty($conceptrows),
         ];
@@ -786,6 +736,33 @@ class controller {
     }
 
     /**
+     * How hard the user asked the AI to make the content.
+     *
+     * @return int From 1 (very easy) to 5 (very hard).
+     */
+    private function ai_level_param(): int {
+        return max(1, min(5, optional_param('level', 3, PARAM_INT)));
+    }
+
+    /**
+     * The levels of content the AI can be asked for, as options of a select.
+     *
+     * @param int $selected The level to show selected.
+     * @return array[] Each with value, label and selected.
+     */
+    private function level_options(int $selected): array {
+        $options = [];
+        foreach (range(1, 5) as $level) {
+            $options[] = [
+                'value' => $level,
+                'label' => get_string('cartridge_ai_level_' . $level, 'local_playergames'),
+                'selected' => $level === $selected,
+            ];
+        }
+        return $options;
+    }
+
+    /**
      * Handles the generate_ai POST action.
      * Does not redirect — sets internal AI state for page re-rendering.
      */
@@ -794,28 +771,15 @@ class controller {
         $aicontext = optional_param('ai_context', '', PARAM_TEXT);
         $ailanguage = $this->ai_language_param();
         $quantity = required_param('quantity', PARAM_INT);
-        $difficulty = required_param('difficulty', PARAM_INT);
-        $aicategoriesraw = optional_param('ai_categories', '', PARAM_TEXT);
+        $level = $this->ai_level_param();
         $quantity = max(10, min(100, $quantity));
-        $difficulty = max(1, min(5, $difficulty));
-
-        $categorynames = [];
-        if ($aicategoriesraw !== '') {
-            foreach (explode(',', $aicategoriesraw) as $catname) {
-                $catname = trim(clean_param($catname, PARAM_TEXT));
-                if ($catname !== '') {
-                    $categorynames[] = $catname;
-                }
-            }
-        }
 
         $this->aiformdata = new \stdClass();
         $this->aiformdata->topic = $topic;
         $this->aiformdata->context = $aicontext;
         $this->aiformdata->language = $ailanguage;
         $this->aiformdata->quantity = $quantity;
-        $this->aiformdata->difficulty = $difficulty;
-        $this->aiformdata->categories = $aicategoriesraw;
+        $this->aiformdata->level = $level;
         $this->tab = 'ai';
 
         try {
@@ -824,8 +788,7 @@ class controller {
                 $topic,
                 $ailanguage,
                 $quantity,
-                $difficulty,
-                $categorynames,
+                $level,
                 $aicontext
             );
             $indexed = [];
@@ -834,8 +797,6 @@ class controller {
                     'index' => $i,
                     'term' => $c['term'] ?? '',
                     'definition' => $c['definition'] ?? '',
-                    'category' => $c['category'] ?? '',
-                    'difficulty' => max(1, min(5, (int) ($c['difficulty'] ?? 3))),
                 ];
             }
             $this->aipreview = [
@@ -911,8 +872,6 @@ class controller {
         $rawconcepts = $this->read_rows([
             'concept_term'       => 'term',
             'concept_definition' => 'definition',
-            'concept_category'   => 'category',
-            'concept_difficulty' => 'difficulty',
         ]);
 
         // A cartridge with no usable concept has nothing to serve: refuse it instead of creating an empty one.
@@ -1024,10 +983,7 @@ class controller {
         $concept = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
             'definition' => required_param('definition', PARAM_TEXT),
-            'categoryid' => optional_param('categoryid', 0, PARAM_INT),
-            'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
-        $concept->categoryid = $this->valid_category_id((int) $concept->categoryid, $postcartridgeid);
 
         if ($concept->term === '' || $concept->definition === '') {
             redirect(
@@ -1077,10 +1033,7 @@ class controller {
         $updated = $imp->sanitize_concept([
             'term' => required_param('term', PARAM_TEXT),
             'definition' => required_param('definition', PARAM_TEXT),
-            'categoryid' => optional_param('categoryid', 0, PARAM_INT),
-            'difficulty' => optional_param('difficulty', 3, PARAM_INT),
         ], $postcartridgeid);
-        $updated->categoryid = $this->valid_category_id((int) $updated->categoryid, $postcartridgeid);
 
         if ($updated->term === '' || $updated->definition === '') {
             redirect(
@@ -1186,7 +1139,8 @@ class controller {
 
         $postcartridgeid = required_param('cartridgeid', PARAM_INT);
         $cartridgerow = $DB->get_record('local_playergames_cartridges', ['id' => $postcartridgeid]);
-        if ((new cartridge_remover())->delete($postcartridgeid)) {
+        $remover = new cartridge_remover();
+        if ($remover->delete($postcartridgeid)) {
             $this->draw_todays_words();
         }
         if ($cartridgerow) {
@@ -1196,68 +1150,18 @@ class controller {
             ]);
             $event->trigger();
         }
+        $gamesoff = array_map(
+            static fn(string $gametype): string => get_string('hub_game_' . $gametype, 'local_playergames'),
+            $remover->switched_off_games()
+        );
         redirect(
             $this->url(),
-            get_string('cartridge_deleted', 'local_playergames'),
+            $gamesoff === []
+                ? get_string('cartridge_deleted', 'local_playergames')
+                : get_string('cartridge_deleted_gamesoff', 'local_playergames', implode(', ', $gamesoff)),
             null,
-            \core\output\notification::NOTIFY_SUCCESS
+            $gamesoff === [] ? \core\output\notification::NOTIFY_SUCCESS : \core\output\notification::NOTIFY_WARNING
         );
-    }
-
-    /**
-     * Handles the add_category POST action.
-     */
-    private function action_add_category(): void {
-        global $DB;
-
-        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $catname = required_param('category_name', PARAM_TEXT);
-        if (!$DB->record_exists('local_playergames_cartridges', ['id' => $postcartridgeid])) {
-            throw new \moodle_exception('error_cartridge_notfound', 'local_playergames');
-        }
-        try {
-            $catmgr = new category_manager();
-            $catmgr->create($postcartridgeid, $catname);
-            redirect(
-                $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                get_string('category_saved', 'local_playergames'),
-                null,
-                \core\output\notification::NOTIFY_SUCCESS
-            );
-        } catch (\moodle_exception $e) {
-            redirect(
-                $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                $e->getMessage(),
-                null,
-                \core\output\notification::NOTIFY_ERROR
-            );
-        }
-    }
-
-    /**
-     * Handles the rename_category POST action.
-     */
-    private function action_rename_category(): void {
-        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $postcategoryid = required_param('category_id', PARAM_INT);
-        $catname = required_param('category_name', PARAM_TEXT);
-        try {
-            $catmgr = new category_manager();
-            $catmgr->rename($postcategoryid, $postcartridgeid, $catname);
-            redirect(
-                $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                get_string('category_saved', 'local_playergames'),
-                null,
-                \core\output\notification::NOTIFY_SUCCESS
-            );
-        } catch (\moodle_exception $e) {
-            redirect(
-                $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-                $e->getMessage(),
-                null,
-                \core\output\notification::NOTIFY_ERROR
-            );
-        }
     }
 
     /**
@@ -1270,28 +1174,16 @@ class controller {
         $topic      = required_param('topic', PARAM_TEXT);
         $language   = $this->ai_language_param();
         $quantity   = max(5, min(50, (int) required_param('quantity', PARAM_INT)));
-        $difficulty = max(1, min(5, (int) optional_param('difficulty', 3, PARAM_INT)));
+        $level      = $this->ai_level_param();
         $aicontext  = optional_param('ai_context', '', PARAM_TEXT);
-        $categoriesraw = optional_param('ai_categories', '', PARAM_TEXT);
-
-        $categorynames = [];
-        if ($categoriesraw !== '') {
-            foreach (explode(',', $categoriesraw) as $catname) {
-                $catname = trim(clean_param($catname, PARAM_TEXT));
-                if ($catname !== '') {
-                    $categorynames[] = $catname;
-                }
-            }
-        }
 
         $this->aisubtab = 'quiz';
         $this->quizformdata = new \stdClass();
         $this->quizformdata->topic      = $topic;
         $this->quizformdata->language   = $language;
         $this->quizformdata->quantity   = $quantity;
-        $this->quizformdata->difficulty = $difficulty;
+        $this->quizformdata->level      = $level;
         $this->quizformdata->context    = $aicontext;
-        $this->quizformdata->categories = $categoriesraw;
         $this->tab = 'ai';
 
         try {
@@ -1300,8 +1192,7 @@ class controller {
                 $topic,
                 $language,
                 $quantity,
-                $difficulty,
-                $categorynames,
+                $level,
                 $aicontext
             );
             $indexed = [];
@@ -1312,11 +1203,10 @@ class controller {
                 }
                 $indexed[] = [
                     'index'           => $i,
+                    'number'          => $i + 1,
                     'questiontext'    => $q['questiontext'],
                     'correct'         => $q['correct'],
                     'distractors'     => $slots,
-                    'category'        => $q['category'] ?? '',
-                    'difficulty'      => max(1, min(5, (int) ($q['difficulty'] ?? 3))),
                     'generalfeedback' => $q['generalfeedback'] ?? '',
                 ];
             }
@@ -1348,8 +1238,6 @@ class controller {
             'question_distractor_1' => 'distractor1',
             'question_distractor_2' => 'distractor2',
             'question_distractor_3' => 'distractor3',
-            'question_category'   => 'category',
-            'question_difficulty' => 'difficulty',
             'question_feedback'   => 'generalfeedback',
         ]);
 
@@ -1371,8 +1259,6 @@ class controller {
                     'questiontext'    => $qtext,
                     'correct'         => $correct,
                     'distractors'     => $distractors,
-                    'category'        => payload::text($q['category'] ?? null),
-                    'difficulty'      => payload::number($q['difficulty'] ?? null, 1, 5, 3),
                     'generalfeedback' => payload::text($q['generalfeedback'] ?? null),
                 ];
             }
@@ -1424,22 +1310,6 @@ class controller {
     }
 
     /**
-     * Handles the delete_category POST action.
-     */
-    private function action_delete_category(): void {
-        $postcartridgeid = required_param('cartridgeid', PARAM_INT);
-        $postcategoryid = required_param('category_id', PARAM_INT);
-        $catmgr = new category_manager();
-        $deleted = $catmgr->delete($postcategoryid, $postcartridgeid);
-        redirect(
-            $this->url(['tab' => 'editor', 'cartridgeid' => $postcartridgeid]),
-            get_string($deleted ? 'category_deleted' : 'error_category_notfound', 'local_playergames'),
-            null,
-            $deleted ? \core\output\notification::NOTIFY_SUCCESS : \core\output\notification::NOTIFY_ERROR
-        );
-    }
-
-    /**
      * Renders the quiz question editor tab for a quiz-type cartridge.
      *
      * @param \renderer_base $output The active renderer.
@@ -1475,13 +1345,6 @@ class controller {
             }
         }
 
-        $catmgr = new category_manager();
-        $categories = $catmgr->get_categories((int) $cartridge->id);
-        $catnamelookup = [];
-        foreach ($categories as $cat) {
-            $catnamelookup[(int) $cat->id] = text::plain($cat->name);
-        }
-
         $editquestion = null;
         if ($this->editquestionid > 0) {
             $editquestion = $db->get_record(
@@ -1495,8 +1358,6 @@ class controller {
         $formquestiontext = '';
         $formcorrect = '';
         $formdistractors = ['', '', '', ''];
-        $formcategoryid = 0;
-        $formdifficulty = 3;
         $formfeedback = '';
         $editingquestion = false;
 
@@ -1504,8 +1365,6 @@ class controller {
             $formaction = 'edit_quiz_question';
             $formquestionid = (int) $editquestion->id;
             $formquestiontext = $editquestion->questiontext;
-            $formcategoryid = isset($editquestion->categoryid) ? (int) $editquestion->categoryid : 0;
-            $formdifficulty = (int) $editquestion->difficulty;
             $formfeedback = (string) ($editquestion->generalfeedback ?? '');
             $editingquestion = true;
             $qanswers = $answersbyquestion[(int) $editquestion->id] ?? [];
@@ -1517,25 +1376,6 @@ class controller {
                     $formdistractors[$di++] = $ans->answertext;
                 }
             }
-        }
-
-        $categoryoptions = [];
-        foreach ($categories as $cat) {
-            $categoryoptions[] = [
-                'id' => (int) $cat->id,
-                'name' => text::plain($cat->name),
-                'selected' => (int) $cat->id === $formcategoryid,
-            ];
-        }
-
-        $catrows = [];
-        foreach ($categories as $cat) {
-            $catrows[] = [
-                'id' => (int) $cat->id,
-                'name' => text::plain($cat->name),
-                'cartridgeid' => (int) $cartridge->id,
-                'sesskey' => sesskey(),
-            ];
         }
 
         $questionrows = [];
@@ -1555,15 +1395,12 @@ class controller {
                 'cartridgeid' => (int) $cartridge->id,
                 'editquestion' => (int) $q->id,
             ]))->out(false);
-            $qcatid = isset($q->categoryid) ? (int) $q->categoryid : 0;
             $questionrows[] = [
                 'id' => (int) $q->id,
+                'number' => count($questionrows) + 1,
                 'questiontext' => text::plain($q->questiontext),
                 'correct' => text::plain($correct),
                 'distractors' => array_map([text::class, 'plain'], $distractors),
-                'category' => $qcatid > 0 && isset($catnamelookup[$qcatid])
-                    ? $catnamelookup[$qcatid] : '',
-                'difficulty' => (int) $q->difficulty,
                 'edit_url' => $editurl,
                 'sesskey' => sesskey(),
                 'cartridgeid' => (int) $cartridge->id,
@@ -1596,35 +1433,11 @@ class controller {
             'form_distractor_1' => $formdistractors[1],
             'form_distractor_2' => $formdistractors[2],
             'form_distractor_3' => $formdistractors[3],
-            'form_categoryid' => $formcategoryid,
-            'form_difficulty' => $formdifficulty,
             'form_generalfeedback' => $formfeedback,
-            'category_options' => $categoryoptions,
-            'categories' => $catrows,
-            'categories_empty' => empty($catrows),
             'questions' => $questionrows,
             'questions_empty' => empty($questionrows),
         ];
         return $output->render_from_template('local_playergames/cartridge_tab_quiz_editor', $ctx);
-    }
-
-    /**
-     * Validates that a category belongs to the cartridge before it is stored.
-     *
-     * @param int $categoryid Posted category id (0 = none).
-     * @param int $cartridgeid Owning cartridge id.
-     * @return int|null The category id if it belongs to the cartridge, otherwise null.
-     */
-    private function valid_category_id(int $categoryid, int $cartridgeid): ?int {
-        global $DB;
-        if ($categoryid <= 0) {
-            return null;
-        }
-        $exists = $DB->record_exists(
-            'local_playergames_categories',
-            ['id' => $categoryid, 'cartridgeid' => $cartridgeid]
-        );
-        return $exists ? $categoryid : null;
     }
 
     /**
@@ -1643,11 +1456,6 @@ class controller {
 
         $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
         $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
-        $categoryid = $this->valid_category_id(
-            optional_param('categoryid', 0, PARAM_INT),
-            $postcartridgeid
-        );
-        $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
         $feedback = trim(clean_param(optional_param('generalfeedback', '', PARAM_TEXT), PARAM_TEXT));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
@@ -1670,8 +1478,6 @@ class controller {
         $qrecord->cartridgeid = $postcartridgeid;
         $qrecord->questiontext = $qtext;
         $qrecord->source = 'manual';
-        $qrecord->difficulty = $difficulty;
-        $qrecord->categoryid = $categoryid;
         $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
         $qrecord->timecreated = $now;
         $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
@@ -1723,11 +1529,6 @@ class controller {
 
         $qtext = trim(clean_param(required_param('questiontext', PARAM_TEXT), PARAM_TEXT));
         $correct = trim(clean_param(required_param('correct', PARAM_TEXT), PARAM_TEXT));
-        $categoryid = $this->valid_category_id(
-            optional_param('categoryid', 0, PARAM_INT),
-            $postcartridgeid
-        );
-        $difficulty = max(1, min(5, optional_param('difficulty', 3, PARAM_INT)));
         $feedback = trim(clean_param(optional_param('generalfeedback', '', PARAM_TEXT), PARAM_TEXT));
         $distractors = [];
         for ($i = 0; $i < 4; $i++) {
@@ -1751,8 +1552,6 @@ class controller {
         $updated = new \stdClass();
         $updated->id = $postquestionid;
         $updated->questiontext = $qtext;
-        $updated->difficulty = $difficulty;
-        $updated->categoryid = $categoryid;
         $updated->generalfeedback = $feedback !== '' ? $feedback : null;
         $DB->update_record('local_playergames_concept_questions', $updated);
         $DB->delete_records('local_playergames_concept_answers', ['questionid' => $postquestionid]);

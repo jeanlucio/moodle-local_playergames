@@ -63,7 +63,7 @@ final class lifecycle_test extends \advanced_testcase {
         $ids = ['cartridge' => $cartridgeid];
         foreach ($terms as $term) {
             $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => 'A word', 'difficulty' => 3,
+                'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => 'A word',
             ]);
         }
         return $ids;
@@ -124,16 +124,6 @@ final class lifecycle_test extends \advanced_testcase {
                     "A season game keeps cartridge {$cartridgeid}, which is gone."
                 );
             }
-        }
-
-        foreach (['concepts', 'concept_questions'] as $table) {
-            $orphans = $DB->count_records_sql(
-                "SELECT COUNT(1)
-                   FROM {local_playergames_{$table}} t
-              LEFT JOIN {local_playergames_categories} g ON g.id = t.categoryid
-                  WHERE t.categoryid IS NOT NULL AND (g.id IS NULL OR g.cartridgeid <> t.cartridgeid)"
-            );
-            $this->assertSame(0, $orphans, "{$table} point at a category that is gone or belongs to another cartridge.");
         }
 
         $profiles = $DB->get_records('local_playergames_player_profile');

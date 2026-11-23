@@ -43,21 +43,19 @@ class ai_generator {
      * @param string $topic Subject area or theme for the concepts.
      * @param string $language Target language for the generated content.
      * @param int $count Number of concepts to request (10–100).
-     * @param int $difficulty Average difficulty target (1–5).
-     * @param array $categorynames Optional list of category names the AI must use.
+     * @param int $level How hard the content should be (1–5).
      * @param string $context Optional reference text or summary to focus the AI.
-     * @return array Array of raw concept arrays with term, definition, category, difficulty.
+     * @return array Array of raw concept arrays with term and definition.
      * @throws \moodle_exception If no AI key is available or the response cannot be parsed.
      */
     public function generate(
         string $topic,
         string $language,
         int $count,
-        int $difficulty,
-        array $categorynames = [],
+        int $level,
         string $context = ''
     ): array {
-        $prompt = $this->build_prompt($topic, $language, $count, $difficulty, $categorynames, $context);
+        $prompt = $this->build_prompt($topic, $language, $count, $level, $context);
         $description = get_string('cartridge_ai_usage_concepts', 'local_playergames', $topic);
         $result = $this->call_api('', $prompt, true, $description);
         if (!$result['success']) {
@@ -140,8 +138,7 @@ class ai_generator {
      * @param string $topic Subject area or theme.
      * @param string $language Target language name.
      * @param int $count Number of concepts to generate.
-     * @param int $difficulty Average difficulty 1–5.
-     * @param array $categorynames Optional category names the AI must use.
+     * @param int $level How hard the content should be (1–5).
      * @param string $context Optional reference text to focus the AI.
      * @return string The constructed prompt.
      */
@@ -149,37 +146,23 @@ class ai_generator {
         string $topic,
         string $language,
         int $count,
-        int $difficulty,
-        array $categorynames = [],
+        int $level,
         string $context = ''
     ): string {
         $langname = $language !== '' ? $language : text::language_name();
         [$minlen, $maxlen] = word_pool::shared_range();
-        $jsonexample = '{"concepts":[{"term":"...","definition":"...","category":"...","difficulty":1}]}';
-
-        if (!empty($categorynames)) {
-            $catlist = '"' . implode('", "', $categorynames) . '"';
-            $categoryrule = "- category: MUST be exactly one of these values (verbatim): {$catlist}";
-        } else {
-            $categoryrule = '- category: broad subject-area label in ' . $langname
-                . ' that identifies the field of knowledge.'
-                . ' Use at most 3 distinct categories for the whole concept set.'
-                . ' Do NOT use specific sub-topics of the current theme as category names.'
-                . ' The category value MUST be written in ' . $langname . '.';
-        }
+        $jsonexample = '{"concepts":[{"term":"...","definition":"..."}]}';
 
         // Concepts only feed the word games, where a term that is not one word of letters can never be played.
         $rules = "- term: exactly ONE word, only letters, from {$minlen} to {$maxlen} letters long."
             . " NEVER use spaces, digits, hyphens, apostrophes or acronyms with dots. Never repeat a term\n"
             . "- definition: one clear sentence explaining the term\n"
-            . $categoryrule . "\n"
-            . "- difficulty: integer 1–5\n"
             . '- No markdown, no code fences, only raw JSON';
 
         $parts = [
             'You are a knowledgeable educator creating a vocabulary and concept study set.',
             "Generate exactly {$count} educational concepts about the topic: \"{$topic}\".",
-            "Target average difficulty: {$difficulty} out of 5 (1 = very easy, 5 = very hard).",
+            "Target difficulty: {$level} out of 5 (1 = very easy, 5 = very hard).",
             "Respond in language: {$langname}.",
         ];
 
@@ -363,7 +346,7 @@ class ai_generator {
      * asked for, so every field is read through payload.
      *
      * @param array $concepts Concepts as the model wrote them.
-     * @return array Concepts with term, definition and category as text and difficulty as a number.
+     * @return array Concepts with term and definition as text.
      */
     private function normalise_concepts(array $concepts): array {
         $result = [];
@@ -374,8 +357,6 @@ class ai_generator {
             $result[] = [
                 'term' => payload::text($concept['term'] ?? null),
                 'definition' => payload::text($concept['definition'] ?? null),
-                'category' => payload::text($concept['category'] ?? null),
-                'difficulty' => payload::number($concept['difficulty'] ?? null, 1, 5, 3),
             ];
         }
         return $result;

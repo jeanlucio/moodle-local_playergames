@@ -115,28 +115,15 @@ final class word_pool {
     /**
      * The active concept cartridges a game draws from in the active season.
      *
-     * The admin picks them per game in the season's game settings; no list, no active season or a season
-     * without a row for the game (one that predates per-season configuration) means all of them.
-     *
      * @param string $gametype 'guess' or 'fill'.
      * @return int[] Cartridge ids.
      */
     public static function cartridges(string $gametype): array {
-        global $DB;
-
-        $activeids = array_map('intval', $DB->get_fieldset_select(
-            'local_playergames_cartridges',
-            'id',
-            'active = 1 AND type = :type',
-            ['type' => 'concept']
-        ));
-        $config = $activeids === [] ? null : season_game_config::get_for_active_season($gametype);
-        if ($config === null || $config->cartridgeids === null) {
-            return $activeids;
-        }
-
-        $kept = json_decode((string) $config->cartridgeids, true);
-        return is_array($kept) ? array_values(array_intersect($activeids, array_map('intval', $kept))) : $activeids;
+        return season_game_config::usable_cartridges(
+            $gametype,
+            season_game_config::active_cartridge_types(),
+            season_game_config::get_for_active_season($gametype)
+        );
     }
 
     /**
@@ -180,14 +167,15 @@ final class word_pool {
     }
 
     /**
-     * Whether the season's cartridges have the words a game needs.
+     * Whether the cartridges have the words a game needs.
      *
      * @param string $gametype 'guess' or 'fill'.
+     * @param int[] $cartridgeids Cartridge ids.
      * @return bool
      */
-    public static function has_enough(string $gametype): bool {
+    public static function has_enough(string $gametype, array $cartridgeids): bool {
         $needed = self::needed($gametype);
-        return count(self::terms($gametype, self::cartridges($gametype), $needed)) >= $needed;
+        return count(self::terms($gametype, $cartridgeids, $needed)) >= $needed;
     }
 
     /**

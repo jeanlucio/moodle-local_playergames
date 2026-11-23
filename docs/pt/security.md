@@ -25,8 +25,8 @@ completa com os IDs exatos de modelo e destinos de dados está documentada na
 
 ## Transmissão de dados
 
-Quando a geração via IA é usada, o prompt montado pelo PlayerGames (tópico, idioma, dificuldade,
-categorias e qualquer texto de referência opcional fornecido pelo professor) é passado para
+Quando a geração via IA é usada, o prompt montado pelo PlayerGames (tópico, idioma, nível
+e qualquer texto de referência opcional fornecido pelo professor) é passado para
 qualquer que seja a fonte que resolveu a requisição (o Hub ou o `core_ai`) para processamento. O
 PlayerGames:
 - Não armazena prompts nem respostas da IA além dos conceitos do cartucho criados dentro do

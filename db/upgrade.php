@@ -129,5 +129,29 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112300, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112301) {
+        // No game ever read the difficulty of a concept or question, and the categories lost their only use with the
+        // choice of the concept of the day.
+        foreach (['local_playergames_concepts', 'local_playergames_concept_questions'] as $name) {
+            $table = new xmldb_table($name);
+            $index = new xmldb_index('idx_categoryid', XMLDB_INDEX_NOTUNIQUE, ['categoryid']);
+            if ($dbman->index_exists($table, $index)) {
+                $dbman->drop_index($table, $index);
+            }
+            foreach (['difficulty', 'categoryid'] as $column) {
+                $field = new xmldb_field($column);
+                if ($dbman->field_exists($table, $field)) {
+                    $dbman->drop_field($table, $field);
+                }
+            }
+        }
+        $table = new xmldb_table('local_playergames_categories');
+        if ($dbman->table_exists($table)) {
+            $dbman->drop_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2026112301, 'local', 'playergames');
+    }
+
     return true;
 }

@@ -37,10 +37,9 @@ class quiz_generator extends ai_generator {
      * @param string $topic Topic to generate questions about.
      * @param string $language Language for question and answer text.
      * @param int $quantity Number of questions to generate.
-     * @param int $difficulty Target average difficulty (1–5).
-     * @param array $categorynames Optional list of category names the AI must use.
+     * @param int $level How hard the questions should be (1–5).
      * @param string $context Optional reference text to focus the questions.
-     * @return array Non-empty array of arrays with keys: questiontext, correct, distractors[4], category, difficulty.
+     * @return array Non-empty array of arrays with keys: questiontext, correct, distractors[4], generalfeedback.
      * @throws \moodle_exception If no AI source is available, the request fails (with the provider's
      *     message) or the answer holds no usable question.
      */
@@ -48,16 +47,14 @@ class quiz_generator extends ai_generator {
         string $topic,
         string $language,
         int $quantity,
-        int $difficulty = 3,
-        array $categorynames = [],
+        int $level = 3,
         string $context = ''
     ): array {
         $prompt = $this->build_standalone_prompt(
             $topic,
             $language,
             $quantity,
-            $difficulty,
-            $categorynames,
+            $level,
             $context
         );
         $description = get_string('cartridge_ai_usage_quiz', 'local_playergames', $topic);
@@ -82,7 +79,7 @@ class quiz_generator extends ai_generator {
      * Replaces any existing AI questions for the cartridge before inserting.
      *
      * @param int $cartridgeid Target quiz cartridge.
-     * @param array $questions Array from generate_preview(): questiontext, correct, distractors[], category, difficulty.
+     * @param array $questions Array from generate_preview(): questiontext, correct, distractors[].
      * @return int Number of questions saved.
      */
     public function save_standalone(int $cartridgeid, array $questions): int {
@@ -100,8 +97,6 @@ class quiz_generator extends ai_generator {
             $DB->delete_records_select('local_playergames_concept_questions', "id $insql", $inparams);
         }
 
-        $catmgr = new category_manager();
-        $catmap = [];
         $total = 0;
         $now = time();
         foreach ($questions as $qdata) {
@@ -115,15 +110,6 @@ class quiz_generator extends ai_generator {
                 continue;
             }
 
-            $catname = payload::text($qdata['category'] ?? null);
-            $categoryid = null;
-            if ($catname !== '') {
-                if (!array_key_exists($catname, $catmap)) {
-                    $catmap[$catname] = $catmgr->ensure_category($cartridgeid, $catname);
-                }
-                $categoryid = $catmap[$catname] ?: null;
-            }
-
             $feedback = payload::text($qdata['generalfeedback'] ?? null);
 
             $qrecord = new \stdClass();
@@ -131,8 +117,6 @@ class quiz_generator extends ai_generator {
             $qrecord->cartridgeid = $cartridgeid;
             $qrecord->questiontext = $qtext;
             $qrecord->source = 'ai';
-            $qrecord->difficulty = payload::number($qdata['difficulty'] ?? null, 1, 5, 3);
-            $qrecord->categoryid = $categoryid;
             $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
             $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
@@ -165,8 +149,7 @@ class quiz_generator extends ai_generator {
      * @param string $topic Subject matter.
      * @param string $language Target language.
      * @param int $quantity Number of questions to request.
-     * @param int $difficulty Target average difficulty (1–5).
-     * @param array $categorynames Optional list of category names the AI must use verbatim.
+     * @param int $level How hard the questions should be (1–5).
      * @param string $context Optional reference text to focus the questions.
      * @return string Prompt text.
      */
@@ -174,8 +157,7 @@ class quiz_generator extends ai_generator {
         string $topic,
         string $language,
         int $quantity,
-        int $difficulty = 3,
-        array $categorynames = [],
+        int $level = 3,
         string $context = ''
     ): string {
         $langname = $language !== '' ? $language : text::language_name();
@@ -184,27 +166,16 @@ class quiz_generator extends ai_generator {
             . '{"questiontext":"Who invented the telephone?",'
             . '"correct":"Alexander Graham Bell",'
             . '"distractors":["Thomas Edison","Nikola Tesla","Guglielmo Marconi","James Watt"],'
-            . '"category":"History","difficulty":2,'
             . '"generalfeedback":"Bell patented the first practical telephone in 1876."},'
             . '{"questiontext":"In what year did World War II end?",'
             . '"correct":"1945",'
             . '"distractors":["1939","1941","1943","1918"],'
-            . '"category":"History","difficulty":3,'
             . '"generalfeedback":"The war ended in 1945 with the surrender of Germany and Japan."}]}';
-
-        if (!empty($categorynames)) {
-            $catlist = '"' . implode('", "', $categorynames) . '"';
-            $categoryrule = "- category: MUST be exactly one of these values (verbatim): {$catlist}";
-        } else {
-            $categoryrule = '- category: a broad subject-area label in ' . $langname
-                . ' identifying the field of knowledge. Use at most 3 distinct categories'
-                . ' for the whole set. The value MUST be written in ' . $langname . '.';
-        }
 
         $parts = [
             "You are an educator creating multiple-choice quiz questions about: {$topic}.",
             "Generate exactly {$qty} questions.",
-            "Target average difficulty: {$difficulty} out of 5 (1 = very easy, 5 = very hard).",
+            "Target difficulty: {$level} out of 5 (1 = very easy, 5 = very hard).",
             "Write all text in language: {$langname}.",
         ];
 
@@ -220,8 +191,6 @@ class quiz_generator extends ai_generator {
             '- questiontext: a concise question stem (max 20 words).',
             '- correct: exactly ONE correct answer — use the same style as the distractors.',
             '- distractors: exactly FOUR plausible but wrong answers.',
-            $categoryrule,
-            '- difficulty: integer 1–5 reflecting how hard the question is.',
             '- generalfeedback: one short sentence (max 25 words) explaining why the correct'
                 . ' answer is right, shown to the learner after they answer. Write it in '
                 . $langname . '.',
@@ -254,7 +223,7 @@ class quiz_generator extends ai_generator {
      * Parses the AI response for standalone MCQs.
      *
      * @param string $json Raw response from the AI provider.
-     * @return array Array of arrays with keys: questiontext, correct, distractors[4], category, difficulty.
+     * @return array Array of arrays with keys: questiontext, correct, distractors[4], generalfeedback.
      */
     protected function parse_standalone_response(string $json): array {
         $json = preg_replace("/^\x60{3}(?:json)?\s*/i", '', trim($json));
@@ -278,8 +247,6 @@ class quiz_generator extends ai_generator {
                 'questiontext'    => payload::text($q['questiontext']),
                 'correct'         => payload::text($q['correct']),
                 'distractors'     => array_slice($distractors, 0, 4),
-                'category'        => payload::text($q['category'] ?? null),
-                'difficulty'      => payload::number($q['difficulty'] ?? null, 1, 5, 3),
                 'generalfeedback' => payload::text($q['generalfeedback'] ?? null),
             ];
         }

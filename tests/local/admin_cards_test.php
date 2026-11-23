@@ -203,7 +203,7 @@ final class admin_cards_test extends \advanced_testcase {
         foreach ([$active, $active, $inactive] as $cartridgeid) {
             $DB->insert_record('local_playergames_concept_questions', (object) [
                 'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => 'Q', 'source' => 'manual',
-                'difficulty' => 3, 'categoryid' => null, 'generalfeedback' => null, 'timecreated' => $now,
+                'generalfeedback' => null, 'timecreated' => $now,
             ]);
         }
 

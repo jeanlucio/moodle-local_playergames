@@ -72,7 +72,7 @@ class glossary_importer {
      *
      * @param int $glossaryid The glossary.
      * @param int $userid The user who imports it, recorded as the uploader.
-     * @return \stdClass The importer result: cartridgeid, count, categories, language.
+     * @return \stdClass The importer result: cartridgeid, count, language, type.
      * @throws \moodle_exception When the glossary is not a global one, or has nothing to copy.
      */
     public function import(int $glossaryid, int $userid): \stdClass {
@@ -97,7 +97,7 @@ class glossary_importer {
             if ($term === '' || $definition === '') {
                 continue;
             }
-            $concepts[] = ['term' => $term, 'definition' => $definition, 'difficulty' => 3];
+            $concepts[] = ['term' => $term, 'definition' => $definition];
             if (count($concepts) >= importer::MAX_CONCEPTS) {
                 break;
             }

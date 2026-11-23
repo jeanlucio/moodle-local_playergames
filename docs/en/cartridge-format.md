@@ -12,15 +12,13 @@ answers) feeds PlayerQuiz and PlayerBattle:
   "concepts": [
     {
       "term": "gamification",
-      "definition": "Use of game elements in non-game contexts",
-      "category": "fundamentals",
-      "difficulty": 2
+      "definition": "Use of game elements in non-game contexts"
     }
   ]
 }
 ```
 
-- Validated by the importer before saving
+- Validated by the importer before saving; a `category` or `difficulty` of an older file is ignored
 - Terms for PlayerGuess: filtered by configurable length (default 4–8 letters) and must be a
   single alphabetic word (no spaces, digits or hyphens) — see
   [How PlayerGuess Works](#playerguess)

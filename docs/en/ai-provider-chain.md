@@ -3,11 +3,12 @@
 Key storage and provider transport (Gemini, Groq, DeepSeek, OpenAI-compatible) live in a
 dedicated companion plugin, **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**.
 PlayerGames itself only builds the cartridge generation prompt (topic, language, concept count,
-difficulty, categories) and parses the AI's JSON response back into concepts, so it stays free of
+level) and parses the AI's JSON response back into concepts, so it stays free of
 key management while still supporting AI-assisted cartridge generation wherever the Hub is
 installed.
 
-The language field comes filled in with the language of the person on the page and can be changed. For concepts, the
+The language field comes filled in with the language of the person on the page and can be changed, and the content level goes from
+very easy to very hard. For concepts, the
 prompt asks only for single words, letters only, with a length that serves PlayerGuess and PlayerFill.
 
 ## Resolution order
@@ -45,9 +46,9 @@ if ($gen->has_key()) {
   system+user prompt through the chain and returns the raw text response.
 - `send(string $prompt): array` — lower-level variant returning the full result array
   (`success`, `data`, `message`, `provider`).
-- `generate(string $topic, string $language, int $count, int $difficulty, array $categorynames = [], string $context = ''): array`
+- `generate(string $topic, string $language, int $count, int $level, string $context = ''): array`
   — the structured cartridge-concept generator; use only when you need concept arrays in
-  `{term, definition, category, difficulty}` format.
+  `{term, definition}` format.
 
 Every AI generation triggered from PlayerGames is tagged in the Hub's own usage log with the
 component (`local_playergames`) and a short description of what was generated (e.g. the cartridge

@@ -55,8 +55,6 @@ final class quiz_generator_test extends \advanced_testcase {
                 'questiontext' => 'Q1',
                 'correct' => 'C1',
                 'distractors' => ['a', 'b', 'c', 'd'],
-                'category' => 'Cat',
-                'difficulty' => 4,
             ],
         ]]);
 
@@ -66,8 +64,6 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame('Q1', $result[0]['questiontext']);
         $this->assertSame('C1', $result[0]['correct']);
         $this->assertCount(4, $result[0]['distractors']);
-        $this->assertSame('Cat', $result[0]['category']);
-        $this->assertSame(4, $result[0]['difficulty']);
     }
 
     public function test_parse_standalone_keeps_general_feedback(): void {
@@ -99,18 +95,6 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame('', $result[0]['generalfeedback']);
     }
 
-    public function test_parse_standalone_defaults_category_and_difficulty(): void {
-        $json = json_encode(['questions' => [
-            ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => ['a', 'b', 'c', 'd']],
-        ]]);
-
-        $result = $this->invoke('parse_standalone_response', [$json]);
-
-        // Missing metadata falls back to empty category and difficulty 3.
-        $this->assertSame('', $result[0]['category']);
-        $this->assertSame(3, $result[0]['difficulty']);
-    }
-
     public function test_parse_standalone_strips_code_fences(): void {
         $inner = json_encode(['questions' => [
             ['questiontext' => 'Q', 'correct' => 'C', 'distractors' => ['a', 'b', 'c', 'd']],
@@ -138,7 +122,7 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame([], $this->invoke('parse_standalone_response', ['garbage']));
     }
 
-    public function test_save_standalone_persists_category_and_difficulty(): void {
+    public function test_save_standalone_persists_the_questions(): void {
         global $DB;
         $this->resetAfterTest();
         $now = time();
@@ -156,11 +140,11 @@ final class quiz_generator_test extends \advanced_testcase {
         $questions = [
             [
                 'questiontext' => 'Q1', 'correct' => 'C1',
-                'distractors' => ['a', 'b', 'c', 'd'], 'category' => 'Science', 'difficulty' => 2,
+                'distractors' => ['a', 'b', 'c', 'd'],
             ],
             [
                 'questiontext' => 'Q2', 'correct' => 'C2',
-                'distractors' => ['a', 'b', 'c', 'd'], 'category' => 'Science', 'difficulty' => 9,
+                'distractors' => ['a', 'b', 'c', 'd'],
             ],
             [
                 'questiontext' => 'Q3', 'correct' => 'C3',
@@ -171,24 +155,13 @@ final class quiz_generator_test extends \advanced_testcase {
         $saved = (new quiz_generator())->save_standalone($cartridgeid, $questions);
 
         $this->assertSame(3, $saved);
-        // The two questions sharing a category name create a single category.
-        $this->assertSame(1, $DB->count_records('local_playergames_categories', [
-            'cartridgeid' => $cartridgeid,
-        ]));
-
         $rows = array_values($DB->get_records(
             'local_playergames_concept_questions',
             ['cartridgeid' => $cartridgeid],
             'id ASC'
         ));
         $this->assertSame('ai', $rows[0]->source);
-        $this->assertSame(2, (int) $rows[0]->difficulty);
-        $this->assertNotNull($rows[0]->categoryid);
-        // Difficulty 9 is clamped to the 1-5 range.
-        $this->assertSame(5, (int) $rows[1]->difficulty);
-        // No category given falls back to null with the default difficulty 3.
-        $this->assertNull($rows[2]->categoryid);
-        $this->assertSame(3, (int) $rows[2]->difficulty);
+        $this->assertSame(['Q1', 'Q2', 'Q3'], array_column($rows, 'questiontext'));
     }
 
     public function test_save_standalone_persists_general_feedback(): void {
@@ -241,8 +214,6 @@ final class quiz_generator_test extends \advanced_testcase {
                 'questiontext' => ['x'],
                 'correct' => ['y'],
                 'distractors' => ['a', ['b'], 'c', 'd', 'e'],
-                'category' => ['z'],
-                'difficulty' => ['w'],
                 'generalfeedback' => ['v'],
             ],
         ]]);
@@ -253,7 +224,6 @@ final class quiz_generator_test extends \advanced_testcase {
         $this->assertSame('', $result[0]['questiontext']);
         $this->assertSame('', $result[0]['correct']);
         $this->assertSame(['a', 'c', 'd', 'e'], $result[0]['distractors']);
-        $this->assertSame(3, $result[0]['difficulty']);
         $this->assertStringNotContainsString('Array', json_encode($result));
     }
 

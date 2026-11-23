@@ -59,7 +59,6 @@ final class guess_manager_test extends \advanced_testcase {
         global $DB;
         return (int) $DB->insert_record('local_playergames_concepts', (object) [
             'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => 'A definition.',
-            'difficulty' => 1,
         ]);
     }
 

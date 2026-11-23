@@ -138,7 +138,7 @@ class quiz_loader {
             $sql,
             $params,
             'local_playergames_concept_questions',
-            'id, questiontext, difficulty, categoryid, generalfeedback',
+            'id, questiontext, generalfeedback',
             $limit,
             $excludeids
         );
@@ -179,8 +179,6 @@ class quiz_loader {
             $dto->source = 'cartridge';
             $dto->sourceid = $qid;
             $dto->questiontext = $q->questiontext;
-            $dto->difficulty = (int) $q->difficulty;
-            $dto->categoryid = isset($q->categoryid) ? (int) $q->categoryid : null;
             $dto->generalfeedback = $q->generalfeedback !== null ? (string) $q->generalfeedback : null;
             $dto->answers = array_map(function ($a): quiz_answer {
                 $ans = new quiz_answer();

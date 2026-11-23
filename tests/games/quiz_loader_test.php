@@ -53,22 +53,18 @@ final class quiz_loader_test extends \advanced_testcase {
      *
      * @param int $cartridgeid Owning cartridge.
      * @param int $distractors Number of distractors to add.
-     * @param int $difficulty Question difficulty.
-     * @param int|null $categoryid Optional category id.
      * @param string|null $feedback Optional general feedback.
      * @return int Question id.
      */
     private function add_question(
         int $cartridgeid,
         int $distractors = 4,
-        int $difficulty = 3,
-        ?int $categoryid = null,
         ?string $feedback = null
     ): int {
         global $DB;
         $qid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
             'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => 'Q?',
-            'source' => 'manual', 'difficulty' => $difficulty, 'categoryid' => $categoryid,
+            'source' => 'manual',
             'generalfeedback' => $feedback, 'timecreated' => time(),
         ]);
         $DB->insert_record('local_playergames_concept_answers', (object) [
@@ -174,23 +170,10 @@ final class quiz_loader_test extends \advanced_testcase {
         $this->assertSame($qkept, $questions[0]->sourceid);
     }
 
-    public function test_metadata_is_carried_to_dto(): void {
-        $this->resetAfterTest();
-        $cartridgeid = $this->make_cartridge();
-        // The loader copies categoryid through; 77 is an opaque passthrough value here.
-        $this->add_question($cartridgeid, 4, 5, 77);
-
-        $questions = (new quiz_loader())->load_session(10);
-
-        $this->assertCount(1, $questions);
-        $this->assertSame(5, $questions[0]->difficulty);
-        $this->assertSame(77, $questions[0]->categoryid);
-    }
-
     public function test_carries_general_feedback_from_cartridge(): void {
         $this->resetAfterTest();
         $cartridgeid = $this->make_cartridge();
-        $this->add_question($cartridgeid, 4, 3, null, 'Light becomes sugar.');
+        $this->add_question($cartridgeid, 4, 'Light becomes sugar.');
 
         $questions = (new quiz_loader())->load_session(10);
 

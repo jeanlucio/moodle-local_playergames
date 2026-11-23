@@ -252,9 +252,7 @@ class daily_play_manager {
         global $DB;
 
         $today = day::today();
-        $activetypes = $DB->get_fieldset_sql(
-            'SELECT DISTINCT type FROM {local_playergames_cartridges} WHERE active = 1'
-        );
+        $activetypes = season_game_config::active_cartridge_types();
 
         $playedrows = $DB->get_records_select(
             'local_playergames_daily_scores',
@@ -271,25 +269,23 @@ class daily_play_manager {
         // Each game has its name in hub_game_<game> and its page in play_<game>.php.
         $gametypes = season_game_config::GAMETYPES;
         $season   = season_manager::get_active();
-        $disabled = [];
-        foreach ($gametypes as $gametype) {
-            // A game the admin switched off for the season is not offered at all.
-            $disabled[$gametype] = $season !== null
-                && season_game_config::is_disabled((int) $season->id, $gametype);
-        }
+        $configs  = $season !== null ? season_game_config::get_all_for_season((int) $season->id) : [];
         $lostgames = array_flip(day_loss::closed_games($userid, $today));
         $result = [];
         foreach ($gametypes as $gametype) {
-            if ($disabled[$gametype] ?? false) {
+            $config = $configs[$gametype] ?? null;
+            // A game the admin switched off for the season is not offered at all.
+            if ($config !== null && !$config->enabled) {
                 continue;
             }
+            $cartridgeids = season_game_config::usable_cartridges($gametype, $activetypes, $config);
             $games   = self::games_per_day($snapshot, $gametype);
             $done    = ($attempts[$gametype] ?? 0) >= $games;
             // A game lost today stays closed until tomorrow; its page still shows how the day ended.
             $lost    = !$done && isset($lostgames[$gametype]);
-            $locked  = !$done && !$lost && !self::has_content($gametype, $activetypes);
+            $locked  = !$done && !$lost && !self::has_content($gametype, $cartridgeids);
             $pending = !$done && !$lost && !$locked;
-            $lockedtexts = $locked ? self::locked_texts($gametype) : ['', ''];
+            $lockedtexts = $locked ? self::locked_texts($gametype, $cartridgeids) : ['', ''];
             $result[] = [
                 'gametype' => $gametype,
                 'name'     => get_string('hub_game_' . $gametype, 'local_playergames'),
@@ -314,12 +310,16 @@ class daily_play_manager {
      * Says why a game has nothing to play today: the badge of its card and the sentence below it.
      *
      * @param string $gametype Game type.
+     * @param int[] $cartridgeids Active cartridges the game draws from.
      * @return string[] [badge, explanation]
      */
-    private static function locked_texts(string $gametype): array {
-        $reason = 'locked';
-        if (in_array($gametype, word_pool::games(), true) && word_pool::cartridges($gametype) !== []) {
-            $reason = word_pool::has_enough($gametype) ? 'notdrawn' : 'nowords';
+    private static function locked_texts(string $gametype, array $cartridgeids): array {
+        if ($cartridgeids === []) {
+            $reason = 'locked';
+        } else if (!in_array($gametype, word_pool::games(), true)) {
+            $reason = 'noquestions';
+        } else {
+            $reason = word_pool::has_enough($gametype, $cartridgeids) ? 'notdrawn' : 'nowords';
         }
         return [
             get_string('hub_game_' . $reason, 'local_playergames'),
@@ -328,16 +328,15 @@ class daily_play_manager {
     }
 
     /**
-     * Whether a game has something to serve.
-     *
-     * PlayerGuess and PlayerFill play the words the daily task drew from concept cartridges. The quiz games
-     * read quiz cartridges: the ones imported from a question bank are cartridges too.
+     * Whether a game has anything to play today.
      *
      * @param string $gametype Game type.
-     * @param string[] $activetypes Types of the active cartridges ('quiz', 'concept').
+     * @param int[] $cartridgeids Active cartridges the game draws from.
      * @return bool
      */
-    private static function has_content(string $gametype, array $activetypes): bool {
+    private static function has_content(string $gametype, array $cartridgeids): bool {
+        global $DB;
+
         if (in_array($gametype, self::SINGLE_ROUND_GAMES, true)) {
             // These games play the words the daily task drew, from the cartridges the season keeps for them:
             // an active concept cartridge is not enough when none of those words exists today.
@@ -347,6 +346,10 @@ class daily_play_manager {
                 : count(fill_manager::get_daily_concepts($today)) >= 2;
         }
 
-        return in_array('quiz', $activetypes, true);
+        if ($cartridgeids === []) {
+            return false;
+        }
+        [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED);
+        return $DB->record_exists_select('local_playergames_concept_questions', "cartridgeid {$insql}", $params);
     }
 }

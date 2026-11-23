@@ -12,15 +12,13 @@ Os cartuchos de conteúdo são arquivos JSON que alimentam os minijogos. Um cart
   "concepts": [
     {
       "term": "gamificação",
-      "definition": "Uso de elementos de jogos em contextos não-lúdicos",
-      "category": "fundamentos",
-      "difficulty": 2
+      "definition": "Uso de elementos de jogos em contextos não-lúdicos"
     }
   ]
 }
 ```
 
-- Validado pelo importador antes de salvar
+- Validado pelo importador antes de salvar; `category` e `difficulty` de um arquivo antigo são ignorados
 - Termos para o PlayerGuess: filtrados por comprimento configurável (padrão 4–8 letras) e devem
   ser uma única palavra alfabética (sem espaços, dígitos ou hífens) — ver
   [Como o PlayerGuess Funciona](#playerguess)

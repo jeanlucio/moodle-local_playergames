@@ -50,7 +50,7 @@ final class season_games_test extends \advanced_testcase {
         ]);
         foreach ($terms as $term) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $id, 'term' => $term, 'definition' => 'D', 'difficulty' => 3,
+                'cartridgeid' => $id, 'term' => $term, 'definition' => 'D',
             ]);
         }
         return $id;

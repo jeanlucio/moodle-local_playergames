@@ -134,9 +134,15 @@ final class cartridge_remover_test extends \advanced_testcase {
         $unrelated = $this->season_game(json_encode([$other]), 'guess');
         $unrestricted = $this->season_game(null, 'fill');
 
-        (new cartridge_remover())->delete($cartridgeid);
+        $remover = new cartridge_remover();
+        $remover->delete($cartridgeid);
 
-        $this->assertNull($DB->get_field('local_playergames_season_games', 'cartridgeids', ['id' => $only]));
+        // The only cartridge of a game takes the game with it: the others are the ones left out on purpose.
+        $this->assertSame('[]', $DB->get_field('local_playergames_season_games', 'cartridgeids', ['id' => $only]));
+        $this->assertSame(['quiz'], $remover->switched_off_games());
+        foreach ([[$only, 0], [$both, 1], [$unrelated, 1], [$unrestricted, 1]] as [$rowid, $enabled]) {
+            $this->assertEquals($enabled, $DB->get_field('local_playergames_season_games', 'enabled', ['id' => $rowid]));
+        }
         $this->assertSame(
             json_encode([$other]),
             $DB->get_field('local_playergames_season_games', 'cartridgeids', ['id' => $both])

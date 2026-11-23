@@ -50,7 +50,7 @@ final class ai_generator_test extends \advanced_testcase {
 
     public function test_parses_wrapped_object(): void {
         $json = json_encode(['concepts' => [
-            ['term' => 'XP', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => 2],
+            ['term' => 'XP', 'definition' => 'Experience'],
         ]]);
 
         $result = $this->parse($json);
@@ -61,7 +61,7 @@ final class ai_generator_test extends \advanced_testcase {
 
     public function test_parses_bare_array(): void {
         $json = json_encode([
-            ['term' => 'Badge', 'definition' => 'A token', 'category' => 'Core', 'difficulty' => 1],
+            ['term' => 'Badge', 'definition' => 'A token'],
         ]);
 
         $result = $this->parse($json);
@@ -72,7 +72,7 @@ final class ai_generator_test extends \advanced_testcase {
 
     public function test_strips_code_fences(): void {
         $inner = json_encode(['concepts' => [
-            ['term' => 'Quest', 'definition' => 'A task', 'category' => 'Flow', 'difficulty' => 3],
+            ['term' => 'Quest', 'definition' => 'A task'],
         ]]);
         $fence = str_repeat(chr(96), 3);
         $fenced = $fence . "json\n" . $inner . "\n" . $fence;
@@ -100,16 +100,16 @@ final class ai_generator_test extends \advanced_testcase {
      */
     public function test_concepts_of_the_wrong_type_are_normalised(): void {
         $json = json_encode(['concepts' => [
-            ['term' => ['x'], 'definition' => ['y'], 'category' => ['z'], 'difficulty' => ['w']],
+            ['term' => ['x'], 'definition' => ['y']],
             'a string instead of a concept',
-            ['term' => '<b>XP</b>', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => '9'],
+            ['term' => '<b>XP</b>', 'definition' => 'Experience'],
         ]]);
 
         $result = $this->parse($json);
 
         $this->assertSame([
-            ['term' => '', 'definition' => '', 'category' => '', 'difficulty' => 3],
-            ['term' => 'XP', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => 5],
+            ['term' => '', 'definition' => ''],
+            ['term' => 'XP', 'definition' => 'Experience'],
         ], $result);
     }
 
@@ -354,30 +354,38 @@ final class ai_generator_test extends \advanced_testcase {
     }
 
     /**
-     * Makes the current language carry the given name, since the test site has only the English pack.
+     * Runs a callback while the current language carries the given name, since the test site has only the English pack.
      *
      * @param string $name Language name.
-     * @return void
+     * @param callable $callback What to run.
+     * @return mixed What the callback returns.
      */
-    private function use_language_named(string $name): void {
+    private function with_language_named(string $name, callable $callback): mixed {
         global $CFG;
         $this->resetAfterTest();
+        $root = $CFG->langlocalroot;
         $dir = make_request_directory();
         mkdir("{$dir}/en_local");
         file_put_contents("{$dir}/en_local/langconfig.php", "<?php\n\$string['thislanguage'] = '{$name}';\n");
         $CFG->langlocalroot = $dir;
-        get_string_manager(true);
-        get_string_manager()->reset_caches(true);
+        get_string_manager(true)->reset_caches(true);
+        try {
+            return $callback();
+        } finally {
+            // The strings are cached beyond the test, so the name would reach the tests that run after this one.
+            $CFG->langlocalroot = $root;
+            get_string_manager(true)->reset_caches(true);
+        }
     }
 
     /**
-     * The prompt carries the topic, the count, the difficulty and the language, and asks for raw JSON.
+     * The prompt carries the topic, the count, the level and the language, and asks for raw JSON.
      */
     public function test_the_prompt_states_what_to_generate(): void {
         $prompt = $this->prompt(['Photosynthesis', 'Portuguese', 25, 4]);
 
         $this->assertStringContainsString('Generate exactly 25 educational concepts about the topic: "Photosynthesis"', $prompt);
-        $this->assertStringContainsString('Target average difficulty: 4 out of 5', $prompt);
+        $this->assertStringContainsString('Target difficulty: 4 out of 5', $prompt);
         $this->assertStringContainsString('Respond in language: Portuguese.', $prompt);
         $this->assertStringContainsString('only raw JSON', $prompt);
         $this->assertStringContainsString('{"concepts":[{"term":', $prompt);
@@ -385,18 +393,16 @@ final class ai_generator_test extends \advanced_testcase {
     }
 
     /**
-     * Without a language the prompt asks for the user's own, and without categories the model is told to keep few.
+     * Without a language the prompt asks for the user's own.
      */
-    public function test_the_prompt_defaults_to_the_language_of_the_user_and_free_categories(): void {
-        $this->use_language_named('Português - Brasil');
-        $prompt = $this->prompt(['Topic', '', 10, 3]);
-        $question = (new \ReflectionMethod(quiz_generator::class, 'build_standalone_prompt'))
-            ->invokeArgs(new quiz_generator(), ['Topic', '', 10]);
-        get_string_manager(true);
+    public function test_the_prompt_defaults_to_the_language_of_the_user(): void {
+        [$prompt, $question] = $this->with_language_named('Português - Brasil', fn(): array => [
+            $this->prompt(['Topic', '', 10, 3]),
+            (new \ReflectionMethod(quiz_generator::class, 'build_standalone_prompt'))
+                ->invokeArgs(new quiz_generator(), ['Topic', '', 10]),
+        ]);
 
         $this->assertStringContainsString('Respond in language: Português - Brasil.', $prompt);
-        $this->assertStringContainsString('Use at most 3 distinct categories', $prompt);
-        $this->assertStringContainsString('MUST be written in Português - Brasil', $prompt);
         $this->assertStringContainsString('Write all text in language: Português - Brasil.', $question);
     }
 
@@ -417,20 +423,10 @@ final class ai_generator_test extends \advanced_testcase {
     }
 
     /**
-     * Given category names, the model must use exactly those.
-     */
-    public function test_the_prompt_restricts_the_categories_when_they_are_given(): void {
-        $prompt = $this->prompt(['Topic', 'English', 10, 3, ['Biology', 'Chemistry']]);
-
-        $this->assertStringContainsString('MUST be exactly one of these values (verbatim): "Biology", "Chemistry"', $prompt);
-        $this->assertStringNotContainsString('at most 3 distinct categories', $prompt);
-    }
-
-    /**
      * A reference text is passed on between separators, so the model uses it.
      */
     public function test_the_prompt_includes_the_reference_text(): void {
-        $prompt = $this->prompt(['Topic', 'English', 10, 3, [], 'Chlorophyll absorbs light.']);
+        $prompt = $this->prompt(['Topic', 'English', 10, 3, 'Chlorophyll absorbs light.']);
 
         $this->assertStringContainsString("---\nChlorophyll absorbs light.\n---", $prompt);
         $this->assertStringContainsString('reference text', $prompt);
@@ -442,7 +438,7 @@ final class ai_generator_test extends \advanced_testcase {
     public function test_generate_parses_the_answer_and_names_the_topic(): void {
         $this->resetAfterTest();
         $answer = json_encode(['concepts' => [
-            ['term' => 'XP', 'definition' => 'Experience', 'category' => 'Core', 'difficulty' => 2],
+            ['term' => 'XP', 'definition' => 'Experience'],
         ]]);
         $generator = $this->generator_answering(['success' => true, 'data' => $answer]);
 

@@ -70,11 +70,16 @@ final class daily_play_manager_test extends \advanced_testcase {
             'name' => 'C', 'version' => '1.0', 'language' => 'en', 'type' => $type,
             'timecreated' => $now, 'timemodified' => $now, 'uploadedby' => 0, 'active' => $active,
         ]);
+        if ($type === 'quiz') {
+            $DB->insert_record('local_playergames_concept_questions', (object) [
+                'cartridgeid' => $id, 'questiontext' => 'Q?', 'source' => 'manual', 'timecreated' => $now,
+            ]);
+        }
         if ($type === 'concept') {
             // PlayerGuess and PlayerFill play the words the daily task drew from the cartridge.
             foreach (['apple', 'grape', 'lemon', 'mango', 'peach', 'melon', 'berry'] as $term) {
                 $DB->insert_record('local_playergames_concepts', (object) [
-                    'cartridgeid' => $id, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+                    'cartridgeid' => $id, 'term' => $term, 'definition' => 'A fruit',
                 ]);
             }
             if ($active) {
@@ -164,6 +169,43 @@ final class daily_play_manager_test extends \advanced_testcase {
         $games = array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
         $this->assertTrue($games['guess']['pending']);
         $this->assertSame('', $games['guess']['str_locked_hint']);
+    }
+
+    /**
+     * A question game looks at the cartridges the season chose for it, and at whether they have questions.
+     *
+     * Regression test: any active question cartridge of the site opened the game, whose page then had no question.
+     */
+    public function test_a_question_game_looks_at_the_cartridges_of_the_season(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $season = \local_playergames\hub\season_manager::create('Season', time() - DAYSECS, time() + DAYSECS);
+        \local_playergames\hub\season_manager::activate((int) $season->id);
+        $this->add_cartridge('quiz');
+        $this->add_cartridge('quiz');
+        [$chosen] = array_keys($DB->get_records('local_playergames_cartridges', null, 'id ASC', 'id'));
+        $DB->set_field(
+            'local_playergames_season_games',
+            'cartridgeids',
+            json_encode([$chosen]),
+            ['seasonid' => $season->id, 'gametype' => 'quiz']
+        );
+        $games = fn(): array => array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
+        $this->assertTrue($games()['quiz']['pending']);
+
+        $DB->delete_records('local_playergames_concept_questions', ['cartridgeid' => $chosen]);
+        $quiz = $games()['quiz'];
+        $this->assertTrue($quiz['locked']);
+        $this->assertSame(get_string('hub_game_noquestions', 'local_playergames'), $quiz['str_locked']);
+        $this->assertSame(get_string('hub_game_noquestions_hint', 'local_playergames'), $quiz['str_locked_hint']);
+
+        $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $chosen]);
+        $quiz = $games()['quiz'];
+        $this->assertTrue($quiz['locked']);
+        $this->assertSame(get_string('hub_game_locked', 'local_playergames'), $quiz['str_locked']);
+        // PlayerBattle has no list, so the other cartridge opens it.
+        $this->assertTrue($games()['battle']['pending']);
     }
 
     public function test_an_inactive_cartridge_opens_nothing(): void {

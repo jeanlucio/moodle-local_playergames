@@ -24,6 +24,7 @@
 
 namespace local_playergames\cartridge;
 
+use local_playergames\hub\season_manager;
 use local_playergames\local\day;
 
 /**
@@ -39,6 +40,18 @@ use local_playergames\local\day;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class cartridge_remover {
+    /** @var string[] Games of a season not closed yet that the last deletion switched off. */
+    private array $switchedoff = [];
+
+    /**
+     * The games the last deletion switched off, because they used no other cartridge.
+     *
+     * @return string[] Game types.
+     */
+    public function switched_off_games(): array {
+        return array_keys($this->switchedoff);
+    }
+
     /**
      * Deletes a cartridge and everything that belongs to or points at it, in one transaction.
      *
@@ -58,7 +71,6 @@ class cartridge_remover {
         );
         $removedtoday = $this->drop_assignments($conceptids);
         $DB->delete_records('local_playergames_concepts', ['cartridgeid' => $cartridgeid]);
-        $DB->delete_records('local_playergames_categories', ['cartridgeid' => $cartridgeid]);
 
         $questionids = $DB->get_fieldset_select(
             'local_playergames_concept_questions',
@@ -119,8 +131,8 @@ class cartridge_remover {
     /**
      * Takes the cartridge out of the lists the seasons keep for their games.
      *
-     * A game left with no cartridge goes back to null, which means every active cartridge, the same as a game
-     * nobody restricted.
+     * A game left with no cartridge is switched off, as it is when the administrator unticks all of them: the other
+     * cartridges are the ones that were left out on purpose.
      *
      * @param int $cartridgeid The cartridge.
      * @return void
@@ -128,12 +140,12 @@ class cartridge_remover {
     private function forget_in_season_games(int $cartridgeid): void {
         global $DB;
 
-        $rows = $DB->get_records_select(
-            'local_playergames_season_games',
-            'cartridgeids IS NOT NULL',
-            null,
-            '',
-            'id, cartridgeids'
+        $this->switchedoff = [];
+        $rows = $DB->get_records_sql(
+            "SELECT g.id, g.gametype, g.enabled, g.cartridgeids, s.status
+               FROM {local_playergames_season_games} g
+          LEFT JOIN {local_playergames_seasons} s ON s.id = g.seasonid
+              WHERE g.cartridgeids IS NOT NULL"
         );
         foreach ($rows as $row) {
             $kept = json_decode((string) $row->cartridgeids, true);
@@ -144,12 +156,14 @@ class cartridge_remover {
                 array_map('intval', $kept),
                 static fn(int $id): bool => $id !== $cartridgeid
             ));
-            $DB->set_field(
-                'local_playergames_season_games',
-                'cartridgeids',
-                $remaining === [] ? null : json_encode($remaining),
-                ['id' => $row->id]
-            );
+            $DB->update_record('local_playergames_season_games', (object) [
+                'id' => $row->id,
+                'cartridgeids' => json_encode($remaining),
+                'enabled' => $remaining === [] ? 0 : $row->enabled,
+            ]);
+            if ($remaining === [] && $row->enabled && $row->status !== season_manager::STATUS_CLOSED) {
+                $this->switchedoff[$row->gametype] = true;
+            }
         }
     }
 

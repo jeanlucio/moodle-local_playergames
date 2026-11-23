@@ -50,7 +50,7 @@ final class word_pool_test extends \advanced_testcase {
         ]);
         foreach ($terms as $term) {
             $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $id, 'term' => $term, 'definition' => 'D', 'difficulty' => 3,
+                'cartridgeid' => $id, 'term' => $term, 'definition' => 'D',
             ]);
         }
         return $id;
@@ -136,15 +136,15 @@ final class word_pool_test extends \advanced_testcase {
      */
     public function test_has_enough(): void {
         $this->resetAfterTest();
-        $this->assertFalse(word_pool::has_enough('guess'));
+        $this->assertFalse(word_pool::has_enough('guess', word_pool::cartridges('guess')));
         $this->add_cartridge(['apple', 'grape', 'lemon', 'mango', 'two words']);
-        $this->assertTrue(word_pool::has_enough('guess'));
-        $this->assertFalse(word_pool::has_enough('fill'));
+        $this->assertTrue(word_pool::has_enough('guess', word_pool::cartridges('guess')));
+        $this->assertFalse(word_pool::has_enough('fill', word_pool::cartridges('fill')));
         $this->add_cartridge(['peach']);
-        $this->assertTrue(word_pool::has_enough('fill'));
+        $this->assertTrue(word_pool::has_enough('fill', word_pool::cartridges('fill')));
         set_config('fill_num_words', 6, 'local_playergames');
         $this->assertSame(6, word_pool::needed('fill'));
-        $this->assertFalse(word_pool::has_enough('fill'));
+        $this->assertFalse(word_pool::has_enough('fill', word_pool::cartridges('fill')));
     }
 
     /**

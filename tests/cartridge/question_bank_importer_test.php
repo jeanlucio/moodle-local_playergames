@@ -130,20 +130,6 @@ final class question_bank_importer_test extends \advanced_testcase {
         $this->assertNotEmpty($question->id);
     }
 
-    public function test_the_category_name_becomes_the_category_of_the_questions(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $category = $this->shared_category('Cells');
-        $this->add_question($category);
-
-        $result = $this->import($category);
-
-        $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $result->cartridgeid]));
-        $this->assertNotNull(
-            $DB->get_field('local_playergames_concept_questions', 'categoryid', ['cartridgeid' => $result->cartridgeid])
-        );
-    }
-
     public function test_a_question_with_a_medium_is_left_out_and_counted(): void {
         global $DB;
         $this->resetAfterTest();

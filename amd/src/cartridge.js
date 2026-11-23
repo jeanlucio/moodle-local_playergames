@@ -18,7 +18,6 @@
  *
  * Provides:
  *  - Delete confirmation dialog on forms with a data-pg-confirm attribute.
- *  - The rename form of a category, opened from its row.
  *  - The AI usage policy of the site, asked for before a form sends anything to the AI.
  *
  * @module     local_playergames/cartridge
@@ -54,36 +53,6 @@ const attachConfirmDialogs = () => {
 };
 
 /**
- * Wires the rename buttons of the categories to the hidden rename form.
- */
-const attachRenameCategoryButtons = () => {
-    const renameForm = document.getElementById('pg-rename-cat-form');
-    if (!renameForm) {
-        return;
-    }
-    const renameIdInput = document.getElementById('pg-rename-cat-id');
-    const renameNameInput = document.getElementById('pg-rename-cat-name');
-    const cancelBtn = document.getElementById('pg-rename-cat-cancel');
-
-    document.querySelectorAll('.pg-rename-cat').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const {categoryid, name} = btn.dataset;
-            renameIdInput.value = categoryid;
-            renameNameInput.value = name;
-            renameForm.classList.remove('d-none');
-            renameNameInput.focus();
-        });
-    });
-
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            renameForm.classList.add('d-none');
-            renameNameInput.value = '';
-        });
-    }
-};
-
-/**
  * Holds every form that carries a data-pg-ai-policy attribute until the AI usage policy of the site is accepted.
  */
 const attachAiPolicyGate = () => {
@@ -103,6 +72,5 @@ const attachAiPolicyGate = () => {
  */
 export const init = () => {
     attachConfirmDialogs();
-    attachRenameCategoryButtons();
     attachAiPolicyGate();
 };

@@ -3,12 +3,13 @@
 O armazenamento de chaves e o transporte com os provedores (Gemini, Groq, DeepSeek, compatível
 com OpenAI) vivem num plugin companheiro dedicado, o
 **[local_aihub](https://github.com/jeanlucio/moodle-local_aihub)**. O PlayerGames em si só monta
-o prompt de geração do cartucho (tópico, idioma, quantidade de conceitos, dificuldade,
-categorias) e interpreta a resposta JSON da IA de volta em conceitos, então fica livre de
+o prompt de geração do cartucho (tópico, idioma, quantidade de conceitos, nível)
+e interpreta a resposta JSON da IA de volta em conceitos, então fica livre de
 gerenciamento de chaves e ainda oferece suporte à geração de cartuchos assistida por IA onde quer
 que o Hub esteja instalado.
 
-O campo de idioma vem preenchido com o idioma de quem está na página e pode ser trocado. Para os conceitos, o prompt
+O campo de idioma vem preenchido com o idioma de quem está na página e pode ser trocado, e o nível do conteúdo
+vai de muito fácil a muito difícil. Para os conceitos, o prompt
 pede só palavras únicas, apenas com letras e no tamanho que serve ao PlayerGuess e ao PlayerFill.
 
 ## Ordem de resolução
@@ -46,9 +47,9 @@ if ($gen->has_key()) {
   prompt livre de sistema+usuário pela cadeia e retorna o texto bruto.
 - `send(string $prompt): array` — variante de nível mais baixo que retorna o array completo do
   resultado (`success`, `data`, `message`, `provider`).
-- `generate(string $topic, string $language, int $count, int $difficulty, array $categorynames = [], string $context = ''): array`
+- `generate(string $topic, string $language, int $count, int $level, string $context = ''): array`
   — o gerador estruturado de conceitos do cartucho; use apenas quando precisar de arrays de
-  conceitos no formato `{term, definition, category, difficulty}`.
+  conceitos no formato `{term, definition}`.
 
 Toda geração de IA disparada pelo PlayerGames é marcada no próprio log de uso do Hub com o
 componente (`local_playergames`) e uma descrição curta do que foi gerado (ex.: o tópico do

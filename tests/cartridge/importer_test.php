@@ -103,23 +103,18 @@ final class importer_test extends \advanced_testcase {
         $this->assertEquals(1, $cartridge->active);
 
         $this->assertSame(3, $DB->count_records('local_playergames_concepts', ['cartridgeid' => $result->cartridgeid]));
-        // Two distinct category names should produce two categories.
-        $this->assertSame(2, $DB->count_records('local_playergames_categories', ['cartridgeid' => $result->cartridgeid]));
     }
 
-    public function test_import_concept_clamps_difficulty(): void {
-        global $DB;
+    /**
+     * A file exported when the cartridges had categories and difficulties still imports, without them.
+     */
+    public function test_the_fields_of_an_older_file_are_ignored(): void {
+        $this->assertStringContainsString('"category"', $this->concept_json());
+        $this->assertStringContainsString('"difficulty"', $this->quiz_json());
         $this->resetAfterTest();
-        $user = $this->getDataGenerator()->create_user();
 
-        $result = (new importer())->import($this->concept_json(), (int) $user->id);
-
-        $badge = $DB->get_record('local_playergames_concepts', [
-            'cartridgeid' => $result->cartridgeid,
-            'term' => 'Badge',
-        ], '*', MUST_EXIST);
-        // Difficulty 9 in the payload must be clamped to the 1-5 range.
-        $this->assertSame(5, (int) $badge->difficulty);
+        $this->assertSame(3, (new importer())->import($this->concept_json(), 2)->count);
+        $this->assertSame(2, (new importer())->import($this->quiz_json(), 2)->count);
     }
 
     public function test_import_quiz_cartridge_by_type(): void {
@@ -144,8 +139,6 @@ final class importer_test extends \advanced_testcase {
 
         $first = reset($questions);
         $this->assertSame('import', $first->source);
-        $this->assertSame(2, (int) $first->difficulty);
-        $this->assertNotNull($first->categoryid);
         $answers = $DB->get_records(
             'local_playergames_concept_answers',
             ['questionid' => $first->id],
@@ -157,14 +150,6 @@ final class importer_test extends \advanced_testcase {
         $this->assertCount(1, $correct);
         $this->assertSame('Pedro Álvares Cabral', $correct[0]->answertext);
         $this->assertSame(0, (int) $correct[0]->sortorder);
-
-        // The two questions share one category name, so a single category is created.
-        $this->assertSame(1, $DB->count_records('local_playergames_categories', [
-            'cartridgeid' => $result->cartridgeid,
-        ]));
-        // Difficulty 9 in the payload is clamped to the 1-5 range.
-        $second = end($questions);
-        $this->assertSame(5, (int) $second->difficulty);
     }
 
     public function test_import_quiz_saves_general_feedback(): void {
@@ -331,8 +316,7 @@ final class importer_test extends \advanced_testcase {
         $this->assertNull($cartridge->author);
         $this->assertSame('1.0', $cartridge->version);
         $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $result->cartridgeid], '*', MUST_EXIST);
-        $this->assertNull($concept->categoryid);
-        $this->assertSame(3, (int) $concept->difficulty);
+        $this->assertSame('XP', $concept->term);
     }
 
     /**

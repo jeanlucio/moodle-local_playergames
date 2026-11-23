@@ -60,7 +60,6 @@ class data_reset {
     /** @var string[] Tables kept: the content of the games and the definitions the site set up. */
     public const KEPT = [
         'local_playergames_cartridges',
-        'local_playergames_categories',
         'local_playergames_concepts',
         'local_playergames_concept_questions',
         'local_playergames_concept_answers',

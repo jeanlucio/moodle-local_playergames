@@ -29,7 +29,7 @@ use local_playergames\cartridge\controller;
 use local_playergames\hub\level_manager;
 
 /**
- * A cartridge, a category or a concept with an ampersand in the name must reach the page escaped once:
+ * A cartridge or a concept with an ampersand in the name must reach the page escaped once:
  * format_string() already returns HTML, so a double-mustache tag would print "&amp;amp;".
  *
  * @package    local_playergames
@@ -91,12 +91,8 @@ final class text_test extends \advanced_testcase {
             'timemodified' => $now, 'uploadedby' => $uploader->id, 'author' => 'Ann & Bob', 'active' => 1,
             'type' => 'concept',
         ]);
-        $categoryid = $DB->insert_record('local_playergames_categories', (object) [
-            'cartridgeid' => $cartridgeid, 'name' => 'Tom & Jerry', 'sortorder' => 0, 'timecreated' => $now,
-        ]);
         $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $cartridgeid, 'term' => 'Salt & Pepper', 'definition' => 'Spice & herb',
-            'difficulty' => 1, 'categoryid' => $categoryid, 'language' => 'en',
+            'cartridgeid' => $cartridgeid, 'term' => 'Salt & Pepper', 'definition' => 'Spice & herb', 'language' => 'en',
         ]);
 
         $this->for_each_striptags(function (int $striptags) use ($cartridgeid, $PAGE): void {
@@ -105,7 +101,7 @@ final class text_test extends \advanced_testcase {
             $editor = (new controller(\context_system::instance(), 'editor', $cartridgeid, 0))->get_renderable($output);
             $html = $library['content_html'] . $editor['content_html'];
 
-            $expected = ['Q &amp; A &gt; 3', 'O&#039;Brien &amp; Co', 'Tom &amp; Jerry', 'Salt &amp; Pepper', 'Spice &amp; herb'];
+            $expected = ['Q &amp; A &gt; 3', 'O&#039;Brien &amp; Co', 'Salt &amp; Pepper', 'Spice &amp; herb'];
             foreach ($expected as $text) {
                 $this->assertStringContainsString($text, $html, "striptags={$striptags}: {$text}");
             }
@@ -126,8 +122,7 @@ final class text_test extends \advanced_testcase {
             'timemodified' => $now, 'uploadedby' => 2, 'author' => 'Ann', 'active' => 1, 'type' => 'concept',
         ]);
         $conceptid = $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $conceptcartridge, 'term' => 'Salt & "Pepper"', 'definition' => 'Spice & herb',
-            'difficulty' => 1, 'categoryid' => 0, 'language' => 'en',
+            'cartridgeid' => $conceptcartridge, 'term' => 'Salt & "Pepper"', 'definition' => 'Spice & herb', 'language' => 'en',
         ]);
         $quizcartridge = $DB->insert_record('local_playergames_cartridges', (object) [
             'name' => 'Quiz', 'version' => '1.0', 'language' => 'en', 'timecreated' => $now,
@@ -135,7 +130,7 @@ final class text_test extends \advanced_testcase {
         ]);
         $questionid = $DB->insert_record('local_playergames_concept_questions', (object) [
             'cartridgeid' => $quizcartridge, 'questiontext' => 'Tom & "Jerry"?', 'source' => 'manual',
-            'difficulty' => 3, 'timecreated' => $now,
+            'timecreated' => $now,
         ]);
         foreach ([['Cat & mouse', 1], ['Dog & bone', 0]] as $order => [$answer, $iscorrect]) {
             $DB->insert_record('local_playergames_concept_answers', (object) [

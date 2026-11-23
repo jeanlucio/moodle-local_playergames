@@ -62,7 +62,6 @@ final class fill_manager_test extends \advanced_testcase {
         global $DB;
         return (int) $DB->insert_record('local_playergames_concepts', (object) [
             'cartridgeid' => $cartridgeid, 'term' => $term, 'definition' => $definition,
-            'difficulty' => 1,
         ]);
     }
 

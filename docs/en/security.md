@@ -25,8 +25,8 @@ exact model IDs and data destinations is documented in
 
 ## Data Transmission
 
-When AI generation is used, the prompt built by PlayerGames (topic, language, difficulty,
-categories, and any optional reference text the teacher provides) is passed to whichever source
+When AI generation is used, the prompt built by PlayerGames (topic, language, level,
+and any optional reference text the teacher provides) is passed to whichever source
 resolved the request (the Hub or `core_ai`) for processing. PlayerGames:
 - Does not store prompts or AI responses beyond the cartridge concepts created inside Moodle
 - Never includes student data in an AI prompt

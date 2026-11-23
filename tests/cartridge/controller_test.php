@@ -149,73 +149,6 @@ final class controller_test extends \advanced_testcase {
     }
 
     /**
-     * Creates a category of a cartridge.
-     *
-     * @param int $cartridgeid The cartridge.
-     * @return int Category id.
-     */
-    private function make_category(int $cartridgeid): int {
-        global $DB;
-        return (int) $DB->insert_record('local_playergames_categories', (object) [
-            'cartridgeid' => $cartridgeid, 'name' => 'Biology', 'sortorder' => 0, 'timecreated' => time(),
-        ]);
-    }
-
-    /**
-     * Regression test: a hand-edited request could store the category of another cartridge on a concept,
-     * which then showed no category in its editor, exported another cartridge's category name and was left
-     * dangling when that category was deleted.
-     */
-    public function test_a_concept_cannot_take_the_category_of_another_cartridge(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $mine = $this->make_cartridge('Mine');
-        $other = $this->make_cartridge('Other');
-        $foreign = $this->make_category($other);
-
-        $this->run_action('action_add_concept', [
-            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $foreign,
-        ]);
-
-        $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $mine], '*', MUST_EXIST);
-        $this->assertNull($concept->categoryid);
-    }
-
-    public function test_a_concept_keeps_a_category_of_its_own_cartridge(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $mine = $this->make_cartridge('Mine');
-        $category = $this->make_category($mine);
-
-        $this->run_action('action_add_concept', [
-            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $category,
-        ]);
-
-        $concept = $DB->get_record('local_playergames_concepts', ['cartridgeid' => $mine], '*', MUST_EXIST);
-        $this->assertSame($category, (int) $concept->categoryid);
-    }
-
-    public function test_editing_a_concept_cannot_move_it_to_the_category_of_another_cartridge(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $mine = $this->make_cartridge('Mine');
-        $other = $this->make_cartridge('Other');
-        $own = $this->make_category($mine);
-        $foreign = $this->make_category($other);
-        $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $mine, 'term' => 'cell', 'definition' => 'A unit.', 'categoryid' => $own,
-            'difficulty' => 3,
-        ]);
-
-        $this->run_action('action_edit_concept', [
-            'cartridgeid' => $mine, 'concept_id' => $conceptid, 'term' => 'cell', 'definition' => 'A unit.',
-            'categoryid' => $foreign,
-        ]);
-
-        $this->assertNull($DB->get_field('local_playergames_concepts', 'categoryid', ['id' => $conceptid]));
-    }
-
-    /**
      * Posts a request to the controller the way the page does, as an administrator.
      *
      * @param array $post The posted fields, including the action.
@@ -260,7 +193,7 @@ final class controller_test extends \advanced_testcase {
         global $DB;
         $questionid = (int) $DB->insert_record('local_playergames_concept_questions', (object) [
             'conceptid' => null, 'cartridgeid' => $cartridgeid, 'questiontext' => $text, 'source' => 'manual',
-            'difficulty' => 3, 'categoryid' => null, 'timecreated' => time(),
+            'timecreated' => time(),
         ]);
         foreach (['Paris', 'Rome', 'Madrid', 'Berlin', 'Lisbon'] as $order => $answer) {
             $DB->insert_record('local_playergames_concept_answers', (object) [
@@ -326,10 +259,9 @@ final class controller_test extends \advanced_testcase {
 
         $this->dispatch([
             'action' => 'edit_concept', 'cartridgeid' => $mine, 'concept_id' => $conceptid,
-            'term' => 'cell', 'definition' => 'The basic unit', 'difficulty' => 4,
+            'term' => 'cell', 'definition' => 'The basic unit',
         ]);
         $this->assertSame('The basic unit', $DB->get_field('local_playergames_concepts', 'definition', ['id' => $conceptid]));
-        $this->assertSame(4, (int) $DB->get_field('local_playergames_concepts', 'difficulty', ['id' => $conceptid]));
 
         $this->dispatch([
             'action' => 'edit_concept', 'cartridgeid' => $mine, 'concept_id' => $conceptid, 'term' => '', 'definition' => 'x',
@@ -352,7 +284,7 @@ final class controller_test extends \advanced_testcase {
         $mine = $this->make_cartridge('Mine');
         $other = $this->make_cartridge('Other');
         $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $other, 'term' => 'cell', 'definition' => 'A unit', 'difficulty' => 3,
+            'cartridgeid' => $other, 'term' => 'cell', 'definition' => 'A unit',
         ]);
 
         $this->assertSame(
@@ -390,7 +322,7 @@ final class controller_test extends \advanced_testcase {
         $sink = $this->redirectEvents();
         $id = $this->make_cartridge('Pack');
         $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $id, 'term' => 'cell', 'definition' => 'A unit', 'difficulty' => 3,
+            'cartridgeid' => $id, 'term' => 'cell', 'definition' => 'A unit',
         ]);
 
         $this->dispatch(['action' => 'delete_cartridge', 'cartridgeid' => $id]);
@@ -406,47 +338,16 @@ final class controller_test extends \advanced_testcase {
     }
 
     /**
-     * Categories are added, renamed and deleted inside the cartridge the request names only.
-     */
-    public function test_adding_renaming_and_deleting_a_category(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $mine = $this->make_cartridge('Mine');
-        $other = $this->make_cartridge('Other');
-
-        $this->dispatch(['action' => 'add_category', 'cartridgeid' => $mine, 'category_name' => 'Biology']);
-        $categoryid = (int) $DB->get_field('local_playergames_categories', 'id', ['cartridgeid' => $mine], MUST_EXIST);
-        $this->assertSame('error_cartridge_notfound', $this->dispatch([
-            'action' => 'add_category', 'cartridgeid' => 999999, 'category_name' => 'Ghost',
-        ]));
-
-        $this->dispatch([
-            'action' => 'rename_category', 'cartridgeid' => $mine, 'category_id' => $categoryid, 'category_name' => 'Botany',
-        ]);
-        $this->assertSame('Botany', $DB->get_field('local_playergames_categories', 'name', ['id' => $categoryid]));
-        $this->dispatch([
-            'action' => 'rename_category', 'cartridgeid' => $other, 'category_id' => $categoryid, 'category_name' => 'Stolen',
-        ]);
-        $this->assertSame('Botany', $DB->get_field('local_playergames_categories', 'name', ['id' => $categoryid]));
-
-        $this->dispatch(['action' => 'delete_category', 'cartridgeid' => $other, 'category_id' => $categoryid]);
-        $this->assertTrue($DB->record_exists('local_playergames_categories', ['id' => $categoryid]));
-        $this->dispatch(['action' => 'delete_category', 'cartridgeid' => $mine, 'category_id' => $categoryid]);
-        $this->assertFalse($DB->record_exists('local_playergames_categories', ['id' => $categoryid]));
-    }
-
-    /**
      * A question is added with its right answer and four distractors, or refused when any is missing.
      */
     public function test_adding_a_quiz_question(): void {
         global $DB;
         $this->resetAfterTest();
         $quiz = $this->make_quiz_cartridge();
-        $category = $this->make_category($quiz);
         $post = [
             'action' => 'add_quiz_question', 'cartridgeid' => $quiz, 'questiontext' => 'Capital of France?',
             'correct' => 'Paris', 'distractor_0' => 'Rome', 'distractor_1' => 'Madrid', 'distractor_2' => 'Berlin',
-            'distractor_3' => 'Lisbon', 'difficulty' => 9, 'categoryid' => $category, 'generalfeedback' => 'Seine',
+            'distractor_3' => 'Lisbon', 'generalfeedback' => 'Seine',
         ];
 
         $this->dispatch(array_merge($post, ['distractor_3' => ' ']));
@@ -456,8 +357,6 @@ final class controller_test extends \advanced_testcase {
 
         $question = $DB->get_record('local_playergames_concept_questions', ['cartridgeid' => $quiz], '*', MUST_EXIST);
         $this->assertSame('manual', $question->source);
-        $this->assertSame(5, (int) $question->difficulty);
-        $this->assertSame($category, (int) $question->categoryid);
         $this->assertSame('Seine', $question->generalfeedback);
         $answers = $DB->get_records('local_playergames_concept_answers', ['questionid' => $question->id], 'sortorder ASC');
         $this->assertSame(['Paris', 'Rome', 'Madrid', 'Berlin', 'Lisbon'], array_values(array_column($answers, 'answertext')));
@@ -492,7 +391,7 @@ final class controller_test extends \advanced_testcase {
         $post = [
             'action' => 'edit_quiz_question', 'cartridgeid' => $quiz, 'question_id' => $questionid,
             'questiontext' => 'Capital of Italy?', 'correct' => 'Rome', 'distractor_0' => 'Paris',
-            'distractor_1' => 'Madrid', 'distractor_2' => 'Berlin', 'distractor_3' => 'Lisbon', 'difficulty' => 0,
+            'distractor_1' => 'Madrid', 'distractor_2' => 'Berlin', 'distractor_3' => 'Lisbon',
         ];
 
         $this->dispatch(array_merge($post, ['correct' => '']));
@@ -505,7 +404,6 @@ final class controller_test extends \advanced_testcase {
 
         $question = $DB->get_record('local_playergames_concept_questions', ['id' => $questionid], '*', MUST_EXIST);
         $this->assertSame('Capital of Italy?', $question->questiontext);
-        $this->assertSame(1, (int) $question->difficulty);
         $this->assertNull($question->generalfeedback);
         $answers = $DB->get_records('local_playergames_concept_answers', ['questionid' => $questionid], 'sortorder ASC');
         $this->assertCount(5, $answers);
@@ -621,14 +519,11 @@ final class controller_test extends \advanced_testcase {
             'action' => 'save_ai_cartridge', 'ai_cartridge_name' => 'Cells', 'ai_language' => 'en', 'ai_author' => 'Bot',
             'concept_term' => [0 => 'Nucleus', 1 => 'Membrane'],
             'concept_definition' => [0 => 'Holds the DNA', 1 => 'Wraps the cell'],
-            'concept_category' => [0 => 'Parts', 1 => 'Parts'],
-            'concept_difficulty' => [0 => 2, 1 => 3],
         ], 'ai');
 
         $cartridge = $DB->get_record('local_playergames_cartridges', ['name' => 'Cells'], '*', MUST_EXIST);
         $this->assertSame('Bot', $cartridge->author);
         $this->assertSame(2, $DB->count_records('local_playergames_concepts', ['cartridgeid' => $cartridge->id]));
-        $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $cartridge->id]));
         $this->assertNotNull($this->todays_guess_word());
         $this->assertNotEmpty(array_filter(
             $sink->get_events(),
@@ -693,30 +588,30 @@ final class controller_test extends \advanced_testcase {
             $this->markTestSkipped('The AI hub of this site has a key, which is a source in itself.');
         }
 
-        $state = $this->generate('action_generate_ai', ['topic' => 'Cells', 'quantity' => 2, 'difficulty' => 9]);
+        $state = $this->generate('action_generate_ai', ['topic' => 'Cells', 'quantity' => 2, 'level' => 9]);
 
         $this->assertNull($state['aipreview']);
         $this->assertNotSame('', $state['aierror']);
         // What was typed is kept, within the limits the form allows.
         $this->assertSame('Cells', $state['aiformdata']->topic);
         $this->assertSame(10, $state['aiformdata']->quantity);
-        $this->assertSame(5, $state['aiformdata']->difficulty);
+        $this->assertSame(5, $state['aiformdata']->level);
         $this->assertSame('ai', $state['tab']);
     }
 
     /**
-     * The concepts the model writes are indexed for the preview form, with difficulty held between 1 and 5.
+     * The concepts the model writes are indexed for the preview form, and the level is held between 1 and 5.
      */
     public function test_generating_concepts_builds_the_preview(): void {
         $this->resetAfterTest();
         $this->core_ai_writes(json_encode(['concepts' => [
-            ['term' => 'Nucleus', 'definition' => 'Holds the DNA', 'category' => 'Parts', 'difficulty' => 2],
-            ['term' => 'Membrane', 'definition' => 'Wraps the cell', 'category' => 'Parts', 'difficulty' => 9],
+            ['term' => 'Nucleus', 'definition' => 'Holds the DNA'],
+            ['term' => 'Membrane', 'definition' => 'Wraps the cell'],
         ]]));
 
         $state = $this->generate('action_generate_ai', [
-            'topic' => 'Cells', 'quantity' => 500, 'difficulty' => 0, 'ai_language' => 'English',
-            'ai_categories' => 'Parts, ,Functions', 'ai_context' => 'Biology notes',
+            'topic' => 'Cells', 'quantity' => 500, 'level' => 0, 'ai_language' => 'English',
+            'ai_context' => 'Biology notes',
         ]);
 
         $this->assertSame('', $state['aierror']);
@@ -724,10 +619,8 @@ final class controller_test extends \advanced_testcase {
         $this->assertSame('English', $state['aipreview']['language']);
         $this->assertSame([0, 1], array_column($state['aipreview']['concepts'], 'index'));
         $this->assertSame(['Nucleus', 'Membrane'], array_column($state['aipreview']['concepts'], 'term'));
-        $this->assertSame([2, 5], array_column($state['aipreview']['concepts'], 'difficulty'));
         $this->assertSame(100, $state['aiformdata']->quantity);
-        $this->assertSame(1, $state['aiformdata']->difficulty);
-        $this->assertSame('Parts, ,Functions', $state['aiformdata']->categories);
+        $this->assertSame(1, $state['aiformdata']->level);
     }
 
     /**
@@ -739,19 +632,19 @@ final class controller_test extends \advanced_testcase {
             [
                 'questiontext' => 'Capital of France?', 'correct' => 'Paris',
                 'distractors' => ['Rome', 'Madrid', 'Berlin', 'Lisbon', 'Vienna'],
-                'category' => 'Europe', 'difficulty' => 1, 'generalfeedback' => 'On the Seine.',
+                'generalfeedback' => 'On the Seine.',
             ],
             ['questiontext' => 'Too few options?', 'correct' => 'Yes', 'distractors' => ['No']],
         ]]));
 
         $state = $this->generate('action_generate_ai_quiz', [
-            'topic' => 'Capitals', 'quantity' => 1, 'ai_categories' => 'Europe',
+            'topic' => 'Capitals', 'quantity' => 1,
         ]);
 
         $this->assertSame('', $state['quizerror']);
         $this->assertSame('quiz', $state['aisubtab']);
         $this->assertSame(5, $state['quizformdata']->quantity);
-        $this->assertSame(3, $state['quizformdata']->difficulty);
+        $this->assertSame(3, $state['quizformdata']->level);
         $questions = $state['quizpreview']['questions'];
         $this->assertCount(1, $questions);
         $this->assertSame('Paris', $questions[0]['correct']);
@@ -804,7 +697,7 @@ final class controller_test extends \advanced_testcase {
         $this->resetAfterTest();
         $concepts = $this->make_cartridge('Cell biology');
         $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $concepts, 'term' => 'cell', 'definition' => 'A unit', 'difficulty' => 3,
+            'cartridgeid' => $concepts, 'term' => 'cell', 'definition' => 'A unit',
         ]);
         $quiz = $this->make_quiz_cartridge('Capitals');
         $this->make_question($quiz);
@@ -875,9 +768,9 @@ final class controller_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
         $this->core_ai_writes(json_encode(['concepts' => [
-            ['term' => 'Nucleus', 'definition' => 'Holds the DNA', 'category' => 'Parts', 'difficulty' => 2],
+            ['term' => 'Nucleus', 'definition' => 'Holds the DNA'],
         ]]));
-        $_POST = ['topic' => 'Cells', 'quantity' => 30, 'difficulty' => 4];
+        $_POST = ['topic' => 'Cells', 'quantity' => 30, 'level' => 4];
         $concepts = new controller(\context_system::instance(), 'ai', 0, 0);
         (new \ReflectionMethod($concepts, 'action_generate_ai'))->invoke($concepts);
 
@@ -895,25 +788,25 @@ final class controller_test extends \advanced_testcase {
 
         $this->assertStringContainsString('name="topic"', $conceptshtml);
         $this->assertStringContainsString('Nucleus', $conceptshtml);
+        $this->assertMatchesRegularExpression('/<option value="4" selected>\s*Hard/', $conceptshtml);
+        $this->assertMatchesRegularExpression('/<option value="3" selected>\s*Medium/', $quizhtml);
         $this->assertStringContainsString('save_ai_cartridge', $conceptshtml);
         $this->assertStringContainsString('Capital of France?', $quizhtml);
         $this->assertStringContainsString('save_ai_quiz_cartridge', $quizhtml);
     }
 
     /**
-     * Editing a concept cartridge lists its concepts and categories, and fills the form of the one chosen.
+     * Editing a concept cartridge lists its concepts, and fills the form of the one chosen.
      */
     public function test_the_concept_editor_lists_concepts_and_fills_the_form_of_the_chosen_one(): void {
         global $DB;
         $this->resetAfterTest();
         $cartridge = $this->make_cartridge('Cell biology');
-        $categoryid = $this->make_category($cartridge);
         $nucleus = (int) $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $cartridge, 'term' => 'nucleus', 'definition' => 'Holds the DNA', 'difficulty' => 2,
-            'categoryid' => $categoryid,
+            'cartridgeid' => $cartridge, 'term' => 'nucleus', 'definition' => 'Holds the DNA',
         ]);
         $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $cartridge, 'term' => 'ribosome', 'definition' => 'Makes proteins', 'difficulty' => 3,
+            'cartridgeid' => $cartridge, 'term' => 'ribosome', 'definition' => 'Makes proteins',
         ]);
 
         $listing = $this->page('editor', $cartridge);
@@ -923,10 +816,20 @@ final class controller_test extends \advanced_testcase {
         $this->assertTrue($listing['editing']);
         $this->assertStringContainsString('nucleus', $listing['content_html']);
         $this->assertStringContainsString('ribosome', $listing['content_html']);
-        $this->assertStringContainsString('Biology', $listing['content_html']);
         $this->assertStringContainsString('add_concept', $listing['content_html']);
         $this->assertStringContainsString('edit_concept', $editing['content_html']);
         $this->assertStringContainsString('add_concept', $missing['content_html']);
+    }
+
+    /**
+     * The form of a cartridge made by hand starts with the language of the user, as the AI forms do.
+     */
+    public function test_the_create_form_starts_with_the_language_of_the_user(): void {
+        $this->resetAfterTest();
+
+        $html = $this->page('create')['content_html'];
+
+        $this->assertMatchesRegularExpression('/name="cartridge_language"\s+value="English"/', $html);
     }
 
     /**
@@ -935,7 +838,6 @@ final class controller_test extends \advanced_testcase {
     public function test_the_quiz_editor_lists_questions_and_fills_the_form_of_the_chosen_one(): void {
         $this->resetAfterTest();
         $quiz = $this->make_quiz_cartridge('Capitals');
-        $this->make_category($quiz);
         $first = $this->make_question($quiz);
         $this->make_question($quiz, 'Capital of Spain?');
 
@@ -946,6 +848,10 @@ final class controller_test extends \advanced_testcase {
         $this->assertStringContainsString('Capital of France?', $listing['content_html']);
         $this->assertStringContainsString('Capital of Spain?', $listing['content_html']);
         $this->assertStringContainsString('add_quiz_question', $listing['content_html']);
+        // The questions are numbered from one, and their button says what it deletes.
+        $this->assertMatchesRegularExpression('~<td>1</td>.*<td>2</td>~s', $listing['content_html']);
+        $this->assertStringContainsString('Delete question', $listing['content_html']);
+        $this->assertStringNotContainsString('Delete concept', $listing['content_html']);
         $this->assertStringContainsString('edit_quiz_question', $editing['content_html']);
         $this->assertStringContainsString('Paris', $editing['content_html']);
         $this->assertStringContainsString('Lisbon', $editing['content_html']);
@@ -1024,7 +930,7 @@ final class controller_test extends \advanced_testcase {
         $ids = [];
         foreach (['apple', 'grape'] as $term) {
             $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit',
             ]);
         }
         $DB->insert_record('local_playergames_daily_assignments', (object) [
@@ -1071,7 +977,7 @@ final class controller_test extends \advanced_testcase {
         $ids = [];
         foreach (['apple' => $doomed, 'grape' => $kept] as $term => $cartridge) {
             $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit',
             ]);
         }
         $today = mktime(0, 0, 0);
@@ -1091,20 +997,6 @@ final class controller_test extends \advanced_testcase {
     }
 
     /**
-     * Adding a category with a name the cartridge already has is refused.
-     */
-    public function test_a_category_name_is_not_added_twice(): void {
-        global $DB;
-        $this->resetAfterTest();
-        $id = $this->make_cartridge('Pack');
-
-        $this->dispatch(['action' => 'add_category', 'cartridgeid' => $id, 'category_name' => 'Biology']);
-        $this->dispatch(['action' => 'add_category', 'cartridgeid' => $id, 'category_name' => 'Biology']);
-
-        $this->assertSame(1, $DB->count_records('local_playergames_categories', ['cartridgeid' => $id]));
-    }
-
-    /**
      * Switching off the cartridge that gave today's PlayerGuess word draws another from the others, and
      * switching it on again leaves the words as they are.
      */
@@ -1116,7 +1008,7 @@ final class controller_test extends \advanced_testcase {
         $ids = [];
         foreach (['apple' => $first, 'grape' => $second] as $term => $cartridge) {
             $ids[$term] = (int) $DB->insert_record('local_playergames_concepts', (object) [
-                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit', 'difficulty' => 3,
+                'cartridgeid' => $cartridge, 'term' => $term, 'definition' => 'A fruit',
             ]);
         }
         $today = mktime(0, 0, 0);
@@ -1183,7 +1075,7 @@ final class controller_test extends \advanced_testcase {
         $this->resetAfterTest();
         $cartridge = $this->make_cartridge('Fruits');
         $grape = (int) $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $cartridge, 'term' => 'grape', 'definition' => 'A fruit', 'difficulty' => 3,
+            'cartridgeid' => $cartridge, 'term' => 'grape', 'definition' => 'A fruit',
         ]);
         $DB->set_field('local_playergames_cartridges', 'active', 0, ['id' => $cartridge]);
 
@@ -1201,7 +1093,7 @@ final class controller_test extends \advanced_testcase {
         $cartridge = $this->make_cartridge('Fruits');
         // Too short for PlayerGuess, which draws terms of four letters or more by default.
         $conceptid = (int) $DB->insert_record('local_playergames_concepts', (object) [
-            'cartridgeid' => $cartridge, 'term' => 'fig', 'definition' => 'A fruit', 'difficulty' => 3,
+            'cartridgeid' => $cartridge, 'term' => 'fig', 'definition' => 'A fruit',
         ]);
 
         $this->dispatch([

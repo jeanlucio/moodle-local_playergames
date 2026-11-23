@@ -23,7 +23,8 @@
     Example context (json):
     {
         "action_url": "/local/playergames/cartridge.php",
-        "sesskey": "abc123"
+        "sesskey": "abc123",
+        "language": "English"
     }
 }}
 <div class="pg-tab-create">
@@ -81,7 +82,8 @@
                             {{#str}}cartridge_language, local_playergames{{/str}}
                         </label>
                         <input type="text" id="pg-new-lang" name="cartridge_language"
-                               class="form-control" placeholder="pt_BR">
+                               value="{{language}}" class="form-control"
+                               placeholder="{{#str}}cartridge_ai_language_placeholder, local_playergames{{/str}}">
                     </div>
                     <div class="col-md-4">
                         <label for="pg-new-author" class="form-label">

@@ -28,8 +28,6 @@ namespace local_playergames\cartridge;
  * Validates and imports a concept cartridge from a JSON payload.
  */
 class importer {
-    /** @var category_manager Lazy-initialised category manager instance. */
-    private ?category_manager $catmgr = null;
     /** @var int Maximum number of characters allowed in a term. */
     const MAX_TERM_LENGTH = 255;
 
@@ -47,7 +45,7 @@ class importer {
      *
      * @param string $jsonstring Raw JSON payload from the uploaded file.
      * @param int $uploaderid Moodle user ID who initiated the import.
-     * @return \stdClass Result with properties: cartridgeid, count, categories, language.
+     * @return \stdClass Result with properties: cartridgeid, count, language, type.
      * @throws \moodle_exception On validation or schema failure.
      */
     public function import(string $jsonstring, int $uploaderid): \stdClass {
@@ -116,24 +114,11 @@ class importer {
      * Saves a pre-validated array of raw concept arrays to an existing cartridge.
      *
      * @param int $cartridgeid Target cartridge ID.
-     * @param array $concepts Array of raw concept arrays (term, definition, category, difficulty).
-     * @return \stdClass Result with properties: cartridgeid, count, categories, language.
+     * @param array $concepts Array of raw concept arrays (term, definition).
+     * @return \stdClass Result with properties: cartridgeid, count, language, type.
      */
     public function save_concepts(int $cartridgeid, array $concepts): \stdClass {
         global $DB;
-
-        if ($this->catmgr === null) {
-            $this->catmgr = new category_manager();
-        }
-
-        // Pre-resolve all unique category names to IDs (avoids N+1 per-concept queries).
-        $catmap = [];
-        foreach ($concepts as $raw) {
-            $name = is_array($raw) ? payload::text($raw['category'] ?? null) : '';
-            if ($name !== '' && !array_key_exists($name, $catmap)) {
-                $catmap[$name] = $this->catmgr->ensure_category($cartridgeid, $name);
-            }
-        }
 
         $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
         $count = 0;
@@ -142,8 +127,6 @@ class importer {
             if (!is_array($raw)) {
                 continue;
             }
-            $name = payload::text($raw['category'] ?? null);
-            $raw['categoryid'] = ($name !== '' && isset($catmap[$name])) ? $catmap[$name] : null;
             $concept = $this->sanitize_concept($raw, $cartridgeid);
             // The same two fields validate_schema() requires: PlayerFill shows the definition as the clue, and
             // the exported cartridge has to import again.
@@ -157,7 +140,6 @@ class importer {
         $result = new \stdClass();
         $result->cartridgeid = $cartridgeid;
         $result->count = $count;
-        $result->categories = !empty($catmap) ? implode(', ', array_keys($catmap)) : '—';
         $result->language = $cartridge ? $cartridge->language : '';
         $result->type = 'concept';
         return $result;
@@ -168,17 +150,12 @@ class importer {
      *
      * @param int $cartridgeid Target cartridge ID.
      * @param array $questions Array of raw question arrays (questiontext, correct, distractors).
-     * @return \stdClass Result with properties: cartridgeid, count, categories, language, type.
+     * @return \stdClass Result with properties: cartridgeid, count, language, type.
      */
     public function save_questions(int $cartridgeid, array $questions): \stdClass {
         global $DB;
 
-        if ($this->catmgr === null) {
-            $this->catmgr = new category_manager();
-        }
-
         $cartridge = $DB->get_record('local_playergames_cartridges', ['id' => $cartridgeid]);
-        $catmap = [];
         $count = 0;
         $now = time();
 
@@ -197,15 +174,6 @@ class importer {
                 continue;
             }
 
-            $catname = payload::text($raw['category'] ?? null);
-            $categoryid = null;
-            if ($catname !== '') {
-                if (!array_key_exists($catname, $catmap)) {
-                    $catmap[$catname] = $this->catmgr->ensure_category($cartridgeid, $catname);
-                }
-                $categoryid = $catmap[$catname] ?: null;
-            }
-
             $feedback = payload::text($raw['generalfeedback'] ?? null);
 
             $qrecord = new \stdClass();
@@ -213,8 +181,6 @@ class importer {
             $qrecord->cartridgeid = $cartridgeid;
             $qrecord->questiontext = $qtext;
             $qrecord->source = 'import';
-            $qrecord->difficulty = payload::number($raw['difficulty'] ?? null, 1, 5, 3);
-            $qrecord->categoryid = $categoryid;
             $qrecord->generalfeedback = $feedback !== '' ? $feedback : null;
             $qrecord->timecreated = $now;
             $questionid = (int) $DB->insert_record('local_playergames_concept_questions', $qrecord);
@@ -241,7 +207,6 @@ class importer {
         $result = new \stdClass();
         $result->cartridgeid = $cartridgeid;
         $result->count = $count;
-        $result->categories = '—';
         $result->language = $cartridge ? $cartridge->language : '';
         $result->type = 'quiz';
         return $result;
@@ -338,9 +303,6 @@ class importer {
             0,
             self::MAX_DEFINITION_LENGTH
         );
-        $rawcatid = isset($raw['categoryid']) ? (int) $raw['categoryid'] : 0;
-        $concept->categoryid = $rawcatid > 0 ? $rawcatid : null;
-        $concept->difficulty = payload::number($raw['difficulty'] ?? null, 1, 5, 3);
         $concept->language = null;
         return $concept;
     }
