@@ -125,6 +125,13 @@ $templatedata = [
     'sesskey'        => sesskey(),
     'rows'           => $rows,
     'str_intro'      => get_string('levels_intro', 'local_playergames'),
+    // Where each avatar tier opens follows the ladder, so the page says it rather than asking for it.
+    'str_avatartiers' => get_string('levels_avatar_tiers', 'local_playergames', (object) [
+        't1' => \local_playergames\hub\avatar_manager::tier_threshold(1),
+        't2' => \local_playergames\hub\avatar_manager::tier_threshold(2),
+        't3' => \local_playergames\hub\avatar_manager::tier_threshold(3),
+        't4' => \local_playergames\hub\avatar_manager::tier_threshold(4),
+    ]),
     'str_col_level'  => get_string('levels_col_level', 'local_playergames'),
     'str_col_minxp'  => get_string('levels_col_minxp', 'local_playergames'),
     'str_col_title'  => get_string('levels_col_title', 'local_playergames'),

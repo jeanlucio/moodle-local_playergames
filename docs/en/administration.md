@@ -18,8 +18,7 @@ open where it leads.
 | **Rules** | Participation and seasons | Who plays (students, staff or both), whether seasons renew by themselves and how long they last. | Site administrator |
 | | Game XP | How much XP each game gives and how many times a day it can be played for XP. | Site administrator |
 | | Game rules | Time per question, attempts and the other rules of each game. | Site administrator |
-| | Levels and titles | How much XP each level takes and the title it gives. | Site administrator |
-| | Avatars | From which level each group of avatars is unlocked. | Site administrator |
+| | Levels and titles | How much XP each level takes and the title it gives. The avatars unlock along this ladder. | Site administrator |
 | | Streak and freeze | How the daily streak works and how a freeze is earned. | Site administrator |
 | | Course XP | The XP courses give through PlayerHUD, shown apart from the season XP. | Site administrator |
 | **Data** | Reset data | Deletes the seasons and everything the players earned, to start again from zero. The cartridges and the settings stay. | Site administrator |
@@ -78,7 +77,7 @@ when and how many records went (event *PlayerGames data reset*).
 
 The plugin's pages in **Site administration → Plugins → Local plugins → PlayerGames** follow the same
 groups: **Get started** (Cartridges, Seasons, Season games), **Rules** (Participation and seasons, Game XP,
-Game rules, Levels and titles, Avatars, Streak and freeze, Course XP), **Monitoring** (Engagement
+Game rules, Levels and titles, Streak and freeze, Course XP), **Monitoring** (Engagement
 Meter) and **Data** (Reset data). The Administration tab is a shortcut to them, not a replacement.
 
 Season games opens the active season, or the next one if none is active. With no season at all it leads

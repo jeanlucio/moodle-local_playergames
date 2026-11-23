@@ -16,7 +16,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `cartridge/ai_generator_test.php` | 7 | Parser de conceitos: JSON encapsulado/puro/com fences, JSON inválido e ausência de conceitos; delegação à fachada do AI Hub com fallback para `core_ai`; respostas com campos de tipo errado |
 | `cartridge/payload_test.php` | 3 | Limpeza dos campos importados e devolvidos pela IA: um escalar vira texto e qualquer outra coisa conta como ausente; um valor único vira lista; números são limitados com um valor padrão |
 | `hub/xp_manager_test.php` | 17 | Limiares de nível, cap por jogo, recompensa de missão sem cap, evento de subida de nível, posição/desempate no ranking de temporada |
-| `hub/avatar_manager_test.php` | 10 | Seed do catálogo padrão, limiares de faixa, rastreio do melhor nível vitalício, regras de desbloqueio/equipar, rejeição de equipar avatar bloqueado |
+| `hub/avatar_manager_test.php` | 15 | Seed do catálogo padrão, limiares de faixa, rastreio do melhor nível vitalício, regras de desbloqueio/equipar, rejeição de equipar avatar bloqueado |
 | `hub/learning_xp_manager_test.php` | 22 | Blocos mensais com janela, controle de visibilidade (independente de ser professor ou gestor), opt-in e posição no ranking, correção no recálculo |
 | `hub/daily_play_manager_test.php` | 6 | Múltiplas jogadas dividem o XP igualmente; jogada além da cota diária rejeitada; última jogada aparada no cap exato; o payload extra (vitória) chega ao evento e só completa a missão da batalha quando marcado; todo jogo pendente aponta para a sua página e um já jogado não |
 | `hub/level_manager_test.php` | 8 | Seed da escada, busca de XP/título, save com renumeração + piso zero, restaurar padrão, geração linear e limites |

@@ -107,5 +107,14 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112200, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112201) {
+        // The unlock level of each avatar tier is no longer set by hand: the tiers follow the level ladder.
+        foreach (range(1, 4) as $tier) {
+            unset_config('avatar_tier' . $tier . '_level', 'local_playergames');
+        }
+
+        upgrade_plugin_savepoint(true, 2026112201, 'local', 'playergames');
+    }
+
     return true;
 }

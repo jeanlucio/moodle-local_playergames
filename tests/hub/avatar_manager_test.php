@@ -97,10 +97,29 @@ final class avatar_manager_test extends \advanced_testcase {
         }
     }
 
-    public function test_tier_threshold_reads_admin_setting(): void {
+    /**
+     * The tiers are spread across the level ladder and follow it when it changes.
+     */
+    public function test_tier_thresholds_follow_the_level_ladder(): void {
         $this->resetAfterTest();
-        set_config('avatar_tier2_level', 3, 'local_playergames');
-        $this->assertSame(3, avatar_manager::tier_threshold(2));
+        level_manager::restore_defaults();
+        $five = array_map([avatar_manager::class, 'tier_threshold'], [1, 2, 3, 4]);
+        $this->assertSame([1, 2, 3, 4], $five);
+
+        level_manager::generate_linear(100, 20);
+        $twenty = array_map([avatar_manager::class, 'tier_threshold'], [1, 2, 3, 4]);
+        $this->assertSame([1, 6, 11, 16], $twenty);
+    }
+
+    /**
+     * An unlock level once set by hand, left behind by an older version, no longer moves a tier.
+     */
+    public function test_a_stored_tier_level_is_ignored(): void {
+        $this->resetAfterTest();
+        level_manager::restore_defaults();
+        set_config('avatar_tier2_level', 5, 'local_playergames');
+
+        $this->assertSame(2, avatar_manager::tier_threshold(2));
     }
 
     public function test_is_unlocked_respects_tier_level(): void {

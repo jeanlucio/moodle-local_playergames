@@ -111,18 +111,14 @@ class avatar_manager {
     /**
      * Returns the minimum level required to unlock a tier.
      *
-     * An admin-set level wins. Otherwise the tiers are spread evenly across the level ladder, the way
-     * the level titles are, so every tier stays reachable whether the ladder has 5 levels or 50: tier 1
-     * opens at level 1 and each later tier a further quarter of the ladder up.
+     * The tiers are spread evenly across the level ladder, the way the level titles are, so every tier stays
+     * reachable whether the ladder has 5 levels or 50, and follows it when the ladder changes: tier 1 opens at
+     * level 1 and each later tier a further quarter of the ladder up.
      *
      * @param int $tier Tier number (1–4).
      * @return int Minimum level.
      */
     public static function tier_threshold(int $tier): int {
-        $configured = (int) get_config('local_playergames', 'avatar_tier' . $tier . '_level');
-        if ($configured > 0) {
-            return $configured;
-        }
         $maxlevel = level_manager::max_level();
         $position = max(0, min(self::TIER_COUNT, $tier) - 1);
         return min($maxlevel, 1 + intdiv($position * $maxlevel, self::TIER_COUNT));

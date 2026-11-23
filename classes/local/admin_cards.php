@@ -167,10 +167,6 @@ final class admin_cards {
                     'state' => [self::class, 'state_levels'],
                 ],
                 [
-                    'key' => 'avatars', 'name' => 'settings_avatars_heading', 'cap' => self::CAP_CONFIG,
-                    'url' => $setting('local_playergames_avatars'),
-                ],
-                [
                     'key' => 'streak', 'name' => 'settings_streak_heading', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_streak'),
                 ],

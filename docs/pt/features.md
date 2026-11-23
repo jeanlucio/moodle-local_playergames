@@ -27,7 +27,7 @@
 * 🏅 **Player Hub — Conquistas:** Conquistas permanentes que persistem entre temporadas.
 * 🏷️ **Player Hub — Títulos:** O título de cada nível, exibido no Player Hub.
 * 🦊 **Player Hub — Coleção de Avatares:** Avatares emoji desbloqueados permanentemente pelo maior
-  nível já alcançado pelo jogador, agrupados em 4 níveis configuráveis — ver
+  nível já alcançado pelo jogador, agrupados em 4 faixas que acompanham a escada de níveis — ver
   [Avatares](#avatars).
 * 🕐 **Log Unificado de Atividade:** Um único log cronológico de todo evento de XP, streak e
   freeze (XP de temporada, XP dos cursos, freeze ganho/usado, streak quebrado), com um modal

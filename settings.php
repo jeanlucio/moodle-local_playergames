@@ -160,24 +160,6 @@ if ($hassiteconfig) {
 
     $ADMIN->add('playergames_rules', $pagexp);
 
-    // Avatars: minimum level to unlock each tier.
-    $pageavatars = new admin_settingpage(
-        'local_playergames_avatars',
-        get_string('settings_avatars_heading', 'local_playergames')
-    );
-
-    $pageavatars->add(new admin_setting_heading(
-        'local_playergames/avatars_heading',
-        get_string('settings_avatars_heading', 'local_playergames'),
-        get_string('settings_avatars_heading_desc', 'local_playergames')
-    ));
-
-    foreach (range(1, \local_playergames\hub\avatar_manager::TIER_COUNT) as $tier) {
-        $pageavatars->add(new \local_playergames\local\setting_avatar_tier($tier));
-    }
-
-    $ADMIN->add('playergames_rules', $pageavatars);
-
     // Learning XP: course XP mirrored from block_playerhud (separate, windowed pool).
     $pagelearning = new admin_settingpage(
         'local_playergames_learning',
@@ -390,7 +372,7 @@ if ($hassiteconfig) {
         $battleattempts
     ));
 
-    $ADMIN->add('playergames_rules', $page3, 'local_playergames_avatars');
+    $ADMIN->add('playergames_rules', $page3, 'local_playergames_streak');
 
     // Get started: the cartridges the games draw from, the season, and which games the season runs.
     $ADMIN->add(
@@ -433,7 +415,7 @@ if ($hassiteconfig) {
             new moodle_url('/local/playergames/manage_levels.php'),
             'moodle/site:config'
         ),
-        'local_playergames_avatars'
+        'local_playergames_streak'
     );
 
     // Engagement meter, site-wide scope (every course).

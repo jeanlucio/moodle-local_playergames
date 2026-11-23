@@ -25,7 +25,7 @@
 * 🏅 **Player Hub — Achievements:** Permanent achievements that persist across seasons.
 * 🏷️ **Player Hub — Titles:** The title of each level, shown on the Player Hub.
 * 🦊 **Player Hub — Avatar Collection:** Emoji avatars unlocked permanently by the highest level a
-  player has ever reached, grouped into 4 configurable tiers — see [Avatars](#avatars).
+  player has ever reached, grouped into 4 tiers that follow the level ladder — see [Avatars](#avatars).
 * 🕐 **Unified Activity Log:** A single, chronological log of every XP, streak and freeze event
   (season XP, course XP, freeze earned/used, streak broken), with a shared "how it works" help
   modal explaining season XP, course XP, avatars and rankings.

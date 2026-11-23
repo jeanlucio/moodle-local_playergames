@@ -15,7 +15,7 @@ PostgreSQL & MariaDB).
 | `cartridge/ai_generator_test.php` | 7 | Concept response parser: wrapped/bare/fenced JSON, invalid and missing-concepts errors; delegation to the AI Hub facade with a `core_ai` fallback; responses with fields of the wrong type |
 | `cartridge/payload_test.php` | 3 | Cleaning of imported and AI-returned fields: a scalar becomes text and anything else counts as missing; a single value is wrapped as a list; numbers are clamped with a fallback |
 | `hub/xp_manager_test.php` | 17 | Level thresholds, per-game cap enforcement, uncapped mission award, level-up event, season ranking position/tie-break |
-| `hub/avatar_manager_test.php` | 10 | Default catalog seeding, tier thresholds, lifetime best-level tracking, unlock/equip rules, locked-equip rejection |
+| `hub/avatar_manager_test.php` | 15 | Default catalog seeding, tier thresholds, lifetime best-level tracking, unlock/equip rules, locked-equip rejection |
 | `hub/learning_xp_manager_test.php` | 22 | Windowed monthly buckets, visibility gating (independent of staff status), ranking opt-in and position, recompute correctness |
 | `hub/daily_play_manager_test.php` | 6 | Multiple plays split XP evenly; play beyond the daily quota rejected; last play trimmed to the exact cap; the extra payload (victory) reaches the event and completes the battle mission only when flagged; every pending game links to its page and a played one does not |
 | `hub/level_manager_test.php` | 8 | Ladder seeding, XP/title lookups, save renumber + zero floor, restore defaults, linear generation and bounds |

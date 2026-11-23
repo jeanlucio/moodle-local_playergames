@@ -19,7 +19,7 @@ avatar away.
 
 ## Tier thresholds
 
-By default the tiers are spread evenly across the level ladder, so every avatar stays reachable
+The tiers are spread evenly across the level ladder, so every avatar stays reachable
 however many levels the ladder has: tier 1 opens at level 1 and each later tier a further quarter
 of the ladder up.
 
@@ -30,8 +30,8 @@ of the ladder up.
 | 3 | 3 | 11 |
 | 4 | 4 | 16 |
 
-Admins can set a fixed minimum level for any tier (0 keeps the automatic spread)
-(*Site administration → Plugins → Local plugins → PlayerGames → Rules → Avatars*).
+There is nothing to set: the tiers follow the ladder of **Levels and titles**, which shows where each one
+opens, and move with it when it changes.
 
 ## Equip and display
 

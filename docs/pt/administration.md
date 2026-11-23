@@ -18,8 +18,7 @@ o destino dele.
 | **Regras** | Participação e temporadas | Quem joga (só estudantes, só professores e gestores, ou todos), se as temporadas se renovam sozinhas e quanto duram. | Administrador do site |
 | | XP dos jogos | Quanto XP cada jogo dá e quantas vezes por dia ele rende XP. | Administrador do site |
 | | Regras dos jogos | Tempo por questão, tentativas e as demais regras de cada jogo. | Administrador do site |
-| | Níveis e títulos | Quanto XP cada nível exige e o título que ele dá. | Administrador do site |
-| | Avatares | A partir de que nível cada grupo de avatares é liberado. | Administrador do site |
+| | Níveis e títulos | Quanto XP cada nível exige e o título que ele dá. Os avatares se liberam ao longo desta escada. | Administrador do site |
 | | Sequência e congelamento | Como a sequência diária funciona e como se ganha um congelamento. | Administrador do site |
 | | XP dos cursos | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
 | **Dados** | Zerar dados | Apaga as temporadas e tudo o que os jogadores conquistaram, para recomeçar do zero. Os cartuchos e as configurações ficam. | Administrador do site |
@@ -80,7 +79,7 @@ quantos registros saíram (evento *Dados do PlayerGames zerados*).
 
 As páginas do plugin em **Administração do site → Plugins → Plugins locais → PlayerGames** seguem os
 mesmos grupos: **Começar** (Cartuchos, Temporadas, Jogos da temporada), **Regras** (Participação e
-temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Avatares, Sequência e congelamento, XP dos
+temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Sequência e congelamento, XP dos
 cursos), **Acompanhamento** (Engajômetro) e **Dados** (Zerar dados). A aba Administração é um atalho para elas, não um
 substituto.
 

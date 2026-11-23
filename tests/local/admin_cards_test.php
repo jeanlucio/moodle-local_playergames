@@ -98,7 +98,7 @@ final class admin_cards_test extends \advanced_testcase {
         $keys = array_map(static fn($group): array => array_column($group['cards'], 'key'), $groups);
         $this->assertSame(['cartridges', 'seasons', 'seasongames'], $keys[0]);
         $this->assertSame(
-            ['participation', 'xp', 'games', 'levels', 'avatars', 'streak', 'learning'],
+            ['participation', 'xp', 'games', 'levels', 'streak', 'learning'],
             $keys[1]
         );
         $this->assertSame(['resetdata'], $keys[2]);
