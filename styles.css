@@ -436,7 +436,8 @@ body.path-local-playergames .local-playergames-dashboard .pg-eco-edge-active {
 
 /* ── Ecosystem map: hover focus ──────────────────────────────────── */
 
-body.path-local-playergames .local-playergames-dashboard .pg-eco-dim .pg-eco-card:not(.pg-eco-card-active):not(.pg-eco-card-linked) {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-dim
+.pg-eco-card:not(.pg-eco-card-active):not(.pg-eco-card-linked) {
     opacity: 0.4;
 }
 
@@ -1028,7 +1029,14 @@ body.path-local-playergames .pg-tab-library .pg-cart-btn-danger:hover {
 /* Gold connector pins at the bottom */
 body.path-local-playergames .pg-tab-library .pg-cart-pins {
     height: 16px;
-    background: repeating-linear-gradient(90deg, var(--pg-pin-gold) 0, var(--pg-pin-gold) 7px, var(--pg-card-edge) 7px, var(--pg-card-edge) 10px);
+    background:
+        repeating-linear-gradient(
+            90deg,
+            var(--pg-pin-gold) 0,
+            var(--pg-pin-gold) 7px,
+            var(--pg-card-edge) 7px,
+            var(--pg-card-edge) 10px
+        );
     border-top: 2px solid rgba(0, 0, 0, 0.45);
     flex-shrink: 0;
 }
