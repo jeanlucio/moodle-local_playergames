@@ -38,7 +38,8 @@ class behat_local_playergames extends behat_base {
     /**
      * Converts page names to URLs for steps like 'I am on the "local_playergames > PlayerGuess" page'.
      *
-     * Recognised page names: Hub, PlayerGuess, PlayerFill, PlayerQuiz, Cartridges, Cartridge import, Seasons.
+     * Recognised page names: Hub, PlayerGuess, PlayerFill, PlayerQuiz, Cartridges, Cartridge import, Seasons,
+     * Season games.
      *
      * @param string $page The page name.
      * @return moodle_url The URL of the page.
@@ -53,6 +54,7 @@ class behat_local_playergames extends behat_base {
             'cartridges' => '/local/playergames/cartridge.php',
             'cartridge import' => '/local/playergames/cartridge.php?tab=import',
             'seasons' => '/local/playergames/manage_seasons.php',
+            'season games' => '/local/playergames/manage_season_games.php',
         ];
         $key = strtolower($page);
         if (!isset($scripts[$key])) {

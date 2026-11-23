@@ -28,7 +28,8 @@
         "str_back": "Back to seasons",
         "str_enabled": "Enabled",
         "str_cartridges": "Cartridges",
-        "str_cartridges_all": "All active cartridges",
+        "str_cartridges_all": "With all checked, the game also uses the cartridges created later.",
+        "str_none": "No cartridge checked: the game is switched off.",
         "str_inactive": "Inactive",
         "str_nocartridges": "No cartridges of this type available.",
         "str_save": "Save changes",
@@ -43,6 +44,7 @@
                     {"id": 1, "name": "Biology Q1 2026", "checked": true}
                 ],
                 "nocartridges": false,
+                "nonechecked": false,
                 "wordrule": "",
                 "fewwords": ""
             },
@@ -55,6 +57,7 @@
                     {"id": 2, "name": "History", "checked": true, "words": "0 of 20 words fit this game", "inactive": false}
                 ],
                 "nocartridges": false,
+                "nonechecked": false,
                 "wordrule": "Words that fit: a single word, only letters, from 4 to 8 letters.",
                 "fewwords": "Words that fit in the chosen cartridges: 0. This game needs at least 1."
             }
@@ -75,12 +78,13 @@
         <input type="hidden" name="sesskey" value="{{sesskey}}">
 
         {{#gamerows}}
-        <div class="card mb-3">
+        <div class="card mb-3" data-region="pg-season-game">
             <div class="card-header d-flex align-items-center">
                 <div class="form-check form-switch me-3 mb-0">
                     <input class="form-check-input"
                            type="checkbox"
                            role="switch"
+                           data-region="pg-game-switch"
                            id="pg-enabled-{{gametype}}"
                            name="enabled_{{gametype}}"
                            value="1"
@@ -95,12 +99,14 @@
                     {{! Cartridge selection }}
                     <div class="col-12">
                         <fieldset>
-                            <legend class="h6 fw-semibold">{{str_cartridges}}</legend>
+                            <legend class="h6 fw-semibold">
+                                {{str_cartridges}}<span class="visually-hidden"> — {{gamename}}</span>
+                            </legend>
                             {{#nocartridges}}
                             <p class="text-muted small">{{str_nocartridges}}</p>
                             {{/nocartridges}}
                             {{^nocartridges}}
-                            <p class="text-muted small mb-2">{{str_cartridges_all}}</p>
+                            <p class="small mb-2">{{str_cartridges_all}}</p>
                             {{#wordrule}}
                             <p class="small mb-2">{{wordrule}}</p>
                             {{/wordrule}}
@@ -113,6 +119,7 @@
                             <div class="form-check">
                                 <input class="form-check-input"
                                        type="checkbox"
+                                       data-region="pg-game-cartridge"
                                        name="cartridges_{{gametype}}[]"
                                        id="pg-cart-{{gametype}}-{{id}}"
                                        value="{{id}}"
@@ -125,6 +132,8 @@
                                 </label>
                             </div>
                             {{/cartridges}}
+                            <p class="small mb-0" role="status" data-region="pg-game-off"
+                               data-text="{{str_none}}">{{#nonechecked}}{{str_none}}{{/nonechecked}}</p>
                             {{/nocartridges}}
                         </fieldset>
                     </div>

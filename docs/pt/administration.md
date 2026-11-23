@@ -86,6 +86,9 @@ substituto.
 Jogos da temporada abre a temporada ativa, ou a próxima se nenhuma estiver ativa. Sem nenhuma temporada,
 leva à página de temporadas.
 
+Com todos os cartuchos marcados, o jogo usa também os criados depois. Sem nenhum marcado, o jogo fica desligado na
+temporada: o interruptor acompanha as caixas, e ligá-lo de novo marca todos.
+
 No PlayerGuess e no PlayerFill, cada cartucho mostra quantas das suas palavras servem para o jogo, e a página avisa
 quando os cartuchos escolhidos não bastam. Na central, o cartão do jogo diz o motivo de não ter o que jogar: sem
 cartucho ativo, sem palavras que atendam aos requisitos ou palavras do dia ainda não sorteadas.

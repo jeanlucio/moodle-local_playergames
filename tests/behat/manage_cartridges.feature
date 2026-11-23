@@ -25,7 +25,7 @@ Feature: Manage the cartridges of PlayerGames
     And I log out
     And I log in as "student1"
     And I am on the "local_playergames > PlayerGuess" page
-    Then I should not see "No terms available"
+    Then I should not see "There is no word for today"
     And "#pg-guess-board" "css_element" should exist
 
   Scenario: A cartridge switched off is shown as inactive
@@ -60,7 +60,7 @@ Feature: Manage the cartridges of PlayerGames
     And I log out
     And I log in as "student1"
     And I am on the "local_playergames > PlayerGuess" page
-    Then I should not see "No terms available"
+    Then I should not see "There is no word for today"
     And "#pg-guess-board" "css_element" should exist
 
   @javascript @_file_upload

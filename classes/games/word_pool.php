@@ -115,7 +115,7 @@ final class word_pool {
     /**
      * The active concept cartridges a game draws from in the active season.
      *
-     * The admin picks them per game in the season's game settings; none picked, no active season or a season
+     * The admin picks them per game in the season's game settings; no list, no active season or a season
      * without a row for the game (one that predates per-season configuration) means all of them.
      *
      * @param string $gametype 'guess' or 'fill'.

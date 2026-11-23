@@ -25,9 +25,9 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\season_game_config;
-use local_playergames\games\word_pool;
 use local_playergames\hub\season_manager;
 use local_playergames\local\text;
+use local_playergames\output\season_games;
 
 require_login();
 $context = context_system::instance();
@@ -58,41 +58,21 @@ $pagetitle = get_string('season_game_pagetitle', 'local_playergames', format_str
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($pagetitle);
 
-// Games grouped by content family: the quiz games read quiz cartridges, the concept games read concept cartridges.
-$gametypes = [];
-foreach (season_game_config::FAMILIES as $type => $family) {
-    $gametypes[] = ['type' => $type, 'family' => $family];
-}
-
-// Load cartridges by family type.
-$quizcartridges = $DB->get_records('local_playergames_cartridges', ['type' => 'quiz'], 'name ASC', 'id, name');
-$conceptcartridges = $DB->get_records(
-    'local_playergames_cartridges',
-    ['type' => 'concept'],
-    'name ASC',
-    'id, name, active'
-);
-
 // POST: save configuration.
 if (data_submitted()) {
     require_sesskey();
 
     $existingconfigs = season_game_config::get_all_for_season($seasonid);
+    $types = $DB->get_records_menu('local_playergames_cartridges', null, '', 'id, type');
     $records = [];
-    foreach ($gametypes as $game) {
-        $gametype = $game['type'];
-        $isquiz   = $game['family'] === 'quiz';
-
-        // Only cartridges of the kind this game reads count; none ticked means all of them.
-        $family = $isquiz ? $quizcartridges : $conceptcartridges;
-        $rawids = optional_param_array('cartridges_' . $gametype, [], PARAM_INT);
-        $kept   = array_values(array_intersect(array_map('intval', $rawids), array_map('intval', array_keys($family))));
-
-        $records[] = [
-            'gametype'     => $gametype,
-            'enabled'      => (int) optional_param('enabled_' . $gametype, 0, PARAM_INT),
-            'cartridgeids' => empty($kept) ? null : json_encode($kept),
-        ];
+    foreach (season_game_config::FAMILIES as $gametype => $family) {
+        // Only cartridges of the kind this game reads count.
+        [$enabled, $cartridgeids] = season_game_config::from_form(
+            (bool) optional_param('enabled_' . $gametype, 0, PARAM_BOOL),
+            optional_param_array('cartridges_' . $gametype, [], PARAM_INT),
+            array_map('intval', array_keys($types, $family, true))
+        );
+        $records[] = ['gametype' => $gametype, 'enabled' => $enabled, 'cartridgeids' => $cartridgeids];
     }
 
     foreach ($records as $record) {
@@ -122,84 +102,19 @@ if (data_submitted()) {
     );
 }
 
-// Load saved config, keyed by gametype.
-$savedconfigs = season_game_config::get_all_for_season($seasonid);
+$PAGE->requires->js_call_amd('local_playergames/season_games', 'init');
+echo $OUTPUT->header();
 
-// Build template data for each game row.
-$wordusage = word_pool::usage();
-$gamerows = [];
-foreach ($gametypes as $game) {
-    $gametype = $game['type'];
-    $family   = $game['family'];
-    $saved    = $savedconfigs[$gametype] ?? null;
-
-    $savedids = [];
-    if ($saved && $saved->cartridgeids !== null) {
-        $decoded = json_decode($saved->cartridgeids, true);
-        $savedids = is_array($decoded) ? array_map('intval', $decoded) : [];
-    }
-
-    // Build cartridge checkbox list.
-    $cartridgelist = $family === 'quiz' ? $quizcartridges : $conceptcartridges;
-    $cartridgerows = [];
-    $usablewords = 0;
-    foreach ($cartridgelist as $c) {
-        $row = [
-            'id'      => (int) $c->id,
-            'name'    => text::plain($c->name),
-            'checked' => empty($savedids) || in_array((int) $c->id, $savedids, true),
-        ];
-        if ($family === 'concept') {
-            // The game draws only from active cartridges, so the words of an inactive one do not count.
-            $usage = $wordusage[(int) $c->id] ?? [$gametype => 0, 'total' => 0];
-            $usablewords += $row['checked'] && $c->active ? $usage[$gametype] : 0;
-            $row['words'] = get_string(
-                'season_game_words',
-                'local_playergames',
-                ['usable' => $usage[$gametype], 'total' => $usage['total']]
-            );
-            $row['inactive'] = !$c->active;
-        }
-        $cartridgerows[] = $row;
-    }
-
-    $wordrule = '';
-    $fewwords = '';
-    if ($family === 'concept') {
-        [$minlen, $maxlen] = word_pool::length_range($gametype);
-        $wordrule = get_string('season_game_words_rule', 'local_playergames', ['min' => $minlen, 'max' => $maxlen]);
-        $needed = word_pool::needed($gametype);
-        $enabled = !$saved || $saved->enabled;
-        if ($enabled && $cartridgerows !== [] && $usablewords < $needed) {
-            $fewwords = get_string(
-                'season_game_words_few',
-                'local_playergames',
-                ['usable' => $usablewords, 'needed' => $needed]
-            );
-        }
-    }
-
-    $gamerows[] = [
-        'gametype'        => $gametype,
-        'gamename'        => get_string('hub_game_' . $gametype, 'local_playergames'),
-        'family'          => $family,
-        'enabled'         => $saved ? (bool) $saved->enabled : true,
-        'cartridges'      => $cartridgerows,
-        'nocartridges'    => empty($cartridgerows),
-        'wordrule'        => $wordrule,
-        'fewwords'        => $fewwords,
-    ];
-}
-
-$templatedata = [
+// After the header, since until then $OUTPUT is a placeholder that is not a renderer.
+$templatedata = (new season_games($seasonid))->export_for_template($OUTPUT) + [
     'seasonname'   => text::plain($season->name),
     'formaction'   => $pageurl->out(false),
     'sesskey'      => sesskey(),
-    'gamerows'     => $gamerows,
     'backurl'      => (new moodle_url('/local/playergames/manage_seasons.php'))->out(false),
     'str_back'     => get_string('season_game_back', 'local_playergames'),
     'str_enabled'  => get_string('season_game_enabled', 'local_playergames'),
     'str_cartridges' => get_string('season_game_cartridges', 'local_playergames'),
+    'str_none' => get_string('season_game_cartridges_off', 'local_playergames'),
     'str_cartridges_all' => get_string('season_game_cartridges_all', 'local_playergames'),
     'str_inactive' => get_string('cartridge_inactive', 'local_playergames'),
     'str_nocartridges' => get_string('season_game_cartridges_none', 'local_playergames'),
@@ -207,6 +122,5 @@ $templatedata = [
     'str_heading'  => get_string('season_game_heading', 'local_playergames', text::plain($season->name)),
 ];
 
-echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_playergames/manage_season_games', $templatedata);
 echo $OUTPUT->footer();

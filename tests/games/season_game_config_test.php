@@ -63,6 +63,20 @@ final class season_game_config_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * All ticked means every cartridge, none ticked switches the game off, and an empty site changes nothing.
+     */
+    public function test_from_form(): void {
+        $this->assertSame([1, null], season_game_config::from_form(true, [5, 7], [5, 7]));
+        $this->assertSame([0, null], season_game_config::from_form(false, [5, 7], [5, 7]));
+        $this->assertSame([1, '[7]'], season_game_config::from_form(true, [7], [5, 7]));
+        $this->assertSame([0, '[7]'], season_game_config::from_form(false, [7], [5, 7]));
+        $this->assertSame([0, '[]'], season_game_config::from_form(true, [], [5, 7]));
+        // A cartridge of another kind, or one that is gone, does not count.
+        $this->assertSame([0, '[]'], season_game_config::from_form(true, [9], [5, 7]));
+        $this->assertSame([1, null], season_game_config::from_form(true, [], []));
+    }
+
     public function test_get_for_active_season_without_season(): void {
         $this->resetAfterTest();
         $this->assertNull(season_game_config::get_for_active_season('quiz'));

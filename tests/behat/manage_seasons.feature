@@ -25,3 +25,36 @@ Feature: Manage the seasons of PlayerGames
     When I press "Activate"
     Then I should see "Season activated."
     And I should see "Active" in the "Spring" "table_row"
+
+  Scenario: A game whose cartridges are all unchecked is switched off
+    Given the following "local_playergames > seasons" exist:
+      | name   |
+      | Spring |
+    And the following "local_playergames > cartridges" exist:
+      | name   |
+      | Fruits |
+    And I am on the "local_playergames > Season games" page
+    And the field "Fruits" in the "PlayerGuess" "fieldset" matches value "1"
+    When I set the field "Fruits" in the "PlayerGuess" "fieldset" to ""
+    And I press "Save changes"
+    Then I should see "Game configuration saved."
+    And the field "Fruits" in the "PlayerGuess" "fieldset" matches value ""
+    And the field "pg-enabled-guess" matches value ""
+    And the field "Fruits" in the "PlayerFill" "fieldset" matches value "1"
+    And the field "pg-enabled-fill" matches value "1"
+
+  @javascript
+  Scenario: The switch of a game follows its cartridges
+    Given the following "local_playergames > seasons" exist:
+      | name   |
+      | Spring |
+    And the following "local_playergames > cartridges" exist:
+      | name   |
+      | Fruits |
+    And I am on the "local_playergames > Season games" page
+    When I click on "Fruits" "checkbox" in the "PlayerGuess" "fieldset"
+    Then the field "pg-enabled-guess" matches value ""
+    And I should see "No cartridge checked" in the "PlayerGuess" "fieldset"
+    And I click on "pg-enabled-guess" "checkbox"
+    And the field "Fruits" in the "PlayerGuess" "fieldset" matches value "1"
+    And I should not see "No cartridge checked" in the "PlayerGuess" "fieldset"

@@ -46,6 +46,7 @@ PostgreSQL & MariaDB).
 | `task/recompute_learning_xp_test.php` | 2 | Nightly window recompute prunes aged-out buckets and corrects cache drift |
 | `privacy/provider_test.php` | 9 | Metadata, contexts, userlist, export, and the three deletion paths; every declared table lists exactly its real columns |
 | `output/hub_test.php` | 2 | Who is offered the seasons page while there is no season: the administrator, and no one else |
+| `output/season_games_test.php` | 2 | The season games page: cartridges ticked as they were saved, all of them without a list and none with an empty one; warning about too few words |
 | `local/access_test.php` | 16 | Staff detection (site admin, course-editing capability), bulk staff-id resolution, hub visibility rules; where each role lands |
 | `local/admin_cards_test.php` | 8 | Administration tab: cards and groups by permission (administrator, manager, student), the tab in the navigation, the state of each card, a season name escaped once, and the documentation link opening in a new tab |
 | `local/game_page_test.php` | 2 | The notice of the game pages when no season is active, and that it never says the game was already played |

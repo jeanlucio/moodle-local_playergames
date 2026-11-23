@@ -115,6 +115,26 @@ class season_game_config {
     }
 
     /**
+     * Turns the form of a game into what the season stores.
+     *
+     * With every cartridge ticked no list is stored, so the ones created later are used as well; with none ticked the
+     * game has nothing to draw from and is switched off. A site with no cartridge of the kind has nothing to tick, and
+     * leaves the game as the switch says.
+     *
+     * @param bool $enabled Whether the switch is on.
+     * @param int[] $ticked Ids of the ticked cartridges.
+     * @param int[] $available Ids of all the cartridges the game could use.
+     * @return array [int enabled, string|null cartridgeids]
+     */
+    public static function from_form(bool $enabled, array $ticked, array $available): array {
+        $kept = array_values(array_intersect($available, $ticked));
+        if (count($kept) === count($available)) {
+            return [(int) $enabled, null];
+        }
+        return [(int) ($enabled && $kept !== []), json_encode($kept)];
+    }
+
+    /**
      * Drops today's words of the concept games that came from a cartridge the season no longer keeps for them.
      *
      * The word of the day is drawn at midnight from the cartridges the season keeps for the game, so narrowing

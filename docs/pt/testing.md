@@ -47,6 +47,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `task/recompute_learning_xp_test.php` | 2 | Recálculo noturno da janela descarta blocos vencidos e corrige desvio de cache |
 | `privacy/provider_test.php` | 9 | Metadata, contextos, userlist, export e as três rotas de deleção; toda tabela declarada lista exatamente as suas colunas reais |
 | `output/hub_test.php` | 2 | Quem recebe o atalho para a página de temporadas enquanto não há temporada: o administrador, e mais ninguém |
+| `output/season_games_test.php` | 2 | Página de jogos da temporada: cartuchos marcados como foram salvos, todos sem lista e nenhum com a lista vazia; aviso de poucas palavras |
 | `local/access_test.php` | 16 | Detecção de professores e gestores (admin de site, capacidade de edição de curso), resolução em lote dos ids de professores e gestores, regras de visibilidade do hub; para onde cada papel é levado |
 | `local/admin_cards_test.php` | 8 | Aba Administração: cards e grupos por permissão (administrador, gerente, estudante), a aba na navegação, o estado de cada card, nome de temporada escapado uma vez e o link da documentação abrindo em nova aba |
 | `local/game_page_test.php` | 2 | O aviso das páginas de jogo quando não há temporada ativa, e que ele nunca diz que o jogo já foi jogado |
