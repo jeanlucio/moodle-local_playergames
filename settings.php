@@ -417,6 +417,16 @@ if ($hassiteconfig) {
         ),
         'local_playergames_streak'
     );
+    $ADMIN->add(
+        'playergames_rules',
+        new admin_externalpage(
+            'local_playergames_manage_missions',
+            get_string('admin_item_missions', 'local_playergames'),
+            new moodle_url('/local/playergames/manage_missions.php'),
+            'moodle/site:config'
+        ),
+        'local_playergames_learning'
+    );
 
     // Engagement meter, site-wide scope (every course).
     // This admin entry is intentionally distinct from the dashboard's "Engagement"

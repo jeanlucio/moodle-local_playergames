@@ -167,6 +167,7 @@ class provider implements
             'currentvalue'  => 'privacy:metadata:local_playergames_mission_progress:currentvalue',
             'completed'     => 'privacy:metadata:local_playergames_mission_progress:completed',
             'timecompleted' => 'privacy:metadata:local_playergames_mission_progress:timecompleted',
+            'timefirstcompleted' => 'privacy:metadata:local_playergames_mission_progress:timefirstcompleted',
         ], 'privacy:metadata:local_playergames_mission_progress');
 
         $collection->add_database_table('local_playergames_user_achievements', [

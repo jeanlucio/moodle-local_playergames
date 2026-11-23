@@ -203,4 +203,37 @@ final class db_upgrade_test extends advanced_testcase {
         $this->assertFalse($dbman->table_exists($categories));
         $this->assertTrue($DB->record_exists('local_playergames_concepts', ['term' => 'apple']));
     }
+
+    /**
+     * The missions get a name and a switch, lose the fixed description, and keep the first completion apart.
+     *
+     * @return void
+     */
+    public function test_upgrade_lets_the_missions_be_named_and_switched_off(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->libdir . '/upgradelib.php');
+        require_once($CFG->dirroot . '/local/playergames/db/upgrade.php');
+        $this->resetAfterTest();
+        $this->preventResetByRollback();
+        $dbman = $DB->get_manager();
+        $missions = new \xmldb_table('local_playergames_missions');
+        $progress = new \xmldb_table('local_playergames_mission_progress');
+        foreach (['name', 'enabled'] as $name) {
+            $dbman->drop_field($missions, new \xmldb_field($name));
+        }
+        $dbman->drop_field($progress, new \xmldb_field('timefirstcompleted'));
+        $dbman->add_field($missions, new \xmldb_field('descstring', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, 'x'));
+        $DB->insert_record('local_playergames_mission_progress', (object) [
+            'userid' => 2, 'missionid' => 1, 'seasonid' => 1, 'currentvalue' => 1, 'completed' => 1, 'timecompleted' => 1234,
+        ]);
+        set_config('version', 2026112301, 'local_playergames');
+
+        $this->assertTrue(xmldb_local_playergames_upgrade(2026112301));
+
+        $this->assertTrue($dbman->field_exists($missions, new \xmldb_field('enabled')));
+        $this->assertTrue($dbman->field_exists($missions, new \xmldb_field('name')));
+        $this->assertFalse($dbman->field_exists($missions, new \xmldb_field('descstring')));
+        $this->assertEquals(1234, $DB->get_field('local_playergames_mission_progress', 'timefirstcompleted', ['userid' => 2]));
+    }
 }

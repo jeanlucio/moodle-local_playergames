@@ -79,14 +79,157 @@ final class mission_manager_test extends \advanced_testcase {
         $this->assertSame(5, $DB->count_records('local_playergames_missions'));
     }
 
-    public function test_get_all_is_keyed_by_type(): void {
+    public function test_get_all_lists_the_missions_a_site_starts_with(): void {
         $this->resetAfterTest();
 
         $missions = mission_manager::get_all();
 
-        $this->assertCount(5, $missions);
-        $this->assertArrayHasKey('daily', $missions);
-        $this->assertArrayHasKey('checkin_streak', $missions);
+        $this->assertSame(array_keys($missions), array_map('intval', array_column($missions, 'id')));
+        $this->assertSame(['daily', 'streak', 'cumulative', 'battle_win', 'checkin_streak'], array_column($missions, 'type'));
+        $this->assertSame(get_string('mission_streak_name', 'local_playergames'), mission_manager::display_name(
+            $missions[array_search('streak', array_column($missions, 'type', 'id'))]
+        ));
+    }
+
+    /**
+     * Adds a mission through the manager.
+     *
+     * @param string $type The kind.
+     * @param int $target The target.
+     * @param int $xp The XP reward.
+     * @param string $name The name.
+     * @return int The mission id.
+     */
+    private function add_mission(string $type, int $target, int $xp = 10, string $name = ''): int {
+        return mission_manager::save((object) [
+            'id' => 0, 'type' => $type, 'name' => $name, 'targetvalue' => $target, 'xpreward' => $xp,
+            'freezereward' => 0, 'enabled' => 1,
+        ]);
+    }
+
+    /**
+     * Two missions of one kind move on together, each to its own target.
+     */
+    public function test_missions_of_the_same_kind_each_reach_their_own_target(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $seasonid = $this->make_season();
+        $user = $this->getDataGenerator()->create_user();
+        mission_manager::sync();
+        $three = $this->add_mission('battle_win', 3, 40, 'Triple win');
+
+        mission_manager::update((int) $user->id, $seasonid, 'battle_won');
+        mission_manager::update((int) $user->id, $seasonid, 'battle_won');
+        $first = $DB->get_record('local_playergames_missions', ['namestring' => 'mission_battle_win_name']);
+        $progress = fn(int $id): \stdClass => $DB->get_record(
+            'local_playergames_mission_progress',
+            ['missionid' => $id, 'userid' => $user->id]
+        );
+        $this->assertEquals(1, $progress((int) $first->id)->completed);
+        $this->assertEquals(0, $progress($three)->completed);
+        $this->assertEquals(2, $progress($three)->currentvalue);
+
+        mission_manager::update((int) $user->id, $seasonid, 'battle_won');
+        $this->assertEquals(1, $progress($three)->completed);
+        $this->assertSame(30 + 40, $this->xp((int) $user->id, $seasonid));
+        $named = $DB->get_record('local_playergames_missions', ['id' => $three]);
+        $this->assertSame('Triple win', mission_manager::display_name($named));
+    }
+
+    /**
+     * The description says the target, in the singular where there is one.
+     */
+    public function test_the_description_follows_the_target(): void {
+        $this->resetAfterTest();
+        $mission = fn(string $type, int $target): \stdClass => (object) ['type' => $type, 'targetvalue' => $target];
+
+        $this->assertSame(
+            get_string('mission_desc_streak', 'local_playergames', 30),
+            mission_manager::description($mission('streak', 30))
+        );
+        $this->assertSame(
+            get_string('mission_desc_daily_one', 'local_playergames'),
+            mission_manager::description($mission('daily', 1))
+        );
+        $this->assertSame(
+            get_string('mission_desc_daily', 'local_playergames', 3),
+            mission_manager::description($mission('daily', 3))
+        );
+        $this->assertStringContainsString('30', mission_manager::description($mission('streak', 30)));
+    }
+
+    /**
+     * A mission that is off neither moves on nor shows; a new one can be deleted, one somebody started cannot.
+     */
+    public function test_a_mission_off_does_not_move_and_one_with_a_history_is_not_deleted(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $seasonid = $this->make_season();
+        $user = $this->getDataGenerator()->create_user();
+        mission_manager::sync();
+        $daily = (int) $DB->get_field('local_playergames_missions', 'id', ['type' => 'daily']);
+        $spare = $this->add_mission('daily', 2);
+
+        $this->assertTrue(mission_manager::set_enabled($daily, false));
+        $this->assertArrayNotHasKey($daily, mission_manager::get_enabled());
+        mission_manager::update((int) $user->id, $seasonid, 'game_played');
+        $this->assertFalse($DB->record_exists('local_playergames_mission_progress', ['missionid' => $daily]));
+        $this->assertTrue($DB->record_exists('local_playergames_mission_progress', ['missionid' => $spare]));
+
+        $this->assertFalse(mission_manager::delete($spare));
+        $this->assertTrue($DB->record_exists('local_playergames_missions', ['id' => $spare]));
+        $this->assertTrue(mission_manager::delete($daily));
+        $this->assertFalse($DB->record_exists('local_playergames_missions', ['id' => $daily]));
+    }
+
+    /**
+     * Once somebody completes a mission in the active season, it stays on and keeps its target and rewards until the
+     * season ends; only its name changes.
+     */
+    public function test_a_mission_completed_this_season_is_locked_until_it_ends(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $seasonid = $this->make_season();
+        $user = $this->getDataGenerator()->create_user();
+        mission_manager::sync();
+        $daily = $DB->get_record('local_playergames_missions', ['type' => 'daily'], '*', MUST_EXIST);
+        $this->assertFalse(mission_manager::is_locked((int) $daily->id));
+
+        mission_manager::update((int) $user->id, $seasonid, 'game_played');
+        $this->assertTrue(mission_manager::is_locked((int) $daily->id));
+        $this->assertFalse(mission_manager::set_enabled((int) $daily->id, false));
+        mission_manager::save((object) [
+            'id' => $daily->id, 'name' => 'Daily player', 'targetvalue' => 5, 'xpreward' => 500, 'freezereward' => 0,
+            'enabled' => 0,
+        ]);
+        $after = $DB->get_record('local_playergames_missions', ['id' => $daily->id], '*', MUST_EXIST);
+        $this->assertSame('Daily player', $after->name);
+        $this->assertEquals([1, 5, 1], [$after->targetvalue, $after->xpreward, $after->enabled]);
+
+        // The daily mission starts again the next day, and it was still completed this season.
+        $DB->set_field('local_playergames_mission_progress', 'timecompleted', time() - 2 * DAYSECS);
+        mission_manager::reset_daily($seasonid);
+        $this->assertTrue(mission_manager::is_locked((int) $daily->id));
+
+        $DB->set_field('local_playergames_seasons', 'status', 'closed', ['id' => $seasonid]);
+        $this->assertFalse(mission_manager::is_locked((int) $daily->id));
+        $this->assertTrue(mission_manager::set_enabled((int) $daily->id, false));
+    }
+
+    /**
+     * The values of a mission stay inside the range of its kind, and a mission gives something.
+     */
+    public function test_the_values_of_a_mission_are_checked(): void {
+        $this->resetAfterTest();
+        $this->assertSame([], mission_manager::errors('streak', 30, 100, 1));
+        $this->assertSame(['targetvalue' => 'error_mission_target'], mission_manager::errors('streak', 1, 10, 0));
+        $this->assertSame(['targetvalue' => 'error_mission_target'], mission_manager::errors('daily', 21, 10, 0));
+        $this->assertSame(['xpreward' => 'error_mission_noreward'], mission_manager::errors('daily', 1, 0, 0));
+        $this->assertSame(['xpreward' => 'error_mission_xp'], mission_manager::errors('daily', 1, -1, 0));
+        $this->assertSame(['freezereward' => 'error_mission_freezes'], mission_manager::errors('daily', 1, 5, 99));
+
+        $this->expectException(\moodle_exception::class);
+        $this->add_mission('quiz_master', 3);
     }
 
     public function test_update_daily_completes_and_awards_xp(): void {

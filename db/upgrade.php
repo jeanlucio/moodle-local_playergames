@@ -153,5 +153,37 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112301, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112303) {
+        // The missions can be named, switched off and added by the administrator, and their description is built
+        // from their target instead of a fixed string.
+        $table = new xmldb_table('local_playergames_missions');
+        $fields = [
+            new xmldb_field('name', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'icon'),
+            new xmldb_field('enabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'name'),
+        ];
+        foreach ($fields as $field) {
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        $field = new xmldb_field('descstring');
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        // A mission completed in a season stays as it is until the season ends, also a daily one, which starts again
+        // every day: the first completion is kept apart from the one of today.
+        $table = new xmldb_table('local_playergames_mission_progress');
+        $field = new xmldb_field('timefirstcompleted', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'timecompleted');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+            $DB->execute(
+                'UPDATE {local_playergames_mission_progress} SET timefirstcompleted = timecompleted WHERE timecompleted IS NOT NULL'
+            );
+        }
+
+        upgrade_plugin_savepoint(true, 2026112303, 'local', 'playergames');
+    }
+
     return true;
 }

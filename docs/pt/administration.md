@@ -20,6 +20,7 @@ o destino dele.
 | | Regras dos jogos | Tempo por questão, tentativas e as demais regras de cada jogo. | Administrador do site |
 | | Níveis e títulos | Quanto XP cada nível exige e o título que ele dá. Os avatares se liberam ao longo desta escada. | Administrador do site |
 | | Sequência e congelamento | Como a sequência diária funciona e como se ganha um congelamento. | Administrador do site |
+| | Missões | As metas que dão XP extra ou congelamento: metas e prêmios, e novas missões dos mesmos tipos. | Administrador do site |
 | | XP dos cursos | O XP que os cursos geram pelo PlayerHUD, mostrado à parte do XP da temporada. | Administrador do site |
 | **Dados** | Zerar dados | Apaga as temporadas e tudo o que os jogadores conquistaram, para recomeçar do zero. Os cartuchos e as configurações ficam. | Administrador do site |
 | **Ajuda e integrações** | Chaves de IA | Chaves usadas para gerar questões com IA. Só aparece com o plugin Central de IA instalado. | Administrador do site |
@@ -79,9 +80,28 @@ quantos registros saíram (evento *Dados do PlayerGames zerados*).
 
 As páginas do plugin em **Administração do site → Plugins → Plugins locais → PlayerGames** seguem os
 mesmos grupos: **Começar** (Cartuchos, Temporadas, Jogos da temporada), **Regras** (Participação e
-temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Sequência e congelamento, XP dos
-cursos), **Acompanhamento** (Engajômetro) e **Dados** (Zerar dados). A aba Administração é um atalho para elas, não um
+temporadas, XP dos jogos, Regras dos jogos, Níveis e títulos, Sequência e congelamento, Missões,
+XP dos cursos), **Acompanhamento** (Engajômetro) e **Dados** (Zerar dados). A aba Administração é um atalho para elas, não um
 substituto.
+
+## Missões
+
+Uma missão pede uma de cinco coisas: jogos no mesmo dia, uma sequência de dias, XP na temporada, vitórias no
+PlayerBattle ou check-ins seguidos. O site começa com uma de cada, e o administrador pode mudar a meta e os prêmios,
+dar um nome, desativar ou adicionar outras dos mesmos tipos (uma sequência de 30 dias que vale mais XP, por exemplo).
+Cada missão vale uma vez por temporada, menos as diárias, que recomeçam todo dia.
+
+Depois que alguém conclui uma missão na temporada ativa, ela não pode ser desativada e a meta e os prêmios ficam
+como estão até o fim da temporada, para que todos joguem pelas mesmas regras; só o nome pode mudar. Uma missão que
+alguém já começou pode ser desativada, mas não excluída, porque as temporadas contam as missões que seus jogadores
+concluíram.
+
+## XP máximo da temporada
+
+A página de temporadas mostra, para cada temporada, o máximo de XP que um jogador pode ganhar nela: todos os jogos
+vencidos em todos os dias, todos os check-ins até o limite e todas as missões que a temporada permite cumprir. Os
+jogos e o check-in seguem as regras que a temporada guardou ao ser criada; as missões são as ativas agora. O XP dos
+cursos fica à parte e não entra na conta.
 
 Jogos da temporada abre a temporada ativa, ou a próxima se nenhuma estiver ativa. Sem nenhuma temporada,
 leva à página de temporadas.

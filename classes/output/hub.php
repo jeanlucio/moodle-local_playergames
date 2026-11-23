@@ -493,7 +493,7 @@ class hub implements renderable, templatable {
     private function get_missions(int $userid, int $seasonid): array {
         global $DB;
 
-        $missions = mission_manager::get_all();
+        $missions = mission_manager::get_enabled();
         if (empty($missions)) {
             return [];
         }
@@ -522,8 +522,8 @@ class hub implements renderable, templatable {
             $pct       = $target > 0 ? min(100, (int) round(($current / $target) * 100)) : 0;
             $result[]  = [
                 'icon'         => $mission->icon,
-                'name'         => get_string($mission->namestring, 'local_playergames'),
-                'desc'         => get_string($mission->descstring, 'local_playergames'),
+                'name'         => mission_manager::display_name($mission),
+                'desc'         => mission_manager::description($mission),
                 'current'      => $current,
                 'target'       => $target,
                 'completed'    => $completed,

@@ -1,0 +1,89 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_playergames/manage_missions
+
+    The missions of the site: what each asks and gives, whether it is on, and whether somebody completed it in the
+    active season, which keeps it as it is until the season ends.
+
+    Example context (json):
+    {
+        "addurl": "/local/playergames/manage_missions.php?action=add",
+        "missions": [
+            {
+                "icon": "fa-fire",
+                "name": "On a roll",
+                "goal": "Reach a streak of 7 days of activity.",
+                "reward": "50 XP + 1 freeze",
+                "enabled": true,
+                "locked": true,
+                "editurl": "/local/playergames/manage_missions.php?action=edit&id=2",
+                "toggleurl": "",
+                "togglelabel": "Switch off",
+                "deleteurl": ""
+            }
+        ]
+    }
+}}
+<div class="local-playergames-missions">
+    <p>{{#str}} mission_intro, local_playergames {{/str}}</p>
+
+    <div class="table-responsive">
+        <table class="table pg-missions-table">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} mission_col_name, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} mission_col_goal, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} mission_col_reward, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} mission_col_state, local_playergames {{/str}}</th>
+                    <th scope="col">{{#str}} actions {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#missions}}
+                <tr>
+                    <td><i class="fa {{icon}} me-2 pg-mission-icon" aria-hidden="true"></i>{{name}}</td>
+                    <td>{{goal}}</td>
+                    <td>{{reward}}</td>
+                    <td>
+                        {{#enabled}}<span class="badge pg-badge-success">{{#str}} mission_enabled, local_playergames {{/str}}</span>{{/enabled}}
+                        {{^enabled}}<span class="badge bg-secondary">{{#str}} mission_off, local_playergames {{/str}}</span>{{/enabled}}
+                        {{#locked}}
+                        <span class="badge bg-warning text-dark" title="{{#str}} mission_locked_help, local_playergames {{/str}}">
+                            <i class="fa fa-lock me-1" aria-hidden="true"></i>{{#str}} mission_locked, local_playergames {{/str}}
+                        </span>
+                        {{/locked}}
+                    </td>
+                    <td class="pg-mission-actions">
+                        <a href="{{editurl}}" class="btn btn-sm btn-outline-secondary">{{#str}} edit {{/str}}</a>
+                        {{#toggleurl}}
+                        <a href="{{toggleurl}}" class="btn btn-sm btn-outline-secondary">{{togglelabel}}</a>
+                        {{/toggleurl}}
+                        {{#deleteurl}}
+                        <a href="{{deleteurl}}" class="btn btn-sm btn-outline-danger">{{#str}} delete {{/str}}</a>
+                        {{/deleteurl}}
+                    </td>
+                </tr>
+                {{/missions}}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="{{addurl}}" class="btn btn-primary">
+        <i class="fa fa-plus me-1" aria-hidden="true"></i>{{#str}} mission_add, local_playergames {{/str}}
+    </a>
+</div>

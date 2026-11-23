@@ -172,6 +172,11 @@ final class admin_cards {
                     'url' => $setting('local_playergames_streak'),
                 ],
                 [
+                    'key' => 'missions', 'icon' => 'fa-bullseye', 'name' => 'admin_item_missions', 'cap' => self::CAP_CONFIG,
+                    'url' => new moodle_url('/local/playergames/manage_missions.php'),
+                    'state' => [self::class, 'state_missions'],
+                ],
+                [
                     'key' => 'learning', 'icon' => 'fa-graduation-cap', 'name' => 'settings_learningxp_heading',
                     'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_learning'),
@@ -205,6 +210,20 @@ final class admin_cards {
      */
     public static function has_ai_hub(): bool {
         return \core_component::get_component_directory('local_aihub') !== null;
+    }
+
+    /**
+     * The state of the missions card.
+     *
+     * @param int $userid The user.
+     * @return string
+     */
+    public static function state_missions(int $userid): string {
+        $missions = \local_playergames\hub\mission_manager::get_all();
+        return get_string('admin_state_missions', 'local_playergames', (object) [
+            'on' => count(array_filter($missions, static fn(\stdClass $mission): bool => (bool) $mission->enabled)),
+            'total' => count($missions),
+        ]);
     }
 
     /**

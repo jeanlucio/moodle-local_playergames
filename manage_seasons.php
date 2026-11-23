@@ -166,6 +166,7 @@ $seasondata = [];
 $playercounts = season_summary::count_players_by_season();
 foreach ($seasons as $season) {
     $playercount = $playercounts[(int) $season->id] ?? 0;
+    $xpceiling = \local_playergames\hub\season_xp::ceiling($season);
     if ($season->status === season_manager::STATUS_ACTIVE) {
         $statusbadge = 'pg-badge-success';
     } else if ($season->status === season_manager::STATUS_UPCOMING) {
@@ -182,6 +183,13 @@ foreach ($seasons as $season) {
         'status'         => get_string('season_status_' . $season->status, 'local_playergames'),
         'statusbadge'    => $statusbadge,
         'players'        => $playercount,
+        'xpmax'          => $xpceiling['total'],
+        'xpbreakdown'    => get_string('season_xp_breakdown', 'local_playergames', (object) [
+            'games' => array_sum($xpceiling['games']),
+            'checkin' => $xpceiling['checkin'],
+            'missions' => $xpceiling['missions'],
+            'days' => $xpceiling['days'],
+        ]),
         'canactivate'    => $season->status === season_manager::STATUS_UPCOMING,
         'canclose'       => $season->status === season_manager::STATUS_ACTIVE,
         'candelete'      => $season->status !== season_manager::STATUS_ACTIVE,
@@ -232,6 +240,7 @@ $templatedata = [
     'str_startdate' => get_string('season_startdate', 'local_playergames'),
     'str_enddate'   => get_string('season_enddate', 'local_playergames'),
     'str_players'   => get_string('season_players', 'local_playergames'),
+    'str_xpmax'     => get_string('season_xp_max', 'local_playergames'),
     'str_activate'  => get_string('season_activate', 'local_playergames'),
     'str_close'     => get_string('season_close', 'local_playergames'),
     'str_noseasons' => get_string('season_no_seasons', 'local_playergames'),

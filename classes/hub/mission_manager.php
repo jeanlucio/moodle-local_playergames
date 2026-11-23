@@ -30,81 +30,57 @@ use local_playergames\local\user_lock;
 use stdClass;
 
 /**
- * Manages the five hardcoded V1 missions.
+ * The missions: the five the plugin starts with, and the ones the administrator adds of the same kinds.
  *
- * Missions are stored in local_playergames_missions and identified by
- * their namestring lang key. sync() ensures the rows exist; update() advances
- * mission progress when the relevant in-game event occurs.
+ * Each kind is followed by code that listens to one event, so a mission can only be of one of the kinds below; any
+ * number of missions can share a kind, with their own target and rewards.
  *
- * Mission types and their triggers:
- *   daily         — incremented by 'game_played'; reset each day by cron
- *   streak        — set when streak reaches targetvalue
- *   cumulative    — set when player season XP reaches targetvalue
- *   battle_win    — set on first battle victory
- *   checkin_streak — incremented by 'checkin'; reset by cron if no check-in yesterday
+ *   daily          — that many games played today; starts again every day
+ *   streak         — a streak of that many days of activity
+ *   cumulative     — that much XP in the season
+ *   battle_win     — that many PlayerBattle victories in the season
+ *   checkin_streak — that many check-ins in a row
+ *
+ * A mission that somebody completed in the active season keeps its target and rewards, and stays on, until the
+ * season ends: changing them halfway would be unfair to whoever had to meet the old ones.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mission_manager {
+    /** @var array[] Each kind: its icon and the range its target may take. */
+    public const TYPES = [
+        'daily'          => ['icon' => 'fa-play', 'min' => 1, 'max' => 20],
+        'streak'         => ['icon' => 'fa-fire', 'min' => 2, 'max' => 365],
+        'cumulative'     => ['icon' => 'fa-star', 'min' => 1, 'max' => 1000000],
+        'battle_win'     => ['icon' => 'fa-trophy', 'min' => 1, 'max' => 365],
+        'checkin_streak' => ['icon' => 'fa-calendar-check', 'min' => 2, 'max' => 365],
+    ];
+
+    /** @var int Most XP a mission can give. */
+    public const MAX_XP = 10000;
+
     /**
-     * Hardcoded mission definitions (V1).
+     * The missions a new site starts with.
      *
-     * namestring and descstring are lang string keys in local_playergames.
+     * Their names are language strings, so each viewer reads them in their own language.
      *
      * @var array<int, array<string, mixed>>
      */
     private const MISSIONS = [
-        [
-            'type'         => 'daily',
-            'targetvalue'  => 1,
-            'xpreward'     => 5,
-            'freezereward' => 0,
-            'namestring'   => 'mission_daily_name',
-            'descstring'   => 'mission_daily_desc',
-            'icon'         => 'fa-play',
-        ],
-        [
-            'type'         => 'streak',
-            'targetvalue'  => 7,
-            'xpreward'     => 50,
-            'freezereward' => 1,
-            'namestring'   => 'mission_streak_name',
-            'descstring'   => 'mission_streak_desc',
-            'icon'         => 'fa-fire',
-        ],
-        [
-            'type'         => 'cumulative',
-            'targetvalue'  => 100,
-            'xpreward'     => 20,
-            'freezereward' => 0,
-            'namestring'   => 'mission_cumulative_name',
-            'descstring'   => 'mission_cumulative_desc',
-            'icon'         => 'fa-star',
-        ],
-        [
-            'type'         => 'battle_win',
-            'targetvalue'  => 1,
-            'xpreward'     => 30,
-            'freezereward' => 0,
-            'namestring'   => 'mission_battle_win_name',
-            'descstring'   => 'mission_battle_win_desc',
-            'icon'         => 'fa-trophy',
-        ],
-        [
-            'type'         => 'checkin_streak',
-            'targetvalue'  => 7,
-            'xpreward'     => 15,
-            'freezereward' => 1,
-            'namestring'   => 'mission_checkin_streak_name',
-            'descstring'   => 'mission_checkin_streak_desc',
-            'icon'         => 'fa-calendar-check',
-        ],
+        ['type' => 'daily', 'targetvalue' => 1, 'xpreward' => 5, 'freezereward' => 0, 'namestring' => 'mission_daily_name'],
+        ['type' => 'streak', 'targetvalue' => 7, 'xpreward' => 50, 'freezereward' => 1, 'namestring' => 'mission_streak_name'],
+        ['type' => 'cumulative', 'targetvalue' => 100, 'xpreward' => 20, 'freezereward' => 0,
+            'namestring' => 'mission_cumulative_name'],
+        ['type' => 'battle_win', 'targetvalue' => 1, 'xpreward' => 30, 'freezereward' => 0,
+            'namestring' => 'mission_battle_win_name'],
+        ['type' => 'checkin_streak', 'targetvalue' => 7, 'xpreward' => 15, 'freezereward' => 1,
+            'namestring' => 'mission_checkin_streak_name'],
     ];
 
     /**
-     * Ensures all hardcoded missions exist in the DB.
+     * Ensures the missions a new site starts with exist.
      *
      * Safe to call multiple times; uses namestring as idempotency key.
      *
@@ -114,28 +90,205 @@ class mission_manager {
         global $DB;
         foreach (self::MISSIONS as $def) {
             if (!$DB->record_exists('local_playergames_missions', ['namestring' => $def['namestring']])) {
+                $def['icon'] = self::TYPES[$def['type']]['icon'];
+                $def['enabled'] = 1;
                 $DB->insert_record('local_playergames_missions', (object) $def);
             }
         }
     }
 
     /**
-     * Loads all missions from the DB (calls sync() if none exist).
+     * Loads every mission, on or off, in the order they were added (calls sync() if none exist).
      *
-     * @return stdClass[] Keyed by mission type.
+     * @return stdClass[] Keyed by id.
      */
     public static function get_all(): array {
         global $DB;
-        $missions = $DB->get_records('local_playergames_missions');
+        $missions = $DB->get_records('local_playergames_missions', null, 'id ASC');
         if (empty($missions)) {
             self::sync();
-            $missions = $DB->get_records('local_playergames_missions');
+            $missions = $DB->get_records('local_playergames_missions', null, 'id ASC');
         }
-        $bytype = [];
-        foreach ($missions as $m) {
-            $bytype[$m->type] = $m;
+        return $missions;
+    }
+
+    /**
+     * The missions that are on, in the order they were added.
+     *
+     * @return stdClass[] Keyed by id.
+     */
+    public static function get_enabled(): array {
+        return array_filter(self::get_all(), static fn(stdClass $mission): bool => (bool) $mission->enabled);
+    }
+
+    /**
+     * The name of a mission: the one the administrator gave, or the one it came with.
+     *
+     * @param stdClass $mission The mission.
+     * @return string Plain text.
+     */
+    public static function display_name(stdClass $mission): string {
+        if (trim((string) ($mission->name ?? '')) !== '') {
+            return \local_playergames\local\text::plain($mission->name);
         }
-        return $bytype;
+        if ((string) ($mission->namestring ?? '') !== '') {
+            return get_string($mission->namestring, 'local_playergames');
+        }
+        return get_string('mission_type_' . $mission->type, 'local_playergames');
+    }
+
+    /**
+     * What a mission asks for, with its target.
+     *
+     * @param stdClass $mission The mission.
+     * @return string
+     */
+    public static function description(stdClass $mission): string {
+        $target = (int) $mission->targetvalue;
+        $one = $target === 1 && in_array($mission->type, ['daily', 'battle_win'], true);
+        return get_string('mission_desc_' . $mission->type . ($one ? '_one' : ''), 'local_playergames', $target);
+    }
+
+    /**
+     * The missions somebody completed in a season, which may not change until it ends.
+     *
+     * @param int $seasonid The season.
+     * @return array Mission ids, as keys.
+     */
+    public static function locked_ids(int $seasonid): array {
+        global $DB;
+        $ids = $DB->get_fieldset_select(
+            'local_playergames_mission_progress',
+            'DISTINCT missionid',
+            'seasonid = :seasonid AND timefirstcompleted IS NOT NULL',
+            ['seasonid' => $seasonid]
+        );
+        return array_fill_keys(array_map('intval', $ids), true);
+    }
+
+    /**
+     * Whether a mission may not change now, because somebody completed it in the active season.
+     *
+     * @param int $missionid The mission.
+     * @return bool
+     */
+    public static function is_locked(int $missionid): bool {
+        $season = season_manager::get_active();
+        return $season !== null && isset(self::locked_ids((int) $season->id)[$missionid]);
+    }
+
+    /**
+     * Whether a mission was ever started by somebody, in which case it is switched off rather than deleted.
+     *
+     * The seasons count the missions their players completed, and the hub shows their progress.
+     *
+     * @param int $missionid The mission.
+     * @return bool
+     */
+    public static function has_history(int $missionid): bool {
+        global $DB;
+        return $DB->record_exists('local_playergames_mission_progress', ['missionid' => $missionid]);
+    }
+
+    /**
+     * Adds a mission, or changes one.
+     *
+     * A locked mission keeps its target, rewards and state: only its name changes.
+     *
+     * @param stdClass $data id (0 to add), type, name, targetvalue, xpreward, freezereward and enabled.
+     * @return int The mission id.
+     * @throws \moodle_exception When the kind is unknown or a value is out of its range.
+     */
+    public static function save(stdClass $data): int {
+        global $DB;
+        $id = (int) ($data->id ?? 0);
+        $current = $id > 0 ? $DB->get_record('local_playergames_missions', ['id' => $id], '*', MUST_EXIST) : null;
+        $type = $current ? $current->type : (string) ($data->type ?? '');
+        if (!isset(self::TYPES[$type])) {
+            throw new \moodle_exception('error_mission_type', 'local_playergames');
+        }
+        $name = trim(\core_text::substr(clean_param((string) ($data->name ?? ''), PARAM_TEXT), 0, 255));
+        if ($current !== null && self::is_locked($id)) {
+            $DB->set_field('local_playergames_missions', 'name', $name !== '' ? $name : null, ['id' => $id]);
+            return $id;
+        }
+
+        foreach (self::errors($type, (int) $data->targetvalue, (int) $data->xpreward, (int) $data->freezereward) as $error) {
+            throw new \moodle_exception($error, 'local_playergames');
+        }
+        $record = (object) [
+            'type' => $type,
+            'name' => $name !== '' ? $name : null,
+            'targetvalue' => (int) $data->targetvalue,
+            'xpreward' => (int) $data->xpreward,
+            'freezereward' => (int) $data->freezereward,
+            'enabled' => empty($data->enabled) ? 0 : 1,
+            'icon' => self::TYPES[$type]['icon'],
+        ];
+        if ($current === null) {
+            $record->namestring = '';
+            return (int) $DB->insert_record('local_playergames_missions', $record);
+        }
+        $record->id = $id;
+        $DB->update_record('local_playergames_missions', $record);
+        return $id;
+    }
+
+    /**
+     * The problems with the values of a mission, as language string keys.
+     *
+     * @param string $type The kind.
+     * @param int $target The target.
+     * @param int $xp The XP reward.
+     * @param int $freezes The freeze reward.
+     * @return string[] Keyed by the form field each is about.
+     */
+    public static function errors(string $type, int $target, int $xp, int $freezes): array {
+        $errors = [];
+        if ($target < self::TYPES[$type]['min'] || $target > self::TYPES[$type]['max']) {
+            $errors['targetvalue'] = 'error_mission_target';
+        }
+        if ($xp < 0 || $xp > self::MAX_XP) {
+            $errors['xpreward'] = 'error_mission_xp';
+        }
+        if ($freezes < 0 || $freezes > streak_manager::max_freezes()) {
+            $errors['freezereward'] = 'error_mission_freezes';
+        }
+        if ($xp === 0 && $freezes === 0) {
+            $errors['xpreward'] = 'error_mission_noreward';
+        }
+        return $errors;
+    }
+
+    /**
+     * Switches a mission on or off, unless somebody completed it in the active season.
+     *
+     * @param int $missionid The mission.
+     * @param bool $enabled Whether it is on.
+     * @return bool Whether it changed.
+     */
+    public static function set_enabled(int $missionid, bool $enabled): bool {
+        global $DB;
+        if (self::is_locked($missionid)) {
+            return false;
+        }
+        $DB->set_field('local_playergames_missions', 'enabled', (int) $enabled, ['id' => $missionid]);
+        return true;
+    }
+
+    /**
+     * Deletes a mission nobody ever started; one with a history can only be switched off.
+     *
+     * @param int $missionid The mission.
+     * @return bool Whether it was deleted.
+     */
+    public static function delete(int $missionid): bool {
+        global $DB;
+        if (self::has_history($missionid)) {
+            return false;
+        }
+        $DB->delete_records('local_playergames_missions', ['id' => $missionid]);
+        return true;
     }
 
     /**
@@ -172,15 +325,35 @@ class mission_manager {
      * @return void
      */
     private static function update_locked(int $userid, int $seasonid, string $trigger, array $context): void {
-        global $DB;
-        $missions = self::get_all();
-
-        if ($trigger === 'game_played') {
-            if (!isset($missions['daily'])) {
-                return;
+        $types = [
+            'game_played' => 'daily',
+            'streak_updated' => 'streak',
+            'xp_earned' => 'cumulative',
+            'battle_won' => 'battle_win',
+            'checkin' => 'checkin_streak',
+        ];
+        $type = $types[$trigger] ?? null;
+        foreach (self::get_enabled() as $mission) {
+            if ($mission->type === $type) {
+                self::advance($userid, $seasonid, $mission, $context);
             }
-            $mission  = $missions['daily'];
-            $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
+        }
+    }
+
+    /**
+     * Moves one mission forward for the event that concerns it.
+     *
+     * @param int $userid The player.
+     * @param int $seasonid The season.
+     * @param stdClass $mission The mission.
+     * @param array $context Data of the event: the streak or the XP total.
+     * @return void
+     */
+    private static function advance(int $userid, int $seasonid, stdClass $mission, array $context): void {
+        global $DB;
+        $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
+
+        if ($mission->type === 'daily') {
             if ($progress->completed && (int) $progress->timecompleted < day::today()) {
                 // A mission completed on another day is over, whether or not the reset of midnight has run yet:
                 // the cron runs late on many sites, and today's play must not find yesterday's mission done.
@@ -188,61 +361,33 @@ class mission_manager {
                 $progress->currentvalue  = 0;
                 $progress->timecompleted = null;
             }
-            if ($progress->completed) {
-                return;
+            if (!$progress->completed) {
+                $progress->currentvalue++;
+                self::advance_or_complete($userid, $seasonid, $mission, $progress);
+            }
+            return;
+        }
+        if ($progress->completed) {
+            return;
+        }
+
+        if ($mission->type === 'streak' && isset($context['streak'])) {
+            $progress->currentvalue = (int) $context['streak'];
+        } else if ($mission->type === 'cumulative' && isset($context['total_xp'])) {
+            $progress->currentvalue = (int) $context['total_xp'];
+        } else if ($mission->type === 'battle_win') {
+            $progress->currentvalue++;
+        } else if ($mission->type === 'checkin_streak') {
+            // Without a check-in yesterday the streak is broken, whether or not the reset of midnight has run.
+            $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => day::yesterday()];
+            if ($progress->currentvalue > 0 && !$DB->record_exists('local_playergames_daily_scores', $yesterday)) {
+                $progress->currentvalue = 0;
             }
             $progress->currentvalue++;
-            if ($progress->currentvalue >= (int) $mission->targetvalue) {
-                self::complete_mission($userid, $seasonid, $mission, $progress);
-            } else {
-                $DB->update_record('local_playergames_mission_progress', $progress);
-            }
+        } else {
+            return;
         }
-
-        if ($trigger === 'streak_updated' && isset($context['streak']) && isset($missions['streak'])) {
-            $mission  = $missions['streak'];
-            $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed) {
-                $progress->currentvalue = (int) $context['streak'];
-                self::advance_or_complete($userid, $seasonid, $mission, $progress);
-            }
-        }
-
-        if ($trigger === 'xp_earned' && isset($context['total_xp']) && isset($missions['cumulative'])) {
-            $mission  = $missions['cumulative'];
-            $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed) {
-                $progress->currentvalue = (int) $context['total_xp'];
-                self::advance_or_complete($userid, $seasonid, $mission, $progress);
-            }
-        }
-
-        if ($trigger === 'battle_won' && isset($missions['battle_win'])) {
-            $mission  = $missions['battle_win'];
-            $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed) {
-                $progress->currentvalue = 1;
-                self::complete_mission($userid, $seasonid, $mission, $progress);
-            }
-        }
-
-        if ($trigger === 'checkin' && isset($missions['checkin_streak'])) {
-            $mission  = $missions['checkin_streak'];
-            $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
-            if (!$progress->completed) {
-                // Without a check-in yesterday the streak is broken, whether or not the reset of midnight has run.
-                $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => day::yesterday()];
-                if ($progress->currentvalue > 0 && !$DB->record_exists('local_playergames_daily_scores', $yesterday)) {
-                    $progress->currentvalue = 0;
-                }
-                $progress->currentvalue++;
-                if ($progress->currentvalue >= (int) $mission->targetvalue) {
-                    self::complete_mission($userid, $seasonid, $mission, $progress);
-                } else {
-                    $DB->update_record('local_playergames_mission_progress', $progress);
-                }
-            }
-        }
+        self::advance_or_complete($userid, $seasonid, $mission, $progress);
     }
 
     /**
@@ -287,23 +432,24 @@ class mission_manager {
      */
     public static function reset_missed_checkin_streaks(int $seasonid, int $yesterday): void {
         global $DB;
-        $missionid = $DB->get_field('local_playergames_missions', 'id', ['type' => 'checkin_streak']);
-        if (!$missionid) {
+        $missionids = $DB->get_fieldset_select('local_playergames_missions', 'id', "type = 'checkin_streak'");
+        if ($missionids === []) {
             return;
         }
+        [$insql, $params] = $DB->get_in_or_equal($missionids, SQL_PARAMS_NAMED, 'mid');
         // Whoever has no check-in of yesterday, nor of today, loses the streak. Asked of the database as a
         // subquery: a list of the ids of everybody who did check in would grow with the site.
         $DB->set_field_select(
             'local_playergames_mission_progress',
             'currentvalue',
             0,
-            "missionid = :mid AND seasonid = :sid AND currentvalue > 0
+            "missionid {$insql} AND seasonid = :sid AND currentvalue > 0
                 AND NOT EXISTS (SELECT 1
                                   FROM {local_playergames_daily_scores} ds
                                  WHERE ds.userid = {local_playergames_mission_progress}.userid
                                    AND ds.gametype = 'checkin'
                                    AND ds.gamedate >= :yesterday)",
-            ['mid' => $missionid, 'sid' => $seasonid, 'yesterday' => $yesterday]
+            $params + ['sid' => $seasonid, 'yesterday' => $yesterday]
         );
     }
 
@@ -319,14 +465,14 @@ class mission_manager {
         return unique_row::get_or_create(
             'local_playergames_mission_progress',
             ['userid' => $userid, 'missionid' => $missionid, 'seasonid' => $seasonid],
-            ['currentvalue' => 0, 'completed' => 0, 'timecompleted' => null]
+            ['currentvalue' => 0, 'completed' => 0, 'timecompleted' => null, 'timefirstcompleted' => null]
         );
     }
 
     /**
-     * Saves the progress of a mission measured by a total (a streak, the XP of the season), or completes it.
+     * Saves the progress of a mission, or completes it once it reaches the target.
      *
-     * The total is stored while it is below the target, so the hub shows how far the player is and not 0 until
+     * The progress is stored while it is below the target, so the hub shows how far the player is and not 0 until
      * the day it is reached.
      *
      * @param int $userid The player.
@@ -362,6 +508,7 @@ class mission_manager {
         global $DB;
         $progress->completed     = 1;
         $progress->timecompleted = time();
+        $progress->timefirstcompleted = $progress->timefirstcompleted ?? $progress->timecompleted;
         $DB->update_record('local_playergames_mission_progress', $progress);
         xp_manager::award_uncapped($userid, (int) $mission->xpreward, $seasonid);
 
@@ -370,7 +517,7 @@ class mission_manager {
                 'mission_completed',
                 'local_playergames',
                 (object) [
-                    'name' => get_string($mission->namestring, 'local_playergames'),
+                    'name' => self::display_name($mission),
                     'xp'   => (int) $mission->xpreward,
                 ]
             ));

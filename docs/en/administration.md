@@ -20,6 +20,7 @@ open where it leads.
 | | Game rules | Time per question, attempts and the other rules of each game. | Site administrator |
 | | Levels and titles | How much XP each level takes and the title it gives. The avatars unlock along this ladder. | Site administrator |
 | | Streak and freeze | How the daily streak works and how a freeze is earned. | Site administrator |
+| | Missions | The goals that give extra XP or a freeze: their targets and rewards, and new ones of the same kinds. | Site administrator |
 | | Course XP | The XP courses give through PlayerHUD, shown apart from the season XP. | Site administrator |
 | **Data** | Reset data | Deletes the seasons and everything the players earned, to start again from zero. The cartridges and the settings stay. | Site administrator |
 | **Help and integrations** | AI keys | Keys used to generate questions with AI. Shown only when the AI Hub plugin is installed. | Site administrator |
@@ -77,8 +78,27 @@ when and how many records went (event *PlayerGames data reset*).
 
 The plugin's pages in **Site administration → Plugins → Local plugins → PlayerGames** follow the same
 groups: **Get started** (Cartridges, Seasons, Season games), **Rules** (Participation and seasons, Game XP,
-Game rules, Levels and titles, Streak and freeze, Course XP), **Monitoring** (Engagement
+Game rules, Levels and titles, Streak and freeze, Missions, Course XP), **Monitoring** (Engagement
 Meter) and **Data** (Reset data). The Administration tab is a shortcut to them, not a replacement.
+
+## Missions
+
+A mission asks for one of five things: games in one day, a streak of days, XP in the season, PlayerBattle victories
+or check-ins in a row. The site starts with one of each, and the administrator can change their target and rewards,
+give them a name, switch them off, or add more of the same kinds (a 30-day streak worth more XP, say). A mission is
+done once per season, apart from the daily ones, which start again every day.
+
+Once somebody completes a mission in the active season, it cannot be switched off and its target and rewards stay
+as they are until the season ends, so that everyone plays by the same rules; only its name can change. A mission
+somebody has started can be switched off, but not deleted, because the seasons count the missions their players
+completed.
+
+## Most XP of a season
+
+The seasons page shows, for each season, the most XP a player can earn in it: every game won on every day, every
+check-in up to its cap, and every mission the season can reach. The games and the check-in follow the rules the
+season froze when it was created; the missions are the ones on now. The XP of the courses is kept apart and is not
+part of it.
 
 Season games opens the active season, or the next one if none is active. With no season at all it leads
 to the seasons page.

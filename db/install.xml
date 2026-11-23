@@ -272,16 +272,17 @@
         <INDEX NAME="idx_userid_seasonid" UNIQUE="false" FIELDS="userid, seasonid"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="local_playergames_missions" COMMENT="Hardcoded mission definitions">
+    <TABLE NAME="local_playergames_missions" COMMENT="Missions: the ones a site starts with and the ones its administrator adds">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="targetvalue" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="xpreward" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="freezereward" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="descstring" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="namestring" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Language string of the name of a mission a site starts with; empty for one the administrator added"/>
         <FIELD NAME="icon" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Name the administrator gave, which takes the place of namestring"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -296,6 +297,7 @@
         <FIELD NAME="currentvalue" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="completed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timefirstcompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="First time the mission was completed in the season, kept when a daily mission starts again"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
