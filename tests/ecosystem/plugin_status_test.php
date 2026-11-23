@@ -33,6 +33,18 @@ namespace local_playergames\ecosystem;
  * @covers \local_playergames\ecosystem\plugin_status
  */
 final class plugin_status_test extends \advanced_testcase {
+    /**
+     * A release gets a single leading "v", whether the plugin wrote one or not.
+     *
+     * Regression test: the page added a "v" to releases that already had one, and showed "vv1.4.0".
+     */
+    public function test_release_label(): void {
+        $this->assertSame('v1.4.0', plugin_status::release_label('v1.4.0'));
+        $this->assertSame('v1.4.0', plugin_status::release_label('1.4.0'));
+        $this->assertSame('v1.12.0', plugin_status::release_label(' v1.12.0 '));
+        $this->assertSame('Beta', plugin_status::release_label('Beta'));
+    }
+
     public function test_get_installed_reports_hub_as_installed(): void {
         $status = plugin_status::get_installed();
 

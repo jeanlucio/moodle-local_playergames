@@ -37,7 +37,7 @@ class plugin_status {
      *
      * The returned array is keyed by component name. Each value contains:
      *   - installed  bool   True when the plugin is present on disk.
-     *   - version    string Human-readable release string or empty.
+     *   - version    string Release as shown, with a single leading "v", or empty.
      *
      * @return array<string, array{installed: bool, version: string}>
      */
@@ -54,7 +54,7 @@ class plugin_status {
             } else {
                 $version = '';
                 if (!empty($info->release)) {
-                    $version = (string) $info->release;
+                    $version = self::release_label((string) $info->release);
                 } else if (!empty($info->versiondb)) {
                     $version = (string) $info->versiondb;
                 }
@@ -63,5 +63,16 @@ class plugin_status {
         }
 
         return $result;
+    }
+
+    /**
+     * Writes a release with one leading "v", whether the plugin declares "1.4.0" or "v1.4.0".
+     *
+     * @param string $release The release a plugin declares.
+     * @return string
+     */
+    public static function release_label(string $release): string {
+        $release = trim($release);
+        return preg_match('/^\d/', $release) ? 'v' . $release : $release;
     }
 }
