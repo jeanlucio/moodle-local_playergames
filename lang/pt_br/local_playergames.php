@@ -23,7 +23,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-// phpcs:disable moodle.Files.LineLength
 
 $string['achievement_100_games_desc'] = 'Conclua 100 jogos diários em uma temporada.';
 $string['achievement_100_games_name'] = 'Centenário';
