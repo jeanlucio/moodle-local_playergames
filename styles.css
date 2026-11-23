@@ -62,6 +62,52 @@ body.path-local-playergames .form-check-input:not([role="switch"]) {
     height: 1.5rem;
 }
 
+/* Bootstrap keeps a gap at the start for a field of its own size, laid over it (4) or floated into it (5). A bigger
+   field covered the label in the first, and in the second was taller than its line and pushed the next one aside,
+   as a staircase. Laid out in a row, the size of the field no longer matters. */
+body.path-local-playergames .form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: 0;
+    margin-block-end: 0.5rem;
+    padding-inline-start: 0;
+}
+
+body.path-local-playergames .form-check .form-check-input {
+    position: static;
+    float: none;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Bootstrap 4 has no switch, and showed a small checkbox: drawn here, it is the same in every version. */
+body.path-local-playergames .form-switch .form-check-input[role="switch"] {
+    appearance: none;
+    width: 2.75rem;
+    height: 1.5rem;
+    border: 1px solid var(--bs-gray-600, #6a737b);
+    border-radius: 0.75rem;
+    background-color: var(--bs-body-bg, #fff);
+    background-image: radial-gradient(circle, var(--bs-gray-600, #6a737b) 0.5rem, transparent 0.55rem);
+    background-repeat: no-repeat;
+    background-position: 0 center;
+    background-size: 1.375rem 1.375rem;
+    cursor: pointer;
+}
+
+body.path-local-playergames .form-switch .form-check-input[role="switch"]:checked {
+    border-color: var(--bs-primary, var(--primary, #0f6cbf));
+    background-color: var(--bs-primary, var(--primary, #0f6cbf));
+    background-image: radial-gradient(circle, #fff 0.5rem, transparent 0.55rem);
+    background-position: 100% center;
+}
+
+body.path-local-playergames .form-switch .form-check-input[role="switch"]:focus-visible {
+    outline: 2px solid var(--bs-primary, var(--primary, #0f6cbf));
+    outline-offset: 2px;
+}
+
 /* The label is a target as well, and the 23px that its text leaves is under the same minimum. */
 body.path-local-playergames .form-check-label {
     display: inline-block;
