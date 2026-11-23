@@ -431,8 +431,9 @@ final class quiz_play_test extends \advanced_testcase {
         $this->prepare();
         set_config('quiz_question_seconds', 30, 'local_playergames');
 
-        $this->assertSame(30, quiz_play::seconds_left(['shownat' => time()]));
-        $this->assertSame(20, quiz_play::seconds_left(['shownat' => time() - 10]));
+        // The clock is read again inside seconds_left(), and a second can turn between the two readings.
+        $this->assertEqualsWithDelta(30, quiz_play::seconds_left(['shownat' => time()]), 1);
+        $this->assertEqualsWithDelta(20, quiz_play::seconds_left(['shownat' => time() - 10]), 1);
         $this->assertSame(1, quiz_play::seconds_left(['shownat' => time() - 500]));
     }
 
