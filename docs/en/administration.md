@@ -83,10 +83,15 @@ Meter) and **Data** (Reset data). The Administration tab is a shortcut to them, 
 
 ## Missions
 
-A mission asks for one of five things: games in one day, a streak of days, XP in the season, PlayerBattle victories
-or check-ins in a row. The site starts with one of each, and the administrator can change their target and rewards,
-give them a name, switch them off, or add more of the same kinds (a 30-day streak worth more XP, say). A mission is
-done once per season, apart from the daily ones, which start again every day.
+A mission asks for one of four things: games in one day, a streak of days, XP in the season or PlayerBattle victories.
+The site starts with six (streaks of 7, 14 and 30 days among them), and the administrator can change their target and
+rewards, give them a name, switch them off, or add more of the same kinds. A mission is done once per season, apart
+from the daily ones, which start again every day.
+
+The streak missions follow the streak of the hub, which a freeze protects and which the *Streak activity* setting
+counts from games only, or from a game or the daily check-in. The streak goes on from one season to the next, but its
+missions count at most the days the season has had, so that a player who arrives with a long streak starts them from
+the first day, like everyone else.
 
 Once somebody completes a mission in the active season, it cannot be switched off and its target and rewards stay
 as they are until the season ends, so that everyone plays by the same rules; only its name can change. A mission

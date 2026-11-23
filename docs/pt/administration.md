@@ -86,10 +86,15 @@ substituto.
 
 ## Missões
 
-Uma missão pede uma de cinco coisas: jogos no mesmo dia, uma sequência de dias, XP na temporada, vitórias no
-PlayerBattle ou check-ins seguidos. O site começa com uma de cada, e o administrador pode mudar a meta e os prêmios,
-dar um nome, desativar ou adicionar outras dos mesmos tipos (uma sequência de 30 dias que vale mais XP, por exemplo).
-Cada missão vale uma vez por temporada, menos as diárias, que recomeçam todo dia.
+Uma missão pede uma de quatro coisas: jogos no mesmo dia, uma sequência de dias, XP na temporada ou vitórias no
+PlayerBattle. O site começa com seis (entre elas, sequências de 7, 14 e 30 dias), e o administrador pode mudar a meta e
+os prêmios, dar um nome, desativar ou adicionar outras dos mesmos tipos. Cada missão vale uma vez por temporada, menos
+as diárias, que recomeçam todo dia.
+
+As missões de sequência seguem a sequência do hub, que o congelamento protege e que a configuração *Atividade da
+sequência* conta só pelos jogos, ou por um jogo ou pelo check-in diário. A sequência continua de uma temporada para a
+outra, mas suas missões contam no máximo os dias que a temporada já teve, para que quem chega com uma sequência longa
+comece do primeiro dia, como todo mundo.
 
 Depois que alguém conclui uma missão na temporada ativa, ela não pode ser desativada e a meta e os prêmios ficam
 como estão até o fim da temporada, para que todos joguem pelas mesmas regras; só o nome pode mudar. Uma missão que

@@ -36,10 +36,9 @@ use stdClass;
  * number of missions can share a kind, with their own target and rewards.
  *
  *   daily          — that many games played today; starts again every day
- *   streak         — a streak of that many days of activity
+ *   streak         — a streak of that many days of activity, counted from the start of the season
  *   cumulative     — that much XP in the season
  *   battle_win     — that many PlayerBattle victories in the season
- *   checkin_streak — that many check-ins in a row
  *
  * A mission that somebody completed in the active season keeps its target and rewards, and stays on, until the
  * season ends: changing them halfway would be unfair to whoever had to meet the old ones.
@@ -55,7 +54,6 @@ class mission_manager {
         'streak'         => ['icon' => 'fa-fire', 'min' => 2, 'max' => 365],
         'cumulative'     => ['icon' => 'fa-star', 'min' => 1, 'max' => 1000000],
         'battle_win'     => ['icon' => 'fa-trophy', 'min' => 1, 'max' => 365],
-        'checkin_streak' => ['icon' => 'fa-calendar-check', 'min' => 2, 'max' => 365],
     ];
 
     /** @var int Most XP a mission can give. */
@@ -71,12 +69,14 @@ class mission_manager {
     private const MISSIONS = [
         ['type' => 'daily', 'targetvalue' => 1, 'xpreward' => 5, 'freezereward' => 0, 'namestring' => 'mission_daily_name'],
         ['type' => 'streak', 'targetvalue' => 7, 'xpreward' => 50, 'freezereward' => 1, 'namestring' => 'mission_streak_name'],
+        ['type' => 'streak', 'targetvalue' => 14, 'xpreward' => 100, 'freezereward' => 1,
+            'namestring' => 'mission_streak14_name'],
+        ['type' => 'streak', 'targetvalue' => 30, 'xpreward' => 200, 'freezereward' => 2,
+            'namestring' => 'mission_streak30_name'],
         ['type' => 'cumulative', 'targetvalue' => 100, 'xpreward' => 20, 'freezereward' => 0,
             'namestring' => 'mission_cumulative_name'],
         ['type' => 'battle_win', 'targetvalue' => 1, 'xpreward' => 30, 'freezereward' => 0,
             'namestring' => 'mission_battle_win_name'],
-        ['type' => 'checkin_streak', 'targetvalue' => 7, 'xpreward' => 15, 'freezereward' => 1,
-            'namestring' => 'mission_checkin_streak_name'],
     ];
 
     /**
@@ -299,7 +299,6 @@ class mission_manager {
      *   'streak_updated'— checks streak mission (context: ['streak' => int])
      *   'xp_earned'     — checks cumulative mission (context: ['total_xp' => int])
      *   'battle_won'    — completes battle_win mission
-     *   'checkin'       — advances checkin_streak mission
      *
      * @param int    $userid
      * @param int    $seasonid
@@ -330,7 +329,6 @@ class mission_manager {
             'streak_updated' => 'streak',
             'xp_earned' => 'cumulative',
             'battle_won' => 'battle_win',
-            'checkin' => 'checkin_streak',
         ];
         $type = $types[$trigger] ?? null;
         foreach (self::get_enabled() as $mission) {
@@ -350,7 +348,6 @@ class mission_manager {
      * @return void
      */
     private static function advance(int $userid, int $seasonid, stdClass $mission, array $context): void {
-        global $DB;
         $progress = self::get_or_create_progress($userid, (int) $mission->id, $seasonid);
 
         if ($mission->type === 'daily') {
@@ -372,22 +369,32 @@ class mission_manager {
         }
 
         if ($mission->type === 'streak' && isset($context['streak'])) {
-            $progress->currentvalue = (int) $context['streak'];
+            // The streak goes on from one season to the next, but each season gives its missions again: a player
+            // who arrives with a long streak starts them from the first day of the season, like everyone else.
+            $progress->currentvalue = min((int) $context['streak'], self::season_day($seasonid));
         } else if ($mission->type === 'cumulative' && isset($context['total_xp'])) {
             $progress->currentvalue = (int) $context['total_xp'];
         } else if ($mission->type === 'battle_win') {
-            $progress->currentvalue++;
-        } else if ($mission->type === 'checkin_streak') {
-            // Without a check-in yesterday the streak is broken, whether or not the reset of midnight has run.
-            $yesterday = ['userid' => $userid, 'gametype' => 'checkin', 'gamedate' => day::yesterday()];
-            if ($progress->currentvalue > 0 && !$DB->record_exists('local_playergames_daily_scores', $yesterday)) {
-                $progress->currentvalue = 0;
-            }
             $progress->currentvalue++;
         } else {
             return;
         }
         self::advance_or_complete($userid, $seasonid, $mission, $progress);
+    }
+
+    /**
+     * Which day of a season today is, the first being 1.
+     *
+     * @param int $seasonid The season.
+     * @return int
+     */
+    private static function season_day(int $seasonid): int {
+        global $DB;
+        $start = $DB->get_field('local_playergames_seasons', 'startdate', ['id' => $seasonid]);
+        if ($start === false) {
+            return PHP_INT_MAX;
+        }
+        return max(1, (int) round((day::today() - day::midnight((int) $start)) / DAYSECS) + 1);
     }
 
     /**
@@ -418,39 +425,6 @@ class mission_manager {
         $DB->set_field_select('local_playergames_mission_progress', 'currentvalue', 0, $where, $params);
         $DB->set_field_select('local_playergames_mission_progress', 'completed', 0, $where, $params);
         $DB->set_field_select('local_playergames_mission_progress', 'timecompleted', null, $where, $params);
-    }
-
-    /**
-     * Resets checkin_streak progress for users who missed a check-in yesterday.
-     *
-     * Called at midnight by the reset_daily_missions task, which can run late: a user who already checked in
-     * today had the streak restarted by that check-in, which the reset must not undo.
-     *
-     * @param int $seasonid
-     * @param int $yesterday Unix timestamp of midnight yesterday.
-     * @return void
-     */
-    public static function reset_missed_checkin_streaks(int $seasonid, int $yesterday): void {
-        global $DB;
-        $missionids = $DB->get_fieldset_select('local_playergames_missions', 'id', "type = 'checkin_streak'");
-        if ($missionids === []) {
-            return;
-        }
-        [$insql, $params] = $DB->get_in_or_equal($missionids, SQL_PARAMS_NAMED, 'mid');
-        // Whoever has no check-in of yesterday, nor of today, loses the streak. Asked of the database as a
-        // subquery: a list of the ids of everybody who did check in would grow with the site.
-        $DB->set_field_select(
-            'local_playergames_mission_progress',
-            'currentvalue',
-            0,
-            "missionid {$insql} AND seasonid = :sid AND currentvalue > 0
-                AND NOT EXISTS (SELECT 1
-                                  FROM {local_playergames_daily_scores} ds
-                                 WHERE ds.userid = {local_playergames_mission_progress}.userid
-                                   AND ds.gametype = 'checkin'
-                                   AND ds.gamedate >= :yesterday)",
-            $params + ['sid' => $seasonid, 'yesterday' => $yesterday]
-        );
     }
 
     /**

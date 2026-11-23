@@ -162,10 +162,15 @@ final class hub_test extends \advanced_testcase {
         $this->assertSame(0, $data['xp']);
         $this->assertFalse($data['maxlevel']);
         $this->assertSame(5, $data['checkin_max']);
+        // The label says that the check-ins give XP only up to the cap of the season.
+        $this->assertSame(
+            get_string('hub_checkins_hint', 'local_playergames', (object) ['xp' => 10, 'max' => 5]),
+            $data['str_checkins_hint']
+        );
         $this->assertSame(0, $data['checkin_done']);
         $this->assertTrue($data['hascheckin']);
         $this->assertTrue($data['hasmissions']);
-        $this->assertCount(5, $data['missions']);
+        $this->assertCount(6, $data['missions']);
         $this->assertSame([0], array_unique(array_column($data['missions'], 'current')));
 
         checkin_manager::record((int) $user->id);

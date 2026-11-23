@@ -22,7 +22,7 @@
 * 🔥 **Player Hub — Streak e Freeze:** Acompanhamento de streak diário. Consumíveis de freeze
   evitam a perda de streak e são ganhos via missões; o check-in diário pode manter o streak vivo
   quando configurado.
-* 🎯 **Player Hub — Missões:** Missões diárias, por streak, cumulativas de XP, por vitória e de check-in,
+* 🎯 **Player Hub — Missões:** Missões diárias, por streak (7, 14 e 30 dias), cumulativas de XP e por vitória,
   com metas e prêmios definidos pelo administrador, que pode criar outras dos mesmos tipos.
 * 🏅 **Player Hub — Conquistas:** Conquistas permanentes que persistem entre temporadas.
 * 🏷️ **Player Hub — Títulos:** O título de cada nível, exibido no Player Hub.

@@ -74,13 +74,13 @@ final class season_xp_test extends \advanced_testcase {
 
         $this->assertSame(['quiz' => 400, 'guess' => 100, 'battle' => 300], $ceiling['games']);
         $this->assertSame(30, $ceiling['checkin']);
-        // Daily 5 x 10 days, streak of 7 (50), 100 XP (20), first victory (30), 7 check-ins (15).
-        $this->assertSame(50 + 50 + 20 + 30 + 15, $ceiling['missions']);
-        $this->assertSame(800 + 30 + 165, $ceiling['total']);
+        // Daily 5 x 10 days, the streak of 7 days (50), 100 XP (20), first victory (30); the streaks of 14 and 30 days
+        // are longer than the season and give nothing.
+        $this->assertSame(50 + 50 + 20 + 30, $ceiling['missions']);
+        $this->assertSame(800 + 30 + 150, $ceiling['total']);
 
-        // A target the season cannot reach in its days gives nothing.
-        $DB->set_field('local_playergames_missions', 'targetvalue', 30, ['type' => 'streak']);
         $DB->set_field('local_playergames_missions', 'enabled', 0, ['type' => 'daily']);
-        $this->assertSame(20 + 30 + 15, season_xp::ceiling($season)['missions']);
+        $DB->set_field('local_playergames_missions', 'targetvalue', 10, ['namestring' => 'mission_streak14_name']);
+        $this->assertSame(50 + 100 + 20 + 30, season_xp::ceiling($season)['missions']);
     }
 }

@@ -185,5 +185,30 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112303, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112304) {
+        // One streak is enough: the check-in streak mission counted the days a second way, which the freezes did not
+        // protect, and the streak setting already decides whether a check-in counts. Two longer streak missions take
+        // its place.
+        $ids = $DB->get_fieldset_select('local_playergames_missions', 'id', "type = 'checkin_streak'");
+        if ($ids !== []) {
+            [$insql, $params] = $DB->get_in_or_equal($ids);
+            $DB->delete_records_select('local_playergames_mission_progress', "missionid {$insql}", $params);
+            $DB->delete_records_select('local_playergames_missions', "id {$insql}", $params);
+        }
+        $streaks = [
+            ['targetvalue' => 14, 'xpreward' => 100, 'freezereward' => 1, 'namestring' => 'mission_streak14_name'],
+            ['targetvalue' => 30, 'xpreward' => 200, 'freezereward' => 2, 'namestring' => 'mission_streak30_name'],
+        ];
+        foreach ($streaks as $mission) {
+            if (!$DB->record_exists('local_playergames_missions', ['namestring' => $mission['namestring']])) {
+                $DB->insert_record('local_playergames_missions', (object) ($mission + [
+                    'type' => 'streak', 'icon' => 'fa-fire', 'enabled' => 1,
+                ]));
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026112304, 'local', 'playergames');
+    }
+
     return true;
 }

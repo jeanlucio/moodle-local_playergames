@@ -37,9 +37,10 @@
         "streak": 5,
         "freezes": 1,
         "hascheckin": true,
+        "str_checkins_hint": "5 XP each, up to 30 in the season",
         "checkin_done": 12,
         "checkin_max": 30,
-        "str_checkins": "Season check-ins",
+        "str_checkins": "Check-ins with XP",
         "rankingenabled": true,
         "showinranking": true,
         "showlearningxp": true,
@@ -238,6 +239,7 @@
                         <i class="fa fa-calendar-check text-success" aria-hidden="true"></i>
                         <div class="fw-bold">{{checkin_done}}/{{checkin_max}}</div>
                         <small class="text-muted">{{str_checkins}}</small>
+                        <small class="d-block">{{str_checkins_hint}}</small>
                     </div>
                     {{/hascheckin}}
 

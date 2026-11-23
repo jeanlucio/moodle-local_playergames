@@ -22,7 +22,7 @@ PostgreSQL & MariaDB).
 | `hub/served_questions_test.php` | 3 | Per-day "already shown" set grouped by source, idempotent scoping, invalid items ignored |
 | `hub/streak_manager_test.php` | 12 | Streak start/continue/reset, freeze consumption, overnight break processing |
 | `hub/season_manager_test.php` | 28 | Season lifecycle, active/upcoming resolution, exclusive activation, snapshot, `create_next`; whether any season exists; editing (a closed season keeps its dates), deleting only a season's own data, the active season refused; closing early ends the season today; overlapping dates found and named |
-| `hub/mission_manager_test.php` | 19 | Mission sync, progress/completion with XP reward, daily and missed check-in resets; several missions of one kind; description from the target; switching off, deleting and the lock of a mission completed this season; the range of each kind |
+| `hub/mission_manager_test.php` | 15 | Mission sync, progress/completion with XP reward, daily resets; the streak missions counted from the start of the season; several missions of one kind; description from the target; switching off, deleting and the lock of a mission completed this season; the range of each kind |
 | `hub/season_xp_test.php` | 2 | The days of a season, first and last included; the most XP of a season, game by game, with the check-in cap and the missions the season can reach |
 | `hub/achievement_manager_test.php` | 6 | Achievement sync, granting (first game/level/all-games-day), idempotency |
 | `hub/title_manager_test.php` | 2 | Level→title key clamping and translation |

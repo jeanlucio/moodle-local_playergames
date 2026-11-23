@@ -88,7 +88,6 @@ final class contracts_test extends \advanced_testcase {
             'set_enabled' => 'writes the mission definitions, which belong to nobody',
             'delete' => 'deletes a mission nobody ever started, which belongs to nobody',
             'reset_daily' => 'cron reset of the missions completed before today; a play does it under the lock too',
-            'reset_missed_checkin_streaks' => 'cron reset of streaks with no check-in yesterday nor today; a check-in does it too',
         ],
         'hub\achievement_manager' => [
             'sync' => 'writes the achievement definitions, which belong to nobody',

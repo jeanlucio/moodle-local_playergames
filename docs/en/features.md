@@ -20,7 +20,7 @@
   [Course XP](#learning-xp).
 * 🔥 **Player Hub — Streak & Freeze:** Daily streak tracking. Freeze consumables prevent streak
   loss and are earned via missions; the daily check-in can keep the streak alive when configured.
-* 🎯 **Player Hub — Missions:** Daily, streak-based, cumulative XP, victory-based and check-in missions,
+* 🎯 **Player Hub — Missions:** Daily, streak-based (7, 14 and 30 days), cumulative XP and victory-based missions,
   with targets and rewards the administrator sets, and more of the same kinds when wanted.
 * 🏅 **Player Hub — Achievements:** Permanent achievements that persist across seasons.
 * 🏷️ **Player Hub — Titles:** The title of each level, shown on the Player Hub.

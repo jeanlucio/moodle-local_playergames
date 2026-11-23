@@ -27,7 +27,6 @@ namespace local_playergames\task;
 use local_playergames\hub\mission_manager;
 use local_playergames\hub\season_manager;
 use local_playergames\hub\streak_manager;
-use local_playergames\local\day;
 
 /**
  * Runs at midnight to reset daily missions and process streak breaks.
@@ -35,7 +34,6 @@ use local_playergames\local\day;
  * Sequence:
  *   1. Process streak breaks for users who missed yesterday (freeze or reset).
  *   2. Reset daily mission progress for all users in the active season.
- *   3. Reset checkin_streak progress for users who missed a check-in yesterday.
  *
  * @package    local_playergames
  * @copyright  2026 Jean Lúcio
@@ -57,8 +55,6 @@ class reset_daily_missions extends \core\task\scheduled_task {
      * @return void
      */
     public function execute(): void {
-        $yesterday = day::yesterday();
-
         $broken = streak_manager::process_breaks();
         mtrace("Streak breaks processed: {$broken}");
 
@@ -70,8 +66,5 @@ class reset_daily_missions extends \core\task\scheduled_task {
 
         mission_manager::reset_daily((int) $season->id);
         mtrace('Daily missions reset for season ' . $season->id);
-
-        mission_manager::reset_missed_checkin_streaks((int) $season->id, $yesterday);
-        mtrace('Checkin streak missions reset for missed users.');
     }
 }

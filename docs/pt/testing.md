@@ -23,7 +23,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `hub/served_questions_test.php` | 3 | Conjunto "já exibido" do dia agrupado por fonte, escopo idempotente, itens inválidos ignorados |
 | `hub/streak_manager_test.php` | 12 | Início/continuação/reset de streak, consumo de freeze, processamento de quebra |
 | `hub/season_manager_test.php` | 28 | Ciclo da temporada, resolução ativa/próxima, ativação exclusiva, snapshot, `create_next`; se existe alguma temporada; edição (a encerrada mantém as datas), exclusão só dos dados da própria temporada, a ativa recusada; encerrar antes do prazo termina a temporada hoje; datas sobrepostas encontradas e nomeadas |
-| `hub/mission_manager_test.php` | 19 | Sync de missão, progresso/conclusão com recompensa de XP, resets diário e de check-in perdido; várias missões do mesmo tipo; descrição a partir da meta; desativar, excluir e a trava de uma missão concluída na temporada; o intervalo de cada tipo |
+| `hub/mission_manager_test.php` | 15 | Sync de missão, progresso/conclusão com recompensa de XP, reset diário; as missões de sequência contadas a partir do início da temporada; várias missões do mesmo tipo; descrição a partir da meta; desativar, excluir e a trava de uma missão concluída na temporada; o intervalo de cada tipo |
 | `hub/season_xp_test.php` | 2 | Os dias de uma temporada, contando o primeiro e o último; o XP máximo da temporada, jogo a jogo, com o limite do check-in e as missões que a temporada permite cumprir |
 | `hub/achievement_manager_test.php` | 6 | Sync de conquista, concessão (primeiro jogo/nível/todos os jogos no dia), idempotência |
 | `hub/title_manager_test.php` | 2 | Clamp da chave nível→título e tradução |
