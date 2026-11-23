@@ -202,7 +202,7 @@ class plugin_registry {
                 ],
             ],
 
-            // Plugins that integrate with the ecosystem.
+            // Plugins outside the Player family with at least one relation on the map, in either direction.
             [
                 'component'   => 'report_unlocker',
                 'abbr'        => 'UNL',
@@ -265,16 +265,16 @@ class plugin_registry {
                     ['target' => 'block_teacher_checklist', 'type' => self::REL_ASSOC],
                 ],
             ],
-
-            // Standalone plugins (no ecosystem code links yet).
             [
                 'component'   => 'block_teacher_checklist',
                 'abbr'        => 'CHK',
                 'color'       => '#059669',
                 'icon'        => 'fa-list-check',
-                'group'       => 'standalone',
+                'group'       => 'integration',
                 'relations'   => [],
             ],
+
+            // Plugins with no relation on the map.
             [
                 'component'   => 'local_resourcestats',
                 'abbr'        => 'RST',

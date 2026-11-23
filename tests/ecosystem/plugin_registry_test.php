@@ -68,6 +68,29 @@ final class plugin_registry_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Outside the Player family, a plugin with a relation on the map, either way, is an integration, and one without is
+     * standalone.
+     *
+     * Regression test: the teacher checklist, which the virtual lab uses, was listed as standalone.
+     */
+    public function test_integrations_have_a_relation_and_standalone_plugins_none(): void {
+        $catalog = plugin_registry::get_catalog();
+        $linked = [];
+        foreach ($catalog as $entry) {
+            foreach ($entry['relations'] as $relation) {
+                $linked[$entry['component']] = true;
+                $linked[$relation['target']] = true;
+            }
+        }
+        foreach ($catalog as $entry) {
+            if (in_array($entry['group'], ['integration', 'standalone'], true)) {
+                $expected = isset($linked[$entry['component']]) ? 'integration' : 'standalone';
+                $this->assertSame($expected, $entry['group'], $entry['component']);
+            }
+        }
+    }
+
     public function test_components_are_unique(): void {
         $components = array_column(plugin_registry::get_catalog(), 'component');
         $this->assertSame($components, array_values(array_unique($components)));
