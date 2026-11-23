@@ -83,6 +83,10 @@ Meter) and **Data** (Reset data). The Administration tab is a shortcut to them, 
 Season games opens the active season, or the next one if none is active. With no season at all it leads
 to the seasons page.
 
+For PlayerGuess and PlayerFill, each cartridge shows how many of its words serve the game, and the page warns when
+the chosen cartridges are not enough. In the hub, the card of the game says why there is nothing to play: no active
+cartridge, no words that meet the requirements, or words of the day not drawn yet.
+
 ## First setup
 
 1. Create a cartridge (**Cartridges**): the games need something to ask.

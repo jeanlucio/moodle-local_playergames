@@ -110,6 +110,7 @@
                 "str_done": "Done",
                 "str_pending": "Play",
                 "str_locked": "No cartridge",
+                "str_locked_hint": "No active cartridge has content for this game.",
                 "str_lost": "Come back tomorrow"
             }
         ],
@@ -328,6 +329,7 @@
                                     <span class="badge bg-secondary">
                                         <i class="fa fa-lock me-1" aria-hidden="true"></i>{{str_locked}}
                                     </span>
+                                    <p class="small mb-0 mt-2">{{str_locked_hint}}</p>
                                     {{/locked}}
                                     {{#pending}}
                                     <span class="badge bg-primary">{{str_pending}}</span>

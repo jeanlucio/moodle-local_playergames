@@ -29,6 +29,7 @@
         "str_enabled": "Enabled",
         "str_cartridges": "Cartridges",
         "str_cartridges_all": "All active cartridges",
+        "str_inactive": "Inactive",
         "str_nocartridges": "No cartridges of this type available.",
         "str_save": "Save changes",
         "str_heading": "Game configuration — Season 1",
@@ -41,7 +42,21 @@
                 "cartridges": [
                     {"id": 1, "name": "Biology Q1 2026", "checked": true}
                 ],
-                "nocartridges": false
+                "nocartridges": false,
+                "wordrule": "",
+                "fewwords": ""
+            },
+            {
+                "gametype": "guess",
+                "gamename": "PlayerGuess",
+                "family": "concept",
+                "enabled": true,
+                "cartridges": [
+                    {"id": 2, "name": "History", "checked": true, "words": "0 of 20 words fit this game", "inactive": false}
+                ],
+                "nocartridges": false,
+                "wordrule": "Words that fit: a single word, only letters, from 4 to 8 letters.",
+                "fewwords": "Words that fit in the chosen cartridges: 0. This game needs at least 1."
             }
         ]
     }
@@ -86,6 +101,14 @@
                             {{/nocartridges}}
                             {{^nocartridges}}
                             <p class="text-muted small mb-2">{{str_cartridges_all}}</p>
+                            {{#wordrule}}
+                            <p class="small mb-2">{{wordrule}}</p>
+                            {{/wordrule}}
+                            {{#fewwords}}
+                            <div class="alert alert-warning py-2" role="alert">
+                                <i class="fa fa-triangle-exclamation me-2" aria-hidden="true"></i>{{fewwords}}
+                            </div>
+                            {{/fewwords}}
                             {{#cartridges}}
                             <div class="form-check">
                                 <input class="form-check-input"
@@ -93,11 +116,12 @@
                                        name="cartridges_{{gametype}}[]"
                                        id="pg-cart-{{gametype}}-{{id}}"
                                        value="{{id}}"
-                                       {{#checked}}checked{{/checked}}
-                                       aria-label="{{name}}">
+                                       {{#checked}}checked{{/checked}}>
                                 <label class="form-check-label"
                                        for="pg-cart-{{gametype}}-{{id}}">
                                     {{name}}
+                                    {{#inactive}}<span class="badge bg-secondary">{{str_inactive}}</span>{{/inactive}}
+                                    {{#words}}<small class="d-block">{{words}}</small>{{/words}}
                                 </label>
                             </div>
                             {{/cartridges}}

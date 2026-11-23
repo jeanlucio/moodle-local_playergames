@@ -24,7 +24,9 @@
 
 namespace local_playergames\cartridge;
 
+use local_playergames\games\word_pool;
 use local_playergames\local\ai_policy;
+use local_playergames\local\text;
 
 /**
  * Builds cartridge concept prompts and generates content through the AI Hub.
@@ -151,7 +153,8 @@ class ai_generator {
         array $categorynames = [],
         string $context = ''
     ): string {
-        $langname = $language !== '' ? $language : 'English';
+        $langname = $language !== '' ? $language : text::language_name();
+        [$minlen, $maxlen] = word_pool::shared_range();
         $jsonexample = '{"concepts":[{"term":"...","definition":"...","category":"...","difficulty":1}]}';
 
         if (!empty($categorynames)) {
@@ -165,7 +168,9 @@ class ai_generator {
                 . ' The category value MUST be written in ' . $langname . '.';
         }
 
-        $rules = "- term: short word or phrase (max 6 words)\n"
+        // Concepts only feed the word games, where a term that is not one word of letters can never be played.
+        $rules = "- term: exactly ONE word, only letters, from {$minlen} to {$maxlen} letters long."
+            . " NEVER use spaces, digits, hyphens, apostrophes or acronyms with dots. Never repeat a term\n"
             . "- definition: one clear sentence explaining the term\n"
             . $categoryrule . "\n"
             . "- difficulty: integer 1–5\n"

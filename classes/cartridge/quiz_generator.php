@@ -24,6 +24,8 @@
 
 namespace local_playergames\cartridge;
 
+use local_playergames\local\text;
+
 /**
  * Generates multiple-choice quiz questions using AI: full MCQs (question, one correct answer and
  * four distractors) for quiz-type cartridges, where the answers are entirely AI-produced.
@@ -176,7 +178,7 @@ class quiz_generator extends ai_generator {
         array $categorynames = [],
         string $context = ''
     ): string {
-        $langname = $language !== '' ? $language : 'English';
+        $langname = $language !== '' ? $language : text::language_name();
         $qty = max(1, $quantity);
         $example = '{"questions":['
             . '{"questiontext":"Who invented the telephone?",'

@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_playergames\games\season_game_config;
+use local_playergames\games\word_pool;
 use local_playergames\hub\season_manager;
 use local_playergames\local\text;
 
@@ -69,7 +70,7 @@ $conceptcartridges = $DB->get_records(
     'local_playergames_cartridges',
     ['type' => 'concept'],
     'name ASC',
-    'id, name'
+    'id, name, active'
 );
 
 // POST: save configuration.
@@ -125,6 +126,7 @@ if (data_submitted()) {
 $savedconfigs = season_game_config::get_all_for_season($seasonid);
 
 // Build template data for each game row.
+$wordusage = word_pool::usage();
 $gamerows = [];
 foreach ($gametypes as $game) {
     $gametype = $game['type'];
@@ -140,12 +142,41 @@ foreach ($gametypes as $game) {
     // Build cartridge checkbox list.
     $cartridgelist = $family === 'quiz' ? $quizcartridges : $conceptcartridges;
     $cartridgerows = [];
+    $usablewords = 0;
     foreach ($cartridgelist as $c) {
-        $cartridgerows[] = [
+        $row = [
             'id'      => (int) $c->id,
-            'name'    => \local_playergames\local\text::plain($c->name),
+            'name'    => text::plain($c->name),
             'checked' => empty($savedids) || in_array((int) $c->id, $savedids, true),
         ];
+        if ($family === 'concept') {
+            // The game draws only from active cartridges, so the words of an inactive one do not count.
+            $usage = $wordusage[(int) $c->id] ?? [$gametype => 0, 'total' => 0];
+            $usablewords += $row['checked'] && $c->active ? $usage[$gametype] : 0;
+            $row['words'] = get_string(
+                'season_game_words',
+                'local_playergames',
+                ['usable' => $usage[$gametype], 'total' => $usage['total']]
+            );
+            $row['inactive'] = !$c->active;
+        }
+        $cartridgerows[] = $row;
+    }
+
+    $wordrule = '';
+    $fewwords = '';
+    if ($family === 'concept') {
+        [$minlen, $maxlen] = word_pool::length_range($gametype);
+        $wordrule = get_string('season_game_words_rule', 'local_playergames', ['min' => $minlen, 'max' => $maxlen]);
+        $needed = word_pool::needed($gametype);
+        $enabled = !$saved || $saved->enabled;
+        if ($enabled && $cartridgerows !== [] && $usablewords < $needed) {
+            $fewwords = get_string(
+                'season_game_words_few',
+                'local_playergames',
+                ['usable' => $usablewords, 'needed' => $needed]
+            );
+        }
     }
 
     $gamerows[] = [
@@ -155,6 +186,8 @@ foreach ($gametypes as $game) {
         'enabled'         => $saved ? (bool) $saved->enabled : true,
         'cartridges'      => $cartridgerows,
         'nocartridges'    => empty($cartridgerows),
+        'wordrule'        => $wordrule,
+        'fewwords'        => $fewwords,
     ];
 }
 
@@ -168,6 +201,7 @@ $templatedata = [
     'str_enabled'  => get_string('season_game_enabled', 'local_playergames'),
     'str_cartridges' => get_string('season_game_cartridges', 'local_playergames'),
     'str_cartridges_all' => get_string('season_game_cartridges_all', 'local_playergames'),
+    'str_inactive' => get_string('cartridge_inactive', 'local_playergames'),
     'str_nocartridges' => get_string('season_game_cartridges_none', 'local_playergames'),
     'str_save'     => get_string('savechanges'),
     'str_heading'  => get_string('season_game_heading', 'local_playergames', text::plain($season->name)),

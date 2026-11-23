@@ -354,6 +354,23 @@ final class ai_generator_test extends \advanced_testcase {
     }
 
     /**
+     * Makes the current language carry the given name, since the test site has only the English pack.
+     *
+     * @param string $name Language name.
+     * @return void
+     */
+    private function use_language_named(string $name): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $dir = make_request_directory();
+        mkdir("{$dir}/en_local");
+        file_put_contents("{$dir}/en_local/langconfig.php", "<?php\n\$string['thislanguage'] = '{$name}';\n");
+        $CFG->langlocalroot = $dir;
+        get_string_manager(true);
+        get_string_manager()->reset_caches(true);
+    }
+
+    /**
      * The prompt carries the topic, the count, the difficulty and the language, and asks for raw JSON.
      */
     public function test_the_prompt_states_what_to_generate(): void {
@@ -368,14 +385,35 @@ final class ai_generator_test extends \advanced_testcase {
     }
 
     /**
-     * Without a language the prompt asks for English, and without categories the model is told to keep few.
+     * Without a language the prompt asks for the user's own, and without categories the model is told to keep few.
      */
-    public function test_the_prompt_defaults_to_english_and_free_categories(): void {
+    public function test_the_prompt_defaults_to_the_language_of_the_user_and_free_categories(): void {
+        $this->use_language_named('Português - Brasil');
         $prompt = $this->prompt(['Topic', '', 10, 3]);
+        $question = (new \ReflectionMethod(quiz_generator::class, 'build_standalone_prompt'))
+            ->invokeArgs(new quiz_generator(), ['Topic', '', 10]);
+        get_string_manager(true);
 
-        $this->assertStringContainsString('Respond in language: English.', $prompt);
+        $this->assertStringContainsString('Respond in language: Português - Brasil.', $prompt);
         $this->assertStringContainsString('Use at most 3 distinct categories', $prompt);
-        $this->assertStringContainsString('MUST be written in English', $prompt);
+        $this->assertStringContainsString('MUST be written in Português - Brasil', $prompt);
+        $this->assertStringContainsString('Write all text in language: Português - Brasil.', $question);
+    }
+
+    /**
+     * The words asked for are the ones both word games can draw, with the length their settings accept.
+     *
+     * Regression test: the prompt asked for "a short word or phrase", and a cartridge of twenty phrases had no word
+     * that PlayerGuess or PlayerFill could use.
+     */
+    public function test_the_prompt_asks_for_words_that_serve_the_games(): void {
+        $this->resetAfterTest();
+        set_config('guess_minlen', 5, 'local_playergames');
+        set_config('guess_maxlen', 7, 'local_playergames');
+        $prompt = $this->prompt(['Topic', 'English', 10, 3]);
+
+        $this->assertStringContainsString('exactly ONE word, only letters, from 5 to 7 letters long', $prompt);
+        $this->assertStringNotContainsString('phrase', $prompt);
     }
 
     /**

@@ -8,6 +8,9 @@ categorias) e interpreta a resposta JSON da IA de volta em conceitos, então fic
 gerenciamento de chaves e ainda oferece suporte à geração de cartuchos assistida por IA onde quer
 que o Hub esteja instalado.
 
+O campo de idioma vem preenchido com o idioma de quem está na página e pode ser trocado. Para os conceitos, o prompt
+pede só palavras únicas, apenas com letras e no tamanho que serve ao PlayerGuess e ao PlayerFill.
+
 ## Ordem de resolução
 
 | Prioridade | Origem | Observações |

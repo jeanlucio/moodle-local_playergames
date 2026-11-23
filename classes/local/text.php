@@ -56,4 +56,13 @@ final class text {
 
         return html_entity_decode(strip_tags($formatted), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
+
+    /**
+     * Returns the name of the language the user reads the site in, written in that language.
+     *
+     * @return string For example "Português - Brasil".
+     */
+    public static function language_name(): string {
+        return get_string('thislanguage', 'langconfig');
+    }
 }

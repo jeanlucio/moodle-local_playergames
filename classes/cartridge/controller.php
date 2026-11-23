@@ -462,7 +462,7 @@ class controller {
             'ai_form_topic'       => $this->aiformdata ? $this->aiformdata->topic : '',
             'ai_form_context'     => $this->aiformdata
                 ? ($this->aiformdata->context ?? '') : '',
-            'ai_form_language'    => $this->aiformdata ? $this->aiformdata->language : '',
+            'ai_form_language'    => $this->aiformdata ? $this->aiformdata->language : text::language_name(),
             'ai_form_quantity'    => $this->aiformdata ? (int) $this->aiformdata->quantity : 20,
             'ai_form_difficulty'  => $this->aiformdata
                 ? (int) $this->aiformdata->difficulty : 3,
@@ -475,7 +475,7 @@ class controller {
             'quiz_preview'        => $quizpreviewdata,
             'quiz_form_topic'     => $this->quizformdata ? $this->quizformdata->topic : '',
             'quiz_form_language'  => $this->quizformdata
-                ? $this->quizformdata->language : '',
+                ? $this->quizformdata->language : text::language_name(),
             'quiz_form_quantity'  => $this->quizformdata
                 ? (int) $this->quizformdata->quantity : 20,
             'quiz_form_difficulty' => $this->quizformdata
@@ -776,13 +776,23 @@ class controller {
     }
 
     /**
+     * The language the user asked the AI for, which is their own when the field was left empty.
+     *
+     * @return string Language name.
+     */
+    private function ai_language_param(): string {
+        $language = trim(optional_param('ai_language', '', PARAM_TEXT));
+        return $language !== '' ? $language : text::language_name();
+    }
+
+    /**
      * Handles the generate_ai POST action.
      * Does not redirect — sets internal AI state for page re-rendering.
      */
     private function action_generate_ai(): void {
         $topic = required_param('topic', PARAM_TEXT);
         $aicontext = optional_param('ai_context', '', PARAM_TEXT);
-        $ailanguage = optional_param('ai_language', '', PARAM_TEXT);
+        $ailanguage = $this->ai_language_param();
         $quantity = required_param('quantity', PARAM_INT);
         $difficulty = required_param('difficulty', PARAM_INT);
         $aicategoriesraw = optional_param('ai_categories', '', PARAM_TEXT);
@@ -1258,7 +1268,7 @@ class controller {
      */
     private function action_generate_ai_quiz(): void {
         $topic      = required_param('topic', PARAM_TEXT);
-        $language   = optional_param('ai_language', '', PARAM_TEXT);
+        $language   = $this->ai_language_param();
         $quantity   = max(5, min(50, (int) required_param('quantity', PARAM_INT)));
         $difficulty = max(1, min(5, (int) optional_param('difficulty', 3, PARAM_INT)));
         $aicontext  = optional_param('ai_context', '', PARAM_TEXT);

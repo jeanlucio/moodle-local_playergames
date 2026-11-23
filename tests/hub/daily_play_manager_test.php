@@ -123,6 +123,49 @@ final class daily_play_manager_test extends \advanced_testcase {
         $this->assertTrue($games['quiz']['pending']);
     }
 
+    /**
+     * A game without anything to play says why: no cartridge, words that do not serve it, or words not drawn yet.
+     *
+     * Regression test: an active cartridge without a usable word was reported as no cartridge at all.
+     */
+    public function test_a_locked_game_says_why(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $reasons = function () use ($user): array {
+            $games = array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
+            return array_map(static fn(array $game): array => [$game['str_locked'], $game['str_locked_hint']], $games);
+        };
+        $texts = static fn(string $reason): array => [
+            get_string("hub_game_{$reason}", 'local_playergames'),
+            get_string("hub_game_{$reason}_hint", 'local_playergames'),
+        ];
+
+        $locked = $reasons();
+        $this->assertSame(array_fill_keys(['quiz', 'guess', 'fill', 'battle'], $texts('locked')), $locked);
+
+        $this->add_cartridge('concept');
+        $DB->set_field('local_playergames_concepts', 'term', 'Two words');
+        $DB->delete_records('local_playergames_daily_assignments', ['gamedate' => \local_playergames\local\day::today()]);
+        $locked = $reasons();
+        $this->assertSame($texts('nowords'), $locked['guess']);
+        $this->assertSame($texts('nowords'), $locked['fill']);
+        $this->assertSame($texts('locked'), $locked['quiz']);
+
+        // One word serves PlayerGuess, not yet drawn, and is too little for PlayerFill.
+        $DB->set_field('local_playergames_concepts', 'term', 'apple', [
+            'id' => $DB->get_field_sql('SELECT MIN(id) FROM {local_playergames_concepts}'),
+        ]);
+        $locked = $reasons();
+        $this->assertSame($texts('notdrawn'), $locked['guess']);
+        $this->assertSame($texts('nowords'), $locked['fill']);
+
+        \local_playergames\task\assign_daily_games::draw_now();
+        $games = array_column(daily_play_manager::get_games_today((int) $user->id, []), null, 'gametype');
+        $this->assertTrue($games['guess']['pending']);
+        $this->assertSame('', $games['guess']['str_locked_hint']);
+    }
+
     public function test_an_inactive_cartridge_opens_nothing(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();

@@ -7,6 +7,9 @@ difficulty, categories) and parses the AI's JSON response back into concepts, so
 key management while still supporting AI-assisted cartridge generation wherever the Hub is
 installed.
 
+The language field comes filled in with the language of the person on the page and can be changed. For concepts, the
+prompt asks only for single words, letters only, with a length that serves PlayerGuess and PlayerFill.
+
 ## Resolution order
 
 | Priority | Source | Notes |

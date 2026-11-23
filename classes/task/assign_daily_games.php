@@ -24,10 +24,9 @@
 
 namespace local_playergames\task;
 
-use core_text;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
-use local_playergames\games\season_game_config;
+use local_playergames\games\word_pool;
 use local_playergames\local\day;
 
 /**
@@ -44,7 +43,7 @@ use local_playergames\local\day;
  *
  * Wordle-style filter for PlayerGuess: only concepts whose term length falls
  * between guess_minlen and guess_maxlen (admin settings) are eligible, and
- * whose term is a single alphabetic word — the same rule guess_manager
+ * whose term is a single alphabetic word (see word_pool) — the same rule guess_manager
  * enforces on every submitted guess. A term with a space, digit or hyphen
  * (e.g. "AI-5") would sit inside the length range yet could never be typed by
  * a letters-only guess, making that day's play unwinnable for everyone.
@@ -105,17 +104,14 @@ class assign_daily_games extends \core\task\scheduled_task {
         global $DB;
         $today = day::today();
 
-        $activeids = $DB->get_fieldset_select(
-            'local_playergames_cartridges',
-            'id',
-            'active = 1'
-        );
-        if (empty($activeids)) {
+        if (!$DB->record_exists('local_playergames_cartridges', ['active' => 1, 'type' => 'concept'])) {
             $this->report('No active cartridges — skipping assignment.');
             return;
         }
 
-        [$minlen, $maxlen] = $this->length_range('guess', 4, 8);
+        foreach (word_pool::games() as $gametype) {
+            $this->report_broken_range($gametype);
+        }
 
         foreach (self::CONCEPT_GAMES as $gametype) {
             $alreadyassigned = $DB->record_exists(
@@ -127,9 +123,8 @@ class assign_daily_games extends \core\task\scheduled_task {
                 continue;
             }
 
-            $pool = $this->season_cartridges($gametype, $activeids);
-            $avoid = $this->terms_assigned_today('fill', $today);
-            $conceptid = $pool === [] ? null : $this->pick_concept($pool, $minlen, $maxlen, $avoid);
+            $terms = word_pool::terms($gametype, word_pool::cartridges($gametype));
+            $conceptid = $this->pick_concept($terms, $this->terms_assigned_today('fill', $today));
             if ($conceptid === null) {
                 $this->report("No eligible concept found for {$gametype} — skipping.");
                 continue;
@@ -143,7 +138,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             $this->report("Assigned concept {$conceptid} to {$gametype} for today.");
         }
 
-        $fillpool = $this->season_cartridges('fill', $activeids);
+        $fillpool = word_pool::cartridges('fill');
         if ($fillpool === []) {
             $this->report('No cartridge kept for fill in the active season — skipping assignment.');
             return;
@@ -152,52 +147,19 @@ class assign_daily_games extends \core\task\scheduled_task {
     }
 
     /**
-     * Reads the term length range a game draws from, falling back to the defaults when it cannot work.
+     * Reports a length range that can match no word, which the draw replaces with the default one.
      *
-     * The settings page refuses a range that crosses itself, but one saved before that, or set another
-     * way, would match no term at all and leave the game without a concept every day.
-     *
-     * @param string $prefix Setting prefix: 'guess' or 'fill'.
-     * @param int $defaultmin Default minimum length.
-     * @param int $defaultmax Default maximum length.
-     * @return int[] [minimum, maximum]
+     * @param string $gametype 'guess' or 'fill'.
+     * @return void
      */
-    private function length_range(string $prefix, int $defaultmin, int $defaultmax): array {
-        $min = (int) get_config('local_playergames', $prefix . '_minlen') ?: $defaultmin;
-        $max = (int) get_config('local_playergames', $prefix . '_maxlen') ?: $defaultmax;
-        if ($min < 1 || $max < $min) {
+    private function report_broken_range(string $gametype): void {
+        [$min, $max] = word_pool::configured_range($gametype);
+        [$usedmin, $usedmax] = word_pool::length_range($gametype);
+        if ([$min, $max] !== [$usedmin, $usedmax]) {
             $this->report(
-                "The {$prefix} term length range {$min}-{$max} cannot match any term — using {$defaultmin}-{$defaultmax}."
+                "The {$gametype} term length range {$min}-{$max} cannot match any term — using {$usedmin}-{$usedmax}."
             );
-            return [$defaultmin, $defaultmax];
         }
-        return [$min, $max];
-    }
-
-    /**
-     * Narrows the active cartridges to the ones the active season kept for a game.
-     *
-     * The admin picks them per game in the season's game settings; none picked, no active season or a
-     * season without a row for the game (one that predates per-season configuration) means all of them.
-     * Only PlayerGuess and PlayerFill read the pick here: the quiz games filter by it when they load
-     * their questions.
-     *
-     * @param string $gametype Game type.
-     * @param int[] $activeids Ids of the active cartridges.
-     * @return int[] Ids the game may draw from, a subset of $activeids.
-     */
-    private function season_cartridges(string $gametype, array $activeids): array {
-        $config = season_game_config::get_for_active_season($gametype);
-        if ($config === null || $config->cartridgeids === null) {
-            return $activeids;
-        }
-
-        $kept = json_decode((string) $config->cartridgeids, true);
-        if (!is_array($kept)) {
-            return $activeids;
-        }
-
-        return array_values(array_intersect($activeids, array_map('intval', $kept)));
     }
 
     /**
@@ -228,17 +190,8 @@ class assign_daily_games extends \core\task\scheduled_task {
         }
 
         $numwords = fill_manager::num_words();
-        [$minlen, $maxlen] = $this->length_range('fill', 3, 12);
-
-        [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
-        $where = "cartridgeid {$insql}";
-        $params['minlen'] = $minlen;
-        $params['maxlen'] = $maxlen;
-        $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
-        $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
-
-        $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
-        [$fresh, $avoided] = $this->split_by_terms($rows, $this->terms_assigned_today('guess', $today));
+        $terms = word_pool::terms('fill', $cartridgeids);
+        [$fresh, $avoided] = $this->split_by_terms($terms, $this->terms_assigned_today('guess', $today));
 
         if (count($fresh) + count($avoided) < $numwords) {
             $this->report('Not enough eligible concepts for fill — skipping.');
@@ -261,29 +214,13 @@ class assign_daily_games extends \core\task\scheduled_task {
     /**
      * Picks a random concept PlayerGuess can use.
      *
-     * The length filter in SQL counts every character, but a guess can only ever contain letters, so each
-     * candidate is checked again in PHP: a term with a space, digit or hyphen (still within the length
-     * bounds) is never assigned.
-     *
-     * @param int[] $cartridgeids Active cartridge IDs.
-     * @param int $minlen Minimum term length.
-     * @param int $maxlen Maximum term length.
+     * @param array $terms Terms the game may draw, keyed by concept id.
      * @param array $avoid Normalized terms already in another game today, keyed by term: used only when nothing else
      *                     is left.
      * @return int|null Concept ID or null if none found.
      */
-    private function pick_concept(array $cartridgeids, int $minlen, int $maxlen, array $avoid = []): ?int {
-        global $DB;
-
-        [$insql, $params] = $DB->get_in_or_equal($cartridgeids, SQL_PARAMS_NAMED, 'cid');
-        $where = "cartridgeid {$insql}";
-        $params['minlen'] = $minlen;
-        $params['maxlen'] = $maxlen;
-        $where .= ' AND ' . $DB->sql_length('term') . ' >= :minlen';
-        $where .= ' AND ' . $DB->sql_length('term') . ' <= :maxlen';
-
-        $rows = $DB->get_records_select('local_playergames_concepts', $where, $params, '', 'id, term');
-        [$fresh, $avoided] = $this->split_by_terms($rows, $avoid);
+    private function pick_concept(array $terms, array $avoid = []): ?int {
+        [$fresh, $avoided] = $this->split_by_terms($terms, $avoid);
         // A word another game uses today is drawn only when no other is left.
         $choices = $fresh !== [] ? $fresh : $avoided;
         if ($choices === []) {
@@ -293,24 +230,20 @@ class assign_daily_games extends \core\task\scheduled_task {
     }
 
     /**
-     * Splits the letters-only concepts among the rows into the ones whose term is free and the ones in $avoid.
+     * Splits the concepts into the ones whose term is free and the ones in $avoid.
      *
-     * @param \stdClass[] $rows Concepts with id and term.
+     * @param array $terms Terms keyed by concept id.
      * @param array $avoid Normalized terms to keep apart, keyed by term.
      * @return array [int[] $fresh, int[] $avoided]
      */
-    private function split_by_terms(array $rows, array $avoid): array {
+    private function split_by_terms(array $terms, array $avoid): array {
         $fresh = [];
         $avoided = [];
-        foreach ($rows as $row) {
-            $normalized = guess_manager::normalize($row->term);
-            if (!guess_manager::is_valid_guess($normalized, core_text::strlen($normalized))) {
-                continue;
-            }
-            if (isset($avoid[$normalized])) {
-                $avoided[] = (int) $row->id;
+        foreach ($terms as $conceptid => $term) {
+            if (isset($avoid[guess_manager::normalize($term)])) {
+                $avoided[] = $conceptid;
             } else {
-                $fresh[] = (int) $row->id;
+                $fresh[] = $conceptid;
             }
         }
         return [$fresh, $avoided];

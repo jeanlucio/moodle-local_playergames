@@ -34,6 +34,7 @@ PostgreSQL & MariaDB).
 | `games/guess_manager_test.php` | 7 | Daily concept resolution, term normalisation, Wordle-style letter feedback (including duplicate letters), guess validation |
 | `games/fill_manager_test.php` | 10 | Word count/max-attempts config clamping, shared letter→slot assignment (including disjoint terms), tile reveal state, cross-reveal cascade, per-day term ordering and filtering, POST response payload reveal rules |
 | `games/battle_manager_test.php` | 12 | PlayerBattle on the server: questions delivered ready for the browser with the text escaped once, no battle without questions, a defeat saved without XP and without spending the play, a victory with the season XP (also past the quota, with none), the best result of the day, a battle accepted once, counters kept in range, only the questions delivered counted as seen |
+| `games/word_pool_test.php` | 7 | Which terms serve PlayerGuess and PlayerFill: the rule itself, length ranges, cartridges of the season, enough words for a day, count per cartridge |
 | `games/season_game_config_test.php` | 7 | Source helpers; enabled-record lookup; per-season listing; default seeding and preservation |
 | `external/set_avatar_test.php` | 3 | Equip/unequip via the AJAX endpoint, rejecting a locked avatar |
 | `external/set_ranking_visibility_test.php` | 2 | Season ranking opt-in/opt-out toggle |

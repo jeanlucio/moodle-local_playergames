@@ -29,6 +29,7 @@ use local_playergames\games\day_loss;
 use local_playergames\games\fill_manager;
 use local_playergames\games\guess_manager;
 use local_playergames\games\season_game_config;
+use local_playergames\games\word_pool;
 use local_playergames\local\access;
 use local_playergames\local\day;
 use local_playergames\local\user_lock;
@@ -288,6 +289,7 @@ class daily_play_manager {
             $lost    = !$done && isset($lostgames[$gametype]);
             $locked  = !$done && !$lost && !self::has_content($gametype, $activetypes);
             $pending = !$done && !$lost && !$locked;
+            $lockedtexts = $locked ? self::locked_texts($gametype) : ['', ''];
             $result[] = [
                 'gametype' => $gametype,
                 'name'     => get_string('hub_game_' . $gametype, 'local_playergames'),
@@ -300,11 +302,29 @@ class daily_play_manager {
                     ? (new moodle_url('/local/playergames/play_' . $gametype . '.php'))->out(false) : '',
                 'str_done'    => get_string('hub_game_done', 'local_playergames'),
                 'str_pending' => get_string('hub_game_pending', 'local_playergames'),
-                'str_locked'  => get_string('hub_game_locked', 'local_playergames'),
+                'str_locked'  => $lockedtexts[0],
+                'str_locked_hint' => $lockedtexts[1],
                 'str_lost'    => get_string('hub_game_lost', 'local_playergames'),
             ];
         }
         return $result;
+    }
+
+    /**
+     * Says why a game has nothing to play today: the badge of its card and the sentence below it.
+     *
+     * @param string $gametype Game type.
+     * @return string[] [badge, explanation]
+     */
+    private static function locked_texts(string $gametype): array {
+        $reason = 'locked';
+        if (in_array($gametype, word_pool::games(), true) && word_pool::cartridges($gametype) !== []) {
+            $reason = word_pool::has_enough($gametype) ? 'notdrawn' : 'nowords';
+        }
+        return [
+            get_string('hub_game_' . $reason, 'local_playergames'),
+            get_string('hub_game_' . $reason . '_hint', 'local_playergames'),
+        ];
     }
 
     /**

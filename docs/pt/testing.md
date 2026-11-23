@@ -35,6 +35,7 @@ completa (Moodle 4.5 → 5.3, PostgreSQL e MariaDB).
 | `games/guess_manager_test.php` | 7 | Resolução do conceito diário, normalização do termo, feedback de letras estilo Wordle (incluindo letras duplicadas), validação da tentativa |
 | `games/fill_manager_test.php` | 10 | Clamp da config de quantidade de palavras/tentativas máximas, atribuição de letra→slot compartilhado (incluindo termos sem letras em comum), estado de revelação das casas, cascata de revelação cruzada, ordenação/filtro dos termos do dia, regras de revelação no payload de resposta do POST |
 | `games/battle_manager_test.php` | 12 | PlayerBattle no servidor: questões entregues prontas para o navegador com o texto escapado uma vez, nenhuma batalha sem questões, derrota salva sem XP e sem gastar a jogada, vitória com o XP da temporada (e sem XP além da cota), o melhor resultado do dia, batalha aceita uma só vez, contadores dentro do limite, só as questões entregues contam como vistas |
+| `games/word_pool_test.php` | 7 | Quais termos servem ao PlayerGuess e ao PlayerFill: a própria regra, faixas de comprimento, cartuchos da temporada, palavras suficientes para um dia, contagem por cartucho |
 | `games/season_game_config_test.php` | 7 | Helpers de fonte; busca do registro habilitado; listagem por temporada; seed de defaults e preservação |
 | `external/set_avatar_test.php` | 3 | Equipar/desequipar via o endpoint AJAX, rejeitando um avatar bloqueado |
 | `external/set_ranking_visibility_test.php` | 2 | Toggle de opt-in/opt-out do ranking de temporada |
