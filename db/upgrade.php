@@ -116,5 +116,18 @@ function xmldb_local_playergames_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112201, 'local', 'playergames');
     }
 
+    if ($oldversion < 2026112300) {
+        // The term lengths of PlayerGuess are named after the game.
+        foreach (['minlen', 'maxlen'] as $end) {
+            $value = get_config('local_playergames', 'wordle_' . $end);
+            if ($value !== false) {
+                set_config('guess_' . $end, $value, 'local_playergames');
+                unset_config('wordle_' . $end, 'local_playergames');
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2026112300, 'local', 'playergames');
+    }
+
     return true;
 }

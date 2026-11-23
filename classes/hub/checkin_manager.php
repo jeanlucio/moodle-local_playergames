@@ -46,14 +46,14 @@ class checkin_manager {
      * Records today's check-in for the user if not already done this day.
      *
      * @param int $userid The user checking in.
-     * @return void
+     * @return bool Whether there is nothing left to do today; false when the lock of the user stayed taken.
      */
-    public static function record(int $userid): void {
+    public static function record(int $userid): bool {
         global $DB;
 
         $season = season_manager::get_active();
         if (!$season) {
-            return;
+            return true;
         }
 
         // The hub calls this on every visit: a check-in already made today is seen without taking the lock.
@@ -61,20 +61,21 @@ class checkin_manager {
         $gamedate = day::today();
         $today = ['userid' => $userid, 'gamedate' => $gamedate, 'gametype' => 'checkin'];
         if ($DB->record_exists('local_playergames_daily_scores', $today)) {
-            return;
+            return true;
         }
 
         // The check-in pays XP and moves the missions and the streak, which a game of the same moment also
         // writes: both run under the lock of the user. When the lock stays taken, the next page checks in.
         $lock = user_lock::acquire($userid);
         if (!$lock) {
-            return;
+            return false;
         }
         try {
             self::record_locked($userid, $season);
         } finally {
             $lock->release();
         }
+        return true;
     }
 
     /**

@@ -52,8 +52,8 @@ final class setting_word_length_test extends \advanced_testcase {
      */
     private function setting(string $end): setting_word_length {
         return $end === 'min'
-            ? new setting_word_length('local_playergames/wordle_minlen', 'Min', 'Help', 4, 'min', 'wordle_maxlen', 8)
-            : new setting_word_length('local_playergames/wordle_maxlen', 'Max', 'Help', 8, 'max', 'wordle_minlen', 4);
+            ? new setting_word_length('local_playergames/guess_minlen', 'Min', 'Help', 4, 'min', 'guess_maxlen', 8)
+            : new setting_word_length('local_playergames/guess_maxlen', 'Max', 'Help', 8, 'max', 'guess_minlen', 4);
     }
 
     public function test_a_range_that_works_is_accepted(): void {
@@ -82,7 +82,7 @@ final class setting_word_length_test extends \advanced_testcase {
      */
     public function test_a_minimum_above_the_stored_maximum_is_refused(): void {
         $this->resetAfterTest();
-        set_config('wordle_maxlen', 6, 'local_playergames');
+        set_config('guess_maxlen', 6, 'local_playergames');
         $crossed = get_string('settings_length_range_invalid', 'local_playergames');
 
         $this->assertSame($crossed, $this->setting('min')->validate('10'));
@@ -91,7 +91,7 @@ final class setting_word_length_test extends \advanced_testcase {
 
     public function test_a_maximum_below_the_stored_minimum_is_refused(): void {
         $this->resetAfterTest();
-        set_config('wordle_minlen', 5, 'local_playergames');
+        set_config('guess_minlen', 5, 'local_playergames');
         $crossed = get_string('settings_length_range_invalid', 'local_playergames');
 
         $this->assertSame($crossed, $this->setting('max')->validate('3'));
@@ -103,16 +103,16 @@ final class setting_word_length_test extends \advanced_testcase {
      */
     public function test_the_other_end_is_read_from_the_submitted_form_first(): void {
         $this->resetAfterTest();
-        set_config('wordle_maxlen', 8, 'local_playergames');
-        $_POST['s_local_playergames_wordle_maxlen'] = '12';
+        set_config('guess_maxlen', 8, 'local_playergames');
+        $_POST['s_local_playergames_guess_maxlen'] = '12';
         try {
             // Raising both at once is valid even though the stored maximum is lower than the new minimum.
             $this->assertTrue($this->setting('min')->validate('10'));
 
-            $_POST['s_local_playergames_wordle_maxlen'] = '3';
+            $_POST['s_local_playergames_guess_maxlen'] = '3';
             $this->assertNotTrue($this->setting('min')->validate('4'));
         } finally {
-            unset($_POST['s_local_playergames_wordle_maxlen']);
+            unset($_POST['s_local_playergames_guess_maxlen']);
         }
     }
 

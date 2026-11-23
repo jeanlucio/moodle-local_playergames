@@ -105,7 +105,13 @@ final class quiz_play_test extends \advanced_testcase {
      * @return array The state.
      */
     private function start(int $count = 3): array {
-        return quiz_play::start($this->today, (int) $this->season->id, $this->questions($count), \context_system::instance());
+        return quiz_play::start(
+            $this->today,
+            (int) $this->season->id,
+            $this->questions($count),
+            \context_system::instance(),
+            (int) $this->user->id
+        );
     }
 
     /**
@@ -162,7 +168,13 @@ final class quiz_play_test extends \advanced_testcase {
         $questions = $this->questions(1);
         $questions[0]->questiontext = 'Is 1 < 2 & <b>3</b> > 2?';
         $questions[0]->answers[0]->text = 'A & <i>B</i>';
-        $state = quiz_play::start($this->today, (int) $this->season->id, $questions, \context_system::instance());
+        $state = quiz_play::start(
+            $this->today,
+            (int) $this->season->id,
+            $questions,
+            \context_system::instance(),
+            (int) $this->user->id
+        );
 
         $view = quiz_play::view($state);
         $this->assertSame('Is 1 < 2 & <b>3</b> > 2?', $view[0]['questiontext']);
@@ -431,5 +443,61 @@ final class quiz_play_test extends \advanced_testcase {
         $this->prepare();
 
         $this->assertSame(0, quiz_play::seconds_left(['shownat' => time() - 10]));
+    }
+
+    /**
+     * Forgets the play of the session, as logging out and in again does.
+     *
+     * @return void
+     */
+    private function new_session(): void {
+        \cache::make_from_params(\cache_store::MODE_SESSION, 'local_playergames', 'quizplay')->purge();
+    }
+
+    /**
+     * With a limit, the wrong answers of the day outlive the session.
+     *
+     * Regression test: they were kept in the session alone, so logging out before the last one started the count
+     * again and the limit was never reached.
+     */
+    public function test_a_new_session_goes_on_from_the_wrong_answers_of_the_day(): void {
+        $this->prepare();
+        set_config('quiz_max_attempts', 2, 'local_playergames');
+        $this->start();
+        $this->answer(0, 0);
+
+        $this->new_session();
+        $state = $this->start();
+        $this->assertSame(1, $state['wrong']);
+        $result = $this->answer(0, 0);
+
+        $this->assertTrue($result['finished']);
+        $this->assertTrue(day_loss::is_closed((int) $this->user->id, 'quiz', $this->today));
+    }
+
+    /**
+     * Winning forgets the wrong answers, so the next play of the day starts with all its attempts.
+     */
+    public function test_a_win_forgets_the_wrong_answers_of_the_day(): void {
+        $this->prepare();
+        set_config('quiz_max_attempts', 3, 'local_playergames');
+        $this->start();
+        $this->answer(0, 0);
+        quiz_play::next();
+        $this->assertTrue($this->answer(1, 2)['won']);
+
+        $this->new_session();
+        $this->assertSame(0, $this->start()['wrong']);
+    }
+
+    /**
+     * With unlimited attempts nothing is kept for the day.
+     */
+    public function test_unlimited_attempts_keep_no_wrong_answers(): void {
+        $this->prepare();
+        $this->start();
+        $this->answer(0, 0);
+
+        $this->assertSame(0, day_loss::wrong((int) $this->user->id, 'quiz', $this->today));
     }
 }

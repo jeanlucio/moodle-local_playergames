@@ -138,7 +138,7 @@ if (!$alreadyplayed && !$closedtoday) {
         $exclude = served_questions::get_excluded((int) $USER->id, 'quiz', $gamedate);
         $loaded  = (new quiz_loader())->load_session($sessionsize, $cartridgeids, $exclude);
         if (!empty($loaded)) {
-            $play = quiz_play::start($gamedate, (int) $activeseason->id, $loaded, $context);
+            $play = quiz_play::start($gamedate, (int) $activeseason->id, $loaded, $context, (int) $USER->id);
         }
     }
 

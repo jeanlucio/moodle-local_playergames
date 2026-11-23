@@ -97,6 +97,8 @@ final class contracts_test extends \advanced_testcase {
         ],
         'games\battle_manager' => [
             'max_attempts' => 'reads a setting',
+            'begin_battle' => 'marks the match under the lock of the round; nothing is paid before submit_result',
+            'settle_abandoned' => 'counts a defeat under the lock of the round, and pays nothing',
             'start_battle' => 'keeps the battle in the session of the request; nothing is paid before submit_result',
             'answer_question' => 'judges one answer in the session of the request; nothing is paid before submit_result',
         ],

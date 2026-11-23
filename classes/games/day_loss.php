@@ -103,6 +103,155 @@ class day_loss {
     }
 
     /**
+     * Defeats counted today.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return int
+     */
+    public static function losses(int $userid, string $gametype, int $gamedate): int {
+        return (int) (round_store::fetch($userid, $gametype, $gamedate)['losses'] ?? 0);
+    }
+
+    /**
+     * Marks a match as being played, so that one left midway can be told from one that ended.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param string $token What identifies the match.
+     * @return void
+     */
+    public static function begin(int $userid, string $gametype, int $gamedate, string $token): void {
+        self::change($userid, $gametype, $gamedate, static function (array $state) use ($token): array {
+            $state['open'] = $token;
+            return $state;
+        });
+    }
+
+    /**
+     * Whether the match is the one being played.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param string $token What identifies the match.
+     * @return bool
+     */
+    public static function is_open(int $userid, string $gametype, int $gamedate, string $token): bool {
+        return (round_store::fetch($userid, $gametype, $gamedate)['open'] ?? '') === $token;
+    }
+
+    /**
+     * Ends the match being played without a defeat.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return void
+     */
+    public static function finish(int $userid, string $gametype, int $gamedate): void {
+        self::change($userid, $gametype, $gamedate, static function (array $state): array {
+            unset($state['open']);
+            return $state;
+        });
+    }
+
+    /**
+     * Counts a match left midway as a defeat, or only forgets it when the defeats are unlimited.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param int $allowed Defeats that close the day; 0 never closes it.
+     * @return void
+     */
+    public static function settle(int $userid, string $gametype, int $gamedate, int $allowed): void {
+        if (empty(round_store::fetch($userid, $gametype, $gamedate)['open'])) {
+            return;
+        }
+        self::change($userid, $gametype, $gamedate, static function (array $state) use ($allowed): array {
+            // Asked again under the lock: another request may have settled it meanwhile.
+            if (empty($state['open'])) {
+                return $state;
+            }
+            unset($state['open']);
+            if ($allowed > 0) {
+                $state['losses'] = (int) ($state['losses'] ?? 0) + 1;
+                $state['closed'] = !empty($state['closed']) || $state['losses'] >= $allowed;
+            }
+            return $state;
+        });
+    }
+
+    /**
+     * Wrong answers kept for the day, so that a new session goes on from them.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return int
+     */
+    public static function wrong(int $userid, string $gametype, int $gamedate): int {
+        return (int) (round_store::fetch($userid, $gametype, $gamedate)['wrong'] ?? 0);
+    }
+
+    /**
+     * Adds one wrong answer to the ones kept for the day.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return int The wrong answers of the day, this one included.
+     */
+    public static function add_wrong(int $userid, string $gametype, int $gamedate): int {
+        $state = self::change($userid, $gametype, $gamedate, static function (array $state): array {
+            $state['wrong'] = (int) ($state['wrong'] ?? 0) + 1;
+            return $state;
+        });
+        return (int) $state['wrong'];
+    }
+
+    /**
+     * Forgets the wrong answers of the day, once the play they belong to was won.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return void
+     */
+    public static function clear_wrong(int $userid, string $gametype, int $gamedate): void {
+        if (self::wrong($userid, $gametype, $gamedate) === 0) {
+            return;
+        }
+        self::change($userid, $gametype, $gamedate, static function (array $state): array {
+            unset($state['wrong']);
+            return $state;
+        });
+    }
+
+    /**
+     * Reads, changes and writes the state of the day under the lock of the round.
+     *
+     * @param int $userid User id.
+     * @param string $gametype One of COUNTED_GAMES.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @param callable $change Receives the state and returns the changed one.
+     * @return array The changed state.
+     */
+    private static function change(int $userid, string $gametype, int $gamedate, callable $change): array {
+        $lock = round_store::lock($userid, $gametype);
+        try {
+            $state = $change(round_store::fetch($userid, $gametype, $gamedate) ?? []);
+            round_store::store($userid, $gametype, $gamedate, $state);
+            return $state;
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
      * Whether the state of a round says the day was lost.
      *
      * @param string $gametype Game type.

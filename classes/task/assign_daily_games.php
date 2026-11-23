@@ -43,7 +43,7 @@ use local_playergames\local\day;
  * it is left unchanged.
  *
  * Wordle-style filter for PlayerGuess: only concepts whose term length falls
- * between wordle_minlen and wordle_maxlen (admin settings) are eligible, and
+ * between guess_minlen and guess_maxlen (admin settings) are eligible, and
  * whose term is a single alphabetic word — the same rule guess_manager
  * enforces on every submitted guess. A term with a space, digit or hyphen
  * (e.g. "AI-5") would sit inside the length range yet could never be typed by
@@ -115,7 +115,7 @@ class assign_daily_games extends \core\task\scheduled_task {
             return;
         }
 
-        [$minlen, $maxlen] = $this->length_range('wordle', 4, 8);
+        [$minlen, $maxlen] = $this->length_range('guess', 4, 8);
 
         foreach (self::CONCEPT_GAMES as $gametype) {
             $alreadyassigned = $DB->record_exists(
@@ -157,7 +157,7 @@ class assign_daily_games extends \core\task\scheduled_task {
      * The settings page refuses a range that crosses itself, but one saved before that, or set another
      * way, would match no term at all and leave the game without a concept every day.
      *
-     * @param string $prefix Setting prefix: 'wordle' or 'fill'.
+     * @param string $prefix Setting prefix: 'guess' or 'fill'.
      * @param int $defaultmin Default minimum length.
      * @param int $defaultmax Default maximum length.
      * @return int[] [minimum, maximum]
@@ -205,7 +205,7 @@ class assign_daily_games extends \core\task\scheduled_task {
      *
      * Candidates are filtered the same way as PlayerGuess (letters-only after
      * normalization, within a configured length range — fill_minlen/fill_maxlen here
-     * instead of wordle_minlen/wordle_maxlen), since every assigned term is tiled as a
+     * instead of guess_minlen/guess_maxlen), since every assigned term is tiled as a
      * guessable word. Skips assignment entirely, rather than assigning a partial set,
      * when the eligible pool is smaller than the configured word count — the same
      * graceful degradation the other concept games apply when no eligible concept

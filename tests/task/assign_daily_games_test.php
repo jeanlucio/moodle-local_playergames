@@ -36,7 +36,7 @@ use local_playergames\games\fill_manager;
  */
 final class assign_daily_games_test extends \advanced_testcase {
     /**
-     * Creates an active concept cartridge with wordle-eligible terms — enough of them
+     * Creates an active concept cartridge with PlayerGuess-eligible terms — enough of them
      * (fill_manager::DEFAULT_NUM_WORDS) that PlayerFill's own multi-concept assignment
      * has a large enough pool to draw from too.
      *
@@ -358,8 +358,8 @@ final class assign_daily_games_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $this->seed_concepts();
-        set_config('wordle_minlen', 10, 'local_playergames');
-        set_config('wordle_maxlen', 6, 'local_playergames');
+        set_config('guess_minlen', 10, 'local_playergames');
+        set_config('guess_maxlen', 6, 'local_playergames');
         set_config('fill_minlen', 13, 'local_playergames');
         set_config('fill_maxlen', -1, 'local_playergames');
 

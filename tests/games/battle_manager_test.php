@@ -602,4 +602,86 @@ final class battle_manager_test extends \advanced_testcase {
         $this->assertFalse($this->finish(true)['success']);
         $this->assertFalse($this->score_row($user));
     }
+
+    /**
+     * With a limit, a battle left midway counts as a defeat when the page is opened again, and gives no result.
+     *
+     * Regression test: only a battle that ended was counted, so reloading one about to be lost undid it.
+     */
+    public function test_a_battle_left_midway_counts_as_a_defeat(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        set_config('battle_max_attempts', 2, 'local_playergames');
+        $this->start();
+        $this->assertTrue((new battle_manager())->begin_battle((int) $user->id)['success']);
+
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+
+        $this->assertSame(1, day_loss::losses((int) $user->id, 'battle', $this->today));
+        $this->assertFalse(day_loss::is_closed((int) $user->id, 'battle', $this->today));
+        // The page left open in another tab can no longer report a victory.
+        $late = $this->finish(true);
+        $this->assertFalse($late['success']);
+        $this->assertFalse($this->score_row($user));
+
+        $this->start();
+        (new battle_manager())->begin_battle((int) $user->id);
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+        $this->assertTrue(day_loss::is_closed((int) $user->id, 'battle', $this->today));
+    }
+
+    /**
+     * Answering a question marks the battle as being played, whatever the browser said before.
+     */
+    public function test_an_answer_marks_the_battle_as_being_played(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        set_config('battle_max_attempts', 1, 'local_playergames');
+        $this->start();
+        $this->answer(1);
+
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+
+        $this->assertTrue(day_loss::is_closed((int) $user->id, 'battle', $this->today));
+    }
+
+    /**
+     * Opening the page and leaving without a move costs nothing, and neither does a battle that ended.
+     */
+    public function test_a_battle_not_played_or_already_ended_is_not_counted(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        set_config('battle_max_attempts', 3, 'local_playergames');
+        $this->start();
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+        $this->assertSame(0, day_loss::losses((int) $user->id, 'battle', $this->today));
+
+        $this->start();
+        (new battle_manager())->begin_battle((int) $user->id);
+        $this->finish(false);
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+        $this->assertSame(1, day_loss::losses((int) $user->id, 'battle', $this->today));
+
+        $this->start();
+        (new battle_manager())->begin_battle((int) $user->id);
+        $this->assertTrue($this->finish(true)['victory']);
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+        $this->assertSame(1, day_loss::losses((int) $user->id, 'battle', $this->today));
+    }
+
+    /**
+     * With unlimited attempts a battle left midway is not a defeat.
+     */
+    public function test_a_battle_left_midway_costs_nothing_when_unlimited(): void {
+        $user = $this->prepare();
+        $this->add_question();
+        $this->start();
+        (new battle_manager())->begin_battle((int) $user->id);
+
+        battle_manager::settle_abandoned((int) $user->id, $this->today);
+
+        $this->assertSame(0, day_loss::losses((int) $user->id, 'battle', $this->today));
+        $this->assertFalse((new battle_manager())->begin_battle((int) $this->getDataGenerator()->create_user()->id)['success']);
+    }
 }

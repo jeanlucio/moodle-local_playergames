@@ -71,6 +71,7 @@ partidas hoje* vs *qual o tamanho do baralho de cada partida*.
 - O tempo esgotar é tratado exatamente como um erro.
 - Uma jogada só pode **falhar** quando há um limite de tentativas; com Ilimitado o jogo entra em loop
   até o acerto.
+- Com limite, os erros do dia ficam guardados no servidor: um novo login continua deles.
 - Uma jogada falha **não dá XP e fecha o PlayerQuiz até o dia seguinte**, a mesma regra dos outros
   jogos: dia perdido é dia perdido. A derrota fica guardada no servidor, então recarregar a página,
   trocar de navegador ou entrar de novo não reabre o jogo, e o hub mostra *Volte amanhã*.

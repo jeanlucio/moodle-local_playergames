@@ -53,9 +53,14 @@ if (data_submitted()) {
         $season === null
         || season_game_config::is_disabled((int) $season->id, 'battle')
         || day_loss::is_closed((int) $USER->id, 'battle', $gamedate)
-        || !in_array($postaction, ['answer_question', 'submit_result'], true)
+        || !in_array($postaction, ['begin_battle', 'answer_question', 'submit_result'], true)
     ) {
         echo json_encode(['success' => false, 'xpawarded' => 0]);
+        exit;
+    }
+
+    if ($postaction === 'begin_battle') {
+        echo json_encode($manager->begin_battle((int) $USER->id));
         exit;
     }
 
@@ -93,6 +98,10 @@ if ($blocked !== null) {
 $snapshot      = season_manager::get_config_snapshot($activeseason);
 $remaining     = daily_play_manager::remaining_plays((int) $USER->id, 'battle', $gamedate, $snapshot);
 $alreadyplayed = $remaining <= 0;
+// A battle left midway counts as a defeat, which can be the last one allowed for the day.
+if (!$alreadyplayed) {
+    battle_manager::settle_abandoned((int) $USER->id, $gamedate);
+}
 // The defeats allowed for the day were all used: the game stays closed until tomorrow.
 $closedtoday = !$alreadyplayed && day_loss::is_closed((int) $USER->id, 'battle', $gamedate);
 
@@ -132,6 +141,16 @@ foreach (
     $strings['str_' . $key] = get_string('battle_' . $key, 'local_playergames');
 }
 
+// The rule is said before the first move, as leaving the page midway costs an attempt.
+$attemptsnotice = '';
+if (battle_manager::max_attempts() > 0) {
+    $attemptsnotice = get_string(
+        'battle_attempts_notice',
+        'local_playergames',
+        max(0, battle_manager::max_attempts() - day_loss::losses((int) $USER->id, 'battle', $gamedate))
+    );
+}
+
 if (!$alreadyplayed && !$closedtoday && !$noquestions) {
     $PAGE->requires->js_call_amd('local_playergames/battle_boot', 'init');
 }
@@ -139,6 +158,7 @@ if (!$alreadyplayed && !$closedtoday && !$noquestions) {
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_playergames/play_battle', $strings + [
     'already_played'  => $alreadyplayed,
+    'attempts_notice' => $attemptsnotice,
     'closed_today'    => $closedtoday,
     'no_questions'    => $noquestions,
     'playable'        => !$alreadyplayed && !$closedtoday && !$noquestions,

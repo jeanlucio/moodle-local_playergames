@@ -54,9 +54,10 @@ class quiz_play {
      * @param int $seasonid The active season.
      * @param quiz_question[] $loaded The questions to deliver.
      * @param \context $context Context the question text is filtered in.
+     * @param int $userid The player.
      * @return array The new state.
      */
-    public static function start(int $gamedate, int $seasonid, array $loaded, \context $context): array {
+    public static function start(int $gamedate, int $seasonid, array $loaded, \context $context, int $userid): array {
         $questions = [];
         foreach ($loaded as $question) {
             $questions[] = self::describe($question, $context);
@@ -67,7 +68,8 @@ class quiz_play {
             'seasonid'     => $seasonid,
             'questions'    => $questions,
             'current'      => 0,
-            'wrong'        => 0,
+            // With a limit, the wrong answers of the day outlive the session: a new login goes on from them.
+            'wrong'        => self::is_limited() ? day_loss::wrong($userid, 'quiz', $gamedate) : 0,
             'awaitingnext' => false,
             'shownat'      => time(),
             'visited'      => empty($questions) ? [] : [$questions[0]['key']],
@@ -104,7 +106,7 @@ class quiz_play {
 
         if (!$state['awaitingnext'] && self::timed_out($state)) {
             $state['awaitingnext'] = true;
-            $state['wrong']++;
+            self::count_wrong($userid, $state);
             if (self::out_of_attempts($state)) {
                 $state['finished'] = true;
                 day_loss::record($userid, 'quiz', (int) $state['gamedate'], 1);
@@ -165,8 +167,9 @@ class quiz_play {
             $play = daily_play_manager::register_play($userid, 'quiz', (int) $state['gamedate'], $season, $context);
             $xpawarded = (int) ($play['xpawarded'] ?? 0);
             self::record_served($userid, $state);
+            day_loss::clear_wrong($userid, 'quiz', (int) $state['gamedate']);
         } else {
-            $state['wrong']++;
+            self::count_wrong($userid, $state);
             $state['awaitingnext'] = true;
             if (self::out_of_attempts($state)) {
                 $state['finished'] = true;
@@ -255,6 +258,31 @@ class quiz_play {
     private static function timed_out(array $state): bool {
         $seconds = (new quiz_settings())->question_seconds();
         return $seconds > 0 && time() - (int) $state['shownat'] > $seconds + self::GRACE_SECONDS;
+    }
+
+    /**
+     * Whether a number of wrong answers ends the play.
+     *
+     * @return bool
+     */
+    private static function is_limited(): bool {
+        return (new quiz_settings())->max_attempts() > 0;
+    }
+
+    /**
+     * Counts one wrong answer, and keeps it for the day when there is a limit.
+     *
+     * Kept in the session alone, the count started again with each login, and the limit was never reached.
+     *
+     * @param int $userid The player.
+     * @param array $state The play, changed in place.
+     * @return void
+     */
+    private static function count_wrong(int $userid, array &$state): void {
+        $state['wrong']++;
+        if (self::is_limited()) {
+            $state['wrong'] = max($state['wrong'], day_loss::add_wrong($userid, 'quiz', (int) $state['gamedate']));
+        }
     }
 
     /**

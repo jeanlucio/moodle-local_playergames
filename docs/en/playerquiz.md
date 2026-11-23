@@ -70,6 +70,7 @@ round's deck is*.
 - A timer expiry is treated exactly like a wrong answer.
 - A play can only **fail** when a maximum-attempts limit is set; with Unlimited the game loops until a
   correct answer.
+- With a limit, the wrong answers of the day are kept on the server: a new login goes on from them.
 - A failed play awards **no XP and closes PlayerQuiz until the next day**, the same rule as the other
   games: a lost day is lost. The defeat is kept on the server, so a reload, another browser or a new
   login does not reopen the game, and the hub shows it as *Come back tomorrow*.

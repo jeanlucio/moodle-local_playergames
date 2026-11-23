@@ -46,7 +46,8 @@ day count come from the Game XP settings the season was created with.
 - **A defeat** is saved but gives no XP. With **Maximum attempts** at Unlimited, the default, it does not
   spend the play and the player may try again at once. With a limit of 1 to 10, that many defeats close
   PlayerBattle until the next day, as a lost day closes the other games; the hub shows it as
-  *Come back tomorrow*.
+  *Come back tomorrow*. With a limit, a battle left or reloaded after the first move counts as a defeat too, and
+  the page says so with the attempts left: the server cannot tell it from a lost connection.
 - The day keeps the **best result**: a victory over a defeat, then the one that dealt the most damage.
 - The first victory completes the **First Victory** mission.
 - The questions shown count as seen for the day, in a defeat too, so the next try brings new ones. When

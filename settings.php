@@ -302,22 +302,22 @@ if ($hassiteconfig) {
     ));
 
     $page3->add(new \local_playergames\local\setting_word_length(
-        'local_playergames/wordle_minlen',
-        get_string('settings_wordle_minlen', 'local_playergames'),
-        get_string('settings_wordle_minlen_desc', 'local_playergames'),
+        'local_playergames/guess_minlen',
+        get_string('settings_guess_minlen', 'local_playergames'),
+        get_string('settings_guess_minlen_desc', 'local_playergames'),
         4,
         'min',
-        'wordle_maxlen',
+        'guess_maxlen',
         8
     ));
 
     $page3->add(new \local_playergames\local\setting_word_length(
-        'local_playergames/wordle_maxlen',
-        get_string('settings_wordle_maxlen', 'local_playergames'),
-        get_string('settings_wordle_maxlen_desc', 'local_playergames'),
+        'local_playergames/guess_maxlen',
+        get_string('settings_guess_maxlen', 'local_playergames'),
+        get_string('settings_guess_maxlen_desc', 'local_playergames'),
         8,
         'max',
-        'wordle_minlen',
+        'guess_minlen',
         4
     ));
 

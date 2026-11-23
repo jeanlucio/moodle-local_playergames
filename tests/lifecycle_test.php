@@ -244,8 +244,8 @@ final class lifecycle_test extends \advanced_testcase {
      */
     public function test_editing_the_term_of_todays_word_starts_the_round_over(): void {
         $this->resetAfterTest();
-        set_config('wordle_minlen', 4, 'local_playergames');
-        set_config('wordle_maxlen', 12, 'local_playergames');
+        set_config('guess_minlen', 4, 'local_playergames');
+        set_config('guess_maxlen', 12, 'local_playergames');
         $this->open_season();
         $words = $this->cartridge_with('Words', ['apple', 'grapefruit']);
         $this->assign_today('guess', $words['apple']);
@@ -303,8 +303,8 @@ final class lifecycle_test extends \advanced_testcase {
     public function test_the_hub_offers_the_word_games_only_when_they_have_words_today(): void {
         global $DB;
         $this->resetAfterTest();
-        set_config('wordle_minlen', 4, 'local_playergames');
-        set_config('wordle_maxlen', 12, 'local_playergames');
+        set_config('guess_minlen', 4, 'local_playergames');
+        set_config('guess_maxlen', 12, 'local_playergames');
         $season = $this->open_season();
         $off = $this->cartridge_with('Off', ['apple']);
         $on = $this->cartridge_with('On', ['grape', 'lemon', 'mango', 'peach', 'melon', 'berry', 'olive']);
@@ -370,7 +370,7 @@ final class lifecycle_test extends \advanced_testcase {
             $questions[] = $question;
         }
         $context = \context_system::instance();
-        games\quiz_play::start(mktime(0, 0, 0), (int) $season->id, $questions, $context);
+        games\quiz_play::start(mktime(0, 0, 0), (int) $season->id, $questions, $context, (int) $player->id);
 
         $next = $this->roll_over($season);
         $verdict = games\quiz_play::answer((int) $player->id, 0, 0, $next, $context);

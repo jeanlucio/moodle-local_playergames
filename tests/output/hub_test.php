@@ -262,6 +262,13 @@ final class hub_test extends \advanced_testcase {
         $this->assertTrue($both['hasstudentranking']);
         $this->assertTrue($admin['showbothtabs']);
         $this->assertSame([(int) $student->id], array_column($admin['studentranking'], 'userid'));
+
+        // A tab with nobody in it says so instead of showing a table with no rows.
+        global $OUTPUT;
+        $empty = get_string('hub_ranking_tab_empty', 'local_playergames');
+        $this->assertStringNotContainsString($empty, $OUTPUT->render_from_template('local_playergames/hub', $both));
+        $alone = ['studentranking' => [], 'hasstudentranking' => false] + $both;
+        $this->assertSame(1, substr_count($OUTPUT->render_from_template('local_playergames/hub', $alone), $empty));
     }
 
     /**

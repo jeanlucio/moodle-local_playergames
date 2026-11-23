@@ -238,6 +238,35 @@ final class hook_callbacks_test extends \advanced_testcase {
     }
 
     /**
+     * A page that finds the lock of the user taken leaves the check-in to the next one.
+     *
+     * Regression test: the session was marked before the check-in was made, so no later page of it tried again.
+     */
+    public function test_a_check_in_left_for_the_next_page_is_made_there(): void {
+        global $DB, $SESSION;
+        $this->resetAfterTest();
+        $this->redirectEvents();
+        $now = time();
+        $DB->insert_record('local_playergames_seasons', (object) [
+            'name' => 'Season', 'startdate' => $now - DAYSECS, 'enddate' => $now + DAYSECS, 'status' => 'active',
+            'config_snapshot' => json_encode([]), 'timecreated' => $now, 'timemodified' => $now,
+        ]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->setUser($student);
+        $flag = 'playergames_checkin_' . date('Ymd');
+        unset($SESSION->$flag);
+        $checkin = ['userid' => $student->id, 'gametype' => 'checkin'];
+
+        \local_playergames\local\user_lock::force_busy_for_tests((int) $student->id);
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+        \local_playergames\local\user_lock::reset_for_tests();
+        $this->assertFalse($DB->record_exists('local_playergames_daily_scores', $checkin));
+
+        hook_callbacks::daily_checkin($this->top_of_body_hook());
+        $this->assertTrue($DB->record_exists('local_playergames_daily_scores', $checkin));
+    }
+
+    /**
      * Nobody is checked in without being logged in, or when they opted out of the gamification.
      */
     public function test_guests_and_users_who_opted_out_are_not_checked_in(): void {

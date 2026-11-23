@@ -72,6 +72,7 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
     const types = CombatRules.PIECE_TYPES;
 
     let grid = [];
+    let begun = false;
     let state = CombatRules.initialState(rules);
     let queue = [];
     let lastKey = null;
@@ -318,6 +319,27 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
     };
 
     /**
+     * Tells the server the battle is being played: from here on, leaving the page counts as a lost battle when the
+     * attempts are limited. Kept alive so that leaving right after the first move does not cancel it.
+     */
+    const begin = async() => {
+        if (begun) {
+            return;
+        }
+        begun = true;
+        try {
+            await fetch(config.posturl, {
+                method: 'POST',
+                keepalive: true,
+                body: new URLSearchParams({sesskey: config.sesskey, action: 'begin_battle'}),
+            });
+        } catch (error) {
+            // The answer to the first question marks it as well.
+            window.console.error(error);
+        }
+    };
+
+    /**
      * One turn of a side: the poison ticks, then it swaps.
      *
      * @param {string} side Whose turn.
@@ -348,6 +370,9 @@ export const createGame = ({board, ui, sound, config, reducedMotion}) => {
         flush();
 
         const move = side === 'player' ? await playerMove() : await opponentMove();
+        if (side === 'player') {
+            begin();
+        }
         const result = await resolveMove(side, move);
         flush();
         return result;

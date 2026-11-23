@@ -102,10 +102,10 @@ class hook_callbacks {
         if (!empty($SESSION->$flag)) {
             return;
         }
-        $SESSION->$flag = true;
-
-        if (checkin_manager::is_participant((int) $USER->id)) {
-            checkin_manager::record((int) $USER->id);
+        // When another request holds the lock of the user, the flag stays off and the next page tries again.
+        if (checkin_manager::is_participant((int) $USER->id) && !checkin_manager::record((int) $USER->id)) {
+            return;
         }
+        $SESSION->$flag = true;
     }
 }

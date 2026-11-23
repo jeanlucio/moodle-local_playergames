@@ -127,8 +127,54 @@ class battle_manager {
             'judging'  => $judging,
             'answered' => 0,
             'correct'  => 0,
+            'token'    => random_string(20),
         ]);
         return $questions;
+    }
+
+    /**
+     * Marks the open battle as being played, at the first move of the player.
+     *
+     * With a limit of defeats, a battle being played that never reports a result counts as one when the page is
+     * opened again (see settle_abandoned()): otherwise reloading a battle about to be lost undid it. Opening the
+     * page and leaving it without a move costs nothing.
+     *
+     * @param int $userid The player.
+     * @return array {success}
+     */
+    public function begin_battle(int $userid): array {
+        $run = self::run_cache()->get($userid);
+        if (!is_array($run)) {
+            return ['success' => false];
+        }
+        self::run_cache()->set($userid, self::mark_begun($userid, $run));
+        return ['success' => true];
+    }
+
+    /**
+     * Counts as a defeat the battle the player left midway, if any.
+     *
+     * @param int $userid The player.
+     * @param int $gamedate Midnight timestamp of the day.
+     * @return void
+     */
+    public static function settle_abandoned(int $userid, int $gamedate): void {
+        day_loss::settle($userid, 'battle', $gamedate, self::max_attempts());
+    }
+
+    /**
+     * Records that the battle is being played, when the defeats are limited and it was not recorded yet.
+     *
+     * @param int $userid The player.
+     * @param array $run The open battle.
+     * @return array The open battle, marked.
+     */
+    private static function mark_begun(int $userid, array $run): array {
+        if (empty($run['begun']) && self::max_attempts() > 0) {
+            day_loss::begin($userid, 'battle', (int) $run['gamedate'], (string) $run['token']);
+            $run['begun'] = true;
+        }
+        return $run;
     }
 
     /**
@@ -160,6 +206,7 @@ class battle_manager {
             return ['success' => false, 'reason' => 'repeat'];
         }
 
+        $run = self::mark_begun($userid, $run);
         $question = $run['judging'][$key];
         $correct  = $choice === (int) $question['correct'];
         $run['judging'][$key]['count']++;
@@ -239,6 +286,11 @@ class battle_manager {
         self::run_cache()->delete($userid);
 
         $gamedate = (int) $run['gamedate'];
+        // A battle already counted as left midway, because the page was opened again, has no result to give.
+        $begun = !empty($run['begun']);
+        if ($begun && !day_loss::is_open($userid, 'battle', $gamedate, (string) $run['token'])) {
+            return ['success' => false, 'victory' => false, 'xpawarded' => 0, 'remaining' => 0, 'closed' => false];
+        }
         $total    = (int) $run['answered'];
         $correct  = (int) $run['correct'];
         $duration = max(0, $now - (int) $run['started']);
@@ -252,6 +304,9 @@ class battle_manager {
         if ($victory) {
             $play = daily_play_manager::register_play($userid, 'battle', $gamedate, $season, $context, ['victory' => 1]);
             $xpawarded = (int) $play['xpawarded'];
+            if ($begun) {
+                day_loss::finish($userid, 'battle', $gamedate);
+            }
         } else {
             $closed = day_loss::record($userid, 'battle', $gamedate, self::max_attempts());
         }

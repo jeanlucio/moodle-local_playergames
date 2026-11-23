@@ -23,6 +23,7 @@
     Example context (json):
     {
         "already_played": false,
+        "attempts_notice": "Attempts left today: 2. After your first move, leaving or reloading the page counts as a lost battle.",
         "closed_today": false,
         "no_questions": false,
         "playable": true,
@@ -91,6 +92,9 @@
     {{#playable}}
     <div id="pg-battle-game" class="pg-battle" data-config="{{config}}" data-board-label="{{str_board_label}}">
         <p class="pg-battle-instructions">{{str_instructions}}</p>
+        {{#attempts_notice}}
+        <p class="pg-battle-instructions"><strong>{{attempts_notice}}</strong></p>
+        {{/attempts_notice}}
 
         <div class="pg-battle-cards">
             {{#cards}}
