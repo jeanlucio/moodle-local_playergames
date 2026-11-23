@@ -262,9 +262,12 @@ final class admin_cards_test extends \advanced_testcase {
         $this->assertStringContainsString('Active: Spring &amp; Summer', $html);
         $this->assertStringNotContainsString('&amp;amp;', $html);
         $this->assertStringNotContainsString('<b>', $html);
-        $this->assertMatchesRegularExpression(
-            '/href="https:[^"]*moodle-local_playergames[^"]*" target="_blank" rel="noopener"/',
-            $html
+        // Every card opens in another tab, so the list stays at hand, and says so to a screen reader.
+        $this->assertSame(substr_count($html, 'class="pg-admin-card"'), substr_count($html, 'target="_blank" rel="noopener"'));
+        $this->assertSame(
+            substr_count($html, 'class="pg-admin-card"'),
+            substr_count($html, get_string('opensinnewwindow'))
         );
+        $this->assertGreaterThan(1, substr_count($html, 'class="pg-admin-card"'));
     }
 }

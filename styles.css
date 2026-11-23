@@ -1524,7 +1524,33 @@ body.path-local-playergames .pg-battle-actions {
 /* ── Administration tab ──────────────────────────────────────────── */
 
 body.path-local-playergames .pg-admin-group {
+    --pg-admin-accent: #0f6cbf;
     margin-block-end: 1.5rem;
+}
+
+/* One colour per group, dark enough for text on white and on its own light tint. */
+body.path-local-playergames .pg-admin-group-start {
+    --pg-admin-accent: #1d5fbf;
+}
+
+body.path-local-playergames .pg-admin-group-rules {
+    --pg-admin-accent: #6d3fc0;
+}
+
+body.path-local-playergames .pg-admin-group-followup {
+    --pg-admin-accent: #0f766e;
+}
+
+body.path-local-playergames .pg-admin-group-data {
+    --pg-admin-accent: #b42318;
+}
+
+body.path-local-playergames .pg-admin-group-help {
+    --pg-admin-accent: #19733f;
+}
+
+body.path-local-playergames .pg-admin-group h3 {
+    color: var(--pg-admin-accent);
 }
 
 body.path-local-playergames .pg-admin-grid {
@@ -1539,6 +1565,7 @@ body.path-local-playergames .pg-admin-card {
     gap: 0.35rem;
     padding: 0.85rem 1rem;
     border: 1px solid var(--bs-border-color, #dee2e6);
+    border-block-start: 4px solid var(--pg-admin-accent);
     border-radius: 0.5rem;
     background: var(--bs-body-bg, #fff);
     color: var(--bs-body-color, #212529);
@@ -1547,14 +1574,38 @@ body.path-local-playergames .pg-admin-card {
 
 body.path-local-playergames .pg-admin-card:hover,
 body.path-local-playergames .pg-admin-card:focus-visible {
-    border-color: var(--bs-primary, #0f6cbf);
-    box-shadow: 0 0 0 1px var(--bs-primary, #0f6cbf);
+    border-color: var(--pg-admin-accent);
+    box-shadow: 0 0 0 1px var(--pg-admin-accent);
     color: var(--bs-body-color, #212529);
     text-decoration: none;
 }
 
+body.path-local-playergames .pg-admin-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+body.path-local-playergames .pg-admin-card-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--pg-admin-accent) 14%, transparent);
+    color: var(--pg-admin-accent);
+}
+
 body.path-local-playergames .pg-admin-card-name {
     font-weight: 700;
+}
+
+body.path-local-playergames .pg-admin-card-newtab {
+    margin-inline-start: auto;
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color, #5c636a);
 }
 
 body.path-local-playergames .pg-admin-card-desc {
@@ -1565,9 +1616,9 @@ body.path-local-playergames .pg-admin-card-desc {
 body.path-local-playergames .badge.pg-admin-card-state {
     align-self: flex-start;
     margin-block-start: auto;
-    border: 1px solid var(--bs-border-color, #dee2e6);
-    background: var(--bs-light, #f8f9fa);
-    color: var(--bs-dark, #212529);
+    border: 1px solid color-mix(in srgb, var(--pg-admin-accent) 35%, transparent);
+    background: color-mix(in srgb, var(--pg-admin-accent) 10%, transparent);
+    color: var(--pg-admin-accent);
     font-weight: 600;
     white-space: normal;
     text-align: start;

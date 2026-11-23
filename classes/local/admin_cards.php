@@ -68,7 +68,7 @@ final class admin_cards {
      * The groups of cards the user can see, without the empty ones.
      *
      * @param int $userid The user.
-     * @return array[] Groups: {key, title, cards}, each card {key, name, description, url, state, external}.
+     * @return array[] Groups: {key, title, cards}, each card {key, icon, name, description, url, state}.
      */
     public static function for_user(int $userid): array {
         $context = context_system::instance();
@@ -87,7 +87,7 @@ final class admin_cards {
                     'url'         => $card['url']->out(false),
                     'state'       => $state,
                     'hasstate'    => $state !== '',
-                    'external'    => !empty($card['external']),
+                    'icon'        => $card['icon'],
                 ];
             }
             if ($visible !== []) {
@@ -132,65 +132,67 @@ final class admin_cards {
         return [
             'start' => [
                 [
-                    'key' => 'cartridges', 'name' => 'admin_item_cartridges', 'cap' => self::CAP_CARTRIDGES,
+                    'key' => 'cartridges', 'icon' => 'fa-layer-group', 'name' => 'admin_item_cartridges',
+                    'cap' => self::CAP_CARTRIDGES,
                     'url' => new moodle_url('/local/playergames/cartridge.php'),
                     'state' => [self::class, 'state_cartridges'],
                 ],
                 [
-                    'key' => 'seasons', 'name' => 'admin_item_seasons', 'cap' => self::CAP_CONFIG,
+                    'key' => 'seasons', 'icon' => 'fa-calendar-days', 'name' => 'admin_item_seasons', 'cap' => self::CAP_CONFIG,
                     'url' => new moodle_url('/local/playergames/manage_seasons.php'),
                     'state' => [self::class, 'state_seasons'],
                 ],
                 [
-                    'key' => 'seasongames', 'name' => 'admin_item_seasongames', 'cap' => self::CAP_CONFIG,
+                    'key' => 'seasongames', 'icon' => 'fa-gamepad', 'name' => 'admin_item_seasongames', 'cap' => self::CAP_CONFIG,
                     'url' => new moodle_url('/local/playergames/manage_season_games.php'),
                     'state' => [self::class, 'state_season_games'],
                 ],
             ],
             'rules' => [
                 [
-                    'key' => 'participation', 'name' => 'season_setup_heading', 'cap' => self::CAP_CONFIG,
+                    'key' => 'participation', 'icon' => 'fa-users', 'name' => 'season_setup_heading', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_seasons'),
                     'state' => [self::class, 'state_participation'],
                 ],
                 [
-                    'key' => 'xp', 'name' => 'settings_xp_heading', 'cap' => self::CAP_CONFIG,
+                    'key' => 'xp', 'icon' => 'fa-star', 'name' => 'settings_xp_heading', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_xp'),
                 ],
                 [
-                    'key' => 'games', 'name' => 'settings_games_heading', 'cap' => self::CAP_CONFIG,
+                    'key' => 'games', 'icon' => 'fa-sliders', 'name' => 'settings_games_heading', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_games'),
                 ],
                 [
-                    'key' => 'levels', 'name' => 'admin_item_levels', 'cap' => self::CAP_CONFIG,
+                    'key' => 'levels', 'icon' => 'fa-trophy', 'name' => 'admin_item_levels', 'cap' => self::CAP_CONFIG,
                     'url' => new moodle_url('/local/playergames/manage_levels.php'),
                     'state' => [self::class, 'state_levels'],
                 ],
                 [
-                    'key' => 'streak', 'name' => 'settings_streak_heading', 'cap' => self::CAP_CONFIG,
+                    'key' => 'streak', 'icon' => 'fa-fire', 'name' => 'settings_streak_heading', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_streak'),
                 ],
                 [
-                    'key' => 'learning', 'name' => 'settings_learningxp_heading', 'cap' => self::CAP_CONFIG,
+                    'key' => 'learning', 'icon' => 'fa-graduation-cap', 'name' => 'settings_learningxp_heading',
+                    'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_playergames_learning'),
                 ],
             ],
             'data' => [
                 [
-                    'key' => 'resetdata', 'name' => 'admin_item_resetdata', 'cap' => self::CAP_CONFIG,
+                    'key' => 'resetdata', 'icon' => 'fa-trash-can', 'name' => 'admin_item_resetdata', 'cap' => self::CAP_CONFIG,
                     'url' => new moodle_url('/local/playergames/reset_data.php'),
                 ],
             ],
             'help' => [
                 [
-                    'key' => 'aikeys', 'name' => 'admin_item_aikeys', 'cap' => self::CAP_CONFIG,
+                    'key' => 'aikeys', 'icon' => 'fa-key', 'name' => 'admin_item_aikeys', 'cap' => self::CAP_CONFIG,
                     'url' => $setting('local_aihub'),
                     'available' => [self::class, 'has_ai_hub'],
                     'state' => [self::class, 'state_ai_keys'],
                 ],
                 [
-                    'key' => 'docs', 'name' => 'admin_item_docs',
-                    'url' => new moodle_url($docs), 'external' => true,
+                    'key' => 'docs', 'icon' => 'fa-book', 'name' => 'admin_item_docs',
+                    'url' => new moodle_url($docs),
                 ],
             ],
         ];
