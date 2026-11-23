@@ -70,15 +70,26 @@
         };
 
         /**
-         * Returns the SVG path of a connection between two card centres.
+         * Returns the SVG path of a connection between two cards.
          *
-         * @param {{x: number, y: number}} a The centre the edge starts from.
-         * @param {{x: number, y: number}} b The centre it ends at.
+         * The curve leaves and arrives at the sides that face each other, so it never runs under a card. Two cards of
+         * the same column are joined by a loop out to their right.
+         *
+         * @param {{left: number, right: number, top: number, bottom: number}} a The box of the card it starts from.
+         * @param {{left: number, right: number, top: number, bottom: number}} b The box of the card it ends at.
          * @return {string} A cubic curve that leaves and arrives horizontally.
          */
         const edgePath = (a, b) => {
-            const midx = a.x + (b.x - a.x) * 0.5;
-            return `M ${a.x} ${a.y} C ${midx} ${a.y} ${midx} ${b.y} ${b.x} ${b.y}`;
+            const ay = (a.top + a.bottom) / 2;
+            const by = (b.top + b.bottom) / 2;
+            if (Math.abs(a.left - b.left) < 4) {
+                const bulge = 24 + Math.min(40, Math.abs(by - ay) / 6);
+                return `M ${a.right} ${ay} C ${a.right + bulge} ${ay} ${b.right + bulge} ${by} ${b.right} ${by}`;
+            }
+            const ax = a.left < b.left ? a.right : a.left;
+            const bx = a.left < b.left ? b.left : b.right;
+            const midx = ax + (bx - ax) * 0.5;
+            return `M ${ax} ${ay} C ${midx} ${ay} ${midx} ${by} ${bx} ${by}`;
         };
 
         return {parseEdges, neighbours, edgePath};

@@ -53,7 +53,15 @@ test('each card knows the cards it is joined to, whichever way the edge goes', (
     assert.equal(map.has('d'), false);
 });
 
-test('a connection leaves and arrives horizontally, bending halfway', () => {
-    assert.equal(Graph.edgePath({x: 0, y: 10}, {x: 100, y: 50}), 'M 0 10 C 50 10 50 50 100 50');
-    assert.equal(Graph.edgePath({x: 100, y: 50}, {x: 0, y: 10}), 'M 100 50 C 50 50 50 10 0 10');
+const box = (left, top) => ({left, right: left + 100, top, bottom: top + 40});
+
+test('a connection joins the sides of the two cards that face each other, bending halfway', () => {
+    assert.equal(Graph.edgePath(box(0, 0), box(300, 100)), 'M 100 20 C 200 20 200 120 300 120');
+    assert.equal(Graph.edgePath(box(300, 100), box(0, 0)), 'M 300 120 C 200 120 200 20 100 20');
+});
+
+// A line from centre to centre ran under the cards of the column between them, and between two cards of the same
+// column it ran under both.
+test('two cards of the same column are joined by a loop out to their right', () => {
+    assert.equal(Graph.edgePath(box(0, 0), box(0, 120)), 'M 100 20 C 144 20 144 140 100 140');
 });

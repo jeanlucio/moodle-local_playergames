@@ -36,7 +36,8 @@ use local_playergames\ecosystem\plugin_status;
  * Responsibilities:
  *   - Build the capability-filtered quick-access action links.
  *   - Build grouped, clickable plugin cards with install status.
- *   - Build the typed relation edges (drawn as connectors by dashboard.js).
+ *   - Build the typed relation edges (drawn by dashboard.js for the plugin the user selects).
+ *   - Build, for each plugin, what it uses and what uses it, as text for the detail panel.
  *   - Build the relation-type legend.
  *
  * @package    local_playergames
@@ -62,7 +63,6 @@ class dashboard implements renderable, templatable {
         [$groups, $cards, $edges] = $this->build_ecosystem();
 
         return [
-            'str_heading_ecosystem' => get_string('dashboard_heading_ecosystem', 'local_playergames'),
             'str_legend'            => get_string('dashboard_legend_heading', 'local_playergames'),
             'groups'                => $groups,
             'cards'                 => $cards,
@@ -89,7 +89,6 @@ class dashboard implements renderable, templatable {
         }
 
         $edges     = $this->build_edges($catalog, $bycomponent);
-        $adjacency = $this->build_adjacency($edges);
 
         $cards     = [];
         $bygroup   = [];
@@ -98,7 +97,11 @@ class dashboard implements renderable, templatable {
             $status    = $statusmap[$component] ?? ['installed' => false, 'version' => ''];
             $installed = (bool) $status['installed'];
 
-            $connections = $this->build_connection_groups($adjacency[$component] ?? [], $bycomponent);
+            $outgoing = array_values(array_filter($edges, fn(array $edge): bool => $edge['from'] === $component));
+            $incoming = array_values(array_filter($edges, fn(array $edge): bool => $edge['to'] === $component));
+            $uses     = $this->build_connection_groups($outgoing, 'to', 'out', $bycomponent);
+            $usedby   = $this->build_connection_groups($incoming, 'from', 'in', $bycomponent);
+            $aiusers  = count(array_filter($incoming, fn(array $edge): bool => $edge['type'] === plugin_registry::REL_AI));
 
             $card = [
                 'component'         => $component,
@@ -115,8 +118,14 @@ class dashboard implements renderable, templatable {
                 'version'           => $status['version'],
                 'hasversion'        => $status['version'] !== '',
                 'description'       => get_string('plugin_desc_' . $component, 'local_playergames'),
-                'connectiongroups'  => $connections,
-                'hasconnections'    => !empty($connections),
+                // The AI hub is joined to most plugins: a mark on the cards says it instead of a line to each.
+                'usesai'            => in_array(plugin_registry::REL_AI, array_column($outgoing, 'type'), true),
+                'aiusers'           => $aiusers > 0
+                    ? get_string('dashboard_ai_users', 'local_playergames', $aiusers) : '',
+                'uses'              => $uses,
+                'hasuses'           => $uses !== [],
+                'usedby'            => $usedby,
+                'hasusedby'         => $usedby !== [],
             ];
 
             $cards[] = $card;
@@ -163,37 +172,18 @@ class dashboard implements renderable, templatable {
     }
 
     /**
-     * Builds an undirected adjacency map (component => [[neighbour, type], ...]).
+     * Groups one direction of a plugin's relations by type, for the detail panel.
      *
-     * @param array $edges Directed edge list.
-     * @return array<string, array<int, array{0: string, 1: string}>>
-     */
-    private function build_adjacency(array $edges): array {
-        $adjacency = [];
-        foreach ($edges as $edge) {
-            $adjacency[$edge['from']][] = [$edge['to'], $edge['type']];
-            $adjacency[$edge['to']][]   = [$edge['from'], $edge['type']];
-        }
-        return $adjacency;
-    }
-
-    /**
-     * Groups a card's connections by relation type for the modal listing.
-     *
-     * @param array $neighbours List of [component, type] pairs.
+     * @param array $edges The edges of the plugin in that direction.
+     * @param string $end Which end of each edge is the other plugin: 'to' or 'from'.
+     * @param string $direction 'out' for what the plugin uses, 'in' for what uses it.
      * @param array $bycomponent Catalog indexed by component name.
-     * @return array
+     * @return array Each with typelabel, cssclass and names.
      */
-    private function build_connection_groups(array $neighbours, array $bycomponent): array {
+    private function build_connection_groups(array $edges, string $end, string $direction, array $bycomponent): array {
         $bytype = [];
-        $seen   = [];
-        foreach ($neighbours as [$component, $type]) {
-            $key = $component . '|' . $type;
-            if (isset($seen[$key]) || !isset($bycomponent[$component])) {
-                continue;
-            }
-            $seen[$key] = true;
-            $bytype[$type][] = $bycomponent[$component]['displayname'];
+        foreach ($edges as $edge) {
+            $bytype[$edge['type']][$edge[$end]] = $bycomponent[$edge[$end]]['displayname'];
         }
 
         $groups = [];
@@ -202,7 +192,7 @@ class dashboard implements renderable, templatable {
                 continue;
             }
             $groups[] = [
-                'typelabel' => get_string('dashboard_edge_' . $type, 'local_playergames'),
+                'typelabel' => get_string('dashboard_' . $direction . '_' . $type, 'local_playergames'),
                 'cssclass'  => 'pg-chip-' . $type,
                 'names'     => implode(', ', $bytype[$type]),
             ];

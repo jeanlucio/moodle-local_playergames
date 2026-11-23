@@ -111,12 +111,37 @@ final class dashboard_test extends \advanced_testcase {
             $connected[$edge['to']] = true;
         }
         foreach ($data['cards'] as $card) {
-            $this->assertSame(isset($connected[$card['component']]), $card['hasconnections'], $card['component']);
-            foreach ($card['connectiongroups'] as $connection) {
+            $this->assertSame(isset($connected[$card['component']]), $card['hasuses'] || $card['hasusedby'], $card['component']);
+            foreach (array_merge($card['uses'], $card['usedby']) as $connection) {
                 $this->assertNotSame('', $connection['names']);
                 $this->assertStringStartsWith('pg-chip-', $connection['cssclass']);
             }
         }
+    }
+
+    /**
+     * The detail of a plugin tells what it uses apart from what uses it, and the AI hub is a mark on the cards.
+     */
+    public function test_the_detail_tells_the_two_directions_apart(): void {
+        $this->resetAfterTest();
+        $cards = array_column($this->export()['cards'], null, 'component');
+        $label = fn(string $key): string => get_string('dashboard_' . $key, 'local_playergames');
+
+        $block = $cards['block_playergames'];
+        $this->assertSame([$label('out_requires')], array_column($block['uses'], 'typelabel'));
+        $this->assertSame($cards['local_playergames']['displayname'], $block['uses'][0]['names']);
+        $this->assertContains($label('in_requires'), array_column($cards['local_playergames']['usedby'], 'typelabel'));
+
+        $this->assertTrue($cards['local_playergames']['usesai']);
+        $this->assertFalse($cards['local_aihub']['usesai']);
+        $users = count(array_filter(
+            plugin_registry::get_catalog(),
+            fn(array $def): bool => in_array(plugin_registry::REL_AI, array_column($def['relations'], 'type'), true)
+        ));
+        $this->assertSame(get_string('dashboard_ai_users', 'local_playergames', $users), $cards['local_aihub']['aiusers']);
+        $this->assertSame('', $cards['local_playergames']['aiusers']);
+        $this->assertFalse($cards['local_resourcestats']['hasuses']);
+        $this->assertFalse($cards['local_resourcestats']['hasusedby']);
     }
 
     /**
@@ -150,5 +175,9 @@ final class dashboard_test extends \advanced_testcase {
         foreach ($data['cards'] as $card) {
             $this->assertStringContainsString(s($card['displayname']), $html);
         }
+        // The connections reach the script, which draws them for the card that is selected.
+        $this->assertMatchesRegularExpression('~<script type="application/json" id="pg-ecosystem-edges">(.+)</script>~', $html);
+        preg_match('~id="pg-ecosystem-edges">(.+)</script>~', $html, $match);
+        $this->assertSame(json_decode($data['edgesjson'], true), json_decode($match[1], true));
     }
 }

@@ -349,13 +349,11 @@ body.path-local-playergames .local-playergames-dashboard .pg-eco-card {
     border-radius: 0.5rem;
     padding: 0.6rem 0.75rem;
     cursor: pointer;
-    transition: box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+    transition: box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-eco-card:hover,
-body.path-local-playergames .local-playergames-dashboard .pg-eco-card.pg-eco-card-active {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-eco-card:focus {
@@ -414,9 +412,48 @@ body.path-local-playergames .local-playergames-dashboard .pg-eco-status {
     font-size: 0.65rem;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-eco-card-go {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card-mark {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-chip-count {
     color: var(--text-muted, #6c757d);
-    margin-inline-start: auto;
+}
+
+/* ── Ecosystem map: detail of the selected plugin ────────────────── */
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-panel {
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--card-bg, #fff);
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-detail-rels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem 2rem;
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-detail .pg-eco-chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* With the families in one column, a line could only loop along the edge of the screen: the panel says it all. */
+@media (max-width: 575.98px) {
+    body.path-local-playergames .local-playergames-dashboard .pg-eco-overlay {
+        display: none;
+    }
+}
+
+body.path-local-playergames .local-playergames-dashboard .pg-eco-detail-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.5rem;
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-eco-chip {
@@ -450,9 +487,7 @@ body.path-local-playergames .local-playergames-dashboard .pg-chip-planned {
 
 body.path-local-playergames .local-playergames-dashboard .pg-eco-edge {
     fill: none;
-    stroke-width: 2;
-    opacity: 0;
-    transition: opacity 0.15s ease, stroke-width 0.15s ease;
+    stroke-width: 2.5;
 }
 
 body.path-local-playergames .local-playergames-dashboard .pg-edge-requires {
@@ -474,22 +509,16 @@ body.path-local-playergames .local-playergames-dashboard .pg-edge-planned {
     stroke-dasharray: 8 5;
 }
 
-/* Connectors are hidden by default and revealed only for the hovered card. */
-body.path-local-playergames .local-playergames-dashboard .pg-eco-edge-active {
-    stroke-width: 3.5;
-    opacity: 1;
-}
-
-/* ── Ecosystem map: hover focus ──────────────────────────────────── */
+/* ── Ecosystem map: selected card ────────────────────────────────── */
 
 body.path-local-playergames .local-playergames-dashboard .pg-eco-dim
 .pg-eco-card:not(.pg-eco-card-active):not(.pg-eco-card-linked) {
-    opacity: 0.4;
+    opacity: 0.35;
 }
 
-body.path-local-playergames .local-playergames-dashboard .pg-eco-card-linked {
+body.path-local-playergames .local-playergames-dashboard .pg-eco-card.pg-eco-card-active {
     border-color: var(--primary, #0f6cbf);
-    box-shadow: 0 0 0 1px var(--primary, #0f6cbf);
+    box-shadow: 0 0 0 2px var(--primary, #0f6cbf);
 }
 
 /* ── Quiz ────────────────────────────────────────────────────────── */

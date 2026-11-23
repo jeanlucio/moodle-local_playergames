@@ -14,73 +14,50 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Player ecosystem dashboard interactions.
+ * Player ecosystem map.
  *
- * Draws the typed relation connectors between plugin cards (measuring real DOM
- * positions, recomputed on resize), highlights a card's connections on hover or
- * focus, and opens a core/modal with the card's pre-rendered detail block.
+ * Selecting a card (click, Enter or Space) draws only its connections, dims the plugins it has nothing to do with
+ * and shows, below the map, what it uses and what uses it. Selecting it again, or pressing Escape, clears it.
  *
  * @module     local_playergames/dashboard
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import Modal from 'core/modal';
 import Graph from 'local_playergames/dashboard/graph';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 /**
- * Opens a modal for the given plugin card.
- *
- * @param {Element} card The .pg-eco-card element.
- */
-const openCardModal = async(card) => {
-    const component = card.dataset.component;
-    const bodyEl = document.getElementById('pg-modal-' + component);
-    if (!bodyEl) {
-        return;
-    }
-    const nameEl = card.querySelector('.pg-eco-card-name');
-    await Modal.create({
-        title: nameEl ? nameEl.textContent : component,
-        body: bodyEl.innerHTML,
-        show: true,
-        removeOnClose: true,
-    });
-};
-
-/**
- * Returns the centre of an element in coordinates relative to a container.
+ * Returns the box of an element in coordinates relative to a container.
  *
  * @param {Element} el The measured element.
  * @param {DOMRect} containerRect The container's bounding rectangle.
- * @return {{x: number, y: number}}
+ * @return {{left: number, right: number, top: number, bottom: number}}
  */
-const centreOf = (el, containerRect) => {
+const boxOf = (el, containerRect) => {
     const rect = el.getBoundingClientRect();
     return {
-        x: rect.left - containerRect.left + rect.width / 2,
-        y: rect.top - containerRect.top + rect.height / 2,
+        left: rect.left - containerRect.left,
+        right: rect.right - containerRect.left,
+        top: rect.top - containerRect.top,
+        bottom: rect.bottom - containerRect.top,
     };
 };
 
 /**
- * Draws every connector path into the overlay SVG.
+ * Draws the connectors of one card into the overlay, or none.
  *
  * @param {Element} container The .pg-eco element.
  * @param {SVGElement} overlay The .pg-eco-overlay SVG element.
- * @param {Array<{from: string, to: string, type: string}>} edges The edge list.
+ * @param {Array<{from: string, to: string, type: string}>} edges The edges to draw.
  */
 const drawEdges = (container, overlay, edges) => {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    overlay.setAttribute('viewBox', `0 0 ${container.clientWidth} ${container.clientHeight}`);
     overlay.setAttribute('preserveAspectRatio', 'none');
     while (overlay.firstChild) {
         overlay.removeChild(overlay.firstChild);
     }
-
     const containerRect = container.getBoundingClientRect();
     edges.forEach(edge => {
         const fromEl = container.querySelector(`.pg-eco-card[data-component="${edge.from}"]`);
@@ -88,57 +65,11 @@ const drawEdges = (container, overlay, edges) => {
         if (!fromEl || !toEl) {
             return;
         }
-        const a = centreOf(fromEl, containerRect);
-        const b = centreOf(toEl, containerRect);
         const path = document.createElementNS(SVGNS, 'path');
-        path.setAttribute('d', Graph.edgePath(a, b));
+        path.setAttribute('d', Graph.edgePath(boxOf(fromEl, containerRect), boxOf(toEl, containerRect)));
         path.setAttribute('class', `pg-eco-edge pg-edge-${edge.type}`);
-        path.dataset.from = edge.from;
-        path.dataset.to = edge.to;
         overlay.appendChild(path);
     });
-};
-
-/**
- * Wires hover/focus highlighting of a card and its connections.
- *
- * @param {Element} container The .pg-eco element.
- * @param {Element} card The card to wire.
- * @param {Map<string, Set<string>>} neighbours Adjacency map.
- */
-const wireHighlight = (container, card, neighbours) => {
-    const component = card.dataset.component;
-
-    const activate = () => {
-        container.classList.add('pg-eco-dim');
-        card.classList.add('pg-eco-card-active');
-        (neighbours.get(component) || new Set()).forEach(other => {
-            const el = container.querySelector(`.pg-eco-card[data-component="${other}"]`);
-            if (el) {
-                el.classList.add('pg-eco-card-linked');
-            }
-        });
-        container.querySelectorAll('.pg-eco-edge').forEach(edge => {
-            if (edge.dataset.from === component || edge.dataset.to === component) {
-                edge.classList.add('pg-eco-edge-active');
-            }
-        });
-    };
-
-    const reset = () => {
-        container.classList.remove('pg-eco-dim');
-        container.querySelectorAll('.pg-eco-card-active, .pg-eco-card-linked').forEach(el => {
-            el.classList.remove('pg-eco-card-active', 'pg-eco-card-linked');
-        });
-        container.querySelectorAll('.pg-eco-edge-active').forEach(el => {
-            el.classList.remove('pg-eco-edge-active');
-        });
-    };
-
-    card.addEventListener('mouseenter', activate);
-    card.addEventListener('mouseleave', reset);
-    card.addEventListener('focus', activate);
-    card.addEventListener('blur', reset);
 };
 
 /**
@@ -160,20 +91,56 @@ const init = () => {
     if (!container || !overlay) {
         return;
     }
-
+    const root = container.closest('.local-playergames-dashboard') || document;
+    const hint = root.querySelector('.pg-eco-hint');
+    const details = root.querySelectorAll('.pg-eco-detail');
     const edges = readEdges();
     const neighbours = Graph.neighbours(edges);
     const cards = container.querySelectorAll('.pg-eco-card');
+    let selected = null;
+
+    const show = () => {
+        const near = neighbours.get(selected) || new Set();
+        container.classList.toggle('pg-eco-dim', selected !== null);
+        cards.forEach(card => {
+            const component = card.dataset.component;
+            card.classList.toggle('pg-eco-card-active', component === selected);
+            card.classList.toggle('pg-eco-card-linked', near.has(component));
+            card.setAttribute('aria-pressed', String(component === selected));
+        });
+        details.forEach(detail => {
+            detail.hidden = detail.dataset.component !== selected;
+        });
+        if (hint) {
+            hint.hidden = selected !== null;
+        }
+        drawEdges(container, overlay, edges.filter(edge => edge.from === selected || edge.to === selected));
+    };
+
+    const panel = root.querySelector('.pg-eco-panel');
+    const choose = card => {
+        selected = card.dataset.component === selected ? null : card.dataset.component;
+        show();
+        // On a phone the panel is far below the card: bring it into view, as nothing on the map changes there.
+        if (selected !== null && panel && window.matchMedia('(max-width: 575.98px)').matches) {
+            panel.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        }
+    };
 
     cards.forEach(card => {
-        card.addEventListener('click', () => openCardModal(card));
+        card.addEventListener('click', () => choose(card));
         card.addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                openCardModal(card);
+                choose(card);
             }
         });
-        wireHighlight(container, card, neighbours);
+    });
+    root.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && selected !== null) {
+            selected = null;
+            show();
+        }
     });
 
     let frame = null;
@@ -181,10 +148,9 @@ const init = () => {
         if (frame) {
             window.cancelAnimationFrame(frame);
         }
-        frame = window.requestAnimationFrame(() => drawEdges(container, overlay, edges));
+        frame = window.requestAnimationFrame(show);
     };
-
-    redraw();
+    show();
     window.addEventListener('resize', redraw);
     if (window.ResizeObserver) {
         new window.ResizeObserver(redraw).observe(container);

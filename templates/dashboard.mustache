@@ -17,21 +17,22 @@
 {{!
     @template local_playergames/dashboard
 
-    Player ecosystem dashboard: quick-access cards and a grouped, clickable
-    plugin map whose typed relations are drawn as connector lines by JS.
+    Player ecosystem map: the plugins grouped by family. Selecting one draws only its connections and shows, below
+    the map, what it uses and what uses it.
 
     Classes required for JS:
-    * pg-eco-card    — clickable plugin card (click/Enter/Space opens modal).
+    * pg-eco-card    — plugin card, selected with a click, Enter or Space.
     * pg-eco         — positioning context for the connector overlay.
-    * pg-eco-overlay — empty SVG the JS fills with connector paths.
+    * pg-eco-overlay — empty SVG the JS fills with the connectors of the selected card.
+    * pg-eco-detail  — the detail of one plugin, shown while its card is selected.
+    * pg-eco-hint    — the text shown while no card is selected.
 
     Data attributes / nodes required for JS:
-    * data-component on each card — plugin frankenstyle component.
+    * data-component on each card and each detail — plugin frankenstyle component.
     * script#pg-ecosystem-edges   — JSON array of {from, to, type} edges.
 
     Example context (json):
     {
-        "str_heading_ecosystem": "Plugin map",
         "str_legend": "Connections",
         "legend": [
             {"cssclass": "pg-edge-requires", "label": "Direct dependency"},
@@ -55,10 +56,8 @@
                         "version": "v0.1.6",
                         "hasversion": true,
                         "description": "AI and gamification hub.",
-                        "hasconnections": true,
-                        "connectiongroups": [
-                            {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
-                        ]
+                        "usesai": true,
+                        "aiusers": ""
                     }
                 ]
             }
@@ -76,9 +75,15 @@
                 "version": "v0.1.6",
                 "hasversion": true,
                 "description": "AI and gamification hub.",
-                "hasconnections": true,
-                "connectiongroups": [
-                    {"typelabel": "Optional AI", "cssclass": "pg-chip-ai", "names": "Player HUD"}
+                "usesai": true,
+                "aiusers": "",
+                "hasuses": true,
+                "uses": [
+                    {"typelabel": "Takes AI from", "cssclass": "pg-chip-ai", "names": "AI Hub"}
+                ],
+                "hasusedby": true,
+                "usedby": [
+                    {"typelabel": "Required by", "cssclass": "pg-chip-requires", "names": "PlayerGames block"}
                 ]
             }
         ],
@@ -108,6 +113,7 @@
                          data-component="{{component}}"
                          role="button"
                          tabindex="0"
+                         aria-pressed="false"
                          aria-label="{{displayname}}, {{statuslabel}}">
                         <div class="pg-eco-card-head">
                             <span class="pg-eco-badge">
@@ -121,7 +127,15 @@
                                 <span class="pg-eco-card-name">{{displayname}}</span>
                                 <span class="badge {{statusbadge}} pg-eco-status">{{statuslabel}}</span>
                             </div>
-                            <i class="fa fa-arrow-right pg-eco-card-go" aria-hidden="true"></i>
+                            {{#usesai}}
+                            <span class="pg-eco-chip pg-chip-ai pg-eco-card-mark"
+                                  title="{{#str}}dashboard_ai_chip_title, local_playergames{{/str}}">
+                                {{#str}}dashboard_ai_chip, local_playergames{{/str}}
+                            </span>
+                            {{/usesai}}
+                            {{#aiusers}}
+                            <span class="pg-eco-chip pg-eco-card-mark pg-eco-chip-count">{{aiusers}}</span>
+                            {{/aiusers}}
                         </div>
                     </div>
                     {{/cards}}
@@ -131,28 +145,50 @@
         </div>
     </div>
 
-</div>
+    <section class="pg-eco-panel mt-4" aria-live="polite">
+        <p class="pg-eco-hint mb-0">{{#str}}dashboard_detail_hint, local_playergames{{/str}}</p>
+        {{#cards}}
+        <div class="pg-eco-detail" data-component="{{component}}" hidden>
+            <h2 class="h5 mb-1">{{displayname}}</h2>
+            <p class="mb-2">{{description}}</p>
+            <p class="mb-3">
+                <span class="badge {{statusbadge}}">{{statuslabel}}</span>
+                {{#hasversion}}<small class="ms-2">{{version}}</small>{{/hasversion}}
+            </p>
+            <div class="pg-eco-detail-rels">
+                <div>
+                    <h3 class="pg-eco-detail-title">{{#str}}dashboard_uses, local_playergames{{/str}}</h3>
+                    {{#hasuses}}
+                    <ul class="list-unstyled mb-0">
+                        {{#uses}}
+                        <li class="mb-2 d-flex align-items-start pg-gap-2">
+                            <span class="pg-eco-chip {{cssclass}}">{{typelabel}}</span>
+                            <span>{{names}}</span>
+                        </li>
+                        {{/uses}}
+                    </ul>
+                    {{/hasuses}}
+                    {{^hasuses}}<p class="mb-0">{{#str}}dashboard_none, local_playergames{{/str}}</p>{{/hasuses}}
+                </div>
+                <div>
+                    <h3 class="pg-eco-detail-title">{{#str}}dashboard_usedby, local_playergames{{/str}}</h3>
+                    {{#hasusedby}}
+                    <ul class="list-unstyled mb-0">
+                        {{#usedby}}
+                        <li class="mb-2 d-flex align-items-start pg-gap-2">
+                            <span class="pg-eco-chip {{cssclass}}">{{typelabel}}</span>
+                            <span>{{names}}</span>
+                        </li>
+                        {{/usedby}}
+                    </ul>
+                    {{/hasusedby}}
+                    {{^hasusedby}}<p class="mb-0">{{#str}}dashboard_none, local_playergames{{/str}}</p>{{/hasusedby}}
+                </div>
+            </div>
+        </div>
+        {{/cards}}
+    </section>
 
-{{! Hidden modal content blocks — one per plugin, read by dashboard.js }}
-{{#cards}}
-<div id="pg-modal-{{component}}" class="d-none">
-    <p class="mb-2">{{description}}</p>
-    <p class="mb-0">
-        <span class="badge {{statusbadge}}">{{statuslabel}}</span>
-        {{#hasversion}}<small class="text-muted ms-2">{{version}}</small>{{/hasversion}}
-    </p>
-    {{#hasconnections}}
-    <hr class="my-3">
-    <ul class="list-unstyled mb-0">
-        {{#connectiongroups}}
-        <li class="mb-2 d-flex align-items-start pg-gap-2">
-            <span class="pg-eco-chip {{cssclass}}">{{typelabel}}</span>
-            <span>{{names}}</span>
-        </li>
-        {{/connectiongroups}}
-    </ul>
-    {{/hasconnections}}
 </div>
-{{/cards}}
 
 <script type="application/json" id="pg-ecosystem-edges">{{{edgesjson}}}</script>
